@@ -1,1 +1,1 @@
-1. Add set startup project steps for samples
+1. Add set startup project steps for running samples in VS

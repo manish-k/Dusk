@@ -10,10 +10,10 @@ namespace dusk
 	{
 	public:
 
-		static void init();
+		static void Init();
 
-		static SharedP<spdlog::logger>& getEngineLogger() { return s_EngineLogger; }
-		static SharedP<spdlog::logger>& getAppLogger() { return s_AppLogger; }
+		static SharedP<spdlog::logger>& GetEngineLogger() { return s_EngineLogger; }
+		static SharedP<spdlog::logger>& GetAppLogger() { return s_AppLogger; }
 
 	private:
 		static SharedP<spdlog::logger> s_EngineLogger;

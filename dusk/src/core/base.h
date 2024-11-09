@@ -11,13 +11,13 @@ namespace dusk
 	using SharedP = std::shared_ptr<T>;
 
 	template<typename T, typename... Args>
-	constexpr UniqueP<T> createUniqueP(Args&&... args)
+	constexpr UniqueP<T> CreateUniqueP(Args&&... args)
 	{
 		return std::make_unique<T>(std::forward<Args>(args)...);
 	}
 
 	template<typename T, typename... Args>
-	constexpr SharedP<T> createSharedP(Args&&... args)
+	constexpr SharedP<T> CreateSharedP(Args&&... args)
 	{
 		return std::make_shared<T>(std::forward<Args>(args)...);
 	}

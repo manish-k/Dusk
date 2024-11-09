@@ -8,7 +8,7 @@ namespace dusk
 		Application();
 		virtual ~Application();
 
-		void run();
+		void Run();
 		//virtual void update(float dt);
 	private:
 

@@ -4,7 +4,7 @@
 
 int main(int argc, char** argv)
 {
-	dusk::Logger::init();
+	dusk::Logger::Init();
 
 	APP_INFO("Starting App {}");
 }

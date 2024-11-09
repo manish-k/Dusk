@@ -7,16 +7,13 @@
 [submodule "dusk/vendor/stb"]
 	path = dusk/vendor/stb
 	url = https://github.com/nothings/stb.git
-[submodule "dusk/vendor/imgui-docking"]
-	path = dusk/vendor/imgui-docking
-	url = https://github.com/ocornut/imgui.git
-	branch = docking
 [submodule "dusk/vendor/entt"]
 	path = dusk/vendor/entt
 	url = https://github.com/skypjack/entt.git
 [submodule "dusk/vendor/spdlog"]
 	path = dusk/vendor/spdlog
 	url = https://github.com/gabime/spdlog.git
-[submodule "imgui-docking"]
-	path = imgui-docking
-	url = https://github.com/nothings/stb.git
+[submodule "dusk/vendor/imgui-docking"]
+	path = dusk/vendor/imgui-docking
+	url = https://github.com/ocornut/imgui.git
+	branch = docking

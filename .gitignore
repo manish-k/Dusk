@@ -40,3 +40,6 @@ CMakeSettings.json
 # Folders
 out/
 build/
+
+# Logs
+*.log

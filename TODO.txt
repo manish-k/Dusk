@@ -1,1 +1,4 @@
-1. Add set startup project steps for running samples in VS
+TODO README
+
+1. Add set startup project steps for running samples in VS.
+2. Add build steps.

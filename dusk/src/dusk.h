@@ -2,6 +2,7 @@
 
 #include "core/base.h"
 #include "core/log.h"
+#include "core/application.h"
 
 // Engine Logger Macros
 #define DUSK_INFO(...) dusk::Logger::GetEngineLogger()->info(__VA_ARGS__)

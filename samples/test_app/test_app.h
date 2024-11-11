@@ -1,8 +1,8 @@
 #pragma once
 
-#include "core/entrypoint.h"
+#include "dusk.h"
 
-class TestApp
+class TestApp final : public dusk::Application
 {
 public:
 	TestApp();

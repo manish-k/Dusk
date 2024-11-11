@@ -13,4 +13,6 @@ namespace dusk
 	private:
 
 	};
+
+	Application* CreateApplication(int argc, char** argv);
 }

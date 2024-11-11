@@ -17,16 +17,16 @@ namespace dusk
 		 */
 		void Run();
 
-		//virtual void update(float dt);
+		// virtual void update(float dt);
 	private:
-
 	};
 
 	/**
 	 * @brief Create the application
-	 * @param argc 
-	 * @param argv 
+	 * @param argc
+	 * @param argv
 	 * @return Pointer to the application instance
 	 */
-	Application* CreateApplication(int argc, char** argv);
+	Application*
+		CreateApplication(int argc, char** argv);
 }

@@ -8,7 +8,7 @@
 
 #ifdef NDEBUG
 #else
-    #define ENABLE_ASSERT
+#define ENABLE_ASSERT
 #endif  // DEBUG
 
 // Engine Logger Macros
@@ -28,14 +28,14 @@
 
 // Assert Macro
 #ifdef ENABLE_ASSERT
-    #define DASSERT(check, ...)    \
+#define DASSERT(check, ...)    \
       {                                 \
         if (!check) {                   \
           DUSK_ERROR(__VA_ARGS__); \
           __debugbreak();               \
         }                               \
       }
-    #define ASSERT(check, ...)    \
+#define ASSERT(check, ...)    \
       {                                \
         if (!check) {                  \
           APP_ERROR(__VA_ARGS__); \
@@ -43,6 +43,6 @@
         }                              \
       }
 #else
-    #define DASSERT(...)
-    #define ASSERT(...)
+#define DASSERT(...)
+#define ASSERT(...)
 #endif  // ENABLE_ASSERT

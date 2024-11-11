@@ -26,7 +26,7 @@ namespace dusk
 
 		/**
 		 * @brief Get static instance of Application logger
-		 * @return Shared pointer to static instance 
+		 * @return Shared pointer to static instance
 		 */
 		static SharedP<spdlog::logger>& GetAppLogger() { return s_AppLogger; }
 

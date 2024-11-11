@@ -12,6 +12,9 @@ namespace dusk
 
 	}
 
+	/**
+	 * @brief 
+	 */
 	void Application::Run()
 	{
 

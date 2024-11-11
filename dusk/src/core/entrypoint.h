@@ -1,3 +1,6 @@
+// This file creates the entrypoint main function
+// wherever it gets included
+
 #pragma once
 
 #include "dusk.h"

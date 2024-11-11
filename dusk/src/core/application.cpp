@@ -12,7 +12,7 @@ namespace dusk
 
 	}
 
-	void Application::run()
+	void Application::Run()
 	{
 
 	}

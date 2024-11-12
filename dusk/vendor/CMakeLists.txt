@@ -17,6 +17,15 @@ set(IMGUI_FILES
     "${IMGUI_DIR}/imstb_textedit.h"
     "${IMGUI_DIR}/imstb_truetype.h")
 
-add_library(imgui STATIC ${IMGUI_FILES})
+add_library(entt STATIC ${IMGUI_FILES})
 
 target_include_directories(imgui SYSTEM PUBLIC ${IMGUI_DIR})
+
+# entt
+set(ENTT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/entt")
+set(IMGUI_FILES
+    "${ENTT_DIR}/single_include/entt/entt.hpp")
+
+add_library(entt STATIC ${ENTT_DIR})
+
+target_include_directories(entt SYSTEM PUBLIC ${ENTT_DIR})

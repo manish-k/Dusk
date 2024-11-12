@@ -45,10 +45,10 @@ set(PROJECT_FILES
 	${SYSTEM_FILES}
 )
 
+add_subdirectory(vendor)
 add_subdirectory(vendor/spdlog)
-add_subdirectory(vendor/entt)
-add_subdirectory(vendor/glfw)
-add_subdirectory(vendor/glm)
+#add_subdirectory(vendor/glfw)
+#add_subdirectory(vendor/glm)
 
 add_library(${PROJECT_NAME} OBJECT ${PROJECT_FILES})
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src/)

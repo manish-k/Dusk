@@ -45,20 +45,15 @@ set(PROJECT_FILES
 	${SYSTEM_FILES}
 )
 
-add_subdirectory(vendor)
-add_subdirectory(vendor/spdlog)
-#add_subdirectory(vendor/glfw)
-#add_subdirectory(vendor/glm)
-
 add_library(${PROJECT_NAME} OBJECT ${PROJECT_FILES})
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src/)
+
+add_subdirectory(vendor)
 
 # TODO make links private, does not work currently
 # because Apps are using engine references. eg. spdlog
 target_link_libraries(${PROJECT_NAME} PUBLIC
 	spdlog
-	#entt
-	#glfw
-	#glm
-	#imgui
+	entt
+	imgui
 )

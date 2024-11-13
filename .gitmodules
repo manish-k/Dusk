@@ -17,3 +17,6 @@
 	path = dusk/vendor/imgui-docking
 	url = https://github.com/ocornut/imgui.git
 	branch = docking
+[submodule "dusk/vendor/tinygltf"]
+	path = dusk/vendor/tinygltf
+	url = https://github.com/syoyo/tinygltf.git

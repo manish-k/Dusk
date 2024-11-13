@@ -57,4 +57,6 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
 	entt
 	imgui
 	glm
+	glfw
+	tinygltf
 )

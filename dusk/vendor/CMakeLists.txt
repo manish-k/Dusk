@@ -26,10 +26,20 @@ add_library(imgui STATIC ${IMGUI_FILES})
 target_include_directories(imgui SYSTEM PUBLIC ${IMGUI_DIR})
 
 # entt
-set(ENTT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/entt/single_include/entt")
-set(ENTT_FILES
-    "${ENTT_DIR}/single_include/entt/entt.hpp")
-
 add_library(entt INTERFACE)
-
+set(ENTT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/entt)
+target_sources(entt INTERFACE ${ENTT_DIR}/single_include/entt/entt.hpp)
 target_include_directories(entt INTERFACE ${ENTT_DIR})
+
+# glm
+add_library(glm INTERFACE)
+set(GLM_DIR ${CMAKE_CURRENT_SOURCE_DIR}/glm)
+target_sources(glm INTERFACE ${GLM_DIR}/glm/glm.hpp)
+target_include_directories(glm SYSTEM INTERFACE ${GLM_DIR})
+
+target_compile_definitions(glm INTERFACE
+    GLM_FORCE_SWIZZLE
+    GLM_FORCE_RADIANS
+    GLM_FORCE_CTOR_INIT
+    GLM_ENABLE_EXPERIMENTAL
+)

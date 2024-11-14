@@ -13,6 +13,7 @@ namespace dusk
 		Entity(entt::registry& registry);
 		virtual ~Entity();
 
+
 		template<typename T, typename... Args>
 		T& addComponent(Args&&... args)
 		{

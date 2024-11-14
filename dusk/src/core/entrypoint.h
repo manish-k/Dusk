@@ -5,16 +5,16 @@
 
 #include "dusk.h"
 
-extern dusk::Application* dusk::CreateApplication(int argc, char** argv);
+extern dusk::Application* dusk::createApplication(int argc, char** argv);
 
 int main(int argc, char** argv)
 {
-	dusk::Logger::Init();
+	dusk::Logger::init();
 
 	APP_INFO("Starting App {}");
 
-	auto app = dusk::CreateApplication(argc, argv);
-	app->Run();
+	auto app = dusk::createApplication(argc, argv);
+	app->run();
 
 	delete app;
 }

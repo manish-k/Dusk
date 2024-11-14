@@ -2,6 +2,7 @@
 
 #include "entity.h"
 #include "scene.h"
+#include "core/base.h"
 
 namespace dusk
 {
@@ -13,7 +14,7 @@ namespace dusk
 
 	private:
 		Scene& m_scene;
-		GameObject& m_parent;
-		std::vector<GameObject> m_childrens;
+		Shared<GameObject> m_parent;
+		std::vector<Shared<GameObject>> m_children;
 	};
 }

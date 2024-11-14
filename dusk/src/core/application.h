@@ -15,7 +15,7 @@ namespace dusk
 		 * @brief Starts the main loop of the rendering
 		 * application
 		 */
-		void Run();
+		void run();
 
 		// virtual void update(float dt);
 	private:
@@ -28,5 +28,5 @@ namespace dusk
 	 * @return Pointer to the application instance
 	 */
 	Application*
-		CreateApplication(int argc, char** argv);
+		createApplication(int argc, char** argv);
 }

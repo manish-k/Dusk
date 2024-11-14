@@ -16,22 +16,22 @@ namespace dusk
 		 * @brief Initialize the logger with format
 		 * and sink settings
 		 */
-		static void Init();
+		static void init();
 
 		/**
 		 * @brief Get static instance of Engine logger
 		 * @return Shared pointer to static instance
 		 */
-		static SharedP<spdlog::logger>& GetEngineLogger() { return s_EngineLogger; }
+		static Shared<spdlog::logger>& getEngineLogger() { return s_engineLogger; }
 
 		/**
 		 * @brief Get static instance of Application logger
 		 * @return Shared pointer to static instance
 		 */
-		static SharedP<spdlog::logger>& GetAppLogger() { return s_AppLogger; }
+		static Shared<spdlog::logger>& getAppLogger() { return s_appLogger; }
 
 	private:
-		static SharedP<spdlog::logger> s_EngineLogger;
-		static SharedP<spdlog::logger> s_AppLogger;
+		static Shared<spdlog::logger> s_engineLogger;
+		static Shared<spdlog::logger> s_appLogger;
 	};
 }

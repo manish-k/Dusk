@@ -5,15 +5,15 @@
 
 namespace dusk
 {
-	SharedP<spdlog::logger> Logger::s_EngineLogger;
-	SharedP<spdlog::logger> Logger::s_AppLogger;
+	Shared<spdlog::logger> Logger::s_engineLogger;
+	Shared<spdlog::logger> Logger::s_appLogger;
 
-	void Logger::Init()
+	void Logger::init()
 	{
-		auto consoleSink = CreateSharedP<spdlog::sinks::stdout_color_sink_mt>();
+		auto consoleSink = createShared<spdlog::sinks::stdout_color_sink_mt>();
 		consoleSink->set_pattern("%^[%T] %n: %v%$");
 
-		auto fileSink = CreateSharedP<spdlog::sinks::basic_file_sink_mt>("logs/dusk.log", true);
+		auto fileSink = createShared<spdlog::sinks::basic_file_sink_mt>("logs/dusk.log", true);
 		fileSink->set_pattern("[%T] [%l] %n: %v");
 
 		std::vector<spdlog::sink_ptr> logSinks{
@@ -21,24 +21,24 @@ namespace dusk
 			fileSink
 		};
 
-		s_AppLogger = CreateSharedP<spdlog::logger>(
+		s_appLogger = createShared<spdlog::logger>(
 			"App",
 			logSinks.begin(),
 			logSinks.end()
 		);
-		s_AppLogger->set_level(spdlog::level::trace);
-		s_AppLogger->flush_on(spdlog::level::trace);
-		spdlog::register_logger(s_AppLogger);
+		s_appLogger->set_level(spdlog::level::trace);
+		s_appLogger->flush_on(spdlog::level::trace);
+		spdlog::register_logger(s_appLogger);
 
-		s_EngineLogger = CreateSharedP<spdlog::logger>(
+		s_engineLogger = createShared<spdlog::logger>(
 			"Dusk",
 			logSinks.begin(),
 			logSinks.end()
 		);
-		s_EngineLogger->set_level(spdlog::level::trace);
-		s_EngineLogger->flush_on(spdlog::level::trace);
-		spdlog::register_logger(s_EngineLogger);
+		s_engineLogger->set_level(spdlog::level::trace);
+		s_engineLogger->flush_on(spdlog::level::trace);
+		spdlog::register_logger(s_engineLogger);
 
-		s_EngineLogger->info("Initialized logger.");
+		s_engineLogger->info("Initialized logger.");
 	}
 }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entt.hpp"
+#include "entity.h"
 
 namespace dusk
 {
@@ -10,10 +10,18 @@ namespace dusk
 		Scene();
 		~Scene();
 
-		entt::registry getRegistry() const 
+		EntityRegistry getRegistry() const
 		{ return m_registry; }
 
+		GameObject addGameObject(GameObject obj);
+		void destroyGameObject(GameObject obj);
+
+		template<typename... Components>
+		auto GetGameObjectsWith()
+		{
+			return m_registry.view<Components...>();
+		}
 	private:
-		entt::registry m_registry;
+		EntityRegistry m_registry;
 	};
 }

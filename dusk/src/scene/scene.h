@@ -26,6 +26,12 @@ namespace dusk
 		};
 
 		/**
+		 * @brief Get root entity id for the scene
+		 * @return EntityId
+		 */
+		EntityId getRootId() { return m_root; }
+
+		/**
 		 * @brief Add game object in the scene
 		 * @param object unique ptr of the game object
 		 * @param parentId of the game object

@@ -6,7 +6,12 @@ namespace dusk
 		: m_name{ name }
 	{
 		DUSK_DEBUG("Creating scene {}", name);
-		m_root = m_registry.create();
+		auto root = createUnique<GameObject>(getRegistry());
+		root->setName("Root");
+
+		auto rootId = root->getId();
+		m_sceneGameObjects.emplace(rootId, std::move(root));
+		m_root = rootId;
 	}
 
 	Scene::~Scene()
@@ -32,6 +37,15 @@ namespace dusk
 	void Scene::destroyGameObject(GameObject& object)
 	{
 		DASSERT(m_sceneGameObjects.contains(object.getId()), "Scene does not have given game object");
+
+		// detach from parent
+		auto parent = getGameObject(object.getParentId());
+		parent.removeChild(object);
+
+		// destroy
+		auto objectId = object.getId();
+		m_sceneGameObjects.erase(objectId);
+		m_registry.destroy(objectId);
 	}
 
 	GameObject& Scene::getGameObject(EntityId objectId)

@@ -9,7 +9,13 @@ namespace dusk
 	GameObject::GameObject(EntityRegistry& registry)
 		: Entity(registry)
 	{
+		DUSK_DEBUG("Creating GameObject");
 		addComponent<TransformComponent>();
+	}
+
+	GameObject::~GameObject()
+	{
+		DUSK_DEBUG("Destroying GameObject");
 	}
 
 	void GameObject::addChild(GameObject& child)

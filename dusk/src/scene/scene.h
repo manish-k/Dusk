@@ -2,6 +2,12 @@
 
 #include "game_object.h"
 
+//include all components for others
+#include "components/camera.h"
+#include "components/mesh.h"
+#include "components/script.h"
+#include "components/transform.h"
+
 #include <string>
 
 namespace dusk

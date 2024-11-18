@@ -38,6 +38,13 @@ set(SCENE_FILES
 	"src/scene/scene.cpp"
 )
 
+set(LOADERS_FILES
+	# Header files
+	"src/loaders/gltf_loader.h"
+	# Source files
+	"src/loaders/gltf_loader.cpp"
+)
+
 set(SYSTEM_FILES
 	# Header files
 	# Source files
@@ -47,6 +54,7 @@ source_group("core\\" FILES ${CORE_FILES})
 source_group("debug\\" FILES ${DEBUG_FILES})
 source_group("renderer\\" FILES ${RENDERER_FILES})
 source_group("scene\\" FILES ${SCENE_FILES})
+source_group("loaders\\" FILES ${LOADERS_FILES})
 source_group("system\\" FILES ${SYSTEM_FILES})
 
 set(PROJECT_FILES

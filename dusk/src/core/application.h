@@ -18,7 +18,10 @@ namespace dusk
 		void run();
 
 		// virtual void update(float dt);
+		virtual void onStart() {};
+	
 	private:
+
 	};
 
 	/**

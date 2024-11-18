@@ -1,10 +1,11 @@
 #pragma once
 
+#include "dusk.h"
 #include "entity.h"
-#include "scene.h"
 #include "core/base.h"
 
 #include <unordered_map>
+#include <string_view>
 
 namespace dusk
 {
@@ -15,16 +16,35 @@ namespace dusk
 		using SMap = std::unordered_map<EntityId, Shared<GameObject>>;
 
 	public:
-		GameObject(Scene& scene) : Entity(scene.getRegistry());
-		~GameObject();
+		explicit GameObject(EntityRegistry& registry);
 
+		/**
+		 * @brief Set name of the game object
+		 * @param name 
+		 */
+		void setName(std::string_view name) { m_name = name; }
+
+		/**
+		 * @brief Add game object as children
+		 * @param child game object
+		 */
 		void addChild(GameObject& child);
-		void removeChild();
-		void setParent();
+
+		/**
+		 * @brief Remove child game object
+		 * @param child game object
+		 */
+		void removeChild(GameObject& child);
+
+		/**
+		 * @brief Set parent id for a game object
+		 * @param parentId 
+		 */
+		void setParent(EntityId parentId) { m_parent = parentId; }
 
 	private:
-		Scene& m_scene;
-		Shared<GameObject> m_parent = nullptr;
-		std::vector<Shared<GameObject>> m_children{};
+		std::string m_name = "GameObject";
+		EntityId m_parent = NULL_ENTITY;
+		std::vector<EntityId> m_children{};
 	};
 }

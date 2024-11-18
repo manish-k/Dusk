@@ -1,27 +1,66 @@
 #pragma once
 
-#include "entity.h"
+#include "game_object.h"
+
+#include <string>
 
 namespace dusk
 {
 	class Scene
 	{
 	public:
-		Scene();
+		/**
+		 * @brief Create scene with a given name
+		 * @param name of the scene
+		 */
+		Scene(std::string_view name);
 		~Scene();
 
-		EntityRegistry getRegistry() const
-		{ return m_registry; }
+		/**
+		 * @brief Get entity-component registry
+		 * @return Reference to registry object
+		 */
+		EntityRegistry& getRegistry()
+		{
+			return m_registry;
+		};
 
-		GameObject addGameObject(GameObject obj);
-		void destroyGameObject(GameObject obj);
+		/**
+		 * @brief Add game object in the scene
+		 * @param object unique ptr of the game object
+		 * @param parentId of the game object
+		 */
+		void addGameObject(
+			Unique<GameObject> object, EntityId parentId);
 
+		/**
+		 * @brief Destroy game object in the scene
+		 * @param object
+		 */
+		void destroyGameObject(GameObject& object);
+
+		/**
+		 * @brief 
+		 * @param objectId 
+		 * @return 
+		 */
+		GameObject& getGameObject(EntityId objectId);
+
+		/**
+		 * @brief Get all the game objects for given components
+		 * @tparam ...Components
+		 * @return iterator for game objects
+		 */
 		template<typename... Components>
 		auto GetGameObjectsWith()
 		{
 			return m_registry.view<Components...>();
 		}
 	private:
+		std::string_view m_name;
 		EntityRegistry m_registry;
+		EntityId m_root = NULL_ENTITY;
+		std::vector<EntityId> m_children{};
+		GameObject::UMap m_sceneGameObjects{};
 	};
 }

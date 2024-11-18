@@ -12,6 +12,7 @@
 #endif  // DEBUG
 
 // Engine Logger Macros
+#define DUSK_DEBUG(...) dusk::Logger::getEngineLogger()->debug(__VA_ARGS__)
 #define DUSK_INFO(...) dusk::Logger::getEngineLogger()->info(__VA_ARGS__)
 #define DUSK_WARN(...) dusk::Logger::getEngineLogger()->warn(__VA_ARGS__)
 #define DUSK_ERROR(...) dusk::Logger::getEngineLogger()->error(__VA_ARGS__)
@@ -20,6 +21,7 @@
 #define DUSK_TRACE(...) dusk::Logger::getEngineLogger()->trace(__VA_ARGS__)
 
 // App Logger Macros
+#define APP_DEBUG(...) dusk::Logger::getAppLogger()->debug(__VA_ARGS__)
 #define APP_INFO(...) dusk::Logger::getAppLogger()->info(__VA_ARGS__)
 #define APP_WARN(...) dusk::Logger::getAppLogger()->warn(__VA_ARGS__)
 #define APP_ERROR(...) dusk::Logger::getAppLogger()->error(__VA_ARGS__)

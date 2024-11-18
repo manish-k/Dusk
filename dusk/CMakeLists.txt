@@ -3,16 +3,22 @@ cmake_minimum_required(VERSION 3.16)
 project(dusk)
 set(CMAKE_CXX_STANDARD 20)
 
-file(
-	GLOB_RECURSE 
-	CORE_FILES 
-	CONFIGURE_DEPENDS 
-	"${CMAKE_CURRENT_SOURCE_DIR}/src/core/*"
+set(CORE_FILES
+	# Header files
+	"src/core/application.h"
+	"src/core/base.h"
+	"src/core/log.h"
+	"src/core/entrypoint.h"
+	# Source files
+	"src/core/application.cpp"
+	"src/core/log.cpp"
 )
 
-set(DEBUG_FILES
-	# Header files
-	# Source files
+file(
+	GLOB_RECURSE 
+	DEBUG_FILES 
+	CONFIGURE_DEPENDS 
+	"${CMAKE_CURRENT_SOURCE_DIR}/src/debug/*"
 )
 
 set(RENDERER_FILES
@@ -22,7 +28,14 @@ set(RENDERER_FILES
 
 set(SCENE_FILES
 	# Header files
+	"src/scene/components/transform.h"
+	"src/scene/entity.h"
+	"src/scene/game_object.h"
+	"src/scene/scene.h"
 	# Source files
+	"src/scene/entity.cpp"
+	"src/scene/game_object.cpp"
+	"src/scene/scene.cpp"
 )
 
 set(SYSTEM_FILES

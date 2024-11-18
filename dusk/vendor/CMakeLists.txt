@@ -29,7 +29,7 @@ target_include_directories(imgui SYSTEM PUBLIC ${IMGUI_DIR})
 add_library(entt INTERFACE)
 set(ENTT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/entt)
 target_sources(entt INTERFACE ${ENTT_DIR}/single_include/entt/entt.hpp)
-target_include_directories(entt INTERFACE ${ENTT_DIR})
+target_include_directories(entt INTERFACE ${ENTT_DIR}/single_include/entt/)
 
 # glm
 add_library(glm INTERFACE)

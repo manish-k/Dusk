@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 
 project(dusk_engine)
+set(CMAKE_CXX_STANDARD 20)
 
 # search for Vulkan SDK
 find_package(Vulkan)

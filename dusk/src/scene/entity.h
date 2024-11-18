@@ -1,9 +1,12 @@
 #pragma once
 
-#include "scene.h"
 #include "dusk.h"
 
-#include "entt.hpp"
+#pragma warning(push, 0)
+#include<entt.hpp>
+#pragma warning(pop)
+
+#define NULL_ENTITY entt::null
 
 namespace dusk
 {
@@ -13,8 +16,8 @@ namespace dusk
 	class Entity
 	{
 	public:
-		Entity(entt::registry& registry);
-		virtual ~Entity();
+		explicit Entity(EntityRegistry& registry);
+		virtual ~Entity() = default;
 
 		/**
 		 * @brief Get the unique id of the Entity
@@ -71,7 +74,7 @@ namespace dusk
 		}
 
 	private:
-		EntityId m_id{ entt::null };
+		EntityId m_id{ NULL_ENTITY };
 		EntityRegistry& m_registry;
 	};
 }

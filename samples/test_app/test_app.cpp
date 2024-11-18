@@ -1,12 +1,24 @@
 #include "test_app.h"
 
 #include "core/entrypoint.h"
+#include "scene/scene.h"
 
-TestApp::TestApp() {}
+using namespace dusk;
+
+TestApp::TestApp()
+{
+
+}
 
 TestApp::~TestApp() { APP_INFO("Destroying Test Application"); }
 
-dusk::Application* dusk::createApplication(int argc, char** argv) {
+dusk::Application* dusk::createApplication(int argc, char** argv)
+{
 	APP_INFO("Creating Test Application");
 	return new TestApp();
+}
+
+void TestApp::onStart()
+{
+	Scene testScene{ "Test" };
 }

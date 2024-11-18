@@ -14,6 +14,6 @@ namespace dusk
 
 	void Application::run()
 	{
-
+		onStart();
 	}
 }

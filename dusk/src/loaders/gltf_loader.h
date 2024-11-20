@@ -1,10 +1,11 @@
 #pragma once
 
+#include "dusk.h"
 #include "core/base.h"
 #include "scene/scene.h"
 
 #include <tiny_gltf.h>
-#include <string>
+#include <string_view>
 
 namespace dusk
 {

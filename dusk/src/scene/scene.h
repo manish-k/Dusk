@@ -2,7 +2,7 @@
 
 #include "game_object.h"
 
-//include all components for others
+//include all components for other files
 #include "components/camera.h"
 #include "components/mesh.h"
 #include "components/script.h"

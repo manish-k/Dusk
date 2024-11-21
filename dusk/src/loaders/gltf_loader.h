@@ -18,11 +18,15 @@ namespace dusk
 		GLTFLoader();
 		~GLTFLoader() = default;
 
-		Unique<Scene> readScene(std::string_view fileName, int sceneIndex);
+		Unique<Scene> readScene(std::string_view fileName);
 
 	private:
-		Scene loadScene(int sceneIndex);
+		Unique<Scene> parseScene(int sceneIndex);
 
-		Unique<GameObject> parseNode(const tinygltf::Node& node);
+		Unique<TransformComponent> parseTransform(
+			const tinygltf::Node& node);
+
+	private:
+		tinygltf::Model model;
 	};
 }

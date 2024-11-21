@@ -2,60 +2,70 @@
 
 namespace dusk
 {
-	Unique<Scene> GLTFLoader::readScene(
-		std::string_view fileName, int sceneIndex)
+	GLTFLoader::GLTFLoader()
 	{
 
 	}
 
-	Unique<GameObject> GLTFLoader::parseNode(const tinygltf::Node& node)
-	{
-		auto gameObject = createUnique<GameObject>();
 
-		auto transform = gameObject->getComponent<TransformComponent>();
+	Unique<Scene> GLTFLoader::readScene(std::string_view fileName)
+	{
+		tinygltf::TinyGLTF loader;
+		std::string loadErr;
+		std::string loadWarn;
+		bool loadResult;
+
+		loadResult = loader.LoadASCIIFromFile(
+			&model, &loadErr, &loadWarn, fileName.data());
+
+		return parseScene(model.defaultScene);
+	}
+
+	Unique<Scene> GLTFLoader::parseScene(int sceneIndex)
+	{
+		auto scene = createUnique<Scene>("Scene");
+		
+		
+		return scene;
+	}
+
+	Unique<TransformComponent> GLTFLoader::parseTransform(
+		const tinygltf::Node& node)
+	{
+		auto transform = createUnique<TransformComponent>();
 
 		// check translation data
 		if (!node.translation.empty())
 		{
-			glm::vec3 newTranslation;
-
-			std::transform(
-				node.translation.begin(), 
-				node.translation.end(), 
-				glm::value_ptr(newTranslation),
-				TypeCast<double, float>{});
-
-			transform.setTranslation(newTranslation);
+			transform->setTranslation({
+				node.translation[0],
+				node.translation[1],
+				node.translation[2]
+				});
 		}
 
 		// check scale data
 		if (!node.scale.empty())
 		{
-			glm::vec3 newScale;
-
-			std::transform(
-				node.scale.begin(),
-				node.scale.end(),
-				glm::value_ptr(newScale),
-				TypeCast<double, float>{});
-
-			transform.setScale(newScale);
+			transform->setScale({
+				node.scale[0],
+				node.scale[1],
+				node.scale[2]
+				});
 		}
 
 		// check rotation data
 		if (!node.rotation.empty())
 		{
-			glm::vec3 newRotation;
-
-			std::transform(
-				node.rotation.begin(),
-				node.rotation.end(),
-				glm::value_ptr(newRotation),
-				TypeCast<double, float>{});
-
-			transform.setRotation(newRotation);
+			transform->setRotation(glm::quat
+				{
+					(float)node.rotation[0],
+					(float)node.rotation[1],
+					(float)node.rotation[2],
+					(float)node.rotation[3]
+				});
 		}
 
-		return gameObject;
+		return transform;
 	}
 }

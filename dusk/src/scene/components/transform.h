@@ -22,7 +22,7 @@ namespace dusk
 			return glm::mat4{};
 		}
 
-		void setTranslation(const glm::vec3 newTranslation)
+		void setTranslation(const glm::vec3& newTranslation)
 		{
 			translation = newTranslation;
 		}
@@ -32,7 +32,7 @@ namespace dusk
 			return translation;
 		}
 
-		void setRotation(const glm::quat newRotation)
+		void setRotation(const glm::quat& newRotation)
 		{
 			rotation = newRotation;
 		}
@@ -42,7 +42,7 @@ namespace dusk
 			return rotation;
 		}
 
-		void setScale(const glm::vec3 newScale)
+		void setScale(const glm::vec3& newScale)
 		{
 			scale = newScale;
 		}

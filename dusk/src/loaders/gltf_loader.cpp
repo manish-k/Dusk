@@ -32,7 +32,7 @@ namespace dusk
 		int sceneIndex = 0;
 		if (m_model.scenes.size() == 0)
 		{
-			DUSK_CRITICAL("No scenes present in the file");
+			DUSK_ERROR("No scenes present in the file");
 			return createUnique<Scene>("Scene");
 		}
 		else if (m_model.defaultScene >= 0 

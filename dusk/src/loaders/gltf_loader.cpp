@@ -47,10 +47,37 @@ namespace dusk
 	Unique<Scene> GLTFLoader::parseScene(int sceneIndex)
 	{
 		auto scene = createUnique<Scene>("Scene");
+		auto& gltfScene = m_model.scenes[sceneIndex];
 		
-
+		// traverse all nodes and attach to the scene
+		for (int nodeIndex : gltfScene.nodes)
+		{
+			traverseSceneNodes(*scene, nodeIndex, scene->getRootId());
+		}
 		
 		return scene;
+	}
+
+	void GLTFLoader::traverseSceneNodes(
+		Scene& scene, int nodeIndex, EntityId parentId)
+	{
+		auto& gltfNode = m_model.nodes[nodeIndex];
+		auto gameObject = createUnique<GameObject>(scene.getRegistry());
+		auto gameObjectId = gameObject->getId();
+
+		// parse transform
+		gameObject->addComponent<TransformComponent>(
+			parseTransform(gltfNode));
+
+		// parse mesh
+
+		scene.addGameObject(std::move(gameObject), parentId);
+
+		// traverse children
+		for (int childIndex : gltfNode.children)
+		{
+			traverseSceneNodes(scene, childIndex, gameObjectId);
+		}
 	}
 
 	TransformComponent GLTFLoader::parseTransform(

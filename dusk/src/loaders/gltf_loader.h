@@ -22,7 +22,10 @@ namespace dusk
 
 	private:
 		Unique<Scene> parseScene(int sceneIndex);
-
+		
+		void traverseSceneNodes(
+			Scene& scene, int nodeIndex, EntityId parentId);
+		
 		TransformComponent parseTransform(
 			const tinygltf::Node& node);
 

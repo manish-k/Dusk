@@ -23,10 +23,10 @@ namespace dusk
 	private:
 		Unique<Scene> parseScene(int sceneIndex);
 
-		Unique<TransformComponent> parseTransform(
+		TransformComponent parseTransform(
 			const tinygltf::Node& node);
 
 	private:
-		tinygltf::Model model;
+		tinygltf::Model m_model;
 	};
 }

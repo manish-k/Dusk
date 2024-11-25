@@ -4,7 +4,7 @@ namespace dusk
 {
 	GLTFLoader::GLTFLoader()
 	{
-
+		int* a = nullptr;
 	}
 
 
@@ -16,28 +16,52 @@ namespace dusk
 		bool loadResult;
 
 		loadResult = loader.LoadASCIIFromFile(
-			&model, &loadErr, &loadWarn, fileName.data());
+			&m_model, &loadErr, &loadWarn, fileName.data());
 
-		return parseScene(model.defaultScene);
+		if (loadErr.size() > 0)
+		{
+			DUSK_ERROR("Error in reading scene. {}", loadErr);
+			return createUnique<Scene>("Scene");
+		}
+
+		if (loadWarn.size() > 0)
+		{
+			DUSK_WARN("{}", loadWarn);
+		}
+
+		int sceneIndex = 0;
+		if (m_model.scenes.size() == 0)
+		{
+			DUSK_CRITICAL("No scenes present in the file");
+			return createUnique<Scene>("Scene");
+		}
+		else if (m_model.defaultScene >= 0 
+			&& m_model.defaultScene < m_model.scenes.size())
+		{
+			sceneIndex = m_model.defaultScene;
+		}
+
+		return parseScene(sceneIndex);
 	}
 
 	Unique<Scene> GLTFLoader::parseScene(int sceneIndex)
 	{
 		auto scene = createUnique<Scene>("Scene");
 		
+
 		
 		return scene;
 	}
 
-	Unique<TransformComponent> GLTFLoader::parseTransform(
+	TransformComponent GLTFLoader::parseTransform(
 		const tinygltf::Node& node)
 	{
-		auto transform = createUnique<TransformComponent>();
+		TransformComponent transform;
 
 		// check translation data
 		if (!node.translation.empty())
 		{
-			transform->setTranslation({
+			transform.setTranslation({
 				node.translation[0],
 				node.translation[1],
 				node.translation[2]
@@ -47,7 +71,7 @@ namespace dusk
 		// check scale data
 		if (!node.scale.empty())
 		{
-			transform->setScale({
+			transform.setScale({
 				node.scale[0],
 				node.scale[1],
 				node.scale[2]
@@ -57,7 +81,7 @@ namespace dusk
 		// check rotation data
 		if (!node.rotation.empty())
 		{
-			transform->setRotation(glm::quat
+			transform.setRotation(glm::quat
 				{
 					(float)node.rotation[0],
 					(float)node.rotation[1],

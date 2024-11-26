@@ -36,7 +36,8 @@ namespace dusk
 		T& addComponent(Args&&... args)
 		{
 			DASSERT(!hasComponent<T>(), "Component already exist for the Entity");
-			return m_registry.emplace<T>(m_id, std::forward(args)...);
+			return m_registry.emplace<T>(
+				m_id, std::forward<Args>(args)...);
 		}
 
 		/**

@@ -41,7 +41,7 @@ namespace dusk
 		 * @brief Get entity id of the parent
 		 * @return EntityId
 		 */
-		EntityId getParentId() { return m_parent; }
+		EntityId getParentId() const { return m_parent; }
 
 		/**
 		 * @brief Set parent id for a game object

@@ -18,3 +18,8 @@ target_include_directories(
 	${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(${PROJECT_NAME} PRIVATE dusk)
+
+## TODO: Try with symlink approach
+set (ASSETS_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/assets")
+set (ASSETS_DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+file(COPY ${ASSETS_SOURCE_DIR} DESTINATION ${ASSETS_DEST_DIR})

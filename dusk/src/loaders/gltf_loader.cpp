@@ -1,12 +1,14 @@
+#define TINYGLTF_IMPLEMENTATION
+#define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "gltf_loader.h"
 
 namespace dusk
 {
 	GLTFLoader::GLTFLoader()
 	{
-		int* a = nullptr;
-	}
 
+	}
 
 	Unique<Scene> GLTFLoader::readScene(std::string_view fileName)
 	{
@@ -18,13 +20,13 @@ namespace dusk
 		loadResult = loader.LoadASCIIFromFile(
 			&m_model, &loadErr, &loadWarn, fileName.data());
 
-		if (loadErr.size() > 0)
+		if (!loadResult)
 		{
 			DUSK_ERROR("Error in reading scene. {}", loadErr);
 			return createUnique<Scene>("Scene");
 		}
 
-		if (loadWarn.size() > 0)
+		if (!loadWarn.empty())
 		{
 			DUSK_WARN("{}", loadWarn);
 		}
@@ -62,15 +64,14 @@ namespace dusk
 		Scene& scene, int nodeIndex, EntityId parentId)
 	{
 		auto& gltfNode = m_model.nodes[nodeIndex];
-		auto gameObject = createUnique<GameObject>(scene.getRegistry());
+		auto gameObject = parseNode(gltfNode, scene.getRegistry());
 		auto gameObjectId = gameObject->getId();
 
-		// parse transform
-		gameObject->addComponent<TransformComponent>(
-			parseTransform(gltfNode));
+		gameObject->setName(gltfNode.name);
 
 		// parse mesh
 
+		// attach object to the scene
 		scene.addGameObject(std::move(gameObject), parentId);
 
 		// traverse children
@@ -80,10 +81,11 @@ namespace dusk
 		}
 	}
 
-	TransformComponent GLTFLoader::parseTransform(
-		const tinygltf::Node& node)
+	Unique<GameObject> GLTFLoader::parseNode(
+		const tinygltf::Node& node, EntityRegistry& registry)
 	{
-		TransformComponent transform;
+		auto gameObject = createUnique<GameObject>(registry);
+		auto& transform = gameObject->getComponent<TransformComponent>();
 
 		// check translation data
 		if (!node.translation.empty())
@@ -117,6 +119,6 @@ namespace dusk
 				});
 		}
 
-		return transform;
+		return gameObject;
 	}
 }

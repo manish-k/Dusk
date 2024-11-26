@@ -20,8 +20,6 @@ dusk::Application* dusk::createApplication(int argc, char** argv)
 
 void TestApp::onStart()
 {
-	Scene testScene{ "Test" };
-	testScene.addGameObject(
-		createUnique<GameObject>(testScene.getRegistry()),
-		testScene.getRootId());
+	auto scene1 = Scene::createSceneFromGLTF(
+		"assets/scenes/test_scene.gltf");
 }

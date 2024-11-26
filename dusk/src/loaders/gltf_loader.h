@@ -26,8 +26,8 @@ namespace dusk
 		void traverseSceneNodes(
 			Scene& scene, int nodeIndex, EntityId parentId);
 		
-		TransformComponent parseTransform(
-			const tinygltf::Node& node);
+		Unique<GameObject> parseNode(
+			const tinygltf::Node& node, EntityRegistry& registry);
 
 	private:
 		tinygltf::Model m_model;

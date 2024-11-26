@@ -1,4 +1,5 @@
 #include "scene.h"
+#include "loaders/gltf_loader.h"
 
 namespace dusk
 {
@@ -39,7 +40,7 @@ namespace dusk
 		DASSERT(m_sceneGameObjects.contains(object.getId()), "Scene does not have given game object");
 
 		// detach from parent
-		auto parent = getGameObject(object.getParentId());
+		auto& parent = getGameObject(object.getParentId());
 		parent.removeChild(object);
 
 		// destroy
@@ -52,5 +53,11 @@ namespace dusk
 	{
 		DASSERT(m_sceneGameObjects.contains(objectId), "Scene does not have the given game object");
 		return *m_sceneGameObjects[objectId];
+	}
+
+	Unique<Scene> Scene::createSceneFromGLTF(std::string_view fileName)
+	{
+		auto loader = createUnique<GLTFLoader>();
+		return loader->readScene(fileName);
 	}
 }

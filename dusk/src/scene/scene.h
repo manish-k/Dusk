@@ -35,7 +35,7 @@ namespace dusk
 		 * @brief Get root entity id for the scene
 		 * @return EntityId
 		 */
-		EntityId getRootId() { return m_root; }
+		EntityId getRootId() const { return m_root; }
 
 		/**
 		 * @brief Add game object in the scene
@@ -68,6 +68,14 @@ namespace dusk
 		{
 			return m_registry.view<Components...>();
 		}
+
+		/**
+		 * @brief Create a scene from a gltf file
+		 * @param fileName 
+		 * @return unique pointer to the scene object
+		 */
+		static Unique<Scene> createSceneFromGLTF(
+			std::string_view fileName);
 	private:
 		std::string_view m_name;
 		EntityRegistry m_registry;

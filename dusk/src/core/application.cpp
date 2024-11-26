@@ -1,10 +1,15 @@
 #include "application.h"
 
+#include <chrono>
+#include <thread>
+
+using namespace std::chrono_literals;
+
 namespace dusk
 {
 	Application::Application()
 	{
-
+		
 	}
 
 	Application::~Application()
@@ -14,6 +19,19 @@ namespace dusk
 
 	void Application::run()
 	{
-		onStart();
+		auto currentTime = std::chrono::high_resolution_clock::now();
+
+		while (m_running)
+		{
+			auto newTime = std::chrono::high_resolution_clock::now();
+			float frameTime =
+				std::chrono::duration<float, std::chrono::seconds::period>(newTime - currentTime).count();
+			currentTime = newTime;
+
+
+			onUpdate(frameTime);
+
+			std::this_thread::sleep_for(16ms);
+		}
 	}
 }

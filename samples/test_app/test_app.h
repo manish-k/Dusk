@@ -8,5 +8,6 @@ public:
 	TestApp();
 	~TestApp();
 
-	void onStart() override;
+	void start() override;
+	void onUpdate(float dt) override;
 };

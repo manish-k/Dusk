@@ -17,11 +17,12 @@ namespace dusk
 		 */
 		void run();
 
-		// virtual void update(float dt);
-		virtual void onStart() {};
+		virtual void onUpdate(float dt) = 0;
+		virtual void start() = 0;
 	
 	private:
-
+		bool m_running = true;
+		bool m_paused = false;
 	};
 
 	/**

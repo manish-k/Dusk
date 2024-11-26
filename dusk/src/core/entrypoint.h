@@ -14,6 +14,7 @@ int main(int argc, char** argv)
 	APP_INFO("Starting App {}");
 
 	auto app = dusk::createApplication(argc, argv);
+	app->start();
 	app->run();
 
 	delete app;

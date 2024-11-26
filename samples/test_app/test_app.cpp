@@ -18,8 +18,13 @@ dusk::Application* dusk::createApplication(int argc, char** argv)
 	return new TestApp();
 }
 
-void TestApp::onStart()
+void TestApp::start()
 {
 	auto scene1 = Scene::createSceneFromGLTF(
 		"assets/scenes/test_scene.gltf");
+}
+
+void TestApp::onUpdate(float dt)
+{
+
 }

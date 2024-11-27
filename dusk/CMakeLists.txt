@@ -45,8 +45,9 @@ set(LOADERS_FILES
 	"src/loaders/gltf_loader.cpp"
 )
 
-set(SYSTEM_FILES
+set(EVENTS_FILE
 	# Header files
+	"src/events/event.h"
 	# Source files
 )
 
@@ -55,7 +56,7 @@ source_group("debug\\" FILES ${DEBUG_FILES})
 source_group("renderer\\" FILES ${RENDERER_FILES})
 source_group("scene\\" FILES ${SCENE_FILES})
 source_group("loaders\\" FILES ${LOADERS_FILES})
-source_group("system\\" FILES ${SYSTEM_FILES})
+source_group("system\\" FILES ${EVENTS_FILE})
 
 set(PROJECT_FILES
 	"src/dusk.h"

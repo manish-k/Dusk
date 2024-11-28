@@ -9,6 +9,7 @@ set(CORE_FILES
 	"src/core/base.h"
 	"src/core/log.h"
 	"src/core/entrypoint.h"
+	"src/core/key_codes.h"
 	# Source files
 	"src/core/application.cpp"
 	"src/core/log.cpp"
@@ -48,6 +49,10 @@ set(LOADERS_FILES
 set(EVENTS_FILE
 	# Header files
 	"src/events/event.h"
+	"src/events/key_event.h"
+	"src/events/mouse_event.h"
+	"src/events/app_event.h"
+	"src/events/event_bus.h"
 	# Source files
 )
 

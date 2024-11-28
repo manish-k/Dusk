@@ -9,15 +9,14 @@
 #ifdef NDEBUG
 #else
 #define ENABLE_ASSERT
-#endif  // DEBUG
+#endif // DEBUG
 
 // Engine Logger Macros
 #define DUSK_DEBUG(...) dusk::Logger::getEngineLogger()->debug(__VA_ARGS__)
 #define DUSK_INFO(...) dusk::Logger::getEngineLogger()->info(__VA_ARGS__)
 #define DUSK_WARN(...) dusk::Logger::getEngineLogger()->warn(__VA_ARGS__)
 #define DUSK_ERROR(...) dusk::Logger::getEngineLogger()->error(__VA_ARGS__)
-#define DUSK_CRITICAL(...) \
-  dusk::Logger::getEngineLogger()->critical(__VA_ARGS__)
+#define DUSK_CRITICAL(...) dusk::Logger::getEngineLogger()->critical(__VA_ARGS__)
 #define DUSK_TRACE(...) dusk::Logger::getEngineLogger()->trace(__VA_ARGS__)
 
 // App Logger Macros
@@ -30,21 +29,26 @@
 
 // Assert Macro
 #ifdef ENABLE_ASSERT
-#define DASSERT(check, ...)    \
-      {                                 \
-        if (!check) {                   \
-          DUSK_ERROR(__VA_ARGS__); \
-          __debugbreak();               \
-        }                               \
-      }
-#define ASSERT(check, ...)    \
-      {                                \
-        if (!check) {                  \
-          APP_ERROR(__VA_ARGS__); \
-          __debugbreak();              \
-        }                              \
-      }
+#define DASSERT(check, ...)          \
+    {                                \
+        if (!check)                  \
+        {                            \
+            DUSK_ERROR(__VA_ARGS__); \
+            __debugbreak();          \
+        }                            \
+    }
+#define ASSERT(check, ...)          \
+    {                               \
+        if (!check)                 \
+        {                           \
+            APP_ERROR(__VA_ARGS__); \
+            __debugbreak();         \
+        }                           \
+    }
 #else
 #define DASSERT(...)
 #define ASSERT(...)
-#endif  // ENABLE_ASSERT
+#endif // ENABLE_ASSERT
+
+// Bit left shift Macro
+#define BIT(x) (1 << x)

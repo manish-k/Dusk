@@ -3,6 +3,13 @@ cmake_minimum_required(VERSION 3.16)
 project(dusk)
 set(CMAKE_CXX_STANDARD 20)
 
+set(VULKAN_BACKEND_FILES
+	# Header files
+	
+	# Source files
+	
+)
+
 set(CORE_FILES
 	# Header files
 	"src/core/application.h"
@@ -20,6 +27,15 @@ file(
 	DEBUG_FILES 
 	CONFIGURE_DEPENDS 
 	"${CMAKE_CURRENT_SOURCE_DIR}/src/debug/*"
+)
+
+set(PLATFORM_FILES
+	# Header files
+	"src/platform/window.h"
+	"src/platform/glfw_vulkan_window.h"
+	# Source files
+	"src/platform/window.cpp"
+	"src/platform/glfw_vulkan_window.cpp"
 )
 
 set(RENDERER_FILES
@@ -56,12 +72,14 @@ set(EVENTS_FILE
 	# Source files
 )
 
+source_group("backend/vulkan\\" FILES ${VULKAN_BACKEND_FILES})
 source_group("core\\" FILES ${CORE_FILES})
 source_group("debug\\" FILES ${DEBUG_FILES})
 source_group("renderer\\" FILES ${RENDERER_FILES})
 source_group("scene\\" FILES ${SCENE_FILES})
 source_group("loaders\\" FILES ${LOADERS_FILES})
-source_group("system\\" FILES ${EVENTS_FILE})
+source_group("platform\\" FILES ${PLATFORM_FILES})
+source_group("events\\" FILES ${EVENTS_FILE})
 
 set(PROJECT_FILES
 	"src/dusk.h"
@@ -70,7 +88,8 @@ set(PROJECT_FILES
 	${RENDERER_FILES}
 	${SCENE_FILES}
 	${LOADERS_FILES}
-	${SYSTEM_FILES}
+	${PLATFORM_FILES}
+	${EVENTS_FILE}
 )
 
 add_library(${PROJECT_NAME} OBJECT ${PROJECT_FILES})

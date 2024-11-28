@@ -58,7 +58,7 @@ namespace dusk
         virtual EventType getEventType() const = 0;
         virtual const char* getName() const = 0;
         virtual int getCategoryFlags() const = 0;
-        virtual std::string toString() const { return getName() }
+        virtual std::string toString() const { return getName(); }
 
         bool isInCategory(EventCategory category) { return getCategoryFlags() & category; }
 
@@ -88,5 +88,7 @@ namespace dusk
         Event& m_event;
     };
 
-    inline std::ostream& operator<<(std::ostream& os, const Event& e) { return os << e.ToString(); }
+    inline std::ostream& operator<<(std::ostream& os, const Event& e) { return os << e.toString(); }
+
+    using EventCallbackFn = std::function<void(Event&)>;
 } // namespace dusk

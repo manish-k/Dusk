@@ -39,7 +39,7 @@ namespace dusk
         glfwSetWindowUserPointer(m_window, this);
     }
 
-    void GLFWVulkanWindow::onUpdate()
+    void GLFWVulkanWindow::onUpdate(float dt)
     {
         if (!glfwWindowShouldClose(m_window))
         {

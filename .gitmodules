@@ -20,3 +20,6 @@
 [submodule "dusk/vendor/tinygltf"]
 	path = dusk/vendor/tinygltf
 	url = https://github.com/syoyo/tinygltf.git
+[submodule "dusk/vendor/vulkan-headers"]
+	path = dusk/vendor/vulkan-headers
+	url = https://github.com/KhronosGroup/Vulkan-Headers.git

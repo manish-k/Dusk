@@ -3,6 +3,7 @@
 #include "dusk.h"
 #include "window.h"
 
+#include <vulkan/vulkan.h>
 #define GLFW_INCLUDE_VULKAN
 #include <glfw/glfw3.h>
 
@@ -16,7 +17,7 @@ namespace dusk
         GLFWVulkanWindow(const Window::Properties& props);
         virtual ~GLFWVulkanWindow() override;
 
-        void onUpdate() override;
+        void onUpdate(float dt) override;
 
         uint32_t getHeight() const override { return m_props.height; }
         uint32_t getWidth() const override { return m_props.width; }

@@ -51,3 +51,11 @@ add_subdirectory(glfw)
 set(TINYGLTF_HEADER_ONLY ON CACHE INTERNAL "" FORCE)
 set(TINYGLTF_INSTALL OFF CACHE INTERNAL "" FORCE)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tinygltf)
+
+# vulkan
+add_library(vulkan INTERFACE)
+set(VULKAN_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vulkan-headers/include)
+target_sources(vulkan INTERFACE ${VULKAN_INCLUDE_DIR}/vulkan/vulkan.h)
+target_include_directories(vulkan SYSTEM INTERFACE ${VULKAN_INCLUDE_DIR})
+
+target_compile_definitions(vulkan INTERFACE VK_NO_PROTOTYPES)

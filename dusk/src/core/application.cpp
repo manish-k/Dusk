@@ -24,6 +24,7 @@ namespace dusk
             float frameTime = std::chrono::duration<float, std::chrono::seconds::period>(newTime - currentTime).count();
             currentTime = newTime;
 
+            window->onUpdate(frameTime);
             onUpdate(frameTime);
 
             std::this_thread::sleep_for(16ms);

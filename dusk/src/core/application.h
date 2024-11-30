@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/base.h"
 #include "events/event.h"
 
 namespace dusk
@@ -36,5 +37,5 @@ namespace dusk
      * @param argv
      * @return Pointer to the application instance
      */
-    Application* createApplication(int argc, char** argv);
+    Unique<Application> createApplication(int argc, char** argv);
 } // namespace dusk

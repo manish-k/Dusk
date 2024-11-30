@@ -6,7 +6,9 @@
 #include "dusk.h"
 #include "core/application.h"
 
-extern dusk::Application* dusk::createApplication(int argc, char** argv);
+using namespace dusk;
+
+extern Unique<dusk::Application> dusk::createApplication(int argc, char** argv);
 
 int main(int argc, char** argv)
 {
@@ -17,6 +19,4 @@ int main(int argc, char** argv)
     auto app = dusk::createApplication(argc, argv);
     app->start();
     app->run();
-
-    delete app;
 }

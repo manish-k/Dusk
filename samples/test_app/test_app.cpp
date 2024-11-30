@@ -9,10 +9,10 @@ TestApp::TestApp() {}
 
 TestApp::~TestApp() { APP_INFO("Destroying Test Application"); }
 
-dusk::Application* dusk::createApplication(int argc, char** argv)
+Unique<dusk::Application> dusk::createApplication(int argc, char** argv)
 {
     APP_INFO("Creating Test Application");
-    return new TestApp();
+    return createUnique<TestApp>();
 }
 
 bool TestApp::start()

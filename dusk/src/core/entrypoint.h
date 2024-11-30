@@ -4,6 +4,7 @@
 #pragma once
 
 #include "dusk.h"
+#include "core/application.h"
 
 extern dusk::Application* dusk::createApplication(int argc, char** argv);
 

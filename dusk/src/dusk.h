@@ -1,15 +1,16 @@
 #pragma once
 
-#include <cassert>
-
-#include "core/application.h"
 #include "core/base.h"
 #include "core/log.h"
+
 
 #ifdef NDEBUG
 #else
 #define ENABLE_ASSERT
 #endif // DEBUG
+
+// Bit left shift Macro
+#define BIT(x) (1 << x)
 
 // Engine Logger Macros
 #define DUSK_DEBUG(...) dusk::Logger::getEngineLogger()->debug(__VA_ARGS__)
@@ -49,6 +50,3 @@
 #define DASSERT(...)
 #define ASSERT(...)
 #endif // ENABLE_ASSERT
-
-// Bit left shift Macro
-#define BIT(x) (1 << x)

@@ -17,7 +17,7 @@ target_include_directories(
 	PUBLIC 
 	${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(${PROJECT_NAME} PRIVATE dusk)
+target_link_libraries(${PROJECT_NAME} PUBLIC dusk)
 
 ## TODO: Try with symlink approach
 set (ASSETS_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/assets")

@@ -1,10 +1,10 @@
-// source: https://github.com/TheCherno/Hazel
-
 #pragma once
 
+#include "dusk.h"
+
 #include <functional>
-#include <sstream>
 #include <iostream>
+#include <sstream>
 
 namespace dusk
 {

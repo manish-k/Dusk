@@ -3,6 +3,13 @@ cmake_minimum_required(VERSION 3.16)
 project(dusk)
 set(CMAKE_CXX_STANDARD 20)
 
+set(ENGINE_DIR "src")
+set(ENGINE_FILES
+	# Header files
+	"${ENGINE_DIR}/dusk.h"
+	# Source files
+)
+
 set(VULKAN_BACKEND_FILES
 	# Header files
 	
@@ -10,16 +17,28 @@ set(VULKAN_BACKEND_FILES
 	
 )
 
+set(CORE_DIR "src/core")
 set(CORE_FILES
 	# Header files
-	"src/core/application.h"
-	"src/core/base.h"
-	"src/core/log.h"
-	"src/core/entrypoint.h"
-	"src/core/key_codes.h"
+	"${CORE_DIR}/application.h"
+	"${CORE_DIR}/base.h"
+	"${CORE_DIR}/log.h"
+	"${CORE_DIR}/entrypoint.h"
+	"${CORE_DIR}/key_codes.h"
 	# Source files
-	"src/core/application.cpp"
-	"src/core/log.cpp"
+	"${CORE_DIR}/application.cpp"
+	"${CORE_DIR}/log.cpp"
+)
+
+set (EVENTS_DIR "src/events")
+set(EVENTS_FILES
+	# Header files
+	"${EVENTS_DIR}/event.h"
+	"${EVENTS_DIR}/key_event.h"
+	"${EVENTS_DIR}/mouse_event.h"
+	"${EVENTS_DIR}/app_event.h"
+	"${EVENTS_DIR}/event_bus.h"
+	# Source files
 )
 
 file(
@@ -29,71 +48,76 @@ file(
 	"${CMAKE_CURRENT_SOURCE_DIR}/src/debug/*"
 )
 
-set(PLATFORM_FILES
+set(LOADERS_DIR "src/loaders")
+set(LOADERS_FILES
 	# Header files
-	"src/platform/window.h"
-	"src/platform/glfw_vulkan_window.h"
+	"${LOADERS_DIR}/gltf_loader.h"
 	# Source files
-	"src/platform/window.cpp"
-	"src/platform/glfw_vulkan_window.cpp"
+	"${LOADERS_DIR}/gltf_loader.cpp"
 )
 
+set(PLATFORM_DIR "src/platform")
+set(PLATFORM_FILES
+	# Header files
+	"${PLATFORM_DIR}/window.h"
+	"${PLATFORM_DIR}/glfw_vulkan_window.h"
+	# Source files
+	"${PLATFORM_DIR}/window.cpp"
+	"${PLATFORM_DIR}/glfw_vulkan_window.cpp"
+)
+
+set(RENDERER_DIR "src/renderer")
 set(RENDERER_FILES
 	# Header files
 	# Source files
 )
 
+set(SCENE_DIR "src/scene")
+set(COMPONENTS_DIR "src/scene/components")
 set(SCENE_FILES
 	# Header files
-	"src/scene/components/transform.h"
-	"src/scene/entity.h"
-	"src/scene/game_object.h"
-	"src/scene/scene.h"
+	"${COMPONENTS_DIR}/transform.h"
+	"${SCENE_DIR}/entity.h"
+	"${SCENE_DIR}/game_object.h"
+	"${SCENE_DIR}/scene.h"
 	# Source files
-	"src/scene/entity.cpp"
-	"src/scene/game_object.cpp"
-	"src/scene/scene.cpp"
+	"${SCENE_DIR}/entity.cpp"
+	"${SCENE_DIR}/game_object.cpp"
+	"${SCENE_DIR}/scene.cpp"
 )
 
-set(LOADERS_FILES
-	# Header files
-	"src/loaders/gltf_loader.h"
-	# Source files
-	"src/loaders/gltf_loader.cpp"
-)
-
-set(EVENTS_FILE
-	# Header files
-	"src/events/event.h"
-	"src/events/key_event.h"
-	"src/events/mouse_event.h"
-	"src/events/app_event.h"
-	"src/events/event_bus.h"
-	# Source files
-)
-
+source_group("\\" FILES ${ENGINE_FILES})
 source_group("backend/vulkan\\" FILES ${VULKAN_BACKEND_FILES})
 source_group("core\\" FILES ${CORE_FILES})
 source_group("debug\\" FILES ${DEBUG_FILES})
+source_group("events\\" FILES ${EVENTS_FILES})
 source_group("renderer\\" FILES ${RENDERER_FILES})
 source_group("scene\\" FILES ${SCENE_FILES})
 source_group("loaders\\" FILES ${LOADERS_FILES})
 source_group("platform\\" FILES ${PLATFORM_FILES})
-source_group("events\\" FILES ${EVENTS_FILE})
 
 set(PROJECT_FILES
-	"src/dusk.h"
+	${ENGINE_FILES}
 	${CORE_FILES}
 	${DEBUG_FILES}
+	#${EVENTS_FILES}
+	${LOADERS_FILES}
 	${RENDERER_FILES}
 	${SCENE_FILES}
-	${LOADERS_FILES}
 	${PLATFORM_FILES}
-	${EVENTS_FILE}
 )
 
 add_library(${PROJECT_NAME} OBJECT ${PROJECT_FILES})
-target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src/)
+target_include_directories(
+	${PROJECT_NAME} PUBLIC 
+	${CMAKE_CURRENT_SOURCE_DIR}/src/
+	${CORE_DIR}
+	${EVENTS_DIR}
+	${LOADERS_DIR}
+	${COMPONENTS_DIR}
+	${SCENE_DIR}
+	${PLATFORM_DIR}
+)
 
 add_subdirectory(vendor)
 

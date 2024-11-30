@@ -14,12 +14,6 @@ namespace dusk
         Application();
         virtual ~Application();
 
-        /**
-         * @brief Starts the main loop of the rendering
-         * application
-         */
-        void run();
-
         virtual bool start() = 0;
         virtual void shutdown() = 0;
 

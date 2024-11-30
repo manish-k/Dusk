@@ -7,7 +7,9 @@ set(ENGINE_DIR "src")
 set(ENGINE_FILES
 	# Header files
 	"${ENGINE_DIR}/dusk.h"
+	"${ENGINE_DIR}/engine.h"
 	# Source files
+	"${ENGINE_DIR}/engine.cpp"
 )
 
 set(VULKAN_BACKEND_FILES
@@ -69,6 +71,7 @@ set(PLATFORM_FILES
 set(RENDERER_DIR "src/renderer")
 set(RENDERER_FILES
 	# Header files
+	"${RENDERER_DIR}/render_api.h"
 	# Source files
 )
 

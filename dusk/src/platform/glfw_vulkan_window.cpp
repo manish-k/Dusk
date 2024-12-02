@@ -43,7 +43,7 @@ namespace dusk
 
         glfwSetErrorCallback(gLFWErrorCallback);
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+        glfwWindowHint(GLFW_RESIZABLE, int(m_props.resizable));
 
         auto* monitor = glfwGetPrimaryMonitor();
         const auto mode = glfwGetVideoMode(monitor);
@@ -120,7 +120,6 @@ namespace dusk
 
                                            currentWindow->setWidth(width);
                                            currentWindow->setHeight(height);
-                                           currentWindow->setResized(true);
 
                                            WindowResizeEvent ev(width, height);
                                            currentWindow->onEvent(ev);

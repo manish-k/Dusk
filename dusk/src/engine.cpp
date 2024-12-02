@@ -4,7 +4,7 @@
 #include <chrono>
 #include <thread>
 
-using namespace std::chrono_literals;
+//using namespace std::chrono_literals;
 
 namespace dusk
 {
@@ -80,7 +80,7 @@ namespace dusk
         dispatcher.dispatch<WindowResizeEvent>(
             [this](WindowResizeEvent ev)
             {
-                DUSK_INFO("WindowResizeEvent received");
+                //DUSK_INFO("WindowResizeEvent received");
                 return false;
             });
 

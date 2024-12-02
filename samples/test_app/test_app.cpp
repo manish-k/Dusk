@@ -7,7 +7,7 @@
 
 using namespace dusk;
 
-TestApp::TestApp() {}
+TestApp::TestApp() { }
 
 TestApp::~TestApp() { APP_INFO("Destroying Test Application"); }
 
@@ -24,14 +24,14 @@ bool TestApp::start()
     return true;
 }
 
-void TestApp::shutdown() {}
+void TestApp::shutdown() { }
 
-void TestApp::onUpdate(float dt) {}
+void TestApp::onUpdate(float dt) { }
 
 void TestApp::onEvent(Event& ev)
 {
     EventDispatcher dispatcher(ev);
-    
+
     /*dispatcher.dispatch<KeyPressedEvent>(
         [this](Event& ev)
         {

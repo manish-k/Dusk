@@ -46,13 +46,6 @@ set(EVENTS_FILES
 	# Source files
 )
 
-file(
-	GLOB_RECURSE 
-	DEBUG_FILES 
-	CONFIGURE_DEPENDS 
-	"${CMAKE_CURRENT_SOURCE_DIR}/src/debug/*"
-)
-
 set(LOADERS_DIR "${PROJECT_SOURCE_DIR}/src/loaders")
 set(LOADERS_FILES
 	# Header files
@@ -95,7 +88,6 @@ set(SCENE_FILES
 source_group("\\" FILES ${ENGINE_FILES})
 source_group("backend/vulkan\\" FILES ${VULKAN_BACKEND_FILES})
 source_group("core\\" FILES ${CORE_FILES})
-source_group("debug\\" FILES ${DEBUG_FILES})
 source_group("events\\" FILES ${EVENTS_FILES})
 source_group("renderer\\" FILES ${RENDERER_FILES})
 source_group("scene\\" FILES ${SCENE_FILES})
@@ -105,7 +97,6 @@ source_group("platform\\" FILES ${PLATFORM_FILES})
 set(PROJECT_FILES
 	${ENGINE_FILES}
 	${CORE_FILES}
-	${DEBUG_FILES}
 	${EVENTS_FILES}
 	${LOADERS_FILES}
 	${RENDERER_FILES}

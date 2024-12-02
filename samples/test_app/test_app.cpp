@@ -65,4 +65,11 @@ void TestApp::onEvent(Event& ev)
             APP_DEBUG(ev.toString());
             return true;
         });
+
+    dispatcher.dispatch<MouseScrolledEvent>(
+        [this](Event& ev)
+        {
+            APP_DEBUG(ev.toString());
+            return true;
+        });
 }

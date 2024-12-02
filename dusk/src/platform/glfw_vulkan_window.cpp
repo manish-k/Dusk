@@ -197,6 +197,17 @@ namespace dusk
                                                DUSK_WARN("Unidentified mouse btn input action received {}", button);
                                        }
                                    });
+
+        // mouse scroll event
+        glfwSetScrollCallback(m_window,
+                              [](GLFWwindow* window, double xoffset, double yoffset)
+                              {
+                                  auto currentWindow = reinterpret_cast<GLFWVulkanWindow*>(glfwGetWindowUserPointer(window));
+
+                                  MouseScrolledEvent ev(xoffset, yoffset);
+
+                                  currentWindow->onEvent(ev);
+                              });
     }
 
     void GLFWVulkanWindow::toggleFullScreen()

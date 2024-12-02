@@ -20,7 +20,6 @@ namespace dusk
             Headless,
             Fullscreen,
             FullscreenBorderless,
-            FullscreenStretch,
             Default
         };
 
@@ -43,6 +42,9 @@ namespace dusk
 
         virtual uint32_t getHeight() const = 0;
         virtual uint32_t getWidth() const = 0;
+
+        virtual void toggleFullScreen() = 0;
+        virtual void toggleFullScreenBorderless() = 0;
 
         virtual void setEventCallback(const EventCallbackFn& cb) = 0;
 

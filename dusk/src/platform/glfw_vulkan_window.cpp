@@ -1,7 +1,15 @@
 #include "glfw_vulkan_window.h"
 
+#include <vulkan/vulkan.h>
+#include <vector>
+
 namespace dusk
 {
+    void gLFWErrorCallback(int errorCode, const char* description)
+    {
+        DUSK_ERROR("GLFW error code{}: {}", errorCode, description);
+    }
+
     GLFWVulkanWindow::GLFWVulkanWindow(Window::Properties& props) : m_props(props)
     {
         if (initWindow())
@@ -32,11 +40,46 @@ namespace dusk
 
     void GLFWVulkanWindow::createWindow()
     {
+
+        glfwSetErrorCallback(gLFWErrorCallback);
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
-        m_window = glfwCreateWindow(m_props.width, m_props.height, m_props.title.c_str(), nullptr, nullptr);
+        auto* monitor = glfwGetPrimaryMonitor();
+        const auto mode = glfwGetVideoMode(monitor);
 
+        switch (m_props.mode)
+        {
+            case Window::Mode::Fullscreen:
+            {
+                m_window = glfwCreateWindow(mode->width, mode->height, m_props.title.c_str(), monitor, nullptr);
+                break;
+            }
+
+            case Window::Mode::FullscreenBorderless:
+            {
+                glfwWindowHint(GLFW_RED_BITS, mode->redBits);
+                glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
+                glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
+                glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
+                m_window = glfwCreateWindow(mode->width, mode->height, m_props.title.c_str(), monitor, nullptr);
+                break;
+            }
+
+            default:
+                m_window = glfwCreateWindow(m_props.width, m_props.height, m_props.title.c_str(), nullptr, nullptr);
+        }
+
+        glfwGetWindowPos(m_window, &m_windowPosX, &m_windowPosY);
         glfwSetWindowUserPointer(m_window, this);
+
+        uint32_t extensionCount = 0;
+        const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&extensionCount);
+        DUSK_INFO("Required {} vulkan extensions for GLFW", extensionCount);
+        for (int i = 0; i < extensionCount; ++i)
+        {
+            DUSK_INFO(glfwExtensions[i]);
+        }
     }
 
     void GLFWVulkanWindow::onUpdate(float dt)
@@ -46,6 +89,13 @@ namespace dusk
             glfwPollEvents();
         }
     }
+
+    void GLFWVulkanWindow::onEvent(Event& ev)
+    {
+        DASSERT(m_eventCallback, "Event callback has not been assigned");
+        m_eventCallback(ev);
+    }
+
     void GLFWVulkanWindow::setEventCallback(const EventCallbackFn& cb)
     {
         m_eventCallback = cb;
@@ -61,9 +111,42 @@ namespace dusk
                                    });
     }
 
-    void GLFWVulkanWindow::onEvent(Event& ev)
+    void GLFWVulkanWindow::toggleFullScreen()
     {
-        DASSERT(m_eventCallback, "Event callback has not been assigned");
-        m_eventCallback(ev);
+        auto monitor = glfwGetPrimaryMonitor();
+        const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+
+        if (m_props.mode == Window::Mode::Fullscreen)
+        {
+            // change to default
+            glfwSetWindowMonitor(m_window, nullptr, m_windowPosX, m_windowPosY, m_props.width, m_props.height,
+                                 mode->refreshRate);
+            m_props.mode = Window::Mode::Default;
+        }
+        else
+        {
+            glfwSetWindowMonitor(m_window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+            m_props.mode = Window::Mode::Fullscreen;
+        }
+    }
+
+    void GLFWVulkanWindow::toggleFullScreenBorderless()
+    {
+        auto monitor = glfwGetPrimaryMonitor();
+        const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+
+        if (m_props.mode == Window::Mode::FullscreenBorderless)
+        {
+            // change to default
+            glfwSetWindowMonitor(m_window, nullptr, m_windowPosX, m_windowPosY, m_props.width, m_props.height,
+                                 mode->refreshRate);
+            m_props.mode = Window::Mode::Default;
+        }
+        else
+        {
+            //TODO: currently same as fullscreen window, need to fix
+            glfwSetWindowMonitor(m_window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+            m_props.mode = Window::Mode::FullscreenBorderless;
+        }
     }
 } // namespace dusk

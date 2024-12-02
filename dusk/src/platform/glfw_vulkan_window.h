@@ -24,6 +24,9 @@ namespace dusk
         uint32_t getHeight() const override { return m_props.height; }
         uint32_t getWidth() const override { return m_props.width; }
 
+        virtual void toggleFullScreen();
+        virtual void toggleFullScreenBorderless();
+
         void setEventCallback(const EventCallbackFn& cb);
 
         void* getNativeWindow() const override { return (void*)m_window; };
@@ -33,9 +36,12 @@ namespace dusk
         void createWindow();
 
     private:
-        GLFWwindow* m_window;   
+        GLFWwindow* m_window;
         Window::Properties m_props;
 
         EventCallbackFn m_eventCallback = nullptr;
+
+        int m_windowPosX;
+        int m_windowPosY;
     };
 } // namespace dusk

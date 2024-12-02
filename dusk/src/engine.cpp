@@ -54,7 +54,8 @@ namespace dusk
 
             m_app->onUpdate(frameTime);
 
-            std::this_thread::sleep_for(16ms);
+            m_window->onUpdate(frameTime);
+            //std::this_thread::sleep_for(16ms);
         }
     }
 

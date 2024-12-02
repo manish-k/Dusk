@@ -3,6 +3,7 @@
 #include "core/entrypoint.h"
 #include "scene/scene.h"
 #include "events/key_event.h"
+#include "events/mouse_event.h"
 
 using namespace dusk;
 
@@ -45,6 +46,20 @@ void TestApp::onEvent(Event& ev)
         });
 
     dispatcher.dispatch<KeyRepeatEvent>(
+        [this](Event& ev)
+        {
+            APP_DEBUG(ev.toString());
+            return true;
+        });
+
+    dispatcher.dispatch<MouseButtonPressedEvent>(
+        [this](Event& ev)
+        {
+            APP_DEBUG(ev.toString());
+            return true;
+        });
+
+    dispatcher.dispatch<MouseButtonReleasedEvent>(
         [this](Event& ev)
         {
             APP_DEBUG(ev.toString());

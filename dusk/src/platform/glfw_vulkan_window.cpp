@@ -142,7 +142,7 @@ namespace dusk
                                        currentWindow->onEvent(ev);
                                        break;
                                    }
-                                   
+
                                    case GLFW_RELEASE:
                                    {
                                        auto keyCode = KeyCode(key);
@@ -165,6 +165,38 @@ namespace dusk
                                        DUSK_WARN("Unidentified Key input action received {}", key);
                                }
                            });
+
+        // mouse button pressed
+        glfwSetMouseButtonCallback(m_window,
+                                   [](GLFWwindow* window, int button, int action, int mods)
+                                   {
+                                       auto currentWindow =
+                                           reinterpret_cast<GLFWVulkanWindow*>(glfwGetWindowUserPointer(window));
+
+                                       switch (action)
+                                       {
+                                           case GLFW_PRESS:
+                                           {
+                                               auto btnCode = MouseCode(button);
+                                               MouseButtonPressedEvent ev(btnCode);
+
+                                               currentWindow->onEvent(ev);
+                                               break;
+                                           }
+
+                                           case GLFW_RELEASE:
+                                           {
+                                               auto btnCode = MouseCode(button);
+                                               MouseButtonReleasedEvent ev(btnCode);
+
+                                               currentWindow->onEvent(ev);
+                                               break;
+                                           }
+
+                                           default:
+                                               DUSK_WARN("Unidentified mouse btn input action received {}", button);
+                                       }
+                                   });
     }
 
     void GLFWVulkanWindow::toggleFullScreen()

@@ -100,6 +100,7 @@ namespace dusk
     {
         m_eventCallback = cb;
 
+        // window close event
         glfwSetWindowCloseCallback(m_window,
                                    [](GLFWwindow* window)
                                    {
@@ -110,6 +111,7 @@ namespace dusk
                                        currentWindow->onEvent(ev);
                                    });
 
+        // window resize event
         glfwSetFramebufferSizeCallback(m_window,
                                        [](GLFWwindow* window, int width, int height)
                                        {
@@ -123,6 +125,46 @@ namespace dusk
                                            WindowResizeEvent ev(width, height);
                                            currentWindow->onEvent(ev);
                                        });
+
+        // keyboard event
+        glfwSetKeyCallback(m_window,
+                           [](GLFWwindow* window, int key, int scancode, int action, int mods)
+                           {
+                               auto currentWindow = reinterpret_cast<GLFWVulkanWindow*>(glfwGetWindowUserPointer(window));
+
+                               switch (action)
+                               {
+                                   case GLFW_PRESS:
+                                   {
+                                       auto keyCode = KeyCode(key);
+                                       KeyPressedEvent ev(keyCode);
+
+                                       currentWindow->onEvent(ev);
+                                       break;
+                                   }
+                                   
+                                   case GLFW_RELEASE:
+                                   {
+                                       auto keyCode = KeyCode(key);
+                                       KeyReleasedEvent ev(keyCode);
+
+                                       currentWindow->onEvent(ev);
+                                       break;
+                                   }
+
+                                   case GLFW_REPEAT:
+                                   {
+                                       auto keyCode = KeyCode(key);
+                                       KeyRepeatEvent ev(keyCode);
+
+                                       currentWindow->onEvent(ev);
+                                       break;
+                                   }
+
+                                   default:
+                                       DUSK_WARN("Unidentified Key input action received {}", key);
+                               }
+                           });
     }
 
     void GLFWVulkanWindow::toggleFullScreen()

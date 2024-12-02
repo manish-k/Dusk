@@ -2,7 +2,10 @@
 
 #include "dusk.h"
 #include "window.h"
+#include "core/key_codes.h"
 #include "events/app_event.h"
+#include "events/key_event.h"
+#include "events/mouse_event.h"
 
 #include <vulkan/vulkan.h>
 #define GLFW_INCLUDE_VULKAN

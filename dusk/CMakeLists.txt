@@ -27,6 +27,7 @@ set(CORE_FILES
 	"${CORE_DIR}/log.h"
 	"${CORE_DIR}/entrypoint.h"
 	"${CORE_DIR}/key_codes.h"
+	"${CORE_DIR}/mouse_codes.h"
 	# Source files
 	"${CORE_DIR}/application.cpp"
 	"${CORE_DIR}/log.cpp"

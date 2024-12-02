@@ -24,7 +24,7 @@ namespace dusk
 
         KeyPressed,
         KeyReleased,
-        KeyTyped,
+        KeyRepeat,
 
         MouseButtonPressed,
         MouseButtonReleased,

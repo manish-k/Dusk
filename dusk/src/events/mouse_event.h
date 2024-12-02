@@ -1,7 +1,7 @@
 #pragma once
 
 #include "event.h"
-#include "core/key_codes.h"
+#include "core/mouse_codes.h"
 
 namespace dusk
 {
@@ -35,7 +35,7 @@ namespace dusk
         float getXOffset() const { return m_xOffset; }
         float getYOffset() const { return m_yOffset; }
 
-        std::string ToString() const override
+        std::string toString() const override
         {
             std::stringstream ss;
             ss << "MouseScrolledEvent: " << getXOffset() << ", " << getYOffset();

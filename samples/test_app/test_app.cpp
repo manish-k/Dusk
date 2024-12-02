@@ -2,6 +2,7 @@
 
 #include "core/entrypoint.h"
 #include "scene/scene.h"
+#include "events/key_event.h"
 
 using namespace dusk;
 
@@ -26,4 +27,27 @@ void TestApp::shutdown() {}
 
 void TestApp::onUpdate(float dt) {}
 
-void TestApp::onEvent(dusk::Event& ev) {}
+void TestApp::onEvent(Event& ev)
+{
+    EventDispatcher dispatcher(ev);
+    dispatcher.dispatch<KeyPressedEvent>(
+        [this](Event& ev)
+        {
+            APP_DEBUG(ev.toString());
+            return true;
+        });
+
+    dispatcher.dispatch<KeyReleasedEvent>(
+        [this](Event& ev)
+        {
+            APP_DEBUG(ev.toString());
+            return true;
+        });
+
+    dispatcher.dispatch<KeyRepeatEvent>(
+        [this](Event& ev)
+        {
+            APP_DEBUG(ev.toString());
+            return true;
+        });
+}

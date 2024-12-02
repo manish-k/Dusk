@@ -74,14 +74,23 @@ namespace dusk
             {
                 DUSK_INFO("WindowCloseEvent received");
                 this->stop();
-                return true;
+                return false;
             });
 
         dispatcher.dispatch<WindowResizeEvent>(
             [this](WindowResizeEvent ev)
             {
                 DUSK_INFO("WindowResizeEvent received");
-                return true;
+                return false;
             });
+
+        // pass event to UI layer
+        // pass event to debug layer
+
+        // pass unhandled event to application
+        if (!ev.isHandled())
+        {
+            m_app->onEvent(ev);
+        }
     }
 } // namespace dusk

@@ -208,6 +208,22 @@ namespace dusk
 
                                   currentWindow->onEvent(ev);
                               });
+
+        // cursor position change event
+        // coordinates obtained are relative to top-left corner of the window
+        glfwSetCursorPosCallback(m_window,
+                                 [](GLFWwindow* window, double xpos, double ypos)
+                                 {
+                                     auto currentWindow =
+                                         reinterpret_cast<GLFWVulkanWindow*>(glfwGetWindowUserPointer(window));
+
+                                     currentWindow->setCursorPosX(xpos);
+                                     currentWindow->setCursorPosy(ypos);
+
+                                     MouseMovedEvent ev(xpos, ypos);
+                                     
+                                     currentWindow->onEvent(ev);
+                                 });
     }
 
     void GLFWVulkanWindow::toggleFullScreen()

@@ -31,7 +31,8 @@ void TestApp::onUpdate(float dt) {}
 void TestApp::onEvent(Event& ev)
 {
     EventDispatcher dispatcher(ev);
-    dispatcher.dispatch<KeyPressedEvent>(
+    
+    /*dispatcher.dispatch<KeyPressedEvent>(
         [this](Event& ev)
         {
             APP_DEBUG(ev.toString());
@@ -72,4 +73,11 @@ void TestApp::onEvent(Event& ev)
             APP_DEBUG(ev.toString());
             return true;
         });
+
+    dispatcher.dispatch<MouseMovedEvent>(
+        [this](Event& ev)
+        {
+            APP_DEBUG(ev.toString());
+            return true;
+        });*/
 }

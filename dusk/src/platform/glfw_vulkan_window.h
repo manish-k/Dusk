@@ -35,6 +35,8 @@ namespace dusk
         void setHeight(uint32_t newHeight) { m_props.height = newHeight; }
         void setResized(bool newState) { m_isResized = newState; }
         void resetResizedState() { m_isResized = false; }
+        void setCursorPosX(int newPosX) { m_cursorPosX = newPosX; }
+        void setCursorPosy(int newPosY) { m_cursorPosY = newPosY; }
         void setEventCallback(const EventCallbackFn& cb);
 
         void* getNativeWindow() const override { return (void*)m_window; };
@@ -53,5 +55,8 @@ namespace dusk
         int m_windowPosY;
 
         bool m_isResized = false;
+
+        int m_cursorPosX;
+        int m_cursorPosY;
     };
 } // namespace dusk

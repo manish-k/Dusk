@@ -125,7 +125,7 @@ target_include_directories(
 
 add_subdirectory(vendor)
 
-# TODO make links private, does not work currently
+# TODO: making links private, does not work currently
 # because Apps are using engine references. eg. spdlog
 target_link_libraries(${PROJECT_NAME} PUBLIC
 	spdlog

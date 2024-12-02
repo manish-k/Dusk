@@ -29,6 +29,7 @@ namespace dusk
 
         bool start(Shared<Application> app);
         void run();
+        void stop();
         void shutdown();
         void onUpdate(float dt);
         void onEvent(Event& ev);

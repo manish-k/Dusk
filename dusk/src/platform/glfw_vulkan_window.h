@@ -2,6 +2,7 @@
 
 #include "dusk.h"
 #include "window.h"
+#include "events/app_event.h"
 
 #include <vulkan/vulkan.h>
 #define GLFW_INCLUDE_VULKAN
@@ -14,10 +15,11 @@ namespace dusk
     class GLFWVulkanWindow : public Window
     {
     public:
-        GLFWVulkanWindow(const Window::Properties& props);
+        GLFWVulkanWindow(Window::Properties& props);
         virtual ~GLFWVulkanWindow() override;
 
         void onUpdate(float dt) override;
+        void onEvent(Event& ev);
 
         uint32_t getHeight() const override { return m_props.height; }
         uint32_t getWidth() const override { return m_props.width; }
@@ -33,5 +35,7 @@ namespace dusk
     private:
         GLFWwindow* m_window;   
         Window::Properties m_props;
+
+        EventCallbackFn m_eventCallback = nullptr;
     };
 } // namespace dusk

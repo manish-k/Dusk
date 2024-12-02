@@ -2,7 +2,7 @@
 
 namespace dusk
 {
-    GLFWVulkanWindow::GLFWVulkanWindow(const Window::Properties& props) : m_props(props)
+    GLFWVulkanWindow::GLFWVulkanWindow(Window::Properties& props) : m_props(props)
     {
         if (initWindow())
         {
@@ -35,7 +35,7 @@ namespace dusk
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
         m_window = glfwCreateWindow(m_props.width, m_props.height, m_props.title.c_str(), nullptr, nullptr);
-        
+
         glfwSetWindowUserPointer(m_window, this);
     }
 
@@ -46,5 +46,24 @@ namespace dusk
             glfwPollEvents();
         }
     }
-    void GLFWVulkanWindow::setEventCallback(const EventCallbackFn& cb) {}
+    void GLFWVulkanWindow::setEventCallback(const EventCallbackFn& cb)
+    {
+        m_eventCallback = cb;
+
+        glfwSetWindowCloseCallback(m_window,
+                                   [](GLFWwindow* window)
+                                   {
+                                       auto currentWindow =
+                                           reinterpret_cast<GLFWVulkanWindow*>(glfwGetWindowUserPointer(window));
+
+                                       WindowCloseEvent ev;
+                                       currentWindow->onEvent(ev);
+                                   });
+    }
+
+    void GLFWVulkanWindow::onEvent(Event& ev)
+    {
+        DASSERT(m_eventCallback, "Event callback has not been assigned");
+        m_eventCallback(ev);
+    }
 } // namespace dusk

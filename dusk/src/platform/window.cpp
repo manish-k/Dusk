@@ -3,7 +3,7 @@
 
 namespace dusk
 {
-    Unique<Window> Window::createWindow(const Properties& props)
+    Unique<Window> Window::createWindow(Properties& props)
     {
         // check render backend api and then create
         // appropriate window

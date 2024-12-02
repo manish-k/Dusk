@@ -32,6 +32,8 @@ namespace dusk
             bool resizable = true;
             Mode mode = Mode::Default;
             Vsync vsync = Vsync::Default;
+
+            static Properties defaultWindowProperties() { return Properties{}; }
         };
 
     public:
@@ -45,7 +47,7 @@ namespace dusk
         virtual void setEventCallback(const EventCallbackFn& cb) = 0;
 
         virtual void* getNativeWindow() const = 0;
-        
-        static Unique<Window> createWindow(const Properties& props = Properties());
+
+        static Unique<Window> createWindow(Properties& props);
     };
 } // namespace dusk

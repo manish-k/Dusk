@@ -1,4 +1,5 @@
 #include "engine.h"
+#include "events/app_event.h"
 
 #include <chrono>
 #include <thread>
@@ -24,7 +25,8 @@ namespace dusk
         m_app = app;
 
         // create window
-        m_window = std::move(Window::createWindow());
+        auto windowProps = Window::Properties::defaultWindowProperties();
+        m_window = std::move(Window::createWindow(windowProps));
         if (!m_window)
         {
             DUSK_ERROR("Window creation failed");
@@ -56,9 +58,21 @@ namespace dusk
         }
     }
 
+    void Engine::stop() { m_running = false; }
+
     void Engine::shutdown() {}
 
     void Engine::onUpdate(float dt) { m_window->onUpdate(dt); }
 
-    void Engine::onEvent(Event& ev) {}
+    void Engine::onEvent(Event& ev)
+    {
+        EventDispatcher dispatcher(ev);
+
+        dispatcher.dispatch<WindowCloseEvent>(
+            [this](WindowCloseEvent ev)
+            {
+                this->stop();
+                return true;
+            });
+    }
 } // namespace dusk

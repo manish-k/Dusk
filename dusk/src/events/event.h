@@ -63,7 +63,7 @@ namespace dusk
         bool isInCategory(EventCategory category) { return getCategoryFlags() & category; }
 
         bool isHandled() const { return m_handled; }
-        void markHandled() { m_handled = true; }
+        void setHandled(bool handledStatus) { m_handled = handledStatus; }
 
     protected:
         bool m_handled = false;
@@ -78,7 +78,7 @@ namespace dusk
         {
             if (m_event.getEventType() == T::getStaticType())
             {
-                m_event.m_handled |= func(*(T*)&m_event);
+                m_event.setHandled(m_event.isHandled() | func(*(T*)&m_event));
                 return true;
             }
             return false;

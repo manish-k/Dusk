@@ -109,6 +109,20 @@ namespace dusk
                                        WindowCloseEvent ev;
                                        currentWindow->onEvent(ev);
                                    });
+
+        glfwSetFramebufferSizeCallback(m_window,
+                                       [](GLFWwindow* window, int width, int height)
+                                       {
+                                           auto currentWindow =
+                                               reinterpret_cast<GLFWVulkanWindow*>(glfwGetWindowUserPointer(window));
+
+                                           currentWindow->setWidth(width);
+                                           currentWindow->setHeight(height);
+                                           currentWindow->setResized(true);
+
+                                           WindowResizeEvent ev(width, height);
+                                           currentWindow->onEvent(ev);
+                                       });
     }
 
     void GLFWVulkanWindow::toggleFullScreen()
@@ -144,7 +158,7 @@ namespace dusk
         }
         else
         {
-            //TODO: currently same as fullscreen window, need to fix
+            // TODO: currently same as fullscreen window, need to fix
             glfwSetWindowMonitor(m_window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
             m_props.mode = Window::Mode::FullscreenBorderless;
         }

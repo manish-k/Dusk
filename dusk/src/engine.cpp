@@ -72,7 +72,15 @@ namespace dusk
         dispatcher.dispatch<WindowCloseEvent>(
             [this](WindowCloseEvent ev)
             {
+                DUSK_INFO("WindowCloseEvent received");
                 this->stop();
+                return true;
+            });
+
+        dispatcher.dispatch<WindowResizeEvent>(
+            [this](WindowResizeEvent ev)
+            {
+                DUSK_INFO("WindowResizeEvent received");
                 return true;
             });
     }

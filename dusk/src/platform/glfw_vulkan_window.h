@@ -16,17 +16,22 @@ namespace dusk
     {
     public:
         GLFWVulkanWindow(Window::Properties& props);
-        virtual ~GLFWVulkanWindow() override;
+        ~GLFWVulkanWindow() override;
 
         void onUpdate(float dt) override;
         void onEvent(Event& ev);
 
         uint32_t getHeight() const override { return m_props.height; }
         uint32_t getWidth() const override { return m_props.width; }
+        bool isResized() const override { return m_isResized; }
 
-        virtual void toggleFullScreen();
-        virtual void toggleFullScreenBorderless();
+        void toggleFullScreen() override;
+        void toggleFullScreenBorderless() override;
 
+        void setWidth(uint32_t newWidth) { m_props.width = newWidth; }
+        void setHeight(uint32_t newHeight) { m_props.height = newHeight; }
+        void setResized(bool newState) { m_isResized = newState; }
+        void resetResizedState() { m_isResized = false; }
         void setEventCallback(const EventCallbackFn& cb);
 
         void* getNativeWindow() const override { return (void*)m_window; };
@@ -43,5 +48,7 @@ namespace dusk
 
         int m_windowPosX;
         int m_windowPosY;
+
+        bool m_isResized = false;
     };
 } // namespace dusk

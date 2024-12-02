@@ -9,27 +9,27 @@
 
 namespace dusk
 {
-	/**
+/**
 	 * @brief 
 	 */
-	class GLTFLoader
-	{
-	public:
-		GLTFLoader();
-		~GLTFLoader() = default;
+class GLTFLoader
+{
+public:
+    GLTFLoader();
+    ~GLTFLoader() = default;
 
-		Unique<Scene> readScene(std::string_view fileName);
+    Unique<Scene> readScene(std::string_view fileName);
 
-	private:
-		Unique<Scene> parseScene(int sceneIndex);
-		
-		void traverseSceneNodes(
-			Scene& scene, int nodeIndex, EntityId parentId);
-		
-		Unique<GameObject> parseNode(
-			const tinygltf::Node& node, EntityRegistry& registry);
+private:
+    Unique<Scene> parseScene(int sceneIndex);
 
-	private:
-		tinygltf::Model m_model;
-	};
-}
+    void traverseSceneNodes(
+        Scene& scene, int nodeIndex, EntityId parentId);
+
+    Unique<GameObject> parseNode(
+        const tinygltf::Node& node, EntityRegistry& registry);
+
+private:
+    tinygltf::Model m_model;
+};
+} // namespace dusk

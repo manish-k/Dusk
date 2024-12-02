@@ -17,7 +17,7 @@ int main(int argc, char** argv)
     dusk::Logger::init();
 
     auto engineConfig = Engine::Config::defaultConfig();
-    auto engine = createUnique<Engine>(engineConfig);
+    auto engine       = createUnique<Engine>(engineConfig);
 
     Shared<Application> app = std::move(dusk::createApplication(argc, argv));
 

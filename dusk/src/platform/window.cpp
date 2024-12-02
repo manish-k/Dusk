@@ -3,11 +3,11 @@
 
 namespace dusk
 {
-    Unique<Window> Window::createWindow(Properties& props)
-    {
-        // check render backend api and then create
-        // appropriate window
+Unique<Window> Window::createWindow(Properties& props)
+{
+    // check render backend api and then create
+    // appropriate window
 
-        return createUnique<GLFWVulkanWindow>(props);
-    }
+    return createUnique<GLFWVulkanWindow>(props);
 }
+} // namespace dusk

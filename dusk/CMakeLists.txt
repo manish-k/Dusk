@@ -1,9 +1,11 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.29)
 
 project(dusk)
 set(CMAKE_CXX_STANDARD 20)
 
-set(ENGINE_DIR "src")
+find_program(CLANG_FORMAT_EXE NAMES "clang-format" DOC "Path to clang-format executable")
+
+set(ENGINE_DIR "${PROJECT_SOURCE_DIR}/src")
 set(ENGINE_FILES
 	# Header files
 	"${ENGINE_DIR}/dusk.h"
@@ -19,7 +21,7 @@ set(VULKAN_BACKEND_FILES
 	
 )
 
-set(CORE_DIR "src/core")
+set(CORE_DIR "${PROJECT_SOURCE_DIR}/src/core")
 set(CORE_FILES
 	# Header files
 	"${CORE_DIR}/application.h"
@@ -33,7 +35,7 @@ set(CORE_FILES
 	"${CORE_DIR}/log.cpp"
 )
 
-set (EVENTS_DIR "src/events")
+set (EVENTS_DIR "${PROJECT_SOURCE_DIR}/src/events")
 set(EVENTS_FILES
 	# Header files
 	"${EVENTS_DIR}/event.h"
@@ -51,7 +53,7 @@ file(
 	"${CMAKE_CURRENT_SOURCE_DIR}/src/debug/*"
 )
 
-set(LOADERS_DIR "src/loaders")
+set(LOADERS_DIR "${PROJECT_SOURCE_DIR}/src/loaders")
 set(LOADERS_FILES
 	# Header files
 	"${LOADERS_DIR}/gltf_loader.h"
@@ -59,7 +61,7 @@ set(LOADERS_FILES
 	"${LOADERS_DIR}/gltf_loader.cpp"
 )
 
-set(PLATFORM_DIR "src/platform")
+set(PLATFORM_DIR "${PROJECT_SOURCE_DIR}/src/platform")
 set(PLATFORM_FILES
 	# Header files
 	"${PLATFORM_DIR}/window.h"
@@ -69,14 +71,14 @@ set(PLATFORM_FILES
 	"${PLATFORM_DIR}/glfw_vulkan_window.cpp"
 )
 
-set(RENDERER_DIR "src/renderer")
+set(RENDERER_DIR "${PROJECT_SOURCE_DIR}/src/renderer")
 set(RENDERER_FILES
 	# Header files
 	"${RENDERER_DIR}/render_api.h"
 	# Source files
 )
 
-set(SCENE_DIR "src/scene")
+set(SCENE_DIR "${PROJECT_SOURCE_DIR}/src/scene")
 set(COMPONENTS_DIR "src/scene/components")
 set(SCENE_FILES
 	# Header files
@@ -137,3 +139,8 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
 	tinygltf
 	vulkan
 )
+
+if(CLANG_FORMAT_EXE)
+    add_custom_target(
+		Code-Format COMMAND ${CLANG_FORMAT_EXE} -i -style=file ${PROJECT_FILES})
+endif()

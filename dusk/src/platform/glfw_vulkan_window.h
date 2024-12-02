@@ -15,89 +15,89 @@
 
 namespace dusk
 {
+/**
+ * @brief Window class for the GLFW vulkan implementation
+ */
+class GLFWVulkanWindow : public Window
+{
+public:
+    GLFWVulkanWindow(Window::Properties& props);
+    ~GLFWVulkanWindow() override;
+
+    void onUpdate(float dt) override;
+    void onEvent(Event& ev);
+
+    uint32_t getHeight() const override { return m_props.height; }
+    uint32_t getWidth() const override { return m_props.width; }
+    bool     isResized() const override { return m_isResized; }
+    void*    getNativeWindow() const override { return (void*)m_window; };
+
+    void toggleFullScreen() override;
+    void toggleFullScreenBorderless() override;
+
     /**
-     * @brief Window class for the GLFW vulkan implementation
+     * @brief Set new width of the current window
+     * @param newWidth
      */
-    class GLFWVulkanWindow : public Window
+    void setWidth(uint32_t newWidth)
     {
-    public:
-        GLFWVulkanWindow(Window::Properties& props);
-        ~GLFWVulkanWindow() override;
+        m_props.width = newWidth;
+        m_isResized   = true;
+    }
 
-        void onUpdate(float dt) override;
-        void onEvent(Event& ev);
+    /**
+     * @brief Set new height of the current window
+     * @param newHeight
+     */
+    void setHeight(uint32_t newHeight)
+    {
+        m_props.height = newHeight;
+        m_isResized    = true;
+    }
 
-        uint32_t getHeight() const override { return m_props.height; }
-        uint32_t getWidth() const override { return m_props.width; }
-        bool isResized() const override { return m_isResized; }
-        void* getNativeWindow() const override { return (void*)m_window; };
+    /**
+     * @brief Reset the resized flag for the window
+     */
+    void resetResizedState() { m_isResized = false; }
 
-        void toggleFullScreen() override;
-        void toggleFullScreenBorderless() override;
+    /**
+     * @brief Set current cursor x position in the window relative to top-left corner
+     * @param newPosX
+     */
+    void setCursorPosX(int newPosX) { m_cursorPosX = newPosX; }
 
-        /**
-         * @brief Set new width of the current window
-         * @param newWidth 
-         */
-        void setWidth(uint32_t newWidth)
-        {
-            m_props.width = newWidth;
-            m_isResized = true;
-        }
+    /**
+     * @brief Set current cursor y position in the window relative to top-left corner
+     * @param newPosY
+     */
+    void setCursorPosy(int newPosY) { m_cursorPosY = newPosY; }
 
-        /**
-         * @brief Set new height of the current window
-         * @param newHeight 
-         */
-        void setHeight(uint32_t newHeight)
-        {
-            m_props.height = newHeight;
-            m_isResized = true;
-        }
+    void setEventCallback(const EventCallbackFn& cb) override;
 
-        /**
-         * @brief Reset the resized flag for the window
-         */
-        void resetResizedState() { m_isResized = false; }
+private:
+    /**
+     * @brief Initialize GLFW library
+     * @return True if successful else false
+     */
+    bool initWindow();
 
-        /**
-         * @brief Set current cursor x position in the window relative to top-left corner
-         * @param newPosX 
-         */
-        void setCursorPosX(int newPosX) { m_cursorPosX = newPosX; }
+    /**
+     * @brief Create window based on the property given during initialization
+     */
+    void createWindow();
 
-        /**
-         * @brief Set current cursor y position in the window relative to top-left corner
-         * @param newPosY 
-         */
-        void setCursorPosy(int newPosY) { m_cursorPosY = newPosY; }
+private:
+    GLFWwindow*        m_window;
+    Window::Properties m_props;
 
-        void setEventCallback(const EventCallbackFn& cb) override;
+    EventCallbackFn m_eventCallback = nullptr;
 
-    private:
-        /**
-         * @brief Initialize GLFW library
-         * @return True if successful else false
-         */
-        bool initWindow();
+    int m_windowPosX;
+    int m_windowPosY;
 
-        /**
-         * @brief Create window based on the property given during initialization
-         */
-        void createWindow();
+    bool m_isResized = false;
 
-    private:
-        GLFWwindow* m_window;
-        Window::Properties m_props;
-
-        EventCallbackFn m_eventCallback = nullptr;
-
-        int m_windowPosX;
-        int m_windowPosY;
-
-        bool m_isResized = false;
-
-        int m_cursorPosX;
-        int m_cursorPosY;
-    };
+    int m_cursorPosX;
+    int m_cursorPosY;
+};
 } // namespace dusk

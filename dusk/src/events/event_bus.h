@@ -7,17 +7,17 @@
 
 namespace dusk
 {
-    class EventBus
-    {
-    public:
-        void push(Unique<Event>& event) { m_eventQueue.push_back(std::move(event)); }
+class EventBus
+{
+public:
+    void push(Unique<Event>& event) { m_eventQueue.push_back(std::move(event)); }
 
-        size_t size() { return m_eventQueue.size(); }
-        
-        void clear() { m_eventQueue.clear(); }
+    size_t size() { return m_eventQueue.size(); }
 
-    private:
-        // TODO: Replace vector with a ring buffer
-        std::list<Unique<Event>> m_eventQueue;
-    };
+    void clear() { m_eventQueue.clear(); }
+
+private:
+    // TODO: Replace vector with a ring buffer
+    std::list<Unique<Event>> m_eventQueue;
+};
 } // namespace dusk

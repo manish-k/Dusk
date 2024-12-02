@@ -3,8 +3,8 @@
 
 namespace dusk
 {
-    Application::Application() {}
+Application::Application() { }
 
-    Application::~Application() {}
+Application::~Application() { }
 
 } // namespace dusk

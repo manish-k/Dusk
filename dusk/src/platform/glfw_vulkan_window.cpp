@@ -5,262 +5,250 @@
 
 namespace dusk
 {
-    void gLFWErrorCallback(int errorCode, const char* description)
+void gLFWErrorCallback(int errorCode, const char* description)
+{
+    DUSK_ERROR("GLFW error code{}: {}", errorCode, description);
+}
+
+GLFWVulkanWindow::GLFWVulkanWindow(Window::Properties& props) :
+    m_props(props)
+{
+    if (initWindow())
     {
-        DUSK_ERROR("GLFW error code{}: {}", errorCode, description);
+        createWindow();
     }
-
-    GLFWVulkanWindow::GLFWVulkanWindow(Window::Properties& props) : m_props(props)
+    else
     {
-        if (initWindow())
-        {
-            createWindow();
-        }
-        else
-        {
-            DUSK_CRITICAL("Unable to initialize GLFW Window");
-            m_window = nullptr;
-        }
+        DUSK_CRITICAL("Unable to initialize GLFW Window");
+        m_window = nullptr;
     }
+}
 
-    GLFWVulkanWindow::~GLFWVulkanWindow()
+GLFWVulkanWindow::~GLFWVulkanWindow()
+{
+    glfwDestroyWindow(m_window);
+    glfwTerminate();
+}
+
+bool GLFWVulkanWindow::initWindow()
+{
+    if (!glfwInit())
     {
-        glfwDestroyWindow(m_window);
-        glfwTerminate();
+        return false;
     }
+    return true;
+}
 
-    bool GLFWVulkanWindow::initWindow()
+void GLFWVulkanWindow::createWindow()
+{
+    glfwSetErrorCallback(gLFWErrorCallback);
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    glfwWindowHint(GLFW_RESIZABLE, int(m_props.resizable));
+
+    auto*      monitor = glfwGetPrimaryMonitor();
+    const auto mode    = glfwGetVideoMode(monitor);
+
+    switch (m_props.mode)
     {
-        if (!glfwInit())
+        case Window::Mode::Fullscreen:
         {
-            return false;
-        }
-        return true;
-    }
-
-    void GLFWVulkanWindow::createWindow()
-    {
-
-        glfwSetErrorCallback(gLFWErrorCallback);
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        glfwWindowHint(GLFW_RESIZABLE, int(m_props.resizable));
-
-        auto* monitor = glfwGetPrimaryMonitor();
-        const auto mode = glfwGetVideoMode(monitor);
-
-        switch (m_props.mode)
-        {
-            case Window::Mode::Fullscreen:
-            {
-                m_window = glfwCreateWindow(mode->width, mode->height, m_props.title.c_str(), monitor, nullptr);
-                break;
-            }
-
-            case Window::Mode::FullscreenBorderless:
-            {
-                glfwWindowHint(GLFW_RED_BITS, mode->redBits);
-                glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
-                glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
-                glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
-                m_window = glfwCreateWindow(mode->width, mode->height, m_props.title.c_str(), monitor, nullptr);
-                break;
-            }
-
-            default:
-                m_window = glfwCreateWindow(m_props.width, m_props.height, m_props.title.c_str(), nullptr, nullptr);
+            m_window = glfwCreateWindow(mode->width, mode->height, m_props.title.c_str(), monitor, nullptr);
+            break;
         }
 
-        glfwGetWindowPos(m_window, &m_windowPosX, &m_windowPosY);
-        glfwSetWindowUserPointer(m_window, this);
-
-        uint32_t extensionCount = 0;
-        const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&extensionCount);
-        DUSK_INFO("Required {} vulkan extensions for GLFW", extensionCount);
-        for (int i = 0; i < extensionCount; ++i)
+        case Window::Mode::FullscreenBorderless:
         {
-            DUSK_INFO(glfwExtensions[i]);
+            glfwWindowHint(GLFW_RED_BITS, mode->redBits);
+            glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
+            glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
+            glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
+            m_window = glfwCreateWindow(mode->width, mode->height, m_props.title.c_str(), monitor, nullptr);
+            break;
         }
+
+        default:
+            m_window = glfwCreateWindow(m_props.width, m_props.height, m_props.title.c_str(), nullptr, nullptr);
     }
 
-    void GLFWVulkanWindow::onUpdate(float dt)
+    glfwGetWindowPos(m_window, &m_windowPosX, &m_windowPosY);
+    glfwSetWindowUserPointer(m_window, this);
+
+    uint32_t     extensionCount = 0;
+    const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&extensionCount);
+    DUSK_INFO("Required {} vulkan extensions for GLFW", extensionCount);
+    for (int i = 0; i < extensionCount; ++i)
     {
-        if (!glfwWindowShouldClose(m_window))
-        {
-            glfwPollEvents();
-        }
+        DUSK_INFO(glfwExtensions[i]);
     }
+}
 
-    void GLFWVulkanWindow::onEvent(Event& ev)
+void GLFWVulkanWindow::onUpdate(float dt)
+{
+    if (!glfwWindowShouldClose(m_window))
     {
-        DASSERT(m_eventCallback, "Event callback has not been assigned");
-        m_eventCallback(ev);
+        glfwPollEvents();
     }
+}
 
-    void GLFWVulkanWindow::setEventCallback(const EventCallbackFn& cb)
-    {
-        m_eventCallback = cb;
+void GLFWVulkanWindow::onEvent(Event& ev)
+{
+    DASSERT(m_eventCallback, "Event callback has not been assigned");
+    m_eventCallback(ev);
+}
 
-        // window close event
-        glfwSetWindowCloseCallback(m_window,
-                                   [](GLFWwindow* window)
-                                   {
-                                       auto currentWindow =
-                                           reinterpret_cast<GLFWVulkanWindow*>(glfwGetWindowUserPointer(window));
+void GLFWVulkanWindow::setEventCallback(const EventCallbackFn& cb)
+{
+    m_eventCallback = cb;
 
-                                       WindowCloseEvent ev;
+    // window close event
+    glfwSetWindowCloseCallback(m_window,
+                               [](GLFWwindow* window) {
+                                   auto currentWindow = reinterpret_cast<GLFWVulkanWindow*>(glfwGetWindowUserPointer(window));
+
+                                   WindowCloseEvent ev;
+                                   currentWindow->onEvent(ev);
+                               });
+
+    // window resize event
+    glfwSetFramebufferSizeCallback(m_window,
+                                   [](GLFWwindow* window, int width, int height) {
+                                       auto currentWindow = reinterpret_cast<GLFWVulkanWindow*>(glfwGetWindowUserPointer(window));
+
+                                       currentWindow->setWidth(width);
+                                       currentWindow->setHeight(height);
+
+                                       WindowResizeEvent ev(width, height);
                                        currentWindow->onEvent(ev);
                                    });
 
-        // window resize event
-        glfwSetFramebufferSizeCallback(m_window,
-                                       [](GLFWwindow* window, int width, int height)
-                                       {
-                                           auto currentWindow =
-                                               reinterpret_cast<GLFWVulkanWindow*>(glfwGetWindowUserPointer(window));
+    // keyboard event
+    glfwSetKeyCallback(m_window,
+                       [](GLFWwindow* window, int key, int scancode, int action, int mods) {
+                           auto currentWindow = reinterpret_cast<GLFWVulkanWindow*>(glfwGetWindowUserPointer(window));
 
-                                           currentWindow->setWidth(width);
-                                           currentWindow->setHeight(height);
-
-                                           WindowResizeEvent ev(width, height);
-                                           currentWindow->onEvent(ev);
-                                       });
-
-        // keyboard event
-        glfwSetKeyCallback(m_window,
-                           [](GLFWwindow* window, int key, int scancode, int action, int mods)
+                           switch (action)
                            {
-                               auto currentWindow = reinterpret_cast<GLFWVulkanWindow*>(glfwGetWindowUserPointer(window));
-
-                               switch (action)
+                               case GLFW_PRESS:
                                {
-                                   case GLFW_PRESS:
-                                   {
-                                       auto keyCode = KeyCode(key);
-                                       KeyPressedEvent ev(keyCode);
+                                   auto            keyCode = KeyCode(key);
+                                   KeyPressedEvent ev(keyCode);
 
-                                       currentWindow->onEvent(ev);
-                                       break;
-                                   }
-
-                                   case GLFW_RELEASE:
-                                   {
-                                       auto keyCode = KeyCode(key);
-                                       KeyReleasedEvent ev(keyCode);
-
-                                       currentWindow->onEvent(ev);
-                                       break;
-                                   }
-
-                                   case GLFW_REPEAT:
-                                   {
-                                       auto keyCode = KeyCode(key);
-                                       KeyRepeatEvent ev(keyCode);
-
-                                       currentWindow->onEvent(ev);
-                                       break;
-                                   }
-
-                                   default:
-                                       DUSK_WARN("Unidentified Key input action received {}", key);
+                                   currentWindow->onEvent(ev);
+                                   break;
                                }
-                           });
 
-        // mouse button pressed
-        glfwSetMouseButtonCallback(m_window,
-                                   [](GLFWwindow* window, int button, int action, int mods)
+                               case GLFW_RELEASE:
+                               {
+                                   auto             keyCode = KeyCode(key);
+                                   KeyReleasedEvent ev(keyCode);
+
+                                   currentWindow->onEvent(ev);
+                                   break;
+                               }
+
+                               case GLFW_REPEAT:
+                               {
+                                   auto           keyCode = KeyCode(key);
+                                   KeyRepeatEvent ev(keyCode);
+
+                                   currentWindow->onEvent(ev);
+                                   break;
+                               }
+
+                               default:
+                                   DUSK_WARN("Unidentified Key input action received {}", key);
+                           }
+                       });
+
+    // mouse button pressed
+    glfwSetMouseButtonCallback(m_window,
+                               [](GLFWwindow* window, int button, int action, int mods) {
+                                   auto currentWindow = reinterpret_cast<GLFWVulkanWindow*>(glfwGetWindowUserPointer(window));
+
+                                   switch (action)
                                    {
-                                       auto currentWindow =
-                                           reinterpret_cast<GLFWVulkanWindow*>(glfwGetWindowUserPointer(window));
-
-                                       switch (action)
+                                       case GLFW_PRESS:
                                        {
-                                           case GLFW_PRESS:
-                                           {
-                                               auto btnCode = MouseCode(button);
-                                               MouseButtonPressedEvent ev(btnCode);
+                                           auto                    btnCode = MouseCode(button);
+                                           MouseButtonPressedEvent ev(btnCode);
 
-                                               currentWindow->onEvent(ev);
-                                               break;
-                                           }
-
-                                           case GLFW_RELEASE:
-                                           {
-                                               auto btnCode = MouseCode(button);
-                                               MouseButtonReleasedEvent ev(btnCode);
-
-                                               currentWindow->onEvent(ev);
-                                               break;
-                                           }
-
-                                           default:
-                                               DUSK_WARN("Unidentified mouse btn input action received {}", button);
+                                           currentWindow->onEvent(ev);
+                                           break;
                                        }
-                                   });
 
-        // mouse scroll event
-        glfwSetScrollCallback(m_window,
-                              [](GLFWwindow* window, double xoffset, double yoffset)
-                              {
-                                  auto currentWindow = reinterpret_cast<GLFWVulkanWindow*>(glfwGetWindowUserPointer(window));
+                                       case GLFW_RELEASE:
+                                       {
+                                           auto                     btnCode = MouseCode(button);
+                                           MouseButtonReleasedEvent ev(btnCode);
 
-                                  MouseScrolledEvent ev(xoffset, yoffset);
+                                           currentWindow->onEvent(ev);
+                                           break;
+                                       }
 
-                                  currentWindow->onEvent(ev);
-                              });
+                                       default:
+                                           DUSK_WARN("Unidentified mouse btn input action received {}", button);
+                                   }
+                               });
 
-        // cursor position change event
-        // coordinates obtained are relative to top-left corner of the window
-        glfwSetCursorPosCallback(m_window,
-                                 [](GLFWwindow* window, double xpos, double ypos)
-                                 {
-                                     auto currentWindow =
-                                         reinterpret_cast<GLFWVulkanWindow*>(glfwGetWindowUserPointer(window));
+    // mouse scroll event
+    glfwSetScrollCallback(m_window,
+                          [](GLFWwindow* window, double xoffset, double yoffset) {
+                              auto currentWindow = reinterpret_cast<GLFWVulkanWindow*>(glfwGetWindowUserPointer(window));
 
-                                     currentWindow->setCursorPosX(xpos);
-                                     currentWindow->setCursorPosy(ypos);
+                              MouseScrolledEvent ev(xoffset, yoffset);
 
-                                     MouseMovedEvent ev(xpos, ypos);
-                                     
-                                     currentWindow->onEvent(ev);
-                                 });
-    }
+                              currentWindow->onEvent(ev);
+                          });
 
-    void GLFWVulkanWindow::toggleFullScreen()
+    // cursor position change event
+    // coordinates obtained are relative to top-left corner of the window
+    glfwSetCursorPosCallback(m_window,
+                             [](GLFWwindow* window, double xpos, double ypos) {
+                                 auto currentWindow = reinterpret_cast<GLFWVulkanWindow*>(glfwGetWindowUserPointer(window));
+
+                                 currentWindow->setCursorPosX(xpos);
+                                 currentWindow->setCursorPosy(ypos);
+
+                                 MouseMovedEvent ev(xpos, ypos);
+
+                                 currentWindow->onEvent(ev);
+                             });
+}
+
+void GLFWVulkanWindow::toggleFullScreen()
+{
+    auto               monitor = glfwGetPrimaryMonitor();
+    const GLFWvidmode* mode    = glfwGetVideoMode(monitor);
+
+    if (m_props.mode == Window::Mode::Fullscreen)
     {
-        auto monitor = glfwGetPrimaryMonitor();
-        const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-
-        if (m_props.mode == Window::Mode::Fullscreen)
-        {
-            // change to default
-            glfwSetWindowMonitor(m_window, nullptr, m_windowPosX, m_windowPosY, m_props.width, m_props.height,
-                                 mode->refreshRate);
-            m_props.mode = Window::Mode::Default;
-        }
-        else
-        {
-            glfwSetWindowMonitor(m_window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
-            m_props.mode = Window::Mode::Fullscreen;
-        }
+        // change to default
+        glfwSetWindowMonitor(m_window, nullptr, m_windowPosX, m_windowPosY, m_props.width, m_props.height, mode->refreshRate);
+        m_props.mode = Window::Mode::Default;
     }
-
-    void GLFWVulkanWindow::toggleFullScreenBorderless()
+    else
     {
-        auto monitor = glfwGetPrimaryMonitor();
-        const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-
-        if (m_props.mode == Window::Mode::FullscreenBorderless)
-        {
-            // change to default
-            glfwSetWindowMonitor(m_window, nullptr, m_windowPosX, m_windowPosY, m_props.width, m_props.height,
-                                 mode->refreshRate);
-            m_props.mode = Window::Mode::Default;
-        }
-        else
-        {
-            // TODO: currently same as fullscreen window, need to fix
-            glfwSetWindowMonitor(m_window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
-            m_props.mode = Window::Mode::FullscreenBorderless;
-        }
+        glfwSetWindowMonitor(m_window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+        m_props.mode = Window::Mode::Fullscreen;
     }
+}
+
+void GLFWVulkanWindow::toggleFullScreenBorderless()
+{
+    auto               monitor = glfwGetPrimaryMonitor();
+    const GLFWvidmode* mode    = glfwGetVideoMode(monitor);
+
+    if (m_props.mode == Window::Mode::FullscreenBorderless)
+    {
+        // change to default
+        glfwSetWindowMonitor(m_window, nullptr, m_windowPosX, m_windowPosY, m_props.width, m_props.height, mode->refreshRate);
+        m_props.mode = Window::Mode::Default;
+    }
+    else
+    {
+        // TODO: currently same as fullscreen window, need to fix
+        glfwSetWindowMonitor(m_window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+        m_props.mode = Window::Mode::FullscreenBorderless;
+    }
+}
 } // namespace dusk

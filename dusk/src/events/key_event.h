@@ -5,61 +5,65 @@
 
 namespace dusk
 {
-    class KeyEvent : public Event
+class KeyEvent : public Event
+{
+public:
+    KeyCode getKeyCode() const { return m_keyCode; }
+
+    EVENT_CLASS_CATEGORY(EventCategoryKeyboard | EventCategoryInput);
+
+protected:
+    KeyEvent(const KeyCode keyCode) :
+        m_keyCode(keyCode) { }
+
+    KeyCode m_keyCode;
+};
+
+class KeyPressedEvent : public KeyEvent
+{
+public:
+    KeyPressedEvent(const KeyCode keyCode, bool isRepeat = false) :
+        KeyEvent(keyCode) { }
+
+    std::string toString() const override
     {
-    public:
-        KeyCode getKeyCode() const { return m_keyCode; }
+        std::stringstream ss;
+        ss << "KeyPressedEvent: " << m_keyCode;
+        return ss.str();
+    }
 
-        EVENT_CLASS_CATEGORY(EventCategoryKeyboard | EventCategoryInput);
+    EVENT_CLASS_TYPE(KeyPressed)
+};
 
-    protected:
-        KeyEvent(const KeyCode keyCode) : m_keyCode(keyCode) {}
+class KeyReleasedEvent : public KeyEvent
+{
+public:
+    KeyReleasedEvent(const KeyCode keyCode) :
+        KeyEvent(keyCode) { }
 
-        KeyCode m_keyCode;
-    };
-
-    class KeyPressedEvent : public KeyEvent
+    std::string toString() const override
     {
-    public:
-        KeyPressedEvent(const KeyCode keyCode, bool isRepeat = false) : KeyEvent(keyCode) {}
+        std::stringstream ss;
+        ss << "KeyReleasedEvent: " << m_keyCode;
+        return ss.str();
+    }
 
-        std::string toString() const override
-        {
-            std::stringstream ss;
-            ss << "KeyPressedEvent: " << m_keyCode;
-            return ss.str();
-        }
+    EVENT_CLASS_TYPE(KeyReleased)
+};
 
-        EVENT_CLASS_TYPE(KeyPressed)
-    };
+class KeyRepeatEvent : public KeyEvent
+{
+public:
+    KeyRepeatEvent(const KeyCode keyCode) :
+        KeyEvent(keyCode) { }
 
-    class KeyReleasedEvent : public KeyEvent
+    std::string toString() const override
     {
-    public:
-        KeyReleasedEvent(const KeyCode keyCode) : KeyEvent(keyCode) {}
+        std::stringstream ss;
+        ss << "KeyRepeatEvent: " << m_keyCode;
+        return ss.str();
+    }
 
-        std::string toString() const override
-        {
-            std::stringstream ss;
-            ss << "KeyReleasedEvent: " << m_keyCode;
-            return ss.str();
-        }
-
-        EVENT_CLASS_TYPE(KeyReleased)
-    };
-
-    class KeyRepeatEvent : public KeyEvent
-    {
-    public:
-        KeyRepeatEvent(const KeyCode keyCode) : KeyEvent(keyCode) {}
-
-        std::string toString() const override
-        {
-            std::stringstream ss;
-            ss << "KeyRepeatEvent: " << m_keyCode;
-            return ss.str();
-        }
-
-        EVENT_CLASS_TYPE(KeyRepeat)
-    };
+    EVENT_CLASS_TYPE(KeyRepeat)
+};
 } // namespace dusk

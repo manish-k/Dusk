@@ -2,14 +2,14 @@
 
 namespace dusk
 {
-    class RenderAPI
+class RenderAPI
+{
+public:
+    enum class API
     {
-    public:
-        enum class API
-        {
-            VULKAN,
-            DX12,
-            OPENGL
-        };
+        VULKAN,
+        DX12,
+        OPENGL
     };
+};
 } // namespace dusk

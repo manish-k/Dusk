@@ -8,89 +8,88 @@
 
 namespace dusk
 {
-    Engine* Engine::s_instance = nullptr;
+Engine* Engine::s_instance = nullptr;
 
-    Engine::Engine(Engine::Config& config) : m_config(config)
+Engine::Engine(Engine::Config& config) :
+    m_config(config)
+{
+    DASSERT(!s_instance, "Engine instance already exists");
+    s_instance = this;
+}
+
+Engine::~Engine() { }
+
+bool Engine::start(Shared<Application> app)
+{
+    DASSERT(!m_app, "Application is null")
+
+    m_app = app;
+
+    // create window
+    auto windowProps = Window::Properties::defaultWindowProperties();
+    m_window         = std::move(Window::createWindow(windowProps));
+    if (!m_window)
     {
-        DASSERT(!s_instance, "Engine instance already exists");
-        s_instance = this;
+        DUSK_ERROR("Window creation failed");
+        return false;
     }
+    m_window->setEventCallback([this](Event& ev) { this->onEvent(ev); });
 
-    Engine::~Engine() {}
+    m_running = true;
+    m_paused  = false;
 
-    bool Engine::start(Shared<Application> app)
+    return true;
+}
+
+void Engine::run()
+{
+    auto currentTime = std::chrono::high_resolution_clock::now();
+
+    while (m_running)
     {
-        DASSERT(!m_app, "Application is null")
+        auto  newTime   = std::chrono::high_resolution_clock::now();
+        float frameTime = std::chrono::duration<float, std::chrono::seconds::period>(newTime - currentTime).count();
+        currentTime     = newTime;
 
-        m_app = app;
+        onUpdate(frameTime);
 
-        // create window
-        auto windowProps = Window::Properties::defaultWindowProperties();
-        m_window = std::move(Window::createWindow(windowProps));
-        if (!m_window)
-        {
-            DUSK_ERROR("Window creation failed");
+        m_app->onUpdate(frameTime);
+
+        m_window->onUpdate(frameTime);
+        //std::this_thread::sleep_for(16ms);
+    }
+}
+
+void Engine::stop() { m_running = false; }
+
+void Engine::shutdown() { }
+
+void Engine::onUpdate(float dt) { m_window->onUpdate(dt); }
+
+void Engine::onEvent(Event& ev)
+{
+    EventDispatcher dispatcher(ev);
+
+    dispatcher.dispatch<WindowCloseEvent>(
+        [this](WindowCloseEvent ev) {
+            DUSK_INFO("WindowCloseEvent received");
+            this->stop();
             return false;
-        }
-        m_window->setEventCallback([this](Event& ev) { this->onEvent(ev); });
+        });
 
-        m_running = true;
-        m_paused = false;
+    dispatcher.dispatch<WindowResizeEvent>(
+        [this](WindowResizeEvent ev) {
+            //DUSK_INFO("WindowResizeEvent received");
+            return false;
+        });
 
-        return true;
-    }
+    // pass event to UI layer
+    // pass event to debug layer
 
-    void Engine::run()
+    // pass unhandled event to application
+    if (!ev.isHandled())
     {
-        auto currentTime = std::chrono::high_resolution_clock::now();
-
-        while (m_running)
-        {
-            auto newTime = std::chrono::high_resolution_clock::now();
-            float frameTime = std::chrono::duration<float, std::chrono::seconds::period>(newTime - currentTime).count();
-            currentTime = newTime;
-
-            onUpdate(frameTime);
-
-            m_app->onUpdate(frameTime);
-
-            m_window->onUpdate(frameTime);
-            //std::this_thread::sleep_for(16ms);
-        }
+        m_app->onEvent(ev);
     }
-
-    void Engine::stop() { m_running = false; }
-
-    void Engine::shutdown() {}
-
-    void Engine::onUpdate(float dt) { m_window->onUpdate(dt); }
-
-    void Engine::onEvent(Event& ev)
-    {
-        EventDispatcher dispatcher(ev);
-
-        dispatcher.dispatch<WindowCloseEvent>(
-            [this](WindowCloseEvent ev)
-            {
-                DUSK_INFO("WindowCloseEvent received");
-                this->stop();
-                return false;
-            });
-
-        dispatcher.dispatch<WindowResizeEvent>(
-            [this](WindowResizeEvent ev)
-            {
-                //DUSK_INFO("WindowResizeEvent received");
-                return false;
-            });
-
-        // pass event to UI layer
-        // pass event to debug layer
-
-        // pass unhandled event to application
-        if (!ev.isHandled())
-        {
-            m_app->onEvent(ev);
-        }
-    }
+}
 } // namespace dusk

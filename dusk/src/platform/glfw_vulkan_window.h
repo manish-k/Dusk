@@ -24,7 +24,7 @@ public:
     GLFWVulkanWindow(Window::Properties& props);
     ~GLFWVulkanWindow() override;
 
-    void onUpdate(float dt) override;
+    void onUpdate(TimeStep dt) override;
     void onEvent(Event& ev);
 
     uint32_t getHeight() const override { return m_props.height; }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/base.h"
+#include "core/dtime.h"
 #include "events/event.h"
 
 namespace dusk
@@ -17,7 +18,7 @@ public:
     virtual bool start()    = 0;
     virtual void shutdown() = 0;
 
-    virtual void onUpdate(float dt) = 0;
+    virtual void onUpdate(TimeStep dt) = 0;
     virtual void onEvent(Event& ev) = 0;
 
 private:

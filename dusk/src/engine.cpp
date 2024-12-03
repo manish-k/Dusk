@@ -1,11 +1,6 @@
 #include "engine.h"
 #include "events/app_event.h"
 
-#include <chrono>
-#include <thread>
-
-//using namespace std::chrono_literals;
-
 namespace dusk
 {
 Engine* Engine::s_instance = nullptr;
@@ -33,7 +28,8 @@ bool Engine::start(Shared<Application> app)
         DUSK_ERROR("Window creation failed");
         return false;
     }
-    m_window->setEventCallback([this](Event& ev) { this->onEvent(ev); });
+    m_window->setEventCallback([this](Event& ev)
+                               { this->onEvent(ev); });
 
     m_running = true;
     m_paused  = false;
@@ -43,20 +39,19 @@ bool Engine::start(Shared<Application> app)
 
 void Engine::run()
 {
-    auto currentTime = std::chrono::high_resolution_clock::now();
+    TimePoint m_lastFrameTime = Time::now();
 
     while (m_running)
     {
-        auto  newTime   = std::chrono::high_resolution_clock::now();
-        float frameTime = std::chrono::duration<float, std::chrono::seconds::period>(newTime - currentTime).count();
-        currentTime     = newTime;
+        TimePoint newTime     = Time::now();
+        TimeStep  m_deltaTime = newTime - m_lastFrameTime;
+        m_lastFrameTime       = newTime;
 
-        onUpdate(frameTime);
+        onUpdate(m_deltaTime);
 
-        m_app->onUpdate(frameTime);
+        m_app->onUpdate(m_deltaTime);
 
-        m_window->onUpdate(frameTime);
-        //std::this_thread::sleep_for(16ms);
+        m_window->onUpdate(m_deltaTime);
     }
 }
 
@@ -64,22 +59,24 @@ void Engine::stop() { m_running = false; }
 
 void Engine::shutdown() { }
 
-void Engine::onUpdate(float dt) { m_window->onUpdate(dt); }
+void Engine::onUpdate(TimeStep dt) { }
 
 void Engine::onEvent(Event& ev)
 {
     EventDispatcher dispatcher(ev);
 
     dispatcher.dispatch<WindowCloseEvent>(
-        [this](WindowCloseEvent ev) {
+        [this](WindowCloseEvent ev)
+        {
             DUSK_INFO("WindowCloseEvent received");
             this->stop();
             return false;
         });
 
     dispatcher.dispatch<WindowResizeEvent>(
-        [this](WindowResizeEvent ev) {
-            //DUSK_INFO("WindowResizeEvent received");
+        [this](WindowResizeEvent ev)
+        {
+            // DUSK_INFO("WindowResizeEvent received");
             return false;
         });
 

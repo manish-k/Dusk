@@ -82,7 +82,7 @@ void GLFWVulkanWindow::createWindow()
     }
 }
 
-void GLFWVulkanWindow::onUpdate(float dt)
+void GLFWVulkanWindow::onUpdate(TimeStep dt)
 {
     if (!glfwWindowShouldClose(m_window))
     {

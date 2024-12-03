@@ -3,6 +3,8 @@
 #include "dusk.h"
 #include "core/application.h"
 
+using namespace dusk;
+
 class TestApp final : public dusk::Application
 {
 public:
@@ -11,6 +13,6 @@ public:
 
     bool start() override;
     void shutdown() override;
-    void onUpdate(float dt) override;
+    void onUpdate(TimeStep dt) override;
     void onEvent(dusk::Event& ev) override;
 };

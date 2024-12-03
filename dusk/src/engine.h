@@ -1,6 +1,7 @@
 #pragma once
 
 #include "dusk.h"
+#include "core/dtime.h"
 #include "core/application.h"
 #include "events/event.h"
 #include "platform/window.h"
@@ -31,7 +32,7 @@ public:
     void run();
     void stop();
     void shutdown();
-    void onUpdate(float dt);
+    void onUpdate(TimeStep dt);
     void onEvent(Event& ev);
 
 private:
@@ -42,6 +43,9 @@ private:
 
     bool m_running = false;
     bool m_paused  = false;
+
+    TimePoint m_lastFrameTime;
+    TimeStep  m_deltaTime;
 
 private:
     static Engine* s_instance;

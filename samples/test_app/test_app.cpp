@@ -5,8 +5,6 @@
 #include "events/key_event.h"
 #include "events/mouse_event.h"
 
-using namespace dusk;
-
 TestApp::TestApp() { }
 
 TestApp::~TestApp() { APP_INFO("Destroying Test Application"); }
@@ -26,7 +24,7 @@ bool TestApp::start()
 
 void TestApp::shutdown() { }
 
-void TestApp::onUpdate(float dt) { }
+void TestApp::onUpdate(TimeStep dt) { }
 
 void TestApp::onEvent(Event& ev)
 {

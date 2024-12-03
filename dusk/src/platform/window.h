@@ -2,6 +2,7 @@
 
 #include "dusk.h"
 #include "events/event.h"
+#include "core/dtime.h"
 
 namespace dusk
 {
@@ -52,9 +53,9 @@ public:
 
     /**
      * @brief Update loop of the window
-     * @param dt time in second since last frame
+     * @param dt duration in seconds since last frame
      */
-    virtual void onUpdate(float dt) = 0;
+    virtual void onUpdate(TimeStep dt) = 0;
 
     /**
      * @brief Get current height of the window

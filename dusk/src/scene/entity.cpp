@@ -2,9 +2,8 @@
 
 namespace dusk
 {
-Entity::Entity(EntityRegistry& registry) :
-    m_registry { registry }
+Entity::Entity()
 {
-    m_id = m_registry.create();
+    m_id = Registry::getRegistry().create();
 }
 } // namespace dusk

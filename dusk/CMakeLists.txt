@@ -80,10 +80,12 @@ set(SCENE_FILES
 	"${SCENE_DIR}/entity.h"
 	"${SCENE_DIR}/game_object.h"
 	"${SCENE_DIR}/scene.h"
+	"${SCENE_DIR}/registry.h"
 	# Source files
 	"${SCENE_DIR}/entity.cpp"
 	"${SCENE_DIR}/game_object.cpp"
 	"${SCENE_DIR}/scene.cpp"
+	"${SCENE_DIR}/registry.cpp"
 )
 
 source_group("\\" FILES ${ENGINE_FILES})

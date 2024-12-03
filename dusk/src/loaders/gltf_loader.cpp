@@ -63,7 +63,7 @@ void GLTFLoader::traverseSceneNodes(
     Scene& scene, int nodeIndex, EntityId parentId)
 {
     auto& gltfNode     = m_model.nodes[nodeIndex];
-    auto  gameObject   = parseNode(gltfNode, scene.getRegistry());
+    auto  gameObject   = parseNode(gltfNode);
     auto  gameObjectId = gameObject->getId();
 
     gameObject->setName(gltfNode.name);
@@ -81,9 +81,9 @@ void GLTFLoader::traverseSceneNodes(
 }
 
 Unique<GameObject> GLTFLoader::parseNode(
-    const tinygltf::Node& node, EntityRegistry& registry)
+    const tinygltf::Node& node)
 {
-    auto  gameObject = createUnique<GameObject>(registry);
+    auto  gameObject = createUnique<GameObject>();
     auto& transform  = gameObject->getComponent<TransformComponent>();
 
     // check translation data

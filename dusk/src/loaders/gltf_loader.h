@@ -10,8 +10,8 @@
 namespace dusk
 {
 /**
-	 * @brief 
-	 */
+ * @brief
+ */
 class GLTFLoader
 {
 public:
@@ -27,7 +27,7 @@ private:
         Scene& scene, int nodeIndex, EntityId parentId);
 
     Unique<GameObject> parseNode(
-        const tinygltf::Node& node, EntityRegistry& registry);
+        const tinygltf::Node& node);
 
 private:
     tinygltf::Model m_model;

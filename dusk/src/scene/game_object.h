@@ -16,37 +16,37 @@ public:
     using SMap = std::unordered_map<EntityId, Shared<GameObject>>;
 
 public:
-    explicit GameObject(EntityRegistry& registry);
-    ~GameObject();
+    GameObject();
+    ~GameObject() override;
 
     /**
-		 * @brief Set name of the game object
-		 * @param name 
-		 */
+     * @brief Set name of the game object
+     * @param name
+     */
     void setName(std::string_view name) { m_name = name; }
 
     /**
-		 * @brief Add game object as children
-		 * @param child game object
-		 */
+     * @brief Add game object as children
+     * @param child game object
+     */
     void addChild(GameObject& child);
 
     /**
-		 * @brief Remove child game object
-		 * @param child game object
-		 */
+     * @brief Remove child game object
+     * @param child game object
+     */
     void removeChild(GameObject& child);
 
     /**
-		 * @brief Get entity id of the parent
-		 * @return EntityId
-		 */
+     * @brief Get entity id of the parent
+     * @return EntityId
+     */
     EntityId getParentId() const { return m_parent; }
 
     /**
-		 * @brief Set parent id for a game object
-		 * @param parentId 
-		 */
+     * @brief Set parent id for a game object
+     * @param parentId
+     */
     void setParent(EntityId parentId) { m_parent = parentId; }
 
 private:

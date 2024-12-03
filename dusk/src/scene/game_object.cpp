@@ -6,8 +6,7 @@
 
 namespace dusk
 {
-GameObject::GameObject(EntityRegistry& registry) :
-    Entity(registry)
+GameObject::GameObject()
 {
     DUSK_DEBUG("Creating GameObject");
     m_name = "New GameObject";

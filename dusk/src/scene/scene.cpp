@@ -3,11 +3,12 @@
 
 namespace dusk
 {
+
 Scene::Scene(std::string_view name) :
     m_name { name }
 {
     DUSK_DEBUG("Creating scene {}", name);
-    auto root = createUnique<GameObject>(getRegistry());
+    auto root = createUnique<GameObject>();
     root->setName("Root");
 
     auto rootId = root->getId();
@@ -18,7 +19,7 @@ Scene::Scene(std::string_view name) :
 Scene::~Scene()
 {
     DUSK_DEBUG("Destroying scene {}", m_name);
-    m_registry.clear();
+    Registry::getRegistry().clear();
 }
 
 void Scene::addGameObject(
@@ -46,7 +47,7 @@ void Scene::destroyGameObject(GameObject& object)
     // destroy
     auto objectId = object.getId();
     m_sceneGameObjects.erase(objectId);
-    m_registry.destroy(objectId);
+    Registry::getRegistry().destroy(objectId);
 }
 
 GameObject& Scene::getGameObject(EntityId objectId)

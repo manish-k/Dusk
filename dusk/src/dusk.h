@@ -3,13 +3,14 @@
 #include "core/base.h"
 #include "core/log.h"
 
-#ifdef NDEBUG
-#else
+#ifdef DDEBUG
 #    define ENABLE_ASSERT
 #endif // DEBUG
 
 // Bit left shift Macro
 #define BIT(x) (1 << x)
+
+#define VA_COUNT(...) ((int)(sizeof((int[]){ __VA_ARGS__ })/sizeof(int)))
 
 // Engine Logger Macros
 #define DUSK_DEBUG(...) dusk::Logger::getEngineLogger()->debug(__VA_ARGS__)

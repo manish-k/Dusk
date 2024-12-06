@@ -18,7 +18,7 @@ namespace dusk
 /**
  * @brief Window class for the GLFW vulkan implementation
  */
-class GLFWVulkanWindow : public Window
+class GLFWVulkanWindow final : public Window
 {
 public:
     GLFWVulkanWindow(Window::Properties& props);

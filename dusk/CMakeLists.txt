@@ -14,11 +14,14 @@ set(ENGINE_FILES
 	"${ENGINE_DIR}/engine.cpp"
 )
 
+set(BACKEND_DIR "${PROJECT_SOURCE_DIR}/src/backend")
+set(VULKAN_BACKEND_DIR "${BACKEND_DIR}/vulkan")
 set(VULKAN_BACKEND_FILES
 	# Header files
-	
+	"${VULKAN_BACKEND_DIR}/vk_renderer.h"
+	"${VULKAN_BACKEND_DIR}/vk_device.h"
 	# Source files
-	
+	"${VULKAN_BACKEND_DIR}/vk_renderer.cpp"
 )
 
 set(CORE_DIR "${PROJECT_SOURCE_DIR}/src/core")
@@ -69,6 +72,7 @@ set(RENDERER_DIR "${PROJECT_SOURCE_DIR}/src/renderer")
 set(RENDERER_FILES
 	# Header files
 	"${RENDERER_DIR}/render_api.h"
+	"${RENDERER_DIR}/renderer.h"
 	# Source files
 )
 
@@ -99,6 +103,7 @@ source_group("platform\\" FILES ${PLATFORM_FILES})
 
 set(PROJECT_FILES
 	${ENGINE_FILES}
+	${VULKAN_BACKEND_FILES}
 	${CORE_FILES}
 	${EVENTS_FILES}
 	${LOADERS_FILES}
@@ -107,11 +112,12 @@ set(PROJECT_FILES
 	${PLATFORM_FILES}
 )
 
-add_library(${PROJECT_NAME} OBJECT ${PROJECT_FILES})
+add_library(${PROJECT_NAME} OBJECT ${PROJECT_FILES} "src/backend/vulkan/vk_renderer.cpp")
 target_include_directories(
 	${PROJECT_NAME} PUBLIC 
 	${ENGINE_DIR}
 	${CORE_DIR}
+	${VULKAN_BACKEND_DIR}
 	${EVENTS_DIR}
 	${LOADERS_DIR}
 	${RENDERER_DIR}
@@ -132,9 +138,31 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
 	glfw
 	tinygltf
 	vulkan
+	volk
 )
 
 if(CLANG_FORMAT_EXE)
     add_custom_target(
 		Code-Format COMMAND ${CLANG_FORMAT_EXE} -i -style=file ${PROJECT_FILES})
+endif()
+
+if(ANDROID)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC 
+		DUSK_PLATFORM_ANDROID
+		VK_USE_PLATFORM_ANDROID_KHR
+	)
+elseif(WIN32)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC 
+		DUSK_PLATFORM_WIN32
+		VK_USE_PLATFORM_WIN32_KHR
+	)
+elseif(APPLE)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC 
+		DUSK_PLATFORM_APPLE
+		VK_USE_PLATFORM_METAL_EXT
+	)
+elseif(UNIX)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC 
+		DUSK_PLATFORM_UNIX
+	)
 endif()

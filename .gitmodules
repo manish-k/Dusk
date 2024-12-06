@@ -23,3 +23,6 @@
 [submodule "dusk/vendor/vulkan-headers"]
 	path = dusk/vendor/vulkan-headers
 	url = https://github.com/KhronosGroup/Vulkan-Headers.git
+[submodule "dusk/vendor/volk"]
+	path = dusk/vendor/volk
+	url = https://github.com/zeux/volk.git

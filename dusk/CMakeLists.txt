@@ -141,6 +141,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
 	tinygltf
 	vulkan
 	volk
+	vma
 )
 
 if(CLANG_FORMAT_EXE)

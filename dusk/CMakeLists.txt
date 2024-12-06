@@ -18,10 +18,12 @@ set(BACKEND_DIR "${PROJECT_SOURCE_DIR}/src/backend")
 set(VULKAN_BACKEND_DIR "${BACKEND_DIR}/vulkan")
 set(VULKAN_BACKEND_FILES
 	# Header files
+	"${VULKAN_BACKEND_DIR}/vk_base.h"
 	"${VULKAN_BACKEND_DIR}/vk_renderer.h"
 	"${VULKAN_BACKEND_DIR}/vk_device.h"
 	# Source files
 	"${VULKAN_BACKEND_DIR}/vk_renderer.cpp"
+	"${VULKAN_BACKEND_DIR}/vk_device.cpp"
 )
 
 set(CORE_DIR "${PROJECT_SOURCE_DIR}/src/core")

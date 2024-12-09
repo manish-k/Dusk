@@ -4,8 +4,6 @@
 #include "vk_base.h"
 
 #include <volk.h>
-#define VMA_IMPLEMENTATION
-#include <vk_mem_alloc.h>
 
 #include <unordered_map>
 

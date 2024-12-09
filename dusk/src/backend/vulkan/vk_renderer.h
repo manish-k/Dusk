@@ -5,9 +5,6 @@
 #include "renderer/renderer.h"
 #include "platform/glfw_vulkan_window.h"
 
-#define VOLK_IMPLEMENTATION
-#include <volk.h>
-
 namespace dusk
 {
 class VulkanRenderer final : public Renderer

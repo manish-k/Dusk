@@ -2,6 +2,9 @@
 
 #include "vk_renderer.h"
 
+#define VOLK_IMPLEMENTATION
+#include <volk.h>
+
 namespace dusk
 {
 VulkanRenderer::VulkanRenderer(GLFWVulkanWindow& window) :

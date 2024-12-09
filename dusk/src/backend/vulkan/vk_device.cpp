@@ -2,6 +2,9 @@
 
 #include "vk_device.h"
 
+#define VMA_IMPLEMENTATION
+#include <vk_mem_alloc.h>
+
 namespace dusk
 {
 VkGfxDevice::VkGfxDevice()

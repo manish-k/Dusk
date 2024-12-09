@@ -1,7 +1,7 @@
 #include "log.h"
 
-#include "spdlog/sinks/stdout_color_sinks.h"
-#include "spdlog/sinks/basic_file_sink.h"
+#include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/sinks/basic_file_sink.h>
 
 namespace dusk
 {
@@ -16,7 +16,7 @@ void Logger::init()
     auto fileSink = createShared<spdlog::sinks::basic_file_sink_mt>("logs/dusk.log", true);
     fileSink->set_pattern("[%T] [%l] %n: %v");
 
-    std::vector<spdlog::sink_ptr> logSinks {
+    DynamicArray<spdlog::sink_ptr> logSinks {
         consoleSink,
         fileSink
     };

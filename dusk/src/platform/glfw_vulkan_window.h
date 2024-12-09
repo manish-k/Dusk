@@ -74,6 +74,8 @@ public:
 
     void setEventCallback(const EventCallbackFn& cb) override;
 
+    DynamicArray<const char*> getRequiredWindowExtensions();
+
 private:
     /**
      * @brief Initialize GLFW library

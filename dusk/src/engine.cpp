@@ -1,5 +1,6 @@
 #include "engine.h"
 #include "events/app_event.h"
+#include "backend/vulkan/vk_renderer.h"
 
 namespace dusk
 {
@@ -30,6 +31,14 @@ bool Engine::start(Shared<Application> app)
     }
     m_window->setEventCallback([this](Event& ev)
                                { this->onEvent(ev); });
+
+
+    //m_renderer = createUnique<VulkanRenderer>(*m_window);
+    //if (!m_renderer->init("Test", 1))
+    //{
+    //    DUSK_ERROR("Renderer initialization failed");
+    //    return false;
+    //}
 
     m_running = true;
     m_paused  = false;

@@ -1,8 +1,13 @@
 #pragma once
 
-#include <volk.h>
+#include "dusk.h"
+#include "vk_base.h"
 
-#include <string_view>
+#include <volk.h>
+#define VMA_IMPLEMENTATION
+#include <vk_mem_alloc.h>
+
+#include <unordered_map>
 
 namespace dusk
 {
@@ -12,7 +17,24 @@ public:
     VkGfxDevice();
     ~VkGfxDevice();
 
-    bool createInstance(std::string_view appName, uint32_t version);
+    VkResult createInstance(const char* appName, uint32_t version, DynamicArray<const char*> requiredExtensions);
     void destroyInstance();
+
+    void populateLayerNames();
+    void populateLayerExtensionNames(const char* pLayerName);
+
+    bool hasLayer(const char* pLayerName) { return m_layersMap.contains(pLayerName); };
+    bool hasInstanceExtension(const char* pExtensionName) { return m_instanceExtensionsMap.contains(pExtensionName); };
+
+
+
+private:
+    VkInstance       m_instance;
+    VkPhysicalDevice m_physicalDevice;
+    VkDevice         m_device;
+
+    std::unordered_map<const char*, int> m_instanceExtensionsMap;
+    std::unordered_map<const char*, int> m_deviceExtensionsMap;
+    std::unordered_map<const char*, int> m_layersMap;
 };
 } // namespace dusk

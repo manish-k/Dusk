@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 namespace dusk
 {
@@ -21,4 +22,8 @@ constexpr Shared<T> createShared(Args&&... args)
 {
     return std::make_shared<T>(std::forward<Args>(args)...);
 }
+
+template<typename T>
+using DynamicArray = std::vector<T>;
+
 } // namespace dusk

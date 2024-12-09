@@ -72,7 +72,7 @@ public:
 private:
     std::string_view      m_name;
     EntityId              m_root = NULL_ENTITY;
-    std::vector<EntityId> m_children {};
+    DynamicArray<EntityId> m_children {};
     GameObject::UMap      m_sceneGameObjects {};
 };
 } // namespace dusk

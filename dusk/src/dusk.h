@@ -3,7 +3,7 @@
 #include "core/base.h"
 #include "core/log.h"
 
-#ifdef DDEBUG
+#ifdef DDEBUG // Dusk Debug
 #    define ENABLE_ASSERT
 #endif // DEBUG
 

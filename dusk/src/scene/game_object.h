@@ -52,6 +52,6 @@ public:
 private:
     std::string           m_name   = "GameObject";
     EntityId              m_parent = NULL_ENTITY;
-    std::vector<EntityId> m_children {};
+    DynamicArray<EntityId> m_children {};
 };
 } // namespace dusk

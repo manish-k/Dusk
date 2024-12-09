@@ -6,6 +6,7 @@
 #include "events/event.h"
 #include "platform/window.h"
 #include "renderer/render_api.h"
+#include "renderer/renderer.h"
 
 namespace dusk
 {
@@ -37,6 +38,8 @@ public:
 
 private:
     Config m_config;
+
+    Unique<Renderer> m_renderer = nullptr;
 
     Shared<Window>      m_window = nullptr;
     Shared<Application> m_app    = nullptr;

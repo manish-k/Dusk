@@ -12,12 +12,120 @@ VkGfxDevice::~VkGfxDevice()
 {
 }
 
-bool VkGfxDevice::createInstance(std::string_view appName, uint32_t version)
+VkResult VkGfxDevice::createInstance(const char* appName, uint32_t version, DynamicArray<const char*> requiredExtensionNames)
 {
-    return VK_TRUE;
+    VkApplicationInfo appInfo {};
+    appInfo.sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+    appInfo.pApplicationName   = appName;
+    appInfo.applicationVersion = VK_MAKE_VERSION(1, version, 0);
+    appInfo.pEngineName        = "Dusk";
+    appInfo.engineVersion      = VK_MAKE_VERSION(1, version, 0);
+    appInfo.apiVersion         = VK_API_VERSION_1_2;
+
+    VkInstanceCreateInfo createInfo {};
+    createInfo.sType            = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    createInfo.pApplicationInfo = &appInfo;
+
+    DynamicArray<const char*> validationLayerNames;
+#ifdef VK_ENABLE_VALIDATION_LAYERS
+    populateLayerNames();
+
+    if (hasLayer("VK_LAYER_KHRONOS_validation"))
+    {
+        populateLayerExtensionNames("VK_LAYER_KHRONOS_validation");
+
+        if (hasInstanceExtension("VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME"))
+        {
+            requiredExtensionNames.push_back("VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME");
+        }
+
+        validationLayerNames.push_back("VK_LAYER_KHRONOS_validation");
+    }
+    else
+    {
+        DUSK_WARN("Validation layer not found");
+    }
+#endif
+
+#ifdef VK_RENDERER_DEBUG
+    requiredExtensionNames.push_back("VK_EXT_DEBUG_UTILS_EXTENSION_NAME");
+#endif
+
+    createInfo.enabledExtensionCount   = static_cast<uint32_t>(requiredExtensionNames.size());
+    createInfo.ppEnabledExtensionNames = requiredExtensionNames.data();
+    createInfo.enabledLayerCount       = static_cast<uint32_t>(validationLayerNames.size());
+    createInfo.ppEnabledLayerNames     = validationLayerNames.data();
+
+    VkResult result = vkCreateInstance(&createInfo, nullptr, &m_instance);
+    if (result != VK_SUCCESS)
+    {
+        return result;
+    }
+
+    volkLoadInstance(m_instance);
+
+#ifdef VK_RENDERER_DEBUG
+    // debug messenger
+#endif
+
+    return VK_SUCCESS;
 }
 
 void VkGfxDevice::destroyInstance()
 {
+    vkDestroyInstance(m_instance, nullptr);
 }
+
+void VkGfxDevice::populateLayerExtensionNames(const char* pLayerName)
+{
+    uint32_t extensionCount = 0;
+    VkResult result         = vkEnumerateInstanceExtensionProperties(pLayerName, &extensionCount, nullptr);
+    if (result != VK_SUCCESS)
+    {
+        DUSK_ERROR("Vulkan instance extension enumeration failed");
+        return;
+    }
+
+    DynamicArray<VkExtensionProperties> instanceExtensions(extensionCount);
+    result = vkEnumerateInstanceExtensionProperties(pLayerName, &extensionCount, instanceExtensions.data());
+    if (result != VK_SUCCESS)
+    {
+        DUSK_ERROR("Vulkan instance extension enumeration failed");
+        return;
+    }
+
+    DUSK_INFO("Supported Vulkan Instance Extensions for layer {}", pLayerName);
+    for (const auto& extension : instanceExtensions)
+    {
+        DUSK_INFO("{}", extension.extensionName);
+        m_instanceExtensionsMap.emplace(extension.extensionName, 1);
+    }
+}
+
+void VkGfxDevice::populateLayerNames()
+{
+    uint32_t layerCount = 0;
+    VkResult result     = vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+    if (result != VK_SUCCESS)
+    {
+        DUSK_ERROR("Vulkan instance layers enumeration failed");
+        return;
+    }
+
+    DynamicArray<VkLayerProperties> instanceLayers(layerCount);
+    result = vkEnumerateInstanceLayerProperties(&layerCount, instanceLayers.data());
+    if (result != VK_SUCCESS)
+    {
+        DUSK_ERROR("Vulkan instance layers enumeration failed");
+        return;
+    }
+
+    DUSK_INFO("Supported Vulkan layers");
+    for (const auto& layer : instanceLayers)
+    {
+        DUSK_INFO("{}", layer.layerName);
+        m_layersMap.emplace(layer.layerName, 1);
+    }
+}
+
 } // namespace dusk

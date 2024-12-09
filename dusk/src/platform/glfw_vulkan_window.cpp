@@ -251,4 +251,14 @@ void GLFWVulkanWindow::toggleFullScreenBorderless()
         m_props.mode = Window::Mode::FullscreenBorderless;
     }
 }
+
+DynamicArray<const char*> GLFWVulkanWindow::getRequiredWindowExtensions()
+{
+    uint32_t     extensionCount = 0;
+    const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&extensionCount);
+
+    DynamicArray<const char*> extensions(glfwExtensions, glfwExtensions + extensionCount);
+    
+    return extensions;
+}
 } // namespace dusk

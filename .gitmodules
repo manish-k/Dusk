@@ -29,3 +29,6 @@
 [submodule "dusk/vendor/vma"]
 	path = dusk/vendor/vma
 	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
+[submodule "dusk/vendor/excalibur-hash"]
+	path = dusk/vendor/excalibur-hash
+	url = https://github.com/SergeyMakeev/ExcaliburHash.git

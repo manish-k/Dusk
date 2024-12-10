@@ -5,7 +5,6 @@
 
 namespace dusk
 {
-
 class Entity
 {
 public:

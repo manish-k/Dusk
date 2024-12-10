@@ -23,8 +23,8 @@ public:
 private:
     Unique<Scene> parseScene(int sceneIndex);
 
-    void traverseSceneNodes(
-        Scene& scene, int nodeIndex, EntityId parentId);
+    void          traverseSceneNodes(
+                 Scene& scene, int nodeIndex, EntityId parentId);
 
     Unique<GameObject> parseNode(
         const tinygltf::Node& node);

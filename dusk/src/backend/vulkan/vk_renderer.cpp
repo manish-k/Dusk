@@ -29,7 +29,7 @@ bool VulkanRenderer::init(const char* appName, uint32_t version)
 
     DynamicArray<const char*> extensions = m_window->getRequiredWindowExtensions();
 
-    result = m_gfxDevice->createInstance(appName, version, extensions);
+    result                               = m_gfxDevice->createInstance(appName, version, extensions);
 
     if (result != VK_SUCCESS)
     {

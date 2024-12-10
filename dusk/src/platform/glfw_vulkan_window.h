@@ -26,22 +26,22 @@ public:
 
     CLASS_UNCOPYABLE(GLFWVulkanWindow)
 
-    void onUpdate(TimeStep dt) override;
-    void onEvent(Event& ev);
+    void     onUpdate(TimeStep dt) override;
+    void     onEvent(Event& ev);
 
     uint32_t getHeight() const override { return m_props.height; }
     uint32_t getWidth() const override { return m_props.width; }
     bool     isResized() const override { return m_isResized; }
     void*    getNativeWindow() const override { return (void*)m_window; };
 
-    void toggleFullScreen() override;
-    void toggleFullScreenBorderless() override;
+    void     toggleFullScreen() override;
+    void     toggleFullScreenBorderless() override;
 
     /**
      * @brief Set new width of the current window
      * @param newWidth
      */
-    void setWidth(uint32_t newWidth)
+    void     setWidth(uint32_t newWidth)
     {
         m_props.width = newWidth;
         m_isResized   = true;
@@ -60,21 +60,21 @@ public:
     /**
      * @brief Reset the resized flag for the window
      */
-    void resetResizedState() { m_isResized = false; }
+    void                      resetResizedState() { m_isResized = false; }
 
     /**
      * @brief Set current cursor x position in the window relative to top-left corner
      * @param newPosX
      */
-    void setCursorPosX(int newPosX) { m_cursorPosX = newPosX; }
+    void                      setCursorPosX(int newPosX) { m_cursorPosX = newPosX; }
 
     /**
      * @brief Set current cursor y position in the window relative to top-left corner
      * @param newPosY
      */
-    void setCursorPosy(int newPosY) { m_cursorPosY = newPosY; }
+    void                      setCursorPosy(int newPosY) { m_cursorPosY = newPosY; }
 
-    void setEventCallback(const EventCallbackFn& cb) override;
+    void                      setEventCallback(const EventCallbackFn& cb) override;
 
     DynamicArray<const char*> getRequiredWindowExtensions();
 
@@ -94,14 +94,14 @@ private:
     GLFWwindow*        m_window;
     Window::Properties m_props;
 
-    EventCallbackFn m_eventCallback = nullptr;
+    EventCallbackFn    m_eventCallback = nullptr;
 
-    int m_windowPosX;
-    int m_windowPosY;
+    int                m_windowPosX;
+    int                m_windowPosY;
 
-    bool m_isResized = false;
+    bool               m_isResized = false;
 
-    int m_cursorPosX;
-    int m_cursorPosY;
+    int                m_cursorPosX;
+    int                m_cursorPosY;
 };
 } // namespace dusk

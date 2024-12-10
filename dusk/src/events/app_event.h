@@ -13,7 +13,7 @@ public:
     unsigned int getWidth() const { return m_width; }
     unsigned int getHeight() const { return m_height; }
 
-    std::string toString() const override
+    std::string  toString() const override
     {
         std::stringstream ss;
         ss << "WindowResizeEvent: " << m_width << ", " << m_height;

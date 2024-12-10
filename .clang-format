@@ -1,11 +1,23 @@
 ﻿---
 BasedOnStyle: WebKit
 AlignAfterOpenBracket: Align
-AlignConsecutiveAssignments: 'true'
-AlignConsecutiveDeclarations: 'true'
+AlignConsecutiveAssignments:
+  Enabled: true
+  AcrossEmptyLines: true
+  AcrossComments: true
+AlignConsecutiveDeclarations:
+  Enabled: true
+  AcrossEmptyLines: true
+  AcrossComments: true
+AlignConsecutiveMacros:
+  Enabled: true
+  AcrossEmptyLines: true
+  AcrossComments: true
 AlignEscapedNewlines: Left
 AlignOperands: 'false'
-AlignTrailingComments: 'true'
+AlignTrailingComments:
+  Kind: Always
+  OverEmptyLines: 2
 AllowAllParametersOfDeclarationOnNextLine: 'true'
 AllowShortBlocksOnASingleLine: 'true'
 AllowShortCaseLabelsOnASingleLine: 'true'

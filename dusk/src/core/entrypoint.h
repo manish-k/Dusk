@@ -11,15 +11,15 @@ using namespace dusk;
 
 extern Unique<dusk::Application> dusk::createApplication(int argc, char** argv);
 
-int main(int argc, char** argv)
+int                              main(int argc, char** argv)
 {
     // start logger
     dusk::Logger::init();
 
-    auto engineConfig = Engine::Config::defaultConfig();
-    auto engine       = createUnique<Engine>(engineConfig);
+    auto                engineConfig = Engine::Config::defaultConfig();
+    auto                engine       = createUnique<Engine>(engineConfig);
 
-    Shared<Application> app = std::move(dusk::createApplication(argc, argv));
+    Shared<Application> app          = std::move(dusk::createApplication(argc, argv));
 
     if (!engine->start(app))
     {

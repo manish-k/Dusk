@@ -102,8 +102,9 @@ void GLFWVulkanWindow::setEventCallback(const EventCallbackFn& cb)
 
     // window close event
     glfwSetWindowCloseCallback(m_window,
-                               [](GLFWwindow* window) {
-                                   auto currentWindow = reinterpret_cast<GLFWVulkanWindow*>(glfwGetWindowUserPointer(window));
+                               [](GLFWwindow* window)
+                               {
+                                   auto             currentWindow = reinterpret_cast<GLFWVulkanWindow*>(glfwGetWindowUserPointer(window));
 
                                    WindowCloseEvent ev;
                                    currentWindow->onEvent(ev);
@@ -111,7 +112,8 @@ void GLFWVulkanWindow::setEventCallback(const EventCallbackFn& cb)
 
     // window resize event
     glfwSetFramebufferSizeCallback(m_window,
-                                   [](GLFWwindow* window, int width, int height) {
+                                   [](GLFWwindow* window, int width, int height)
+                                   {
                                        auto currentWindow = reinterpret_cast<GLFWVulkanWindow*>(glfwGetWindowUserPointer(window));
 
                                        currentWindow->setWidth(width);
@@ -123,7 +125,8 @@ void GLFWVulkanWindow::setEventCallback(const EventCallbackFn& cb)
 
     // keyboard event
     glfwSetKeyCallback(m_window,
-                       [](GLFWwindow* window, int key, int scancode, int action, int mods) {
+                       [](GLFWwindow* window, int key, int scancode, int action, int mods)
+                       {
                            auto currentWindow = reinterpret_cast<GLFWVulkanWindow*>(glfwGetWindowUserPointer(window));
 
                            switch (action)
@@ -162,7 +165,8 @@ void GLFWVulkanWindow::setEventCallback(const EventCallbackFn& cb)
 
     // mouse button pressed
     glfwSetMouseButtonCallback(m_window,
-                               [](GLFWwindow* window, int button, int action, int mods) {
+                               [](GLFWwindow* window, int button, int action, int mods)
+                               {
                                    auto currentWindow = reinterpret_cast<GLFWVulkanWindow*>(glfwGetWindowUserPointer(window));
 
                                    switch (action)
@@ -192,8 +196,9 @@ void GLFWVulkanWindow::setEventCallback(const EventCallbackFn& cb)
 
     // mouse scroll event
     glfwSetScrollCallback(m_window,
-                          [](GLFWwindow* window, double xoffset, double yoffset) {
-                              auto currentWindow = reinterpret_cast<GLFWVulkanWindow*>(glfwGetWindowUserPointer(window));
+                          [](GLFWwindow* window, double xoffset, double yoffset)
+                          {
+                              auto               currentWindow = reinterpret_cast<GLFWVulkanWindow*>(glfwGetWindowUserPointer(window));
 
                               MouseScrolledEvent ev(xoffset, yoffset);
 
@@ -203,7 +208,8 @@ void GLFWVulkanWindow::setEventCallback(const EventCallbackFn& cb)
     // cursor position change event
     // coordinates obtained are relative to top-left corner of the window
     glfwSetCursorPosCallback(m_window,
-                             [](GLFWwindow* window, double xpos, double ypos) {
+                             [](GLFWwindow* window, double xpos, double ypos)
+                             {
                                  auto currentWindow = reinterpret_cast<GLFWVulkanWindow*>(glfwGetWindowUserPointer(window));
 
                                  currentWindow->setCursorPosX(xpos);
@@ -254,11 +260,11 @@ void GLFWVulkanWindow::toggleFullScreenBorderless()
 
 DynamicArray<const char*> GLFWVulkanWindow::getRequiredWindowExtensions()
 {
-    uint32_t     extensionCount = 0;
-    const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&extensionCount);
+    uint32_t                  extensionCount = 0;
+    const char**              glfwExtensions = glfwGetRequiredInstanceExtensions(&extensionCount);
 
     DynamicArray<const char*> extensions(glfwExtensions, glfwExtensions + extensionCount);
-    
+
     return extensions;
 }
 } // namespace dusk

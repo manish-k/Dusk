@@ -8,7 +8,7 @@ namespace dusk
 Shared<spdlog::logger> Logger::s_engineLogger;
 Shared<spdlog::logger> Logger::s_appLogger;
 
-void Logger::init()
+void                   Logger::init()
 {
     auto consoleSink = createShared<spdlog::sinks::stdout_color_sink_mt>();
     consoleSink->set_pattern("%^[%T] %n: %v%$");

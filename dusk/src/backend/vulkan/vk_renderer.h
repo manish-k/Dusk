@@ -16,7 +16,7 @@ public:
     bool init(const char* appName, uint32_t version) override;
 
 private:
-    Unique<VkGfxDevice> m_gfxDevice = nullptr;
+    Unique<VkGfxDevice>      m_gfxDevice = nullptr;
 
     Shared<GLFWVulkanWindow> m_window;
 };

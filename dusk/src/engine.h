@@ -17,7 +17,7 @@ public:
     {
         RenderAPI::API renderAPI;
 
-        static Config defaultConfig()
+        static Config  defaultConfig()
         {
             auto config      = Config {};
             config.renderAPI = RenderAPI::API::VULKAN;
@@ -39,18 +39,18 @@ public:
     void onEvent(Event& ev);
 
 private:
-    Config m_config;
+    Config              m_config;
 
-    Unique<Renderer> m_renderer = nullptr;
+    Unique<Renderer>    m_renderer = nullptr;
 
-    Shared<Window>      m_window = nullptr;
-    Shared<Application> m_app    = nullptr;
+    Shared<Window>      m_window   = nullptr;
+    Shared<Application> m_app      = nullptr;
 
-    bool m_running = false;
-    bool m_paused  = false;
+    bool                m_running  = false;
+    bool                m_paused   = false;
 
-    TimePoint m_lastFrameTime;
-    TimeStep  m_deltaTime;
+    TimePoint           m_lastFrameTime;
+    TimeStep            m_deltaTime;
 
 private:
     static Engine* s_instance;

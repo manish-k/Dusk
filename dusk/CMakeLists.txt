@@ -56,6 +56,8 @@ set(LOADERS_DIR "${PROJECT_SOURCE_DIR}/src/loaders")
 set(LOADERS_FILES
 	# Header files
 	"${LOADERS_DIR}/gltf_loader.h"
+	"${LOADERS_DIR}/obj_loader.h"
+	"${LOADERS_DIR}/stb_image_loader.h"
 	# Source files
 	"${LOADERS_DIR}/gltf_loader.cpp"
 )
@@ -79,7 +81,7 @@ set(RENDERER_FILES
 )
 
 set(SCENE_DIR "${PROJECT_SOURCE_DIR}/src/scene")
-set(COMPONENTS_DIR "src/scene/components")
+set(COMPONENTS_DIR "${SCENE_DIR}/components")
 set(SCENE_FILES
 	# Header files
 	"${COMPONENTS_DIR}/transform.h"

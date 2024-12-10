@@ -65,13 +65,13 @@ enum EventCategory
 class Event
 {
 public:
-    virtual ~Event() = default;
+    virtual ~Event()                             = default;
 
     /**
      * @brief Get event type of the event
      * @return Possible EventType of the event
      */
-    virtual EventType getEventType() const = 0;
+    virtual EventType   getEventType() const     = 0;
 
     /**
      * @brief Get name of the event
@@ -96,13 +96,13 @@ public:
      * @param category to check against
      * @return true if category matches else false
      */
-    bool isInCategory(EventCategory category) { return getCategoryFlags() & category; }
+    bool                isInCategory(EventCategory category) { return getCategoryFlags() & category; }
 
     /**
      * @brief Check if event is already handled
      * @return true if handled else false
      */
-    bool isHandled() const { return m_handled; }
+    bool                isHandled() const { return m_handled; }
 
     /**
      * @brief Set the handled status of the event. If event is handled then it will not
@@ -110,7 +110,7 @@ public:
      * @param handledStatus true to mark event as handled else set it to false for further
      * propogation
      */
-    void setHandled(bool handledStatus) { m_handled = handledStatus; }
+    void                setHandled(bool handledStatus) { m_handled = handledStatus; }
 
 protected:
     bool m_handled = false;

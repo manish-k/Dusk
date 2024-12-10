@@ -10,11 +10,11 @@ namespace dusk
 class EventBus
 {
 public:
-    void push(Unique<Event>& event) { m_eventQueue.push_back(std::move(event)); }
+    void   push(Unique<Event>& event) { m_eventQueue.push_back(std::move(event)); }
 
     size_t size() { return m_eventQueue.size(); }
 
-    void clear() { m_eventQueue.clear(); }
+    void   clear() { m_eventQueue.clear(); }
 
 private:
     // TODO: Replace vector with a ring buffer

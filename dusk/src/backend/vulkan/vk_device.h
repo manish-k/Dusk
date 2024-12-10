@@ -18,11 +18,11 @@ public:
     VkResult createInstance(const char* appName, uint32_t version, DynamicArray<const char*> requiredExtensions);
     void     destroyInstance();
 
-    void populateLayerNames();
-    void populateLayerExtensionNames(const char* pLayerName);
+    void     populateLayerNames();
+    void     populateLayerExtensionNames(const char* pLayerName);
 
-    bool hasLayer(const char* pLayerName);
-    bool hasInstanceExtension(const char* pExtensionName);
+    bool     hasLayer(const char* pLayerName);
+    bool     hasInstanceExtension(const char* pExtensionName);
 
 #ifdef VK_RENDERER_DEBUG
     static VKAPI_ATTR VkBool32 VKAPI_CALL vulkanDebugMessengerCallback(
@@ -37,8 +37,8 @@ private:
     VkPhysicalDevice m_physicalDevice;
     VkDevice         m_device;
 
-    HashSet<size_t> m_instanceExtensionsSet;
-    HashSet<size_t> m_layersSet;
+    HashSet<size_t>  m_instanceExtensionsSet;
+    HashSet<size_t>  m_layersSet;
 
 #ifdef VK_RENDERER_DEBUG
     VkDebugUtilsMessengerEXT m_debugMessenger;

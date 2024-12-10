@@ -36,14 +36,14 @@ public:
      * @param object unique ptr of the game object
      * @param parentId of the game object
      */
-    void addGameObject(
-        Unique<GameObject> object, EntityId parentId);
+    void     addGameObject(
+            Unique<GameObject> object, EntityId parentId);
 
     /**
      * @brief Destroy game object in the scene
      * @param object
      */
-    void destroyGameObject(GameObject& object);
+    void        destroyGameObject(GameObject& object);
 
     /**
      * @brief
@@ -72,9 +72,9 @@ public:
         std::string_view fileName);
 
 private:
-    std::string_view      m_name;
-    EntityId              m_root = NULL_ENTITY;
+    std::string_view       m_name;
+    EntityId               m_root = NULL_ENTITY;
     DynamicArray<EntityId> m_children {};
-    GameObject::UMap      m_sceneGameObjects {};
+    GameObject::UMap       m_sceneGameObjects {};
 };
 } // namespace dusk

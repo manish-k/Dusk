@@ -3,7 +3,6 @@
 
 namespace dusk
 {
-
 Scene::Scene(std::string_view name) :
     m_name { name }
 {

@@ -60,7 +60,7 @@ VkResult VkGfxDevice::createInstance(const char* appName, uint32_t version, Dyna
     createInfo.enabledLayerCount       = static_cast<uint32_t>(validationLayerNames.size());
     createInfo.ppEnabledLayerNames     = validationLayerNames.data();
 
-    VkResult result = vkCreateInstance(&createInfo, nullptr, &m_instance);
+    VkResult result                    = vkCreateInstance(&createInfo, nullptr, &m_instance);
     if (result != VK_SUCCESS)
     {
         return result;
@@ -75,7 +75,7 @@ VkResult VkGfxDevice::createInstance(const char* appName, uint32_t version, Dyna
     messengerCreateInfo.pfnUserCallback                    = vulkanDebugMessengerCallback;
     messengerCreateInfo.pUserData                          = this;
 
-    result = vkCreateDebugUtilsMessengerEXT(
+    result                                                 = vkCreateDebugUtilsMessengerEXT(
         m_instance,
         &messengerCreateInfo,
         nullptr,

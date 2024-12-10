@@ -19,7 +19,7 @@ bool Engine::start(Shared<Application> app)
 {
     DASSERT(!m_app, "Application is null")
 
-    m_app = app;
+    m_app            = app;
 
     // create window
     auto windowProps = Window::Properties::defaultWindowProperties();
@@ -31,7 +31,6 @@ bool Engine::start(Shared<Application> app)
     }
     m_window->setEventCallback([this](Event& ev)
                                { this->onEvent(ev); });
-
 
     m_renderer = createUnique<VulkanRenderer>(std::dynamic_pointer_cast<GLFWVulkanWindow>(m_window));
     if (!m_renderer->init("Test", 1))

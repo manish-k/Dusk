@@ -7,7 +7,7 @@
 #include "events/key_event.h"
 #include "events/mouse_event.h"
 
-#include <vulkan/vulkan.h>
+#include <volk.h>
 #define GLFW_INCLUDE_VULKAN
 #include <glfw/glfw3.h>
 
@@ -77,6 +77,8 @@ public:
     void                      setEventCallback(const EventCallbackFn& cb) override;
 
     DynamicArray<const char*> getRequiredWindowExtensions();
+
+    VkResult                  createWindowSurface(VkInstance instance, VkSurfaceKHR* surface);
 
 private:
     /**

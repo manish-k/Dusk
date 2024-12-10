@@ -267,4 +267,8 @@ DynamicArray<const char*> GLFWVulkanWindow::getRequiredWindowExtensions()
 
     return extensions;
 }
+VkResult GLFWVulkanWindow::createWindowSurface(VkInstance instance, VkSurfaceKHR* pSurface)
+{
+    return glfwCreateWindowSurface(instance, m_window, nullptr, pSurface);
+}
 } // namespace dusk

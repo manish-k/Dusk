@@ -23,6 +23,8 @@ public:
     Scene(std::string_view name);
     ~Scene();
 
+    CLASS_UNCOPYABLE(Scene)
+
     /**
      * @brief Get root entity id for the scene
      * @return EntityId

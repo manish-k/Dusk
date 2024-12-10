@@ -11,7 +11,7 @@
 // Bit left shift Macro
 #define BIT(x) (1 << x)
 
-#define VA_COUNT(...) ((int)(sizeof((int[]){ __VA_ARGS__ })/sizeof(int)))
+#define VA_COUNT(...) ((int)(sizeof((int[]) { __VA_ARGS__ }) / sizeof(int)))
 
 // Engine Logger Macros
 #define DUSK_DEBUG(...) dusk::Logger::getEngineLogger()->debug(__VA_ARGS__)
@@ -51,3 +51,8 @@
 #    define DASSERT(...)
 #    define ASSERT(...)
 #endif // ENABLE_ASSERT
+
+// Macro for making class uncopyable
+#define CLASS_UNCOPYABLE(type)             \
+    type(const type&)            = delete; \
+    type& operator=(const type&) = delete;

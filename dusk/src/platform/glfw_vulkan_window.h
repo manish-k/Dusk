@@ -24,6 +24,8 @@ public:
     GLFWVulkanWindow(Window::Properties& props);
     ~GLFWVulkanWindow() override;
 
+    CLASS_UNCOPYABLE(GLFWVulkanWindow)
+
     void onUpdate(TimeStep dt) override;
     void onEvent(Event& ev);
 

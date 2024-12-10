@@ -1,5 +1,7 @@
 #pragma once
 
+#include "dusk.h"
+
 #pragma warning(push, 0)
 #include <entt.hpp>
 #pragma warning(pop)
@@ -19,6 +21,8 @@ class Registry
 public:
     Registry()  = default;
     ~Registry() = default;
+
+    CLASS_UNCOPYABLE(Registry)
 
     /**
      * @brief Get entity-component global registry

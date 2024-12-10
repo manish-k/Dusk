@@ -29,6 +29,8 @@ public:
     Engine(Config& conf);
     ~Engine();
 
+    CLASS_UNCOPYABLE(Engine)
+
     bool start(Shared<Application> app);
     void run();
     void stop();

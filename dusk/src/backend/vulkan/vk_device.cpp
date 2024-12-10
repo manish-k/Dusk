@@ -69,7 +69,22 @@ VkResult VkGfxDevice::createInstance(const char* appName, uint32_t version, Dyna
     volkLoadInstance(m_instance);
 
 #ifdef VK_RENDERER_DEBUG
-    // debug messenger
+    VkDebugUtilsMessengerCreateInfoEXT messengerCreateInfo = { VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT };
+    messengerCreateInfo.messageSeverity                    = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
+    messengerCreateInfo.messageType                        = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
+    messengerCreateInfo.pfnUserCallback                    = vulkanDebugMessengerCallback;
+    messengerCreateInfo.pUserData                          = this;
+
+    result = vkCreateDebugUtilsMessengerEXT(
+        m_instance,
+        &messengerCreateInfo,
+        nullptr,
+        &m_debugMessenger);
+
+    if (result != VK_SUCCESS)
+    {
+        DUSK_ERROR("Unable to setup debug messenger");
+    }
 #endif
 
     return VK_SUCCESS;
@@ -77,6 +92,10 @@ VkResult VkGfxDevice::createInstance(const char* appName, uint32_t version, Dyna
 
 void VkGfxDevice::destroyInstance()
 {
+#ifdef VK_RENDERER_DEBUG
+    vkDestroyDebugUtilsMessengerEXT(m_instance, m_debugMessenger, nullptr);
+#endif
+
     vkDestroyInstance(m_instance, nullptr);
 }
 
@@ -110,6 +129,41 @@ bool VkGfxDevice::hasInstanceExtension(const char* pExtensionName)
 {
     return m_instanceExtensionsSet.has(hash(pExtensionName));
 }
+
+#ifdef VK_RENDERER_DEBUG
+VKAPI_ATTR VkBool32 VKAPI_CALL VkGfxDevice::vulkanDebugMessengerCallback(
+    VkDebugUtilsMessageSeverityFlagBitsEXT      messageSeverity,
+    VkDebugUtilsMessageTypeFlagsEXT             messageType,
+    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+    void*                                       pUserData)
+{
+    if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
+    {
+        DUSK_INFO("Vulkan: {}", pCallbackData->pMessage);
+        if (pCallbackData->cmdBufLabelCount)
+        {
+            DUSK_INFO(" debug labels:");
+            for (size_t i = 0u; i < pCallbackData->cmdBufLabelCount; ++i)
+            {
+                const size_t reverseIndex = pCallbackData->cmdBufLabelCount - 1u - i;
+                DUSK_INFO("     - {}", pCallbackData->pCmdBufLabels[reverseIndex].pLabelName);
+            }
+        }
+    }
+
+    if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+    {
+        DUSK_WARN("Vulkan: {}", pCallbackData->pMessage);
+    }
+
+    if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+    {
+        DUSK_ERROR("Vulkan: {}", pCallbackData->pMessage);
+    }
+
+    return VK_FALSE;
+}
+#endif
 
 void VkGfxDevice::populateLayerNames()
 {

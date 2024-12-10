@@ -38,9 +38,6 @@ bool VulkanRenderer::init(const char* appName, uint32_t version)
     }
     DUSK_INFO("VkInstance created successfully");
 
-    // create vulkan instance
-    // volk load instance
-    // setup debug logger
     // create surface
     // pick physical device
     // create logical device

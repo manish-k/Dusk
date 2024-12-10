@@ -2,6 +2,7 @@
 
 #include "core/base.h"
 #include "core/log.h"
+#include "utils/hash.h"
 
 #ifdef DDEBUG // Dusk Debug
 #    define ENABLE_ASSERT

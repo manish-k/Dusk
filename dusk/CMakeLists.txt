@@ -94,6 +94,13 @@ set(SCENE_FILES
 	"${SCENE_DIR}/registry.cpp"
 )
 
+set(UTILS_DIR "${PROJECT_SOURCE_DIR}/src/utils/")
+set(UTILS_FILES
+	# Header files
+	"${UTILS_DIR}/hash.h"
+	# Source files
+)
+
 source_group("\\" FILES ${ENGINE_FILES})
 source_group("backend/vulkan\\" FILES ${VULKAN_BACKEND_FILES})
 source_group("core\\" FILES ${CORE_FILES})
@@ -102,6 +109,7 @@ source_group("renderer\\" FILES ${RENDERER_FILES})
 source_group("scene\\" FILES ${SCENE_FILES})
 source_group("loaders\\" FILES ${LOADERS_FILES})
 source_group("platform\\" FILES ${PLATFORM_FILES})
+source_group("utilss\\" FILES ${UTILS_FILES})
 
 set(PROJECT_FILES
 	${ENGINE_FILES}
@@ -112,6 +120,7 @@ set(PROJECT_FILES
 	${RENDERER_FILES}
 	${SCENE_FILES}
 	${PLATFORM_FILES}
+	${UTILS_FILES}
 )
 
 add_library(${PROJECT_NAME} OBJECT ${PROJECT_FILES} "src/backend/vulkan/vk_renderer.cpp")
@@ -126,6 +135,7 @@ target_include_directories(
 	${COMPONENTS_DIR}
 	${SCENE_DIR}
 	${PLATFORM_DIR}
+	${UTILS_DIR}
 )
 
 add_subdirectory(vendor)
@@ -142,6 +152,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
 	vulkan
 	volk
 	vma
+	excalibur_hash
 )
 
 if(CLANG_FORMAT_EXE)

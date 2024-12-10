@@ -7,7 +7,7 @@
 
 namespace dusk
 {
-VulkanRenderer::VulkanRenderer(GLFWVulkanWindow& window) :
+VulkanRenderer::VulkanRenderer(Shared<GLFWVulkanWindow> window) :
     m_window(window)
 {
     m_gfxDevice = createUnique<VkGfxDevice>();
@@ -27,15 +27,17 @@ bool VulkanRenderer::init(const char* appName, uint32_t version)
         return false;
     }
 
-    DynamicArray<const char*> extensions = m_window.getRequiredWindowExtensions();
+    DynamicArray<const char*> extensions = m_window->getRequiredWindowExtensions();
 
     result = m_gfxDevice->createInstance(appName, version, extensions);
 
-    if (!result)
+    if (result != VK_SUCCESS)
     {
         DUSK_ERROR("Unable to create vk instance");
         return false;
     }
+    DUSK_INFO("VkInstance created successfully");
+
     // create vulkan instance
     // volk load instance
     // setup debug logger

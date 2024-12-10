@@ -33,16 +33,17 @@ VkResult VkGfxDevice::createInstance(const char* appName, uint32_t version, Dyna
 #ifdef VK_ENABLE_VALIDATION_LAYERS
     populateLayerNames();
 
-    if (hasLayer("VK_LAYER_KHRONOS_validation"))
+    const char* validationLayerName = "VK_LAYER_KHRONOS_validation";
+    if (hasLayer(validationLayerName))
     {
-        populateLayerExtensionNames("VK_LAYER_KHRONOS_validation");
+        populateLayerExtensionNames(validationLayerName);
 
         if (hasInstanceExtension("VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME"))
         {
             requiredExtensionNames.push_back("VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME");
         }
 
-        validationLayerNames.push_back("VK_LAYER_KHRONOS_validation");
+        validationLayerNames.push_back(validationLayerName);
     }
     else
     {
@@ -51,7 +52,7 @@ VkResult VkGfxDevice::createInstance(const char* appName, uint32_t version, Dyna
 #endif
 
 #ifdef VK_RENDERER_DEBUG
-    requiredExtensionNames.push_back("VK_EXT_DEBUG_UTILS_EXTENSION_NAME");
+    requiredExtensionNames.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 #endif
 
     createInfo.enabledExtensionCount   = static_cast<uint32_t>(requiredExtensionNames.size());
@@ -101,8 +102,13 @@ void VkGfxDevice::populateLayerExtensionNames(const char* pLayerName)
     for (const auto& extension : instanceExtensions)
     {
         DUSK_INFO("{}", extension.extensionName);
-        m_instanceExtensionsMap.emplace(extension.extensionName, 1);
+        m_instanceExtensionsSet.emplace(hash(extension.extensionName));
     }
+}
+
+bool VkGfxDevice::hasInstanceExtension(const char* pExtensionName)
+{
+    return m_instanceExtensionsSet.has(hash(pExtensionName));
 }
 
 void VkGfxDevice::populateLayerNames()
@@ -127,8 +133,13 @@ void VkGfxDevice::populateLayerNames()
     for (const auto& layer : instanceLayers)
     {
         DUSK_INFO("{}", layer.layerName);
-        m_layersMap.emplace(layer.layerName, 1);
+        m_layersSet.emplace(hash(layer.layerName));
     }
+}
+
+bool VkGfxDevice::hasLayer(const char* pLayerName)
+{
+    return m_layersSet.has(hash(pLayerName));
 }
 
 } // namespace dusk

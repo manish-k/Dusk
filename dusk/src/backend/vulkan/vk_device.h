@@ -21,8 +21,8 @@ public:
     void populateLayerNames();
     void populateLayerExtensionNames(const char* pLayerName);
 
-    bool hasLayer(const char* pLayerName) { return m_layersMap.contains(pLayerName); };
-    bool hasInstanceExtension(const char* pExtensionName) { return m_instanceExtensionsMap.contains(pExtensionName); };
+    bool hasLayer(const char* pLayerName);
+    bool hasInstanceExtension(const char* pExtensionName);
 
 
 
@@ -31,8 +31,7 @@ private:
     VkPhysicalDevice m_physicalDevice;
     VkDevice         m_device;
 
-    std::unordered_map<const char*, int> m_instanceExtensionsMap;
-    std::unordered_map<const char*, int> m_deviceExtensionsMap;
-    std::unordered_map<const char*, int> m_layersMap;
+    HashSet<size_t> m_instanceExtensionsSet;
+    HashSet<size_t> m_layersSet;
 };
 } // namespace dusk

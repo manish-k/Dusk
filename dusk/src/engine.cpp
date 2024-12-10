@@ -33,12 +33,12 @@ bool Engine::start(Shared<Application> app)
                                { this->onEvent(ev); });
 
 
-    //m_renderer = createUnique<VulkanRenderer>(*m_window);
-    //if (!m_renderer->init("Test", 1))
-    //{
-    //    DUSK_ERROR("Renderer initialization failed");
-    //    return false;
-    //}
+    m_renderer = createUnique<VulkanRenderer>(std::dynamic_pointer_cast<GLFWVulkanWindow>(m_window));
+    if (!m_renderer->init("Test", 1))
+    {
+        DUSK_ERROR("Renderer initialization failed");
+        return false;
+    }
 
     m_running = true;
     m_paused  = false;

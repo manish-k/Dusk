@@ -10,7 +10,7 @@ namespace dusk
 class VulkanRenderer final : public Renderer
 {
 public:
-    VulkanRenderer(GLFWVulkanWindow& window);
+    VulkanRenderer(Shared<GLFWVulkanWindow> window);
     ~VulkanRenderer() override;
 
     bool init(const char* appName, uint32_t version) override;
@@ -18,6 +18,6 @@ public:
 private:
     Unique<VkGfxDevice> m_gfxDevice = nullptr;
 
-    GLFWVulkanWindow& m_window;
+    Shared<GLFWVulkanWindow> m_window;
 };
 } // namespace dusk

@@ -72,14 +72,6 @@ void GLFWVulkanWindow::createWindow()
 
     glfwGetWindowPos(m_window, &m_windowPosX, &m_windowPosY);
     glfwSetWindowUserPointer(m_window, this);
-
-    uint32_t     extensionCount = 0;
-    const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&extensionCount);
-    DUSK_INFO("Required {} vulkan extensions for GLFW", extensionCount);
-    for (int i = 0; i < extensionCount; ++i)
-    {
-        DUSK_INFO(glfwExtensions[i]);
-    }
 }
 
 void GLFWVulkanWindow::onUpdate(TimeStep dt)

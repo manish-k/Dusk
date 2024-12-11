@@ -28,8 +28,13 @@ bool VulkanRenderer::init(const char* appName, uint32_t version)
     }
 
     DynamicArray<const char*> extensions = m_window->getRequiredWindowExtensions();
+    DUSK_INFO("Required {} vulkan extensions for GLFW", extensions.size());
+    for (int i = 0; i < extensions.size(); ++i)
+    {
+        DUSK_INFO(" - {}", extensions[i]);
+    }
 
-    result                               = m_gfxDevice->createInstance(appName, version, extensions);
+    result = m_gfxDevice->createInstance(appName, version, extensions);
 
     if (result != VK_SUCCESS)
     {
@@ -38,7 +43,15 @@ bool VulkanRenderer::init(const char* appName, uint32_t version)
     }
     DUSK_INFO("VkInstance created successfully");
 
-    // create surface
+    result = m_window->createWindowSurface(m_gfxDevice->getVkInstance(), &m_surface);
+    if (result != VK_SUCCESS)
+    {
+        DUSK_ERROR("Unable to create window surface");
+        return false;
+    }
+    DUSK_INFO("Window surface created successfully");
+    
+    m_gfxDevice->createDevice(m_surface);
     // pick physical device
     // create logical device
     // create command pool

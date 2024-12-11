@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <vector>
+#include <array>
 #include <ExcaliburHash.h>
 
 namespace dusk
@@ -26,6 +27,9 @@ constexpr Shared<T> createShared(Args&&... args)
 
 template <typename T>
 using DynamicArray = std::vector<T>;
+
+template <typename T, std::size_t N>
+using Array = std::array<T, N>;
 
 template <typename K, typename V>
 using HashMap = Excalibur::HashTable<K, V>;

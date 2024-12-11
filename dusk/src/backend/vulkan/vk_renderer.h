@@ -15,9 +15,14 @@ public:
 
     bool init(const char* appName, uint32_t version) override;
 
+    void createSurface();
+    void destroySurface();
+
 private:
     Unique<VkGfxDevice>      m_gfxDevice = nullptr;
 
     Shared<GLFWVulkanWindow> m_window;
+
+    VkSurfaceKHR             m_surface;
 };
 } // namespace dusk

@@ -90,6 +90,169 @@ VkResult VkGfxDevice::createInstance(const char* appName, uint32_t version, Dyna
     return VK_SUCCESS;
 }
 
+void VkGfxDevice::createDevice(VkSurfaceKHR surface)
+{
+    DASSERT(m_instance != VK_NULL_HANDLE, "VkInstance is not present");
+    DASSERT(surface != VK_NULL_HANDLE, "Invalid surface given");
+
+    uint32_t deviceCount = 0u;
+    VkResult result      = vkEnumeratePhysicalDevices(m_instance, &deviceCount, nullptr);
+
+    if (deviceCount == 0u)
+    {
+        DUSK_ERROR("No GPU available with vulkan support");
+        return;
+    }
+
+    if (result != VK_SUCCESS)
+    {
+        DUSK_ERROR("Error in getting physical devices");
+        return;
+    }
+
+    DynamicArray<VkPhysicalDevice> physicalDevices(deviceCount);
+    result = vkEnumeratePhysicalDevices(m_instance, &deviceCount, physicalDevices.data());
+
+    if (result != VK_SUCCESS)
+    {
+        DUSK_ERROR("Error in getting physical devices");
+        return;
+    }
+
+    struct PhysicalDeviceInfo
+    {
+        VkPhysicalDeviceProperties deviceProperties;
+        VkPhysicalDeviceFeatures   deviceFeatures;
+        DynamicArray<const char*>  activeDeviceExtensions;
+
+        uint32_t                   graphicsQueueIndex;
+        uint32_t                   computeQueueIndex;
+        uint32_t                   transferQueueIndex;
+        uint32_t                   presentQueueIndex;
+
+        bool                       isSupported = false;
+    };
+
+    // TODO: can be replaced with an Array?
+    DynamicArray<PhysicalDeviceInfo> physicalDeviceInfo(deviceCount);
+
+    for (uint32_t deviceIndex = 0u; deviceIndex < deviceCount; ++deviceIndex)
+    {
+        const VkPhysicalDevice physicalDevice = physicalDevices[deviceIndex];
+        PhysicalDeviceInfo*    pDeviceInfo    = &physicalDeviceInfo[deviceIndex];
+
+        // Get physical device properties
+        vkGetPhysicalDeviceProperties(physicalDevice, &pDeviceInfo->deviceProperties);
+        DUSK_INFO("Vulkan Device {} {}", deviceIndex, pDeviceInfo->deviceProperties.deviceName);
+        DUSK_INFO("- api version {}", deviceIndex, pDeviceInfo->deviceProperties.apiVersion);
+        DUSK_INFO("- vendor id {}", deviceIndex, pDeviceInfo->deviceProperties.vendorID);
+        DUSK_INFO("- device id {}", deviceIndex, pDeviceInfo->deviceProperties.deviceID);
+        // DUSK_INFO("- device type {}", deviceIndex, pDeviceInfo->deviceProperties.deviceType);
+        DUSK_INFO("- driver version {}", deviceIndex, pDeviceInfo->deviceProperties.driverVersion);
+
+        // Get supported features
+        vkGetPhysicalDeviceFeatures(physicalDevice, &pDeviceInfo->deviceFeatures);
+
+        // TODO check surface capabilities, surface formats and present modes
+
+        // check available queue families
+        uint32_t familyCount = 0u;
+        vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &familyCount, nullptr);
+
+        DynamicArray<VkQueueFamilyProperties> queueFamiliesProperties(familyCount);
+        vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &familyCount, queueFamiliesProperties.data());
+        DUSK_INFO("- found {} queue families", familyCount);
+
+        uint32_t commonQueueIndex   = familyCount;
+        uint32_t computeQueueIndex  = familyCount;
+        uint32_t transferQueueIndex = familyCount;
+
+
+        for (uint32_t familyIndex = 0; familyIndex < familyCount; ++familyIndex)
+        {
+            DUSK_INFO("- - Vulkan queue family #{}", familyIndex);
+            const bool supportsGraphic  = queueFamiliesProperties[familyIndex].queueFlags & VK_QUEUE_GRAPHICS_BIT;
+            const bool supportsCompute  = queueFamiliesProperties[familyIndex].queueFlags & VK_QUEUE_COMPUTE_BIT;
+            const bool supportsTransfer = queueFamiliesProperties[familyIndex].queueFlags & VK_QUEUE_TRANSFER_BIT;
+
+            DUSK_INFO("- - - supports graphic {}", supportsGraphic);
+            DUSK_INFO("- - - supports compute {}", supportsCompute);
+            DUSK_INFO("- - - supports transfer {}", supportsTransfer);
+
+            VkBool32 supportsPresent = false;
+            VkResult result          = vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, familyIndex, surface, &supportsPresent);
+            if (result != VK_SUCCESS)
+            {
+                DUSK_ERROR("Unable to query surface support");
+                return;
+            }
+            DUSK_INFO("- - - supports present {}", supportsPresent);
+
+            if (supportsGraphic && supportsCompute && supportsPresent && commonQueueIndex == familyCount)
+            {
+                commonQueueIndex = familyIndex;
+            }
+
+            if (supportsCompute && !supportsGraphic)
+            {
+                computeQueueIndex = familyIndex;
+            }
+
+            if (supportsTransfer && !supportsGraphic)
+            {
+                transferQueueIndex = familyIndex;
+            }
+
+            DUSK_INFO("- - - queue count {}", queueFamiliesProperties[familyIndex].queueCount);
+            DUSK_INFO("- - - timestampValidBits {}", queueFamiliesProperties[familyIndex].timestampValidBits);
+        }
+        
+        if (commonQueueIndex == familyCount)
+        {
+            DUSK_INFO("Skipping device because no vulkan family found which supports graphics, compute and presentation for given surface");
+            continue;
+        }
+        pDeviceInfo->graphicsQueueIndex = commonQueueIndex;
+
+        if (computeQueueIndex == familyCount)
+        {
+            // No dedicated compute queue was found, assign common queue
+            computeQueueIndex = commonQueueIndex;
+        }
+        pDeviceInfo->computeQueueIndex = computeQueueIndex;
+
+        if (transferQueueIndex == familyCount)
+        {
+            // No dedicated transfer queue was found, assign common queue
+            // Graphics queue can always be used for transfer if required
+            transferQueueIndex = commonQueueIndex;
+        }
+        pDeviceInfo->transferQueueIndex = transferQueueIndex;
+
+        // check device extension support
+        uint32_t deviceExtensionCount   = 0u;
+        vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &deviceExtensionCount, nullptr);
+
+        DynamicArray<VkExtensionProperties> availableExtensions(deviceExtensionCount);
+        vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &deviceExtensionCount, availableExtensions.data());
+        DUSK_INFO("- found {} supported device extensions", deviceExtensionCount);
+
+        HashSet<size_t> availableExtensionsSet;
+        for (auto& extension : availableExtensions)
+        {
+            DUSK_INFO("- - {}", extension.extensionName);
+            availableExtensionsSet.emplace(hash(extension.extensionName));
+        }
+
+        if (!availableExtensionsSet.has(hash(VK_KHR_SWAPCHAIN_EXTENSION_NAME)))
+        {
+            DUSK_INFO("Skipping device because it does not support extension {}", VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+        }
+
+        pDeviceInfo->isSupported = true;
+    }
+}
+
 void VkGfxDevice::destroyInstance()
 {
 #ifdef VK_RENDERER_DEBUG
@@ -120,7 +283,7 @@ void VkGfxDevice::populateLayerExtensionNames(const char* pLayerName)
     DUSK_INFO("Supported Vulkan Instance Extensions for layer {}", pLayerName);
     for (const auto& extension : instanceExtensions)
     {
-        DUSK_INFO("{}", extension.extensionName);
+        DUSK_INFO(" - {}", extension.extensionName);
         m_instanceExtensionsSet.emplace(hash(extension.extensionName));
     }
 }
@@ -186,7 +349,7 @@ void VkGfxDevice::populateLayerNames()
     DUSK_INFO("Supported Vulkan layers");
     for (const auto& layer : instanceLayers)
     {
-        DUSK_INFO("{}", layer.layerName);
+        DUSK_INFO(" - {}", layer.layerName);
         m_layersSet.emplace(hash(layer.layerName));
     }
 }

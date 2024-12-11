@@ -33,7 +33,7 @@
 #ifdef ENABLE_ASSERT
 #    define DASSERT(check, ...)          \
         {                                \
-            if (!check)                  \
+            if (!(check))                \
             {                            \
                 DUSK_ERROR(__VA_ARGS__); \
                 __debugbreak();          \
@@ -41,7 +41,7 @@
         }
 #    define ASSERT(check, ...)          \
         {                               \
-            if (!check)                 \
+            if (!(check))               \
             {                           \
                 APP_ERROR(__VA_ARGS__); \
                 __debugbreak();         \

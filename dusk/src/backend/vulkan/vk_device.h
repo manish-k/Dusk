@@ -6,6 +6,7 @@
 #include <volk.h>
 
 #include <unordered_map>
+#include <optional>
 
 namespace dusk
 {
@@ -15,14 +16,18 @@ public:
     VkGfxDevice();
     ~VkGfxDevice();
 
-    VkResult createInstance(const char* appName, uint32_t version, DynamicArray<const char*> requiredExtensions);
-    void     destroyInstance();
+    VkResult   createInstance(const char* appName, uint32_t version, DynamicArray<const char*> requiredExtensions);
+    void       destroyInstance();
+    VkInstance getVkInstance() { return m_instance; } // TODO: Handle without getter, maybe with some struct
 
-    void     populateLayerNames();
-    void     populateLayerExtensionNames(const char* pLayerName);
+    void       createDevice(VkSurfaceKHR surface);
+    void       destroyDevice();
 
-    bool     hasLayer(const char* pLayerName);
-    bool     hasInstanceExtension(const char* pExtensionName);
+    void       populateLayerNames();
+    void       populateLayerExtensionNames(const char* pLayerName);
+
+    bool       hasLayer(const char* pLayerName);
+    bool       hasInstanceExtension(const char* pExtensionName);
 
 #ifdef VK_RENDERER_DEBUG
     static VKAPI_ATTR VkBool32 VKAPI_CALL vulkanDebugMessengerCallback(
@@ -39,6 +44,10 @@ private:
 
     HashSet<size_t>  m_instanceExtensionsSet;
     HashSet<size_t>  m_layersSet;
+
+    uint32_t         m_graphicsQueueIndex;
+    uint32_t         m_computeQueueIndex;
+    uint32_t         m_transferQueueIndex;
 
 #ifdef VK_RENDERER_DEBUG
     VkDebugUtilsMessengerEXT m_debugMessenger;

@@ -143,7 +143,7 @@ void VkGfxDevice::createDevice(VkSurfaceKHR surface)
 
         // Get physical device properties
         vkGetPhysicalDeviceProperties(physicalDevice, &pDeviceInfo->deviceProperties);
-        DUSK_INFO("Vulkan Device {} {}", deviceIndex, pDeviceInfo->deviceProperties.deviceName);
+        DUSK_INFO("Vulkan Device #{} {}", deviceIndex, pDeviceInfo->deviceProperties.deviceName);
         DUSK_INFO("- api version {}", deviceIndex, pDeviceInfo->deviceProperties.apiVersion);
         DUSK_INFO("- vendor id {}", deviceIndex, pDeviceInfo->deviceProperties.vendorID);
         DUSK_INFO("- device id {}", deviceIndex, pDeviceInfo->deviceProperties.deviceID);

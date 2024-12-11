@@ -247,6 +247,7 @@ void VkGfxDevice::createDevice(VkSurfaceKHR surface)
         if (!availableExtensionsSet.has(hash(VK_KHR_SWAPCHAIN_EXTENSION_NAME)))
         {
             DUSK_INFO("Skipping device because it does not support extension {}", VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+            continue;
         }
 
         pDeviceInfo->isSupported = true;

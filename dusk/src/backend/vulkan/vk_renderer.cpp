@@ -15,6 +15,8 @@ VulkanRenderer::VulkanRenderer(Shared<GLFWVulkanWindow> window) :
 
 VulkanRenderer::~VulkanRenderer()
 {
+    destroySurface();
+
     m_gfxDevice->destroyInstance();
 }
 
@@ -43,19 +45,27 @@ bool VulkanRenderer::init(const char* appName, uint32_t version)
     }
     DUSK_INFO("VkInstance created successfully");
 
-    result = m_window->createWindowSurface(m_gfxDevice->getVkInstance(), &m_surface);
+    result = createSurface();
     if (result != VK_SUCCESS)
     {
         DUSK_ERROR("Unable to create window surface");
         return false;
     }
     DUSK_INFO("Window surface created successfully");
-    
+
     m_gfxDevice->createDevice(m_surface);
     // pick physical device
     // create logical device
     // create command pool
 
     return true;
+}
+VkResult VulkanRenderer::createSurface()
+{
+    return m_window->createWindowSurface(m_gfxDevice->getVkInstance(), &m_surface);
+}
+void VulkanRenderer::destroySurface()
+{
+    vkDestroySurfaceKHR(m_gfxDevice->getVkInstance(), m_surface, nullptr);
 }
 } // namespace dusk

@@ -15,7 +15,7 @@ public:
 
     bool init(const char* appName, uint32_t version) override;
 
-    void createSurface();
+    VkResult createSurface();
     void destroySurface();
 
 private:

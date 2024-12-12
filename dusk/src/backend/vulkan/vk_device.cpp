@@ -223,7 +223,7 @@ void VkGfxDevice::createDevice(VkSurfaceKHR surface)
 
         if (transferQueueIndex == familyCount)
         {
-            // No dedicated transfer queue was found, assign common queue
+            // No dedicated transfer queue was found, assign common queue index
             // Graphics queue can always be used for transfer if required
             transferQueueIndex = commonQueueIndex;
         }

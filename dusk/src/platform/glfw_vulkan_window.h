@@ -41,7 +41,7 @@ public:
      * @brief Set new width of the current window
      * @param newWidth
      */
-    void     setWidth(uint32_t newWidth)
+    void setWidth(uint32_t newWidth)
     {
         m_props.width = newWidth;
         m_isResized   = true;
@@ -60,13 +60,13 @@ public:
     /**
      * @brief Reset the resized flag for the window
      */
-    void                      resetResizedState() { m_isResized = false; }
+    void resetResizedState() { m_isResized = false; }
 
     /**
      * @brief Set current cursor x position in the window relative to top-left corner
      * @param newPosX
      */
-    void                      setCursorPosX(int newPosX) { m_cursorPosX = newPosX; }
+    void setCursorPosX(int newPosX) { m_cursorPosX = newPosX; }
 
     /**
      * @brief Set current cursor y position in the window relative to top-left corner

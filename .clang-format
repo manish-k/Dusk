@@ -4,15 +4,15 @@ AlignAfterOpenBracket: Align
 AlignConsecutiveAssignments:
   Enabled: true
   AcrossEmptyLines: true
-  AcrossComments: true
+  AcrossComments: false
 AlignConsecutiveDeclarations:
   Enabled: true
   AcrossEmptyLines: true
-  AcrossComments: true
+  AcrossComments: false
 AlignConsecutiveMacros:
   Enabled: true
   AcrossEmptyLines: true
-  AcrossComments: true
+  AcrossComments: false
 AlignConsecutiveShortCaseStatements:
   Enabled: true
   AcrossEmptyLines: true

@@ -16,7 +16,7 @@ public:
      * @brief Initialize the logger with format
      * and sink settings
      */
-    static void                    init();
+    static void init();
 
     /**
      * @brief Get static instance of Engine logger

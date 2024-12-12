@@ -13,10 +13,10 @@ public:
     VulkanRenderer(Shared<GLFWVulkanWindow> window);
     ~VulkanRenderer() override;
 
-    bool init(const char* appName, uint32_t version) override;
+    bool     init(const char* appName, uint32_t version) override;
 
     VkResult createSurface();
-    void destroySurface();
+    void     destroySurface();
 
 private:
     Unique<VkGfxDevice>      m_gfxDevice = nullptr;

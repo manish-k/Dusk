@@ -226,7 +226,7 @@ void VkGfxDevice::createDevice(VkSurfaceKHR surface)
         pDeviceInfo->transferQueueIndex = transferQueueIndex;
 
         // check device extension support
-        uint32_t deviceExtensionCount   = 0u;
+        uint32_t deviceExtensionCount = 0u;
         vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &deviceExtensionCount, nullptr);
 
         DynamicArray<VkExtensionProperties> availableExtensions(deviceExtensionCount);

@@ -19,7 +19,7 @@ bool Engine::start(Shared<Application> app)
 {
     DASSERT(!m_app, "Application is null")
 
-    m_app            = app;
+    m_app = app;
 
     // create window
     auto windowProps = Window::Properties::defaultWindowProperties();

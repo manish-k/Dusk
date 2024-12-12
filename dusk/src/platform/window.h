@@ -49,53 +49,53 @@ public:
     };
 
 public:
-    virtual ~Window()                                                 = default;
+    virtual ~Window() = default;
 
     /**
      * @brief Update loop of the window
      * @param dt duration in seconds since last frame
      */
-    virtual void          onUpdate(TimeStep dt)                       = 0;
+    virtual void onUpdate(TimeStep dt) = 0;
 
     /**
      * @brief Get current height of the window
      * @return height
      */
-    virtual uint32_t      getHeight() const                           = 0;
+    virtual uint32_t getHeight() const = 0;
 
     /**
      * @brief Get current width of the window
      * @return width
      */
-    virtual uint32_t      getWidth() const                            = 0;
+    virtual uint32_t getWidth() const = 0;
 
     /**
      * @brief Get the resized state of the window
      * @return true if window has been resized, otherwise false
      */
-    virtual bool          isResized() const                           = 0;
+    virtual bool isResized() const = 0;
 
     /**
      * @brief Toggle between fullscreen and default window's size
      */
-    virtual void          toggleFullScreen()                          = 0;
+    virtual void toggleFullScreen() = 0;
 
     /**
      * @brief Toggle between borderless fullscreen and default window's size
      */
-    virtual void          toggleFullScreenBorderless()                = 0;
+    virtual void toggleFullScreenBorderless() = 0;
 
     /**
      * @brief Set callback to trigger when window events are received
      * @param cb function to call on events
      */
-    virtual void          setEventCallback(const EventCallbackFn& cb) = 0;
+    virtual void setEventCallback(const EventCallbackFn& cb) = 0;
 
     /**
      * @brief Get native window pointer
      * @return raw pointer to the window
      */
-    virtual void*         getNativeWindow() const                     = 0;
+    virtual void* getNativeWindow() const = 0;
 
     /**
      * @brief Static function to create a window

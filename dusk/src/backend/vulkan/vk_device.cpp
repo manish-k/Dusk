@@ -133,7 +133,6 @@ void VkGfxDevice::createDevice(VkSurfaceKHR surface)
         bool                       isSupported = false;
     };
 
-    // TODO: can be replaced with an Array?
     DynamicArray<PhysicalDeviceInfo> physicalDeviceInfo(deviceCount);
 
     for (uint32_t deviceIndex = 0u; deviceIndex < deviceCount; ++deviceIndex)
@@ -152,8 +151,6 @@ void VkGfxDevice::createDevice(VkSurfaceKHR surface)
 
         // Get supported features
         vkGetPhysicalDeviceFeatures(physicalDevice, &pDeviceInfo->deviceFeatures);
-
-        // TODO check surface capabilities, surface formats and present modes
 
         // check available queue families
         uint32_t familyCount = 0u;
@@ -249,9 +246,50 @@ void VkGfxDevice::createDevice(VkSurfaceKHR surface)
             DUSK_INFO("Skipping device because it does not support extension {}", VK_KHR_SWAPCHAIN_EXTENSION_NAME);
             continue;
         }
+        pDeviceInfo->activeDeviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+
+        // Feature checks
+        if (!pDeviceInfo->deviceFeatures.samplerAnisotropy)
+        {
+            DUSK_INFO("Skipping device because it does not support samplerAnisotropy");
+            continue;
+        }
 
         pDeviceInfo->isSupported = true;
     }
+
+    std::optional<uint32_t> selectedPhysicalDeviceIndex;
+
+    for (uint32_t i = 0; i < deviceCount; ++i)
+    {
+        const PhysicalDeviceInfo* pDeviceInfo = &physicalDeviceInfo[i];
+
+        if (!pDeviceInfo->isSupported)
+        {
+            continue;
+        }
+
+        // select very first supported device
+        if (!selectedPhysicalDeviceIndex.has_value())
+        {
+            selectedPhysicalDeviceIndex = i;
+        }
+
+        // give preference to device with discrete GPU
+        if (pDeviceInfo->isSupported && pDeviceInfo->deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+        {
+            selectedPhysicalDeviceIndex = i;
+            break;
+        }
+    }
+
+    if (!selectedPhysicalDeviceIndex.has_value())
+    {
+        DUSK_ERROR("No Vulkan supported physical device found");
+        return;
+    }
+
+    m_physicalDevice = physicalDevices[selectedPhysicalDeviceIndex.value()];
 }
 
 void VkGfxDevice::destroyInstance()

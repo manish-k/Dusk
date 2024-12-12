@@ -164,7 +164,6 @@ void VkGfxDevice::createDevice(VkSurfaceKHR surface)
         uint32_t computeQueueIndex  = familyCount;
         uint32_t transferQueueIndex = familyCount;
 
-
         for (uint32_t familyIndex = 0; familyIndex < familyCount; ++familyIndex)
         {
             DUSK_INFO("- - Vulkan queue family #{}", familyIndex);
@@ -203,7 +202,7 @@ void VkGfxDevice::createDevice(VkSurfaceKHR surface)
             DUSK_INFO("- - - queue count {}", queueFamiliesProperties[familyIndex].queueCount);
             DUSK_INFO("- - - timestampValidBits {}", queueFamiliesProperties[familyIndex].timestampValidBits);
         }
-        
+
         if (commonQueueIndex == familyCount)
         {
             DUSK_INFO("Skipping device because no vulkan family found which supports graphics, compute and presentation for given surface");
@@ -285,11 +284,108 @@ void VkGfxDevice::createDevice(VkSurfaceKHR surface)
 
     if (!selectedPhysicalDeviceIndex.has_value())
     {
-        DUSK_ERROR("No Vulkan supported physical device found");
+        DUSK_ERROR("No Vulkan supported physical device was found");
         return;
     }
 
-    m_physicalDevice = physicalDevices[selectedPhysicalDeviceIndex.value()];
+    m_physicalDevice                                = physicalDevices[selectedPhysicalDeviceIndex.value()];
+    const PhysicalDeviceInfo* pSelectedDeviceInfo   = &physicalDeviceInfo[selectedPhysicalDeviceIndex.value()];
+
+    constexpr float           transferQueuePriority = 0.0f;
+    constexpr float           graphicsQueuePriority = 1.0f;
+    constexpr float           computeQueuePriority  = 1.0f;
+
+    HashSet<uint32_t>         uniqueQueueIndices;
+    uniqueQueueIndices.emplace(pSelectedDeviceInfo->graphicsQueueIndex);
+    uniqueQueueIndices.emplace(pSelectedDeviceInfo->computeQueueIndex);
+    uniqueQueueIndices.emplace(pSelectedDeviceInfo->transferQueueIndex);
+
+    DynamicArray<VkDeviceQueueCreateInfo> queuesCreateInfo;
+
+    // Add graphics queue. Also it is the main queue for presentation
+    {
+        VkDeviceQueueCreateInfo queueCreateInfo {};
+        queueCreateInfo.sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queueCreateInfo.queueFamilyIndex = pSelectedDeviceInfo->graphicsQueueIndex;
+        queueCreateInfo.queueCount       = 1;
+        queueCreateInfo.pQueuePriorities = &graphicsQueuePriority;
+
+        queuesCreateInfo.push_back(queueCreateInfo);
+        uniqueQueueIndices.erase(pSelectedDeviceInfo->graphicsQueueIndex);
+    }
+
+    // Add dedicated compute queue if available
+    if (uniqueQueueIndices.has(pSelectedDeviceInfo->computeQueueIndex))
+    {
+        VkDeviceQueueCreateInfo queueCreateInfo {};
+        queueCreateInfo.sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queueCreateInfo.queueFamilyIndex = pSelectedDeviceInfo->computeQueueIndex;
+        queueCreateInfo.queueCount       = 1;
+        queueCreateInfo.pQueuePriorities = &computeQueuePriority;
+
+        queuesCreateInfo.push_back(queueCreateInfo);
+        uniqueQueueIndices.erase(pSelectedDeviceInfo->computeQueueIndex);
+    }
+
+    // Add dedicated transfer queue if available
+    if (uniqueQueueIndices.has(pSelectedDeviceInfo->transferQueueIndex))
+    {
+        VkDeviceQueueCreateInfo queueCreateInfo {};
+        queueCreateInfo.sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queueCreateInfo.queueFamilyIndex = pSelectedDeviceInfo->transferQueueIndex;
+        queueCreateInfo.queueCount       = 1;
+        queueCreateInfo.pQueuePriorities = &transferQueuePriority;
+
+        queuesCreateInfo.push_back(queueCreateInfo);
+        uniqueQueueIndices.erase(pSelectedDeviceInfo->transferQueueIndex);
+    }
+
+    DASSERT(queuesCreateInfo.size() != 0, "empty queue create info");
+
+    VkDeviceCreateInfo deviceCreateInfo {};
+    deviceCreateInfo.sType                 = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    deviceCreateInfo.queueCreateInfoCount  = static_cast<uint32_t>(queuesCreateInfo.size());
+    deviceCreateInfo.pQueueCreateInfos     = queuesCreateInfo.data();
+    deviceCreateInfo.pEnabledFeatures      = nullptr;
+
+    deviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(
+        pSelectedDeviceInfo->activeDeviceExtensions.size());
+    deviceCreateInfo.ppEnabledExtensionNames = pSelectedDeviceInfo->activeDeviceExtensions.data();
+
+    result                                   = vkCreateDevice(m_physicalDevice, &deviceCreateInfo, nullptr, &m_device);
+
+    if (result != VK_SUCCESS)
+    {
+        DUSK_ERROR("Failed to create logical device");
+        return;
+    }
+    DUSK_INFO("Logical device creation successful");
+
+    volkLoadDevice(m_device);
+
+    // fetch graphic queue handle
+    vkGetDeviceQueue(m_device, pSelectedDeviceInfo->graphicsQueueIndex, 0, &m_graphicsQueue);
+    if (m_graphicsQueue == VK_NULL_HANDLE)
+    {
+        DUSK_ERROR("Unable to get graphic queue from vulkan device");
+        return;
+    }
+
+    // fetch compute queue handle
+    vkGetDeviceQueue(m_device, pSelectedDeviceInfo->computeQueueIndex, 0, &m_computeQueue);
+    if (m_computeQueue == VK_NULL_HANDLE)
+    {
+        DUSK_ERROR("Unable to get compute queue from vulkan device");
+        return;
+    }
+
+    // fetch graphic queue handle
+    vkGetDeviceQueue(m_device, pSelectedDeviceInfo->transferQueueIndex, 0, &m_transferQueue);
+    if (m_transferQueue == VK_NULL_HANDLE)
+    {
+        DUSK_ERROR("Unable to get transfer queue from vulkan device");
+        return;
+    }
 }
 
 void VkGfxDevice::destroyInstance()
@@ -299,6 +395,16 @@ void VkGfxDevice::destroyInstance()
 #endif
 
     vkDestroyInstance(m_instance, nullptr);
+}
+
+void VkGfxDevice::destroyDevice()
+{
+    m_graphicsQueue = VK_NULL_HANDLE;
+    m_computeQueue = VK_NULL_HANDLE;
+    m_transferQueue = VK_NULL_HANDLE;
+
+    vkDestroyDevice(m_device, nullptr);
+    m_device = VK_NULL_HANDLE;
 }
 
 void VkGfxDevice::populateLayerExtensionNames(const char* pLayerName)

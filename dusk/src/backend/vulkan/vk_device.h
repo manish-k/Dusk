@@ -45,9 +45,9 @@ private:
     HashSet<size_t>  m_instanceExtensionsSet;
     HashSet<size_t>  m_layersSet;
 
-    uint32_t         m_graphicsQueueIndex;
-    uint32_t         m_computeQueueIndex;
-    uint32_t         m_transferQueueIndex;
+    VkQueue          m_graphicsQueue;
+    VkQueue          m_computeQueue;
+    VkQueue          m_transferQueue;
 
 #ifdef VK_RENDERER_DEBUG
     VkDebugUtilsMessengerEXT m_debugMessenger;

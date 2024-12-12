@@ -17,6 +17,7 @@ VulkanRenderer::~VulkanRenderer()
 {
     destroySurface();
 
+    m_gfxDevice->destroyDevice();
     m_gfxDevice->destroyInstance();
 }
 

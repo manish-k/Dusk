@@ -386,6 +386,20 @@ void VkGfxDevice::createDevice(VkSurfaceKHR surface)
         DUSK_ERROR("Unable to get transfer queue from vulkan device");
         return;
     }
+
+    VkCommandPoolCreateInfo poolInfo {};
+    poolInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    poolInfo.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    poolInfo.queueFamilyIndex = pSelectedDeviceInfo->graphicsQueueIndex;
+
+    result                    = vkCreateCommandPool(m_device, &poolInfo, nullptr, &m_commandPool);
+
+    if (result != VK_SUCCESS)
+    {
+        DUSK_ERROR("Failed to create command pool");
+        return;
+    }
+    DUSK_INFO("Command pool created with graphics queue");
 }
 
 void VkGfxDevice::destroyInstance()
@@ -400,10 +414,14 @@ void VkGfxDevice::destroyInstance()
 void VkGfxDevice::destroyDevice()
 {
     m_graphicsQueue = VK_NULL_HANDLE;
-    m_computeQueue = VK_NULL_HANDLE;
+    m_computeQueue  = VK_NULL_HANDLE;
     m_transferQueue = VK_NULL_HANDLE;
 
-    vkDestroyDevice(m_device, nullptr);
+    if (m_commandPool != VK_NULL_HANDLE)
+        vkDestroyCommandPool(m_device, m_commandPool, nullptr);
+
+    if (m_device != VK_NULL_HANDLE)
+        vkDestroyDevice(m_device, nullptr);
     m_device = VK_NULL_HANDLE;
 }
 
@@ -448,7 +466,6 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VkGfxDevice::vulkanDebugMessengerCallback(
     const auto& logger = Logger::getVulkanLogger();
     if (messageSeverity & (VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT))
     {
-
         logger->info("{}", pCallbackData->pMessage);
         if (pCallbackData->cmdBufLabelCount)
         {

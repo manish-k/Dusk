@@ -41,9 +41,14 @@ private:
     VkInstance       m_instance;
     VkPhysicalDevice m_physicalDevice;
     VkDevice         m_device;
+    VkCommandPool    m_commandPool;
 
     HashSet<size_t>  m_instanceExtensionsSet;
     HashSet<size_t>  m_layersSet;
+
+    uint32_t         m_graphicsFamilyIndex;
+    uint32_t         m_computeFamilyIndex;
+    uint32_t         m_transferFamilyIndex;
 
     VkQueue          m_graphicsQueue;
     VkQueue          m_computeQueue;

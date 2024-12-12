@@ -55,8 +55,7 @@ bool VulkanRenderer::init(const char* appName, uint32_t version)
     DUSK_INFO("Window surface created successfully");
 
     m_gfxDevice->createDevice(m_surface);
-    // pick physical device
-    // create logical device
+
     // create command pool
 
     return true;

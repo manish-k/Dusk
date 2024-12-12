@@ -12,7 +12,7 @@ Shared<spdlog::logger> Logger::s_vulkanLogger;
 void                   Logger::init()
 {
     auto consoleSink = createShared<spdlog::sinks::stdout_color_sink_mt>();
-    consoleSink->set_pattern("%^[%T] %n: %v%$");
+    consoleSink->set_pattern("%^[%T] [%l] %n: %v%$");
 
     auto fileSink = createShared<spdlog::sinks::basic_file_sink_mt>("logs/dusk.log", true);
     fileSink->set_pattern("[%T] [%l] %n: %v");

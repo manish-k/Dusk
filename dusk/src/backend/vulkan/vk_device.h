@@ -1,7 +1,7 @@
 #pragma once
 
 #include "dusk.h"
-#include "vk_base.h"
+#include "vk.h"
 
 #include <volk.h>
 
@@ -16,15 +16,15 @@ public:
     VkGfxDevice();
     ~VkGfxDevice();
 
-    VkResult   createInstance(const char* appName, uint32_t version, DynamicArray<const char*> requiredExtensions);
+    Error   createInstance(const char* appName, uint32_t version, DynamicArray<const char*> requiredExtensions);
     void       destroyInstance();
     VkInstance getVkInstance() { return m_instance; } // TODO: Handle without getter, maybe with some struct
 
-    void       createDevice(VkSurfaceKHR surface);
+    Error      createDevice(VkSurfaceKHR surface);
     void       destroyDevice();
 
-    void       populateLayerNames();
-    void       populateLayerExtensionNames(const char* pLayerName);
+    Error      populateLayerNames();
+    Error      populateLayerExtensionNames(const char* pLayerName);
 
     bool       hasLayer(const char* pLayerName);
     bool       hasInstanceExtension(const char* pExtensionName);
@@ -38,21 +38,17 @@ public:
 #endif
 
 private:
-    VkInstance       m_instance;
-    VkPhysicalDevice m_physicalDevice;
-    VkDevice         m_device;
-    VkCommandPool    m_commandPool;
+    VkInstance       m_instance       = VK_NULL_HANDLE;
+    VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
+    VkDevice         m_device         = VK_NULL_HANDLE;
+    VkCommandPool    m_commandPool    = VK_NULL_HANDLE;
 
     HashSet<size_t>  m_instanceExtensionsSet;
     HashSet<size_t>  m_layersSet;
 
-    uint32_t         m_graphicsFamilyIndex;
-    uint32_t         m_computeFamilyIndex;
-    uint32_t         m_transferFamilyIndex;
-
-    VkQueue          m_graphicsQueue;
-    VkQueue          m_computeQueue;
-    VkQueue          m_transferQueue;
+    VkQueue          m_graphicsQueue = VK_NULL_HANDLE;
+    VkQueue          m_computeQueue  = VK_NULL_HANDLE;
+    VkQueue          m_transferQueue = VK_NULL_HANDLE;
 
 #ifdef VK_RENDERER_DEBUG
     VkDebugUtilsMessengerEXT m_debugMessenger;

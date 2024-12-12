@@ -15,7 +15,7 @@ VkGfxDevice::~VkGfxDevice()
 {
 }
 
-VkResult VkGfxDevice::createInstance(const char* appName, uint32_t version, DynamicArray<const char*> requiredExtensionNames)
+Error VkGfxDevice::createInstance(const char* appName, uint32_t version, DynamicArray<const char*> requiredExtensionNames)
 {
     VkApplicationInfo appInfo {};
     appInfo.sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -31,12 +31,16 @@ VkResult VkGfxDevice::createInstance(const char* appName, uint32_t version, Dyna
 
     DynamicArray<const char*> validationLayerNames;
 #ifdef VK_ENABLE_VALIDATION_LAYERS
-    populateLayerNames();
+    Error err = populateLayerNames();
+    if (err != Error::Ok)
+        return err;
 
     const char* validationLayerName = "VK_LAYER_KHRONOS_validation";
     if (hasLayer(validationLayerName))
     {
-        populateLayerExtensionNames(validationLayerName);
+        err = populateLayerExtensionNames(validationLayerName);
+        if (err != Error::Ok)
+            return err;
 
         if (hasInstanceExtension("VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME"))
         {
@@ -60,10 +64,12 @@ VkResult VkGfxDevice::createInstance(const char* appName, uint32_t version, Dyna
     createInfo.enabledLayerCount       = static_cast<uint32_t>(validationLayerNames.size());
     createInfo.ppEnabledLayerNames     = validationLayerNames.data();
 
-    VkResult result                    = vkCreateInstance(&createInfo, nullptr, &m_instance);
-    if (result != VK_SUCCESS)
+    VulkanResult result                = vkCreateInstance(&createInfo, nullptr, &m_instance);
+    if (result.hasError())
     {
-        return result;
+        DUSK_ERROR("vkInstance creation failed {}", result.toString());
+        return result.getErrorId();
+        ;
     }
 
     volkLoadInstance(m_instance);
@@ -81,42 +87,44 @@ VkResult VkGfxDevice::createInstance(const char* appName, uint32_t version, Dyna
         nullptr,
         &m_debugMessenger);
 
-    if (result != VK_SUCCESS)
+    if (result.hasError())
     {
-        DUSK_ERROR("Unable to setup debug messenger");
+        DUSK_ERROR("Unable to setup debug messenger {}", result.toString());
+        return result.getErrorId();
     }
 #endif
 
-    return VK_SUCCESS;
+    DUSK_INFO("VkInstance created successfully");
+    return Error::Ok;
 }
 
-void VkGfxDevice::createDevice(VkSurfaceKHR surface)
+Error VkGfxDevice::createDevice(VkSurfaceKHR surface)
 {
     DASSERT(m_instance != VK_NULL_HANDLE, "VkInstance is not present");
     DASSERT(surface != VK_NULL_HANDLE, "Invalid surface given");
 
-    uint32_t deviceCount = 0u;
-    VkResult result      = vkEnumeratePhysicalDevices(m_instance, &deviceCount, nullptr);
+    uint32_t     deviceCount = 0u;
+    VulkanResult result      = vkEnumeratePhysicalDevices(m_instance, &deviceCount, nullptr);
+
+    if (result.hasError())
+    {
+        DUSK_ERROR("Error in getting physical devices {}", result.toString());
+        return result.getErrorId();
+    }
 
     if (deviceCount == 0u)
     {
         DUSK_ERROR("No GPU available with vulkan support");
-        return;
-    }
-
-    if (result != VK_SUCCESS)
-    {
-        DUSK_ERROR("Error in getting physical devices");
-        return;
+        return Error::NotFound;
     }
 
     DynamicArray<VkPhysicalDevice> physicalDevices(deviceCount);
     result = vkEnumeratePhysicalDevices(m_instance, &deviceCount, physicalDevices.data());
 
-    if (result != VK_SUCCESS)
+    if (result.hasError())
     {
-        DUSK_ERROR("Error in getting physical devices");
-        return;
+        DUSK_ERROR("Error in getting physical devices {}", result.toString());
+        return result.getErrorId();
     }
 
     struct PhysicalDeviceInfo
@@ -175,12 +183,12 @@ void VkGfxDevice::createDevice(VkSurfaceKHR surface)
             DUSK_INFO("- - - supports compute {}", supportsCompute);
             DUSK_INFO("- - - supports transfer {}", supportsTransfer);
 
-            VkBool32 supportsPresent = false;
-            VkResult result          = vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, familyIndex, surface, &supportsPresent);
-            if (result != VK_SUCCESS)
+            VkBool32     supportsPresent = false;
+            VulkanResult result          = vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, familyIndex, surface, &supportsPresent);
+            if (result.hasError())
             {
-                DUSK_ERROR("Unable to query surface support");
-                return;
+                DUSK_ERROR("Unable to query surface support {}", result.toString());
+                return result.getErrorId();
             }
             DUSK_INFO("- - - supports present {}", supportsPresent);
 
@@ -285,7 +293,7 @@ void VkGfxDevice::createDevice(VkSurfaceKHR surface)
     if (!selectedPhysicalDeviceIndex.has_value())
     {
         DUSK_ERROR("No Vulkan supported physical device was found");
-        return;
+        return Error::NotFound;
     }
 
     m_physicalDevice                                = physicalDevices[selectedPhysicalDeviceIndex.value()];
@@ -354,10 +362,10 @@ void VkGfxDevice::createDevice(VkSurfaceKHR surface)
 
     result                                   = vkCreateDevice(m_physicalDevice, &deviceCreateInfo, nullptr, &m_device);
 
-    if (result != VK_SUCCESS)
+    if (result.hasError())
     {
-        DUSK_ERROR("Failed to create logical device");
-        return;
+        DUSK_ERROR("Failed to create logical device {}", result.toString());
+        return result.getErrorId();
     }
     DUSK_INFO("Logical device creation successful");
 
@@ -368,7 +376,7 @@ void VkGfxDevice::createDevice(VkSurfaceKHR surface)
     if (m_graphicsQueue == VK_NULL_HANDLE)
     {
         DUSK_ERROR("Unable to get graphic queue from vulkan device");
-        return;
+        return Error::NotFound;
     }
 
     // fetch compute queue handle
@@ -376,7 +384,7 @@ void VkGfxDevice::createDevice(VkSurfaceKHR surface)
     if (m_computeQueue == VK_NULL_HANDLE)
     {
         DUSK_ERROR("Unable to get compute queue from vulkan device");
-        return;
+        return Error::NotFound;
     }
 
     // fetch graphic queue handle
@@ -384,7 +392,7 @@ void VkGfxDevice::createDevice(VkSurfaceKHR surface)
     if (m_transferQueue == VK_NULL_HANDLE)
     {
         DUSK_ERROR("Unable to get transfer queue from vulkan device");
-        return;
+        return Error::NotFound;
     }
 
     VkCommandPoolCreateInfo poolInfo {};
@@ -394,12 +402,15 @@ void VkGfxDevice::createDevice(VkSurfaceKHR surface)
 
     result                    = vkCreateCommandPool(m_device, &poolInfo, nullptr, &m_commandPool);
 
-    if (result != VK_SUCCESS)
+    if (result.hasError())
     {
-        DUSK_ERROR("Failed to create command pool");
-        return;
+        DUSK_ERROR("Failed to create command pool {}", result.toString());
+        return result.getErrorId();
     }
+
     DUSK_INFO("Command pool created with graphics queue");
+
+    return Error::Ok;
 }
 
 void VkGfxDevice::destroyInstance()
@@ -425,22 +436,22 @@ void VkGfxDevice::destroyDevice()
     m_device = VK_NULL_HANDLE;
 }
 
-void VkGfxDevice::populateLayerExtensionNames(const char* pLayerName)
+Error VkGfxDevice::populateLayerExtensionNames(const char* pLayerName)
 {
-    uint32_t extensionCount = 0;
-    VkResult result         = vkEnumerateInstanceExtensionProperties(pLayerName, &extensionCount, nullptr);
-    if (result != VK_SUCCESS)
+    uint32_t     extensionCount = 0;
+    VulkanResult result         = vkEnumerateInstanceExtensionProperties(pLayerName, &extensionCount, nullptr);
+    if (result.hasError())
     {
-        DUSK_ERROR("Vulkan instance extension enumeration failed");
-        return;
+        DUSK_ERROR("Vulkan instance extension enumeration failed {}", result.toString());
+        return result.getErrorId();
     }
 
     DynamicArray<VkExtensionProperties> instanceExtensions(extensionCount);
     result = vkEnumerateInstanceExtensionProperties(pLayerName, &extensionCount, instanceExtensions.data());
-    if (result != VK_SUCCESS)
+    if (result.hasError())
     {
-        DUSK_ERROR("Vulkan instance extension enumeration failed");
-        return;
+        DUSK_ERROR("Vulkan instance extension enumeration failed {}", result.toString());
+        return result.getErrorId();
     }
 
     DUSK_INFO("Supported Vulkan Instance Extensions for layer {}", pLayerName);
@@ -449,6 +460,8 @@ void VkGfxDevice::populateLayerExtensionNames(const char* pLayerName)
         DUSK_INFO(" - {}", extension.extensionName);
         m_instanceExtensionsSet.emplace(hash(extension.extensionName));
     }
+
+    return Error::Ok;
 }
 
 bool VkGfxDevice::hasInstanceExtension(const char* pExtensionName)
@@ -492,22 +505,22 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VkGfxDevice::vulkanDebugMessengerCallback(
 }
 #endif
 
-void VkGfxDevice::populateLayerNames()
+Error VkGfxDevice::populateLayerNames()
 {
-    uint32_t layerCount = 0;
-    VkResult result     = vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
-    if (result != VK_SUCCESS)
+    uint32_t     layerCount = 0;
+    VulkanResult result     = vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+    if (result.hasError())
     {
-        DUSK_ERROR("Vulkan instance layers enumeration failed");
-        return;
+        DUSK_ERROR("Vulkan instance layers enumeration failed {}", result.toString());
+        return result.getErrorId();
     }
 
     DynamicArray<VkLayerProperties> instanceLayers(layerCount);
     result = vkEnumerateInstanceLayerProperties(&layerCount, instanceLayers.data());
-    if (result != VK_SUCCESS)
+    if (result.hasError())
     {
-        DUSK_ERROR("Vulkan instance layers enumeration failed");
-        return;
+        DUSK_ERROR("Vulkan instance layers enumeration failed {}", result.toString());
+        return result.getErrorId();
     }
 
     DUSK_INFO("Supported Vulkan layers");
@@ -516,6 +529,8 @@ void VkGfxDevice::populateLayerNames()
         DUSK_INFO(" - {}", layer.layerName);
         m_layersSet.emplace(hash(layer.layerName));
     }
+
+    return Error::Ok;
 }
 
 bool VkGfxDevice::hasLayer(const char* pLayerName)

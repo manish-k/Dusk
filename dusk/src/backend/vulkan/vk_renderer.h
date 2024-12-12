@@ -13,16 +13,13 @@ public:
     VulkanRenderer(Shared<GLFWVulkanWindow> window);
     ~VulkanRenderer() override;
 
-    bool     init(const char* appName, uint32_t version) override;
-
-    VkResult createSurface();
-    void     destroySurface();
+    bool init(const char* appName, uint32_t version) override;
 
 private:
     Unique<VkGfxDevice>      m_gfxDevice = nullptr;
 
     Shared<GLFWVulkanWindow> m_window;
 
-    VkSurfaceKHR             m_surface;
+    VkSurfaceKHR             m_surface = VK_NULL_HANDLE;
 };
 } // namespace dusk

@@ -2,7 +2,7 @@
 
 namespace dusk
 {
-Error VulkanResult::getErrorId()
+Error VulkanResult::getErrorId() const
 {
     switch (vkResult)
     {
@@ -30,7 +30,7 @@ Error VulkanResult::getErrorId()
     }
 }
 
-std::string VulkanResult::toString()
+std::string VulkanResult::toString() const
 {
     std::stringstream ss;
 

@@ -15,7 +15,7 @@ VulkanRenderer::VulkanRenderer(Shared<GLFWVulkanWindow> window) :
 
 VulkanRenderer::~VulkanRenderer()
 {
-    destroySurface();
+    vkDestroySurfaceKHR(m_gfxDevice->getVkInstance(), m_surface, nullptr);
 
     m_gfxDevice->destroyDevice();
     m_gfxDevice->destroyInstance();
@@ -23,10 +23,10 @@ VulkanRenderer::~VulkanRenderer()
 
 bool VulkanRenderer::init(const char* appName, uint32_t version)
 {
-    VkResult result = volkInitialize();
-    if (result != VK_SUCCESS)
+    VulkanResult result = volkInitialize();
+    if (result.hasError())
     {
-        DUSK_ERROR("Volk initialization failed. Vulkan loader might not be present");
+        DUSK_ERROR("Volk initialization failed. Vulkan loader might not be present {}", result.toString());
         return false;
     }
 
@@ -37,35 +37,27 @@ bool VulkanRenderer::init(const char* appName, uint32_t version)
         DUSK_INFO(" - {}", extensions[i]);
     }
 
-    result = m_gfxDevice->createInstance(appName, version, extensions);
+    Error err = m_gfxDevice->createInstance(appName, version, extensions);
 
-    if (result != VK_SUCCESS)
+    if (err != Error::Ok)
     {
-        DUSK_ERROR("Unable to create vk instance");
         return false;
     }
-    DUSK_INFO("VkInstance created successfully");
 
-    result = createSurface();
-    if (result != VK_SUCCESS)
+    err = m_window->createWindowSurface(m_gfxDevice->getVkInstance(), &m_surface);
+    if (err != Error::Ok)
     {
-        DUSK_ERROR("Unable to create window surface");
+        
         return false;
     }
-    DUSK_INFO("Window surface created successfully");
 
-    m_gfxDevice->createDevice(m_surface);
-
-    // create command pool
+    err = m_gfxDevice->createDevice(m_surface);
+    if (err != Error::Ok)
+    {
+        return false;
+    }
 
     return true;
 }
-VkResult VulkanRenderer::createSurface()
-{
-    return m_window->createWindowSurface(m_gfxDevice->getVkInstance(), &m_surface);
-}
-void VulkanRenderer::destroySurface()
-{
-    vkDestroySurfaceKHR(m_gfxDevice->getVkInstance(), m_surface, nullptr);
-}
+
 } // namespace dusk

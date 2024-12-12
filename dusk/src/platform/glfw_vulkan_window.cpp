@@ -259,8 +259,16 @@ DynamicArray<const char*> GLFWVulkanWindow::getRequiredWindowExtensions()
 
     return extensions;
 }
-VkResult GLFWVulkanWindow::createWindowSurface(VkInstance instance, VkSurfaceKHR* pSurface)
+Error GLFWVulkanWindow::createWindowSurface(VkInstance instance, VkSurfaceKHR* pSurface)
 {
-    return glfwCreateWindowSurface(instance, m_window, nullptr, pSurface);
+    VulkanResult result = glfwCreateWindowSurface(instance, m_window, nullptr, pSurface);
+
+    if (result.hasError())
+    {
+        DUSK_ERROR("Unable to create window surface {}", result.toString());
+    }
+    DUSK_INFO("Window surface created successfully");
+
+    return result.getErrorId();
 }
 } // namespace dusk

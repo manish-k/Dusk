@@ -1,6 +1,7 @@
 #pragma once
 
 #include "dusk.h"
+#include "backend/vulkan/vk.h"
 #include "window.h"
 #include "core/key_codes.h"
 #include "events/app_event.h"
@@ -78,7 +79,7 @@ public:
 
     DynamicArray<const char*> getRequiredWindowExtensions();
 
-    VkResult                  createWindowSurface(VkInstance instance, VkSurfaceKHR* surface);
+    Error                     createWindowSurface(VkInstance instance, VkSurfaceKHR* pSurface);
 
 private:
     /**

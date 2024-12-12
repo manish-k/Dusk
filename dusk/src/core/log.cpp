@@ -7,6 +7,7 @@ namespace dusk
 {
 Shared<spdlog::logger> Logger::s_engineLogger;
 Shared<spdlog::logger> Logger::s_appLogger;
+Shared<spdlog::logger> Logger::s_vulkanLogger;
 
 void                   Logger::init()
 {
@@ -36,6 +37,14 @@ void                   Logger::init()
     s_engineLogger->set_level(spdlog::level::trace);
     s_engineLogger->flush_on(spdlog::level::trace);
     spdlog::register_logger(s_engineLogger);
+
+    s_vulkanLogger = createShared<spdlog::logger>(
+        "Vulkan",
+        logSinks.begin(),
+        logSinks.end());
+    s_vulkanLogger->set_level(spdlog::level::trace);
+    s_vulkanLogger->flush_on(spdlog::level::trace);
+    spdlog::register_logger(s_vulkanLogger);
 
     s_engineLogger->info("Initialized logger.");
 }

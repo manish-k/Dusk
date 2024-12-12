@@ -445,28 +445,30 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VkGfxDevice::vulkanDebugMessengerCallback(
     const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
     void*                                       pUserData)
 {
-    if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
+    const auto& logger = Logger::getVulkanLogger();
+    if (messageSeverity & (VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT))
     {
-        DUSK_INFO("Vulkan: {}", pCallbackData->pMessage);
+
+        logger->info("{}", pCallbackData->pMessage);
         if (pCallbackData->cmdBufLabelCount)
         {
-            DUSK_INFO(" debug labels:");
+            logger->info(" debug labels:");
             for (size_t i = 0u; i < pCallbackData->cmdBufLabelCount; ++i)
             {
                 const size_t reverseIndex = pCallbackData->cmdBufLabelCount - 1u - i;
-                DUSK_INFO("     - {}", pCallbackData->pCmdBufLabels[reverseIndex].pLabelName);
+                logger->info("     - {}", pCallbackData->pCmdBufLabels[reverseIndex].pLabelName);
             }
         }
     }
 
     if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
     {
-        DUSK_WARN("Vulkan: {}", pCallbackData->pMessage);
+        logger->warn("Vulkan: {}", pCallbackData->pMessage);
     }
 
     if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
     {
-        DUSK_ERROR("Vulkan: {}", pCallbackData->pMessage);
+        logger->error("Vulkan: {}", pCallbackData->pMessage);
     }
 
     return VK_FALSE;

@@ -30,8 +30,15 @@ public:
      */
     static Shared<spdlog::logger>& getAppLogger() { return s_appLogger; }
 
+    /**
+     * @brief Get static instance of Vulkan debug logger
+     * @return Shared pointer to static instance
+     */
+    static Shared<spdlog::logger>& getVulkanLogger() { return s_vulkanLogger; }
+
 private:
     static Shared<spdlog::logger> s_engineLogger;
     static Shared<spdlog::logger> s_appLogger;
+    static Shared<spdlog::logger> s_vulkanLogger;
 };
 } // namespace dusk

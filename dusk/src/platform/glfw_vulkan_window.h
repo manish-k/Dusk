@@ -73,13 +73,27 @@ public:
      * @brief Set current cursor y position in the window relative to top-left corner
      * @param newPosY
      */
-    void                      setCursorPosy(int newPosY) { m_cursorPosY = newPosY; }
+    void setCursorPosy(int newPosY) { m_cursorPosY = newPosY; }
 
-    void                      setEventCallback(const EventCallbackFn& cb) override;
+    /**
+     * @brief Set callback to trigger on input events
+     * @param cb function
+     */
+    void setEventCallback(const EventCallbackFn& cb) override;
 
+    /**
+     * @brief Get required vulkan extensions to enable for glfw
+     * @return list of extensions
+     */
     DynamicArray<const char*> getRequiredWindowExtensions();
 
-    Error                     createWindowSurface(VkInstance instance, VkSurfaceKHR* pSurface);
+    /**
+     * @brief Get glfw extent size in pixels
+     * @return Extent containing current width and height
+     */
+    VkExtent2D getFramebufferExtent();
+
+    Error      createWindowSurface(VkInstance instance, VkSurfaceKHR* pSurface);
 
 private:
     /**

@@ -17,16 +17,21 @@ struct VulkanResult
 {
     VkResult vkResult = VK_SUCCESS;
 
-    VulkanResult() { }
+    VulkanResult()    = default;
     VulkanResult(VkResult result) :
         vkResult(result) { }
 
-    bool        isOk() const { return vkResult == VK_SUCCESS; }
-    bool        hasError() const { return vkResult != VK_SUCCESS; }
+    bool                 isOk() const { return vkResult == VK_SUCCESS; }
+    bool                 hasError() const { return vkResult != VK_SUCCESS; }
 
-    Error       getErrorId() const;
-    std::string toString() const;
+    Error                getErrorId() const;
+    std::string          toString() const;
+
+    friend std::ostream& operator<<(std::ostream& os, const VulkanResult& result) { return os << result.toString(); }
 };
 
-inline std::ostream& operator<<(std::ostream& os, const VulkanResult& result) { return os << result.toString(); }
+const char* getDeviceTypeString(VkPhysicalDeviceType deviceType);
+const char* getVkFormatString(VkFormat format);
+const char* getVkColorSpaceString(VkColorSpaceKHR colorSpace);
+const char* getVkPresentModeString(VkPresentModeKHR presentMode);
 } // namespace dusk

@@ -15,7 +15,7 @@ VkGfxDevice::~VkGfxDevice()
 {
 }
 
-Error VkGfxDevice::createInstance(const char* appName, uint32_t version, DynamicArray<const char*> requiredExtensionNames)
+Error VkGfxDevice::createInstance(const char* appName, uint32_t version, DynamicArray<const char*> requiredExtensionNames, VulkanContext& vkContext)
 {
     VkApplicationInfo appInfo {};
     appInfo.sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -69,8 +69,9 @@ Error VkGfxDevice::createInstance(const char* appName, uint32_t version, Dynamic
     {
         DUSK_ERROR("vkInstance creation failed {}", result.toString());
         return result.getErrorId();
-        ;
     }
+
+    vkContext.vulkanInstance = m_instance;
 
     volkLoadInstance(m_instance);
 
@@ -98,10 +99,10 @@ Error VkGfxDevice::createInstance(const char* appName, uint32_t version, Dynamic
     return Error::Ok;
 }
 
-Error VkGfxDevice::createDevice(VkSurfaceKHR surface)
+Error VkGfxDevice::createDevice(VulkanContext& vkContext)
 {
     DASSERT(m_instance != VK_NULL_HANDLE, "VkInstance is not present");
-    DASSERT(surface != VK_NULL_HANDLE, "Invalid surface given");
+    DASSERT(vkContext.surface != VK_NULL_HANDLE, "Invalid surface given");
 
     uint32_t     deviceCount = 0u;
     VulkanResult result      = vkEnumeratePhysicalDevices(m_instance, &deviceCount, nullptr);
@@ -184,7 +185,7 @@ Error VkGfxDevice::createDevice(VkSurfaceKHR surface)
             DUSK_INFO("- - - supports transfer {}", supportsTransfer);
 
             VkBool32     supportsPresent = false;
-            VulkanResult result          = vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, familyIndex, surface, &supportsPresent);
+            VulkanResult result          = vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, familyIndex, vkContext.surface, &supportsPresent);
             if (result.hasError())
             {
                 DUSK_ERROR("Unable to query surface support {}", result.toString());
@@ -296,14 +297,23 @@ Error VkGfxDevice::createDevice(VkSurfaceKHR surface)
         return Error::NotFound;
     }
 
-    m_physicalDevice                                = physicalDevices[selectedPhysicalDeviceIndex.value()];
-    const PhysicalDeviceInfo* pSelectedDeviceInfo   = &physicalDeviceInfo[selectedPhysicalDeviceIndex.value()];
+    m_physicalDevice                              = physicalDevices[selectedPhysicalDeviceIndex.value()];
+    const PhysicalDeviceInfo* pSelectedDeviceInfo = &physicalDeviceInfo[selectedPhysicalDeviceIndex.value()];
 
-    constexpr float           transferQueuePriority = 0.0f;
-    constexpr float           graphicsQueuePriority = 1.0f;
-    constexpr float           computeQueuePriority  = 1.0f;
+    // set physical device info in the vulkan context
+    vkContext.physicalDevice                  = m_physicalDevice;
+    vkContext.physicalDeviceFeatures          = pSelectedDeviceInfo->deviceFeatures;
+    vkContext.physicalDeviceProperties        = pSelectedDeviceInfo->deviceProperties;
+    vkContext.graphicsQueueFamilyIndex        = pSelectedDeviceInfo->graphicsQueueIndex;
+    vkContext.presentQueueFamilyIndex         = pSelectedDeviceInfo->graphicsQueueIndex;
+    vkContext.computeQueueFamilyIndex         = pSelectedDeviceInfo->computeQueueIndex;
+    vkContext.transferQueueFamilyIndex        = pSelectedDeviceInfo->transferQueueIndex;
 
-    HashSet<uint32_t>         uniqueQueueIndices;
+    constexpr float   transferQueuePriority = 0.0f;
+    constexpr float   graphicsQueuePriority = 1.0f;
+    constexpr float   computeQueuePriority  = 1.0f;
+
+    HashSet<uint32_t> uniqueQueueIndices;
     uniqueQueueIndices.emplace(pSelectedDeviceInfo->graphicsQueueIndex);
     uniqueQueueIndices.emplace(pSelectedDeviceInfo->computeQueueIndex);
     uniqueQueueIndices.emplace(pSelectedDeviceInfo->transferQueueIndex);
@@ -369,6 +379,8 @@ Error VkGfxDevice::createDevice(VkSurfaceKHR surface)
     }
     DUSK_INFO("Logical device creation successful");
 
+    vkContext.device = m_device;
+
     volkLoadDevice(m_device);
 
     // fetch graphic queue handle
@@ -387,7 +399,7 @@ Error VkGfxDevice::createDevice(VkSurfaceKHR surface)
         return Error::NotFound;
     }
 
-    // fetch graphic queue handle
+    // fetch transfer queue handle
     vkGetDeviceQueue(m_device, pSelectedDeviceInfo->transferQueueIndex, 0, &m_transferQueue);
     if (m_transferQueue == VK_NULL_HANDLE)
     {

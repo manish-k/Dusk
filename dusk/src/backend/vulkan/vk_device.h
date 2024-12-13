@@ -2,6 +2,7 @@
 
 #include "dusk.h"
 #include "vk.h"
+#include "vk_types.h"
 
 #include <volk.h>
 
@@ -16,11 +17,11 @@ public:
     VkGfxDevice();
     ~VkGfxDevice();
 
-    Error   createInstance(const char* appName, uint32_t version, DynamicArray<const char*> requiredExtensions);
+    Error      createInstance(const char* appName, uint32_t version, DynamicArray<const char*> requiredExtensions, VulkanContext& vkContext);
     void       destroyInstance();
     VkInstance getVkInstance() { return m_instance; } // TODO: Handle without getter, maybe with some struct
 
-    Error      createDevice(VkSurfaceKHR surface);
+    Error      createDevice(VulkanContext& vkContext);
     void       destroyDevice();
 
     Error      populateLayerNames();
@@ -47,6 +48,7 @@ private:
     HashSet<size_t>  m_layersSet;
 
     VkQueue          m_graphicsQueue = VK_NULL_HANDLE;
+    VkQueue          m_presentQueue  = VK_NULL_HANDLE;
     VkQueue          m_computeQueue  = VK_NULL_HANDLE;
     VkQueue          m_transferQueue = VK_NULL_HANDLE;
 

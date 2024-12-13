@@ -20,12 +20,15 @@ set(VULKAN_BACKEND_FILES
 	# Header files
 	"${VULKAN_BACKEND_DIR}/vk.h"
 	"${VULKAN_BACKEND_DIR}/vk_base.h"
+	"${VULKAN_BACKEND_DIR}/vk_types.h"
 	"${VULKAN_BACKEND_DIR}/vk_renderer.h"
 	"${VULKAN_BACKEND_DIR}/vk_device.h"
+	"${VULKAN_BACKEND_DIR}/vk_swapchain.h"
 	# Source files
 	"${VULKAN_BACKEND_DIR}/vk.cpp"
 	"${VULKAN_BACKEND_DIR}/vk_renderer.cpp"
 	"${VULKAN_BACKEND_DIR}/vk_device.cpp"
+	"${VULKAN_BACKEND_DIR}/vk_swapchain.cpp"
 )
 
 set(CORE_DIR "${PROJECT_SOURCE_DIR}/src/core")

@@ -259,6 +259,20 @@ DynamicArray<const char*> GLFWVulkanWindow::getRequiredWindowExtensions()
 
     return extensions;
 }
+
+VkExtent2D GLFWVulkanWindow::getFramebufferExtent()
+{
+    int width, height;
+    glfwGetFramebufferSize(m_window, &width, &height);
+
+    VkExtent2D actualExtent = {
+        static_cast<uint32_t>(width),
+        static_cast<uint32_t>(height)
+    };
+
+    return actualExtent;
+}
+
 Error GLFWVulkanWindow::createWindowSurface(VkInstance instance, VkSurfaceKHR* pSurface)
 {
     VulkanResult result = glfwCreateWindowSurface(instance, m_window, nullptr, pSurface);

@@ -7,6 +7,8 @@
 
 namespace dusk
 {
+VulkanContext VulkanRenderer::s_context = VulkanContext {};
+
 VulkanRenderer::VulkanRenderer(Shared<GLFWVulkanWindow> window) :
     m_window(window)
 {
@@ -23,6 +25,9 @@ VulkanRenderer::~VulkanRenderer()
 
 bool VulkanRenderer::init(const char* appName, uint32_t version)
 {
+    auto& context = VulkanRenderer::s_context;
+
+    // Initialize instance function pointers
     VulkanResult result = volkInitialize();
     if (result.hasError())
     {
@@ -37,27 +42,48 @@ bool VulkanRenderer::init(const char* appName, uint32_t version)
         DUSK_INFO(" - {}", extensions[i]);
     }
 
-    Error err = m_gfxDevice->createInstance(appName, version, extensions);
+    Error err = m_gfxDevice->createInstance(appName, version, extensions, context);
 
     if (err != Error::Ok)
     {
         return false;
     }
 
-    err = m_window->createWindowSurface(m_gfxDevice->getVkInstance(), &m_surface);
+    err = m_window->createWindowSurface(context.vulkanInstance, &m_surface);
     if (err != Error::Ok)
     {
-        
+        return false;
+    }
+    context.surface = m_surface;
+
+    // pick physical device and create logical device
+    err = m_gfxDevice->createDevice(context);
+    if (err != Error::Ok)
+    {
         return false;
     }
 
-    err = m_gfxDevice->createDevice(m_surface);
+    err = recreateSwapChain();
     if (err != Error::Ok)
     {
         return false;
     }
 
     return true;
+}
+
+Error VulkanRenderer::recreateSwapChain()
+{
+    auto&                context      = VulkanRenderer::s_context;
+    VkExtent2D           windowExtent = m_window->getFramebufferExtent();
+
+    VkGfxSwapChainParams params {};
+    params.windowWidth  = windowExtent.width;
+    params.windowHeight = windowExtent.height;
+    params.oldSwapChain = VK_NULL_HANDLE;
+
+    m_swapChain         = createUnique<VkGfxSwapChain>();
+    return m_swapChain->create(context, params);
 }
 
 } // namespace dusk

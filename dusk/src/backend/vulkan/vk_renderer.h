@@ -2,6 +2,8 @@
 
 #include "dusk.h"
 #include "vk_device.h"
+#include "vk_types.h"
+#include "vk_swapchain.h"
 #include "renderer/renderer.h"
 #include "platform/glfw_vulkan_window.h"
 
@@ -16,10 +18,17 @@ public:
     bool init(const char* appName, uint32_t version) override;
 
 private:
+    Error recreateSwapChain();
+
+private:
     Unique<VkGfxDevice>      m_gfxDevice = nullptr;
+    Unique<VkGfxSwapChain>   m_swapChain = nullptr;
 
-    Shared<GLFWVulkanWindow> m_window;
+    Shared<GLFWVulkanWindow> m_window    = nullptr;
 
-    VkSurfaceKHR             m_surface = VK_NULL_HANDLE;
+    VkSurfaceKHR             m_surface   = VK_NULL_HANDLE;
+
+private:
+    static VulkanContext s_context;
 };
 } // namespace dusk

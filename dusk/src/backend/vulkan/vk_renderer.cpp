@@ -13,10 +13,13 @@ VulkanRenderer::VulkanRenderer(Shared<GLFWVulkanWindow> window) :
     m_window(window)
 {
     m_gfxDevice = createUnique<VkGfxDevice>();
+    m_swapChain = createUnique<VkGfxSwapChain>();
 }
 
 VulkanRenderer::~VulkanRenderer()
 {
+    m_swapChain->destroy();
+    
     vkDestroySurfaceKHR(m_gfxDevice->getVkInstance(), m_surface, nullptr);
 
     m_gfxDevice->destroyDevice();
@@ -82,7 +85,6 @@ Error VulkanRenderer::recreateSwapChain()
     params.windowHeight = windowExtent.height;
     params.oldSwapChain = VK_NULL_HANDLE;
 
-    m_swapChain         = createUnique<VkGfxSwapChain>();
     return m_swapChain->create(context, params);
 }
 

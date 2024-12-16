@@ -16,6 +16,9 @@ Error VkGfxSwapChain::create(VulkanContext& context, VkGfxSwapChainParams& param
 
 void VkGfxSwapChain::destroy()
 {
+    destroyImageViews();
+
+    // TODO: handle double destroy of swapchain
     destroySwapChain();
 }
 
@@ -88,12 +91,62 @@ Error VkGfxSwapChain::createSwapChain(const VkGfxSwapChainParams& params)
         DUSK_ERROR("Swap chain creation failed {}", result.toString());
         return result.getErrorId();
     }
+
+    Error err = createImageViews(surfaceFormat.format);
+    if (err != Error::Ok)
+    {
+        destroySwapChain();
+        return err;
+    }
 }
 
 void VkGfxSwapChain::destroySwapChain()
 {
     vkDestroySwapchainKHR(m_device, m_swapChain, nullptr);
     m_swapChain = VK_NULL_HANDLE;
+}
+
+// TODO: this functionality should go into VkGfxDevice
+Error VkGfxSwapChain::createImageViews(VkFormat format)
+{
+    m_swapChainImageViews.resize(m_swapChainImages.size());
+
+    for (uint32_t i = 0u; i < m_swapChainImages.size(); i++)
+    {
+        VkImageViewCreateInfo createInfo {};
+        createInfo.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        createInfo.image                           = m_swapChainImages[i];
+        createInfo.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
+        createInfo.format                          = format;
+
+        createInfo.components.r                    = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.g                    = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.b                    = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.a                    = VK_COMPONENT_SWIZZLE_IDENTITY;
+
+        createInfo.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+        createInfo.subresourceRange.baseMipLevel   = 0;
+        createInfo.subresourceRange.levelCount     = 1;
+        createInfo.subresourceRange.baseArrayLayer = 0;
+        createInfo.subresourceRange.layerCount     = 1;
+
+        VulkanResult result                        = vkCreateImageView(m_device, &createInfo, nullptr, &m_swapChainImageViews[i]);
+        if (result.hasError())
+        {
+            DUSK_ERROR("Unable to create image view of swapchain images {}", result.toString());
+            return result.getErrorId();
+        }
+    }
+
+    return Error();
+}
+
+void VkGfxSwapChain::destroyImageViews()
+{
+    for (auto imageView : m_swapChainImageViews)
+    {
+        vkDestroyImageView(m_device, imageView, nullptr);
+    }
 }
 
 VkSurfaceFormatKHR VkGfxSwapChain::getBestSurfaceFormat() const

@@ -28,20 +28,24 @@ private:
     Error              createSwapChain(const VkGfxSwapChainParams& params);
     void               destroySwapChain();
 
+    Error              createImageViews(VkFormat format);
+    void               destroyImageViews();
+
     VkSurfaceFormatKHR getBestSurfaceFormat() const;
     VkPresentModeKHR   getPresentMode() const;
     VkExtent2D         getSwapExtent(uint32_t width, uint32_t height) const;
 
 private:
-    VkPhysicalDevice         m_physicalDevice = VK_NULL_HANDLE;
-    VkDevice                 m_device         = VK_NULL_HANDLE;
-    VkSurfaceKHR             m_surface        = VK_NULL_HANDLE;
-    VkSwapchainKHR           m_swapChain      = VK_NULL_HANDLE;
+    VkPhysicalDevice          m_physicalDevice = VK_NULL_HANDLE;
+    VkDevice                  m_device         = VK_NULL_HANDLE;
+    VkSurfaceKHR              m_surface        = VK_NULL_HANDLE;
+    VkSwapchainKHR            m_swapChain      = VK_NULL_HANDLE;
 
-    VkSurfaceCapabilitiesKHR m_capabilities;
+    VkSurfaceCapabilitiesKHR  m_capabilities;
 
-    DynamicArray<VkImage>    m_swapChainImages;
+    DynamicArray<VkImage>     m_swapChainImages;
+    DynamicArray<VkImageView> m_swapChainImageViews;
 
-    VkExtent2D               m_currentExtent;
+    VkExtent2D                m_currentExtent;
 };
 } // namespace dusk

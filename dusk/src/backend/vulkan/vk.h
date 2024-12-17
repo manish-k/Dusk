@@ -1,7 +1,9 @@
 #pragma once
 
+#include "dusk.h"
 #include "core/error.h"
 #include "vk_base.h"
+#include "renderer/vertex.h"
 
 #include <volk.h>
 #include <string>
@@ -30,8 +32,17 @@ struct VulkanResult
     friend std::ostream& operator<<(std::ostream& os, const VulkanResult& result) { return os << result.toString(); }
 };
 
+// Vk values to string
 const char* getDeviceTypeString(VkPhysicalDeviceType deviceType);
 const char* getVkFormatString(VkFormat format);
 const char* getVkColorSpaceString(VkColorSpaceKHR colorSpace);
 const char* getVkPresentModeString(VkPresentModeKHR presentMode);
+
+// Custom values to Vk values
+VkFormat getVkVertexAttributeFormat(VertexAttributeFormat format);
+
+// vertex descriptor functions
+DynamicArray<VkVertexInputBindingDescription>   getVertexBindingDescription();
+DynamicArray<VkVertexInputAttributeDescription> getVertexAtrributeDescription();
+
 } // namespace dusk

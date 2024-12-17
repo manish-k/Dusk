@@ -336,4 +336,48 @@ const char* getVkPresentModeString(VkPresentModeKHR presentMode)
     }
 }
 
+VkFormat getVkVertexAttributeFormat(VertexAttributeFormat format)
+{
+    switch (format)
+    {
+        case VertexAttributeFormat::X32Y32_FLOAT:       return VK_FORMAT_R32G32_SFLOAT;
+        case VertexAttributeFormat::X32Y32Z32_FLOAT:    return VK_FORMAT_R32G32B32_SFLOAT;
+        case VertexAttributeFormat::X32Y32Z32W32_FLOAT: return VK_FORMAT_R32G32B32A32_SFLOAT;
+        default:                                        break;
+    }
+
+    return VK_FORMAT_UNDEFINED;
+}
+
+DynamicArray<VkVertexInputBindingDescription> getVertexBindingDescription()
+{
+    DynamicArray<VkVertexInputBindingDescription> bindingDescriptions(1);
+    bindingDescriptions[0].binding   = 0;
+    bindingDescriptions[0].stride    = sizeof(Vertex);
+    bindingDescriptions[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    return bindingDescriptions;
+}
+
+DynamicArray<VkVertexInputAttributeDescription> getVertexAtrributeDescription()
+{
+    DynamicArray<VkVertexInputAttributeDescription> attributeDescriptions {};
+
+    // get vertex struct info
+    auto attribuitesInfo = Vertex::getVertexAttributesDescription();
+    for (uint32_t attribIndex = 0u; attribIndex < attribuitesInfo.size(); ++attribIndex)
+    {
+        auto& attribute = attribuitesInfo[attribIndex];
+        attributeDescriptions.push_back(
+            { attribute.location, 0, getVkVertexAttributeFormat(attribute.format), attribute.offset });
+        attributeDescriptions.push_back(
+            { attribute.location, 0, getVkVertexAttributeFormat(attribute.format), attribute.offset });
+        attributeDescriptions.push_back(
+            { attribute.location, 0, getVkVertexAttributeFormat(attribute.format), attribute.offset });
+        attributeDescriptions.push_back(
+            { attribute.location, 0, getVkVertexAttributeFormat(attribute.format), attribute.offset });
+    }
+
+    return attributeDescriptions;
+}
+
 } // namespace dusk

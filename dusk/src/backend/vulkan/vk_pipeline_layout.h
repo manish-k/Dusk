@@ -14,6 +14,8 @@ struct VkGfxPipelineLayoutConfig
 
 class VkGfxPipelineLayout
 {
+    friend class VkGfxRenderPipeline;
+
 public:
     class Builder
     {
@@ -34,6 +36,8 @@ public:
 public:
     VkGfxPipelineLayout(const VulkanContext& vkContext, const VkGfxPipelineLayoutConfig& layoutConfig);
     ~VkGfxPipelineLayout();
+
+    CLASS_UNCOPYABLE(VkGfxPipelineLayout);
 
     VkPipelineLayout get() const { return m_pipelineLayout; }
     bool             isValid() const { return m_pipelineLayout != VK_NULL_HANDLE; }

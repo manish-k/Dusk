@@ -14,6 +14,8 @@ struct VkGfxRenderPassConfig
 
 class VkGfxRenderPass
 {
+    friend class VkGfxRenderPipeline;
+
 public:
     class Builder
     {
@@ -32,6 +34,8 @@ public:
 public:
     VkGfxRenderPass(const VulkanContext& vkContext, const VkGfxRenderPassConfig& renderPassConfig);
     ~VkGfxRenderPass();
+
+    CLASS_UNCOPYABLE(VkGfxRenderPass);
 
     bool isValid() const { return m_renderPass != VK_NULL_HANDLE; }
 

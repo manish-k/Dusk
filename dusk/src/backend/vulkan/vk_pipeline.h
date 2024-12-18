@@ -18,8 +18,8 @@ struct VkGfxRenderPipelineConfig
     DynamicArray<VkDynamicState>        dynamicStates;
     VkPipelineColorBlendAttachmentState colorBlendAttachment {};
 
-    Shared<Buffer>                      vertexShaderCode   = nullptr;
-    Shared<Buffer>                      fragmentShaderCode = nullptr;
+    Buffer*                             vertexShaderCode   = nullptr;
+    Buffer*                             fragmentShaderCode = nullptr;
 
     VkRenderPass                        renderPass         = VK_NULL_HANDLE;
     uint32_t                            subpassIndex       = 0u;
@@ -36,8 +36,8 @@ public:
         Builder(VulkanContext& vkContext);
 
         Builder& addDynamicState(VkDynamicState state);
-        Builder& setVertexShaderCode(Shared<Buffer> shaderCode);
-        Builder& setFragmentShaderCode(Shared<Buffer> shaderCode);
+        Builder& setVertexShaderCode(Buffer* shaderCode);
+        Builder& setFragmentShaderCode(Buffer* shaderCode);
         Builder& setRenderPass(VkGfxRenderPass& renderPass);
         Builder& setSubPassIndex(uint32_t index);
         Builder& setPipelineLayout(VkGfxPipelineLayout& pipelineLayout);
@@ -62,7 +62,7 @@ public:
     bool isValid() const { return m_pipeline != VK_NULL_HANDLE; };
 
 private:
-    void createShaderModule(const Buffer& shaderCode, VkShaderModule* shaderModule) const;
+    void createShaderModule(const Buffer* shaderCode, VkShaderModule* shaderModule) const;
 
 private:
     VkDevice       m_device               = VK_NULL_HANDLE;

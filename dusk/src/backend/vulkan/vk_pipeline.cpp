@@ -25,12 +25,12 @@ VkGfxRenderPipeline::Builder::addDynamicState(VkDynamicState state)
     m_renderConfig.dynamicStates.push_back(state);
 }
 
-VkGfxRenderPipeline::Builder::setVertexShaderCode(Shared<Buffer> shaderCode)
+VkGfxRenderPipeline::Builder::setVertexShaderCode(const Shared<Buffer> shaderCode)
 {
     m_renderConfig.vertexShaderCode = shaderCode;
 }
 
-VkGfxRenderPipeline::Builder::setFragmentShaderCode(Shared<Buffer> shaderCode)
+VkGfxRenderPipeline::Builder::setFragmentShaderCode(const Shared<Buffer> shaderCode)
 {
     m_renderConfig.fragmentShaderCode = shaderCode;
 }
@@ -236,12 +236,12 @@ VkGfxRenderPipeline::~VkGfxRenderPipeline()
     }
 }
 
-void dusk::VkGfxRenderPipeline::createShaderModule(const Buffer& shaderCode, VkShaderModule* shaderModule) const
+void dusk::VkGfxRenderPipeline::createShaderModule(const Buffer* shaderCode, VkShaderModule* shaderModule) const
 {
     VkShaderModuleCreateInfo createInfo {};
     createInfo.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    createInfo.codeSize = shaderCode.size();
-    createInfo.pCode    = reinterpret_cast<const uint32_t*>(shaderCode.data());
+    createInfo.codeSize = shaderCode->size();
+    createInfo.pCode    = reinterpret_cast<const uint32_t*>(shaderCode->data());
 
     VulkanResult result = vkCreateShaderModule(m_device, &createInfo, nullptr, shaderModule);
 

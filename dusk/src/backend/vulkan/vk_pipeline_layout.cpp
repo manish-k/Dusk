@@ -56,6 +56,8 @@ VkGfxPipelineLayout::VkGfxPipelineLayout(const VulkanContext& vkContext, const V
     pipelineLayoutInfo.pPushConstantRanges    = pushConstantRanges.data();
 
     VulkanResult result                       = vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout);
+    
+    // TODO: need better error handling
     if (result.hasError())
     {
         DUSK_ERROR("Unable to create pipeline layout {}", result.toString());

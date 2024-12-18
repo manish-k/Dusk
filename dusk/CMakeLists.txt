@@ -48,6 +48,7 @@ set(CORE_FILES
 	"${CORE_DIR}/key_codes.h"
 	"${CORE_DIR}/mouse_codes.h"
 	"${CORE_DIR}/dtime.h"
+	"${CORE_DIR}/buffer.h"
 	# Source files
 	"${CORE_DIR}/application.cpp"
 	"${CORE_DIR}/log.cpp"
@@ -79,9 +80,11 @@ set(PLATFORM_FILES
 	# Header files
 	"${PLATFORM_DIR}/window.h"
 	"${PLATFORM_DIR}/glfw_vulkan_window.h"
+	"${PLATFORM_DIR}/file_system.h"
 	# Source files
 	"${PLATFORM_DIR}/window.cpp"
 	"${PLATFORM_DIR}/glfw_vulkan_window.cpp"
+	"${PLATFORM_DIR}/file_system.cpp"
 )
 
 set(RENDERER_DIR "${PROJECT_SOURCE_DIR}/src/renderer")

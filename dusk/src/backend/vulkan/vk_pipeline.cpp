@@ -197,6 +197,7 @@ VkGfxRenderPipeline::VkGfxRenderPipeline(VulkanContext& vkContext, VkGfxRenderPi
     // create pipeline
     VulkanResult result = vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_pipeline);
 
+    // TODO: need better error handling
     if (result.hasError())
     {
         DUSK_ERROR("Unable to create graphics pipeline {}", result.toString());

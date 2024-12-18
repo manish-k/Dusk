@@ -8,12 +8,6 @@
 
 namespace dusk
 {
-struct VkRenderPipelineShaderModules
-{
-    VkShaderModule vertexShader   = VK_NULL_HANDLE;
-    VkShaderModule fragmentShader = VK_NULL_HANDLE;
-};
-
 // TODO: Add following configurations
 // 1. Src and Dst blend factors and blend operation. Enable/disable of blending
 // 2. Depth stencil enable/disable, compare op and front/back ops
@@ -24,12 +18,13 @@ struct VkGfxRenderPipelineConfig
     DynamicArray<VkDynamicState>        dynamicStates;
     VkPipelineColorBlendAttachmentState colorBlendAttachment {};
 
-    VkRenderPipelineShaderModules       renderShaderModules;
+    Shared<Buffer>                      vertexShaderCode   = nullptr;
+    Shared<Buffer>                      fragmentShaderCode = nullptr;
 
-    VkRenderPass                        renderPass     = VK_NULL_HANDLE;
-    uint32_t                            subpassIndex   = 0u;
+    VkRenderPass                        renderPass         = VK_NULL_HANDLE;
+    uint32_t                            subpassIndex       = 0u;
 
-    VkPipelineLayout                    pipelineLayout = VK_NULL_HANDLE;
+    VkPipelineLayout                    pipelineLayout     = VK_NULL_HANDLE;
 };
 
 class VkGfxRenderPipeline
@@ -41,6 +36,8 @@ public:
         Builder(VulkanContext& vkContext);
 
         Builder& addDynamicState(VkDynamicState state);
+        Builder& setVertexShaderCode(Shared<Buffer> shaderCode);
+        Builder& setFragmentShaderCode(Shared<Buffer> shaderCode);
         Builder& setRenderPass(VkGfxRenderPass& renderPass);
         Builder& setSubPassIndex(uint32_t index);
         Builder& setPipelineLayout(VkGfxPipelineLayout& pipelineLayout);
@@ -65,7 +62,13 @@ public:
     bool isValid() const { return m_pipeline != VK_NULL_HANDLE; };
 
 private:
-    VkDevice   m_device   = VK_NULL_HANDLE;
-    VkPipeline m_pipeline = VK_NULL_HANDLE;
+    void createShaderModule(const Buffer& shaderCode, VkShaderModule* shaderModule) const;
+
+private:
+    VkDevice       m_device               = VK_NULL_HANDLE;
+    VkPipeline     m_pipeline             = VK_NULL_HANDLE;
+
+    VkShaderModule m_vertexShaderModule   = VK_NULL_HANDLE;
+    VkShaderModule m_fragmentShaderModule = VK_NULL_HANDLE;
 };
 } // namespace dusk

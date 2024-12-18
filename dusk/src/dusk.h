@@ -3,6 +3,7 @@
 #include "core/base.h"
 #include "core/log.h"
 #include "core/error.h"
+#include "core/buffer.h"
 #include "utils/hash.h"
 
 #ifdef DDEBUG // Dusk Debug

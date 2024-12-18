@@ -1,6 +1,8 @@
 #include "vk_pipeline.h"
 #include "vk_pipeline.h"
 #include "vk_pipeline.h"
+#include "vk_pipeline.h"
+#include "vk_pipeline.h"
 
 namespace dusk
 {
@@ -23,13 +25,23 @@ VkGfxRenderPipeline::Builder::addDynamicState(VkDynamicState state)
     m_renderConfig.dynamicStates.push_back(state);
 }
 
+VkGfxRenderPipeline::Builder::setVertexShaderCode(Shared<Buffer> shaderCode)
+{
+    m_renderConfig.vertexShaderCode = shaderCode;
+}
+
+VkGfxRenderPipeline::Builder::setFragmentShaderCode(Shared<Buffer> shaderCode)
+{
+    m_renderConfig.fragmentShaderCode = shaderCode;
+}
+
 VkGfxRenderPipeline::Builder& VkGfxRenderPipeline::Builder::setRenderPass(VkGfxRenderPass& renderPass)
 {
     m_renderConfig.renderPass = renderPass.m_renderPass;
     return *this;
 }
 
-VkGfxRenderPipeline::Builder& VkGfxRenderPipeline::Builder::setRenderPass(uint32_t index)
+VkGfxRenderPipeline::Builder& VkGfxRenderPipeline::Builder::setSubPassIndex(uint32_t index)
 {
     m_renderConfig.subpassIndex = index;
     return *this;
@@ -111,16 +123,18 @@ VkGfxRenderPipeline::VkGfxRenderPipeline(VulkanContext& vkContext, VkGfxRenderPi
     dynamicStatesInfo.dynamicStateCount = static_cast<uint32_t>(renderConfig.dynamicStates.size());
     dynamicStatesInfo.pDynamicStates    = renderConfig.dynamicStates.data();
 
+    createShaderModule(renderConfig.vertexShaderCode, &m_vertexShaderModule);
     VkPipelineShaderStageCreateInfo vertShaderStageInfo {};
     vertShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     vertShaderStageInfo.stage  = VK_SHADER_STAGE_VERTEX_BIT;
-    vertShaderStageInfo.module = renderConfig.renderShaderModules.vertexShader;
+    vertShaderStageInfo.module = m_vertexShaderModule;
     vertShaderStageInfo.pName  = "main";
 
+    createShaderModule(renderConfig.fragmentShaderCode, &m_fragmentShaderModule);
     VkPipelineShaderStageCreateInfo fragShaderStageInfo {};
     fragShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     fragShaderStageInfo.stage  = VK_SHADER_STAGE_FRAGMENT_BIT;
-    fragShaderStageInfo.module = renderConfig.renderShaderModules.fragmentShader;
+    fragShaderStageInfo.module = m_fragmentShaderModule;
     fragShaderStageInfo.pName  = "main";
 
     // shaders list
@@ -206,9 +220,35 @@ VkGfxRenderPipeline::VkGfxRenderPipeline(VulkanContext& vkContext, VkGfxRenderPi
 
 VkGfxRenderPipeline::~VkGfxRenderPipeline()
 {
+    if (m_vertexShaderModule != VK_NULL_HANDLE)
+    {
+        vkDestroyShaderModule(m_device, m_vertexShaderModule, nullptr);
+    }
+
+    if (m_fragmentShaderModule != VK_NULL_HANDLE)
+    {
+        vkDestroyShaderModule(m_device, m_fragmentShaderModule, nullptr);
+    }
+
     if (m_pipeline != VK_NULL_HANDLE)
     {
         vkDestroyPipeline(m_device, m_pipeline, nullptr);
     }
 }
+
+void dusk::VkGfxRenderPipeline::createShaderModule(const Buffer& shaderCode, VkShaderModule* shaderModule) const
+{
+    VkShaderModuleCreateInfo createInfo {};
+    createInfo.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    createInfo.codeSize = shaderCode.size();
+    createInfo.pCode    = reinterpret_cast<const uint32_t*>(shaderCode.data());
+
+    VulkanResult result = vkCreateShaderModule(m_device, &createInfo, nullptr, shaderModule);
+
+    if (result.hasError())
+    {
+        DUSK_ERROR("Unable to create shader module {}", result.toString());
+    }
+}
+
 } // namespace dusk

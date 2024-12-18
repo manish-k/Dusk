@@ -3,6 +3,7 @@
 #include "vk_pipeline.h"
 #include "vk_pipeline.h"
 #include "vk_pipeline.h"
+#include "vk_pipeline.h"
 
 namespace dusk
 {
@@ -20,19 +21,22 @@ VkGfxRenderPipeline::Builder::Builder(VulkanContext& vkContext) :
     m_renderConfig.colorBlendAttachment.alphaBlendOp        = VK_BLEND_OP_ADD;
 }
 
-VkGfxRenderPipeline::Builder::addDynamicState(VkDynamicState state)
+VkGfxRenderPipeline::Builder& VkGfxRenderPipeline::Builder::addDynamicState(VkDynamicState state)
 {
     m_renderConfig.dynamicStates.push_back(state);
+    return *this;
 }
 
-VkGfxRenderPipeline::Builder::setVertexShaderCode(const Shared<Buffer> shaderCode)
+VkGfxRenderPipeline::Builder& VkGfxRenderPipeline::Builder::setVertexShaderCode(Buffer* shaderCode)
 {
     m_renderConfig.vertexShaderCode = shaderCode;
+    return *this;
 }
 
-VkGfxRenderPipeline::Builder::setFragmentShaderCode(const Shared<Buffer> shaderCode)
+VkGfxRenderPipeline::Builder& VkGfxRenderPipeline::Builder::setFragmentShaderCode(Buffer* shaderCode)
 {
     m_renderConfig.fragmentShaderCode = shaderCode;
+    return *this;
 }
 
 VkGfxRenderPipeline::Builder& VkGfxRenderPipeline::Builder::setRenderPass(VkGfxRenderPass& renderPass)
@@ -55,8 +59,8 @@ VkGfxRenderPipeline::Builder& VkGfxRenderPipeline::Builder::setPipelineLayout(Vk
 
 Unique<VkGfxRenderPipeline> VkGfxRenderPipeline::Builder::build()
 {
-    DASSERT(renderConfig.renderPass != VK_NULL_HANDLE, "render pass is required for rendering");
-    DASSERT(renderConfig.pipelineLayout != VK_NULL_HANDLE, "pipeline layout is required for rendering");
+    DASSERT(m_renderConfig.renderPass != VK_NULL_HANDLE, "render pass is required for rendering");
+    DASSERT(m_renderConfig.pipelineLayout != VK_NULL_HANDLE, "pipeline layout is required for rendering");
 
     auto pipeline = createUnique<VkGfxRenderPipeline>(m_context, m_renderConfig);
 
@@ -103,7 +107,7 @@ VkGfxRenderPipeline::VkGfxRenderPipeline(VulkanContext& vkContext, VkGfxRenderPi
     colorBlendInfo.blendConstants[1] = 0.0f;
     colorBlendInfo.blendConstants[2] = 0.0f;
     colorBlendInfo.blendConstants[3] = 0.0f;
-    colorBlendInfo.pAttachments      = &m_renderConfig.colorBlendAttachment;
+    colorBlendInfo.pAttachments      = &renderConfig.colorBlendAttachment;
 
     // input assembly state
     VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo {};
@@ -143,8 +147,8 @@ VkGfxRenderPipeline::VkGfxRenderPipeline(VulkanContext& vkContext, VkGfxRenderPi
     };
 
     // vertex attributes info
-    auto bindingDescriptions   = getBindingDescriptions();
-    auto attributeDescriptions = getAttributeDescriptions();
+    auto bindingDescriptions   = getVertexBindingDescription();
+    auto attributeDescriptions = getVertexAtrributeDescription();
 
     // input state info
     VkPipelineVertexInputStateCreateInfo vertexInputInfo {};

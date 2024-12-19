@@ -81,13 +81,13 @@ Error VkGfxSwapChain::createSwapChain(const VkGfxSwapChainParams& params)
     DUSK_INFO("Selecting extent width={}, height={}", extent.width, extent.height);
 
     DUSK_INFO("Surface capabilities minImageCount={} and maxImageCount={}", m_capabilities.minImageCount, m_capabilities.maxImageCount);
-    uint32_t imageCount = m_capabilities.minImageCount + 1;
+    m_imagesCount = m_capabilities.minImageCount + 1;
     if (m_capabilities.maxImageCount > 0
-        && imageCount > m_capabilities.maxImageCount)
+        && m_imagesCount > m_capabilities.maxImageCount)
     {
-        imageCount = m_capabilities.maxImageCount;
+        m_imagesCount = m_capabilities.maxImageCount;
     }
-    DUSK_INFO("Setting image count {} for swapchain images", imageCount);
+    DUSK_INFO("Setting image count {} for swapchain images", m_imagesCount);
 
     VkSurfaceTransformFlagBitsKHR transform = m_capabilities.currentTransform;
     if (m_capabilities.supportedTransforms & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR)
@@ -99,7 +99,7 @@ Error VkGfxSwapChain::createSwapChain(const VkGfxSwapChainParams& params)
     createInfo.sType                 = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
     createInfo.surface               = m_surface;
 
-    createInfo.minImageCount         = imageCount;
+    createInfo.minImageCount         = m_imagesCount;
     createInfo.imageFormat           = surfaceFormat.format;
     createInfo.imageColorSpace       = surfaceFormat.colorSpace;
     createInfo.imageExtent           = extent;
@@ -130,6 +130,9 @@ Error VkGfxSwapChain::createSwapChain(const VkGfxSwapChainParams& params)
         destroySwapChain();
         return err;
     }
+
+    DUSK_INFO("Swapchain created successfully");
+    return Error::Ok;
 }
 
 void VkGfxSwapChain::destroySwapChain()

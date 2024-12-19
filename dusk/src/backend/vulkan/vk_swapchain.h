@@ -26,6 +26,7 @@ public:
     Error          initFrameBuffers(VkGfxRenderPass& renderPass);
 
     VkSwapchainKHR getSwapChain() const { return m_swapChain; }
+    uint32_t       getImagesCount() const { return m_imagesCount; }
 
 private:
     Error              createSwapChain(const VkGfxSwapChainParams& params);
@@ -46,6 +47,7 @@ private:
 
     VkSurfaceCapabilitiesKHR    m_capabilities;
 
+    uint32_t                    m_imagesCount;
     DynamicArray<VkImage>       m_swapChainImages;
     DynamicArray<VkImageView>   m_swapChainImageViews;
     DynamicArray<VkFramebuffer> m_frameBuffers;

@@ -419,6 +419,7 @@ Error VkGfxDevice::createDevice(VulkanContext& vkContext)
         DUSK_ERROR("Failed to create command pool {}", result.toString());
         return result.getErrorId();
     }
+    vkContext.commandPool = m_commandPool;
 
     DUSK_INFO("Command pool created with graphics queue");
 

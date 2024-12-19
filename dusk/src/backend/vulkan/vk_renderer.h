@@ -19,14 +19,20 @@ public:
 
 private:
     Error recreateSwapChain();
+    
+    Error createCommandBuffers();
+    void  freeCommandBuffers();
+    Error recreateCommandBuffers();
 
 private:
-    Unique<VkGfxDevice>      m_gfxDevice = nullptr;
-    Unique<VkGfxSwapChain>   m_swapChain = nullptr;
+    Unique<VkGfxDevice>           m_gfxDevice = nullptr;
+    Unique<VkGfxSwapChain>        m_swapChain = nullptr;
 
-    Shared<GLFWVulkanWindow> m_window    = nullptr;
+    Shared<GLFWVulkanWindow>      m_window    = nullptr;
 
-    VkSurfaceKHR             m_surface   = VK_NULL_HANDLE;
+    VkSurfaceKHR                  m_surface   = VK_NULL_HANDLE;
+
+    DynamicArray<VkCommandBuffer> m_commandBuffers;
 
 private:
     static VulkanContext s_context;

@@ -18,9 +18,13 @@ VulkanRenderer::VulkanRenderer(Shared<GLFWVulkanWindow> window) :
 
 VulkanRenderer::~VulkanRenderer()
 {
+    auto& context = VulkanRenderer::s_context;
+
+    freeCommandBuffers();
+
     m_swapChain->destroy();
-    
-    vkDestroySurfaceKHR(m_gfxDevice->getVkInstance(), m_surface, nullptr);
+
+    vkDestroySurfaceKHR(context.vulkanInstance, m_surface, nullptr);
 
     m_gfxDevice->destroyDevice();
     m_gfxDevice->destroyInstance();
@@ -72,6 +76,12 @@ bool VulkanRenderer::init(const char* appName, uint32_t version)
         return false;
     }
 
+    err = createCommandBuffers();
+    if (err != Error::Ok)
+    {
+        return false;
+    }
+
     return true;
 }
 
@@ -86,6 +96,48 @@ Error VulkanRenderer::recreateSwapChain()
     params.oldSwapChain = VK_NULL_HANDLE;
 
     return m_swapChain->create(context, params);
+}
+
+Error VulkanRenderer::createCommandBuffers()
+{
+    auto& context = VulkanRenderer::s_context;
+
+    m_commandBuffers.resize(m_swapChain->getImagesCount());
+
+    VkCommandBufferAllocateInfo allocInfo {};
+    allocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandPool        = context.commandPool;
+    allocInfo.commandBufferCount = static_cast<uint32_t>(m_commandBuffers.size());
+
+    // allocate command buffers for each swapchain image
+    VulkanResult result = vkAllocateCommandBuffers(context.device, &allocInfo, m_commandBuffers.data());
+
+    if (result.hasError())
+    {
+        DUSK_ERROR("Unable to allocate command buffers {}", result.toString());
+        return result.getErrorId();
+    }
+
+    DUSK_INFO("Command buffers created = {}", m_commandBuffers.size());
+
+    return Error::Ok;
+}
+
+void VulkanRenderer::freeCommandBuffers()
+{
+    auto& context = VulkanRenderer::s_context;
+    vkFreeCommandBuffers(context.device, context.commandPool, static_cast<uint32_t>(m_commandBuffers.size()), m_commandBuffers.data());
+    m_commandBuffers.clear();
+}
+
+Error VulkanRenderer::recreateCommandBuffers()
+{
+    DUSK_INFO("Recreating command buffers");
+    
+    freeCommandBuffers();
+
+    return createCommandBuffers();
 }
 
 } // namespace dusk

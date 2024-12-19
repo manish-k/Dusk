@@ -11,6 +11,8 @@ struct VulkanContext
     VkDevice                   device;
     VkSurfaceKHR               surface;
 
+    VkCommandPool              commandPool;
+
     VkPhysicalDeviceProperties physicalDeviceProperties;
     VkPhysicalDeviceFeatures   physicalDeviceFeatures;
 

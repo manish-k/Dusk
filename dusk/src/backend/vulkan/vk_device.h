@@ -19,7 +19,6 @@ public:
 
     Error      createInstance(const char* appName, uint32_t version, DynamicArray<const char*> requiredExtensions, VulkanContext& vkContext);
     void       destroyInstance();
-    VkInstance getVkInstance() { return m_instance; } // TODO: Handle without getter, maybe with some struct
 
     Error      createDevice(VulkanContext& vkContext);
     void       destroyDevice();

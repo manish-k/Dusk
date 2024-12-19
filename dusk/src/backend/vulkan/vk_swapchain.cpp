@@ -27,6 +27,37 @@ void VkGfxSwapChain::resize()
 {
 }
 
+Error VkGfxSwapChain::initFrameBuffers(VkGfxRenderPass& renderPass)
+{
+    m_frameBuffers.resize(m_swapChainImageViews.size());
+
+    for (uint32_t i = 0u; i < m_swapChainImageViews.size(); ++i)
+    {
+        Array<VkImageView, 1> attachments[] = {
+            m_swapChainImageViews[i],
+        };
+
+        VkFramebufferCreateInfo framebufferInfo {};
+        framebufferInfo.sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        framebufferInfo.renderPass      = renderPass.m_renderPass;
+        framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments->size());
+        framebufferInfo.pAttachments    = attachments->data();
+        framebufferInfo.width           = m_currentExtent.width;
+        framebufferInfo.height          = m_currentExtent.height;
+        framebufferInfo.layers          = 1;
+
+        VulkanResult result             = vkCreateFramebuffer(m_device, &framebufferInfo, nullptr, &m_frameBuffers[i]);
+
+        if (result.hasError())
+        {
+            DUSK_ERROR("Unable to creat framebuffers {}");
+            return result.getErrorId();
+        }
+    }
+
+    return Error::Ok;
+}
+
 Error VkGfxSwapChain::createSwapChain(const VkGfxSwapChainParams& params)
 {
     VulkanResult result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(

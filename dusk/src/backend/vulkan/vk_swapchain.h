@@ -3,6 +3,7 @@
 #include "dusk.h"
 #include "vk.h"
 #include "vk_types.h"
+#include "vk_renderpass.h"
 
 namespace dusk
 {
@@ -22,6 +23,8 @@ public:
 
     void           resize();
 
+    Error          initFrameBuffers(VkGfxRenderPass& renderPass);
+
     VkSwapchainKHR getSwapChain() const { return m_swapChain; }
 
 private:
@@ -36,16 +39,17 @@ private:
     VkExtent2D         getSwapExtent(uint32_t width, uint32_t height) const;
 
 private:
-    VkPhysicalDevice          m_physicalDevice = VK_NULL_HANDLE;
-    VkDevice                  m_device         = VK_NULL_HANDLE;
-    VkSurfaceKHR              m_surface        = VK_NULL_HANDLE;
-    VkSwapchainKHR            m_swapChain      = VK_NULL_HANDLE;
+    VkPhysicalDevice            m_physicalDevice = VK_NULL_HANDLE;
+    VkDevice                    m_device         = VK_NULL_HANDLE;
+    VkSurfaceKHR                m_surface        = VK_NULL_HANDLE;
+    VkSwapchainKHR              m_swapChain      = VK_NULL_HANDLE;
 
-    VkSurfaceCapabilitiesKHR  m_capabilities;
+    VkSurfaceCapabilitiesKHR    m_capabilities;
 
-    DynamicArray<VkImage>     m_swapChainImages;
-    DynamicArray<VkImageView> m_swapChainImageViews;
+    DynamicArray<VkImage>       m_swapChainImages;
+    DynamicArray<VkImageView>   m_swapChainImageViews;
+    DynamicArray<VkFramebuffer> m_frameBuffers;
 
-    VkExtent2D                m_currentExtent;
+    VkExtent2D                  m_currentExtent;
 };
 } // namespace dusk

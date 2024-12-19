@@ -15,6 +15,7 @@ struct VkGfxRenderPassConfig
 class VkGfxRenderPass
 {
     friend class VkGfxRenderPipeline;
+    friend class VkGfxSwapChain;
 
 public:
     class Builder

@@ -11,6 +11,11 @@ Error VkGfxSwapChain::create(VulkanContext& context, VkGfxSwapChainParams& param
     m_device         = context.device;
     m_surface        = context.surface;
 
+    m_graphicsQueue  = context.graphicsQueue;
+    m_presentQueue   = context.presentQueue;
+    m_computeQueue   = context.computeQueue;
+    m_transferQueue  = context.transferQueue;
+
     return createSwapChain(params);
 }
 
@@ -54,6 +59,85 @@ Error VkGfxSwapChain::initFrameBuffers(VkGfxRenderPass& renderPass)
             return result.getErrorId();
         }
     }
+
+    return Error::Ok;
+}
+
+Error VkGfxSwapChain::acquireNextImage(uint32_t* imageIndex)
+{
+    vkWaitForFences(
+        m_device, 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
+
+    VulkanResult result = vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, imageIndex);
+
+    if (result.hasError())
+    {
+        DUSK_ERROR("Unable to acquire swapchain image {}", result.toString());
+        return result.getErrorId();
+    }
+
+    return Error::Ok;
+}
+
+Error VkGfxSwapChain::submitCommandBuffers(const VkCommandBuffer* buffers, uint32_t* imageIndex)
+{
+    if (m_imagesInFlight[*imageIndex] != VK_NULL_HANDLE)
+    {
+        vkWaitForFences(m_device, 1, &m_imagesInFlight[*imageIndex], VK_TRUE, UINT64_MAX);
+    }
+    m_imagesInFlight[*imageIndex] = m_inFlightFences[m_currentFrame];
+
+    // wait semaphores
+    VkSemaphore          waitSemaphores[] = { m_imageAvailableSemaphores[m_currentFrame] };
+    VkPipelineStageFlags waitStages[]     = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+
+    // signal semaphores
+    VkSemaphore signalSemaphores[] = { m_renderFinishedSemaphores[m_currentFrame] };
+
+    // image submit info for presentation
+    VkSubmitInfo submitInfo         = {};
+    submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.waitSemaphoreCount   = 1;
+    submitInfo.pWaitSemaphores      = waitSemaphores;
+    submitInfo.pWaitDstStageMask    = waitStages;
+    submitInfo.commandBufferCount   = 1;
+    submitInfo.pCommandBuffers      = buffers;
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores    = signalSemaphores;
+
+    vkResetFences(m_device, 1, &m_inFlightFences[m_currentFrame]);
+
+    VulkanResult result = vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, m_inFlightFences[m_currentFrame]);
+
+    if (result.hasError())
+    {
+        DUSK_ERROR("Failed to submit draw command buffer to queue {}", result.toString());
+        return result.getErrorId();
+    }
+
+    VkPresentInfoKHR presentInfo   = {};
+    presentInfo.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+
+    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pWaitSemaphores    = signalSemaphores;
+
+    VkSwapchainKHR swapChains[]    = { m_swapChain };
+    presentInfo.swapchainCount     = 1;
+    presentInfo.pSwapchains        = swapChains;
+
+    presentInfo.pImageIndices      = imageIndex;
+
+    // present image
+    result = vkQueuePresentKHR(m_presentQueue, &presentInfo);
+
+    if (result.hasError())
+    {
+        DUSK_ERROR("Failed to present image {}", result.toString());
+        return result.getErrorId();
+    }
+
+    // go to next frame
+    m_currentFrame = (m_currentFrame + 1) % m_imagesCount;
 
     return Error::Ok;
 }
@@ -194,7 +278,8 @@ Error VkGfxSwapChain::createImageViews(VkFormat format)
         createInfo.subresourceRange.baseArrayLayer = 0;
         createInfo.subresourceRange.layerCount     = 1;
 
-        VulkanResult result                        = vkCreateImageView(m_device, &createInfo, nullptr, &m_swapChainImageViews[i]);
+        // create image views
+        VulkanResult result = vkCreateImageView(m_device, &createInfo, nullptr, &m_swapChainImageViews[i]);
         if (result.hasError())
         {
             DUSK_ERROR("Unable to create image view of swapchain images {}", result.toString());
@@ -236,7 +321,7 @@ Error VkGfxSwapChain::createSyncObjects()
             return result.getErrorId();
         }
 
-         result = vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_renderFinishedSemaphores[i]);
+        result = vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_renderFinishedSemaphores[i]);
         if (result.hasError())
         {
             DUSK_ERROR("Unable to create renderFinishedSemaphores {}", result.toString());

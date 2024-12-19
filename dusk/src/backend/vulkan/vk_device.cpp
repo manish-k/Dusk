@@ -301,13 +301,13 @@ Error VkGfxDevice::createDevice(VulkanContext& vkContext)
     const PhysicalDeviceInfo* pSelectedDeviceInfo = &physicalDeviceInfo[selectedPhysicalDeviceIndex.value()];
 
     // set physical device info in the vulkan context
-    vkContext.physicalDevice                  = m_physicalDevice;
-    vkContext.physicalDeviceFeatures          = pSelectedDeviceInfo->deviceFeatures;
-    vkContext.physicalDeviceProperties        = pSelectedDeviceInfo->deviceProperties;
-    vkContext.graphicsQueueFamilyIndex        = pSelectedDeviceInfo->graphicsQueueIndex;
-    vkContext.presentQueueFamilyIndex         = pSelectedDeviceInfo->graphicsQueueIndex;
-    vkContext.computeQueueFamilyIndex         = pSelectedDeviceInfo->computeQueueIndex;
-    vkContext.transferQueueFamilyIndex        = pSelectedDeviceInfo->transferQueueIndex;
+    vkContext.physicalDevice                = m_physicalDevice;
+    vkContext.physicalDeviceFeatures        = pSelectedDeviceInfo->deviceFeatures;
+    vkContext.physicalDeviceProperties      = pSelectedDeviceInfo->deviceProperties;
+    vkContext.graphicsQueueFamilyIndex      = pSelectedDeviceInfo->graphicsQueueIndex;
+    vkContext.presentQueueFamilyIndex       = pSelectedDeviceInfo->graphicsQueueIndex;
+    vkContext.computeQueueFamilyIndex       = pSelectedDeviceInfo->computeQueueIndex;
+    vkContext.transferQueueFamilyIndex      = pSelectedDeviceInfo->transferQueueIndex;
 
     constexpr float   transferQueuePriority = 0.0f;
     constexpr float   graphicsQueuePriority = 1.0f;
@@ -390,6 +390,8 @@ Error VkGfxDevice::createDevice(VulkanContext& vkContext)
         DUSK_ERROR("Unable to get graphic queue from vulkan device");
         return Error::NotFound;
     }
+    vkContext.graphicsQueue = m_graphicsQueue;
+    vkContext.presentQueue  = m_presentQueue;
 
     // fetch compute queue handle
     vkGetDeviceQueue(m_device, pSelectedDeviceInfo->computeQueueIndex, 0, &m_computeQueue);
@@ -398,6 +400,7 @@ Error VkGfxDevice::createDevice(VulkanContext& vkContext)
         DUSK_ERROR("Unable to get compute queue from vulkan device");
         return Error::NotFound;
     }
+    vkContext.computeQueue = m_computeQueue;
 
     // fetch transfer queue handle
     vkGetDeviceQueue(m_device, pSelectedDeviceInfo->transferQueueIndex, 0, &m_transferQueue);
@@ -406,6 +409,7 @@ Error VkGfxDevice::createDevice(VulkanContext& vkContext)
         DUSK_ERROR("Unable to get transfer queue from vulkan device");
         return Error::NotFound;
     }
+    vkContext.transferQueue = m_transferQueue;
 
     VkCommandPoolCreateInfo poolInfo {};
     poolInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;

@@ -25,6 +25,9 @@ public:
 
     Error          initFrameBuffers(VkGfxRenderPass& renderPass);
 
+    Error          acquireNextImage(uint32_t* imageIndex);
+    Error          submitCommandBuffers(const VkCommandBuffer* buffers, uint32_t* imageIndex);
+
     VkSwapchainKHR getSwapChain() const { return m_swapChain; }
     uint32_t       getImagesCount() const { return m_imagesCount; }
 
@@ -62,6 +65,11 @@ private:
     DynamicArray<VkFence>       m_inFlightFences;
     DynamicArray<VkFence>       m_imagesInFlight;
 
-    uint32_t currentFrame = 0u;
+    uint32_t                    m_currentFrame  = 0u;
+
+    VkQueue                     m_graphicsQueue = VK_NULL_HANDLE;
+    VkQueue                     m_presentQueue  = VK_NULL_HANDLE;
+    VkQueue                     m_computeQueue  = VK_NULL_HANDLE;
+    VkQueue                     m_transferQueue = VK_NULL_HANDLE;
 };
 } // namespace dusk

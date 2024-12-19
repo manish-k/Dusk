@@ -20,5 +20,10 @@ struct VulkanContext
     uint32_t                   presentQueueFamilyIndex;
     uint32_t                   computeQueueFamilyIndex;
     uint32_t                   transferQueueFamilyIndex;
+
+    VkQueue                    graphicsQueue;
+    VkQueue                    presentQueue;
+    VkQueue                    computeQueue;
+    VkQueue                    transferQueue;
 };
 } // namespace dusk

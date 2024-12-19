@@ -18,7 +18,7 @@ void VkGfxSwapChain::destroy()
 {
     destroyImageViews();
 
-    // TODO: handle double destroy of swapchain, 
+    // TODO: handle double destroy of swapchain,
     // can trigger after failed image view creation
     destroySwapChain();
 }
@@ -134,8 +134,23 @@ Error VkGfxSwapChain::createSwapChain(const VkGfxSwapChainParams& params)
 
 void VkGfxSwapChain::destroySwapChain()
 {
-    vkDestroySwapchainKHR(m_device, m_swapChain, nullptr);
-    m_swapChain = VK_NULL_HANDLE;
+    for (auto imageView : m_swapChainImageViews)
+    {
+        vkDestroyImageView(m_device, imageView, nullptr);
+    }
+    m_swapChainImageViews.clear();
+
+    if (m_swapChain != VK_NULL_HANDLE)
+    {
+        vkDestroySwapchainKHR(m_device, m_swapChain, nullptr);
+        m_swapChain = VK_NULL_HANDLE;
+    }
+
+    for (auto framebuffer : m_frameBuffers)
+    {
+        vkDestroyFramebuffer(m_device, framebuffer, nullptr);
+    }
+    m_frameBuffers.clear();
 }
 
 // TODO: this functionality should go into VkGfxDevice

@@ -35,6 +35,8 @@ private:
     Error              createImageViews(VkFormat format);
     void               destroyImageViews();
 
+    Error              createSyncObjects();
+
     VkSurfaceFormatKHR getBestSurfaceFormat() const;
     VkPresentModeKHR   getPresentMode() const;
     VkExtent2D         getSwapExtent(uint32_t width, uint32_t height) const;
@@ -53,5 +55,13 @@ private:
     DynamicArray<VkFramebuffer> m_frameBuffers;
 
     VkExtent2D                  m_currentExtent;
+
+    DynamicArray<VkSemaphore>   m_imageAvailableSemaphores;
+    DynamicArray<VkSemaphore>   m_renderFinishedSemaphores;
+
+    DynamicArray<VkFence>       m_inFlightFences;
+    DynamicArray<VkFence>       m_imagesInFlight;
+
+    uint32_t currentFrame = 0u;
 };
 } // namespace dusk

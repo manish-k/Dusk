@@ -131,6 +131,13 @@ Error VkGfxSwapChain::createSwapChain(const VkGfxSwapChainParams& params)
         return err;
     }
 
+    err = createSyncObjects();
+    if (err != Error::Ok)
+    {
+        destroySwapChain();
+        return err;
+    }
+
     DUSK_INFO("Swapchain created successfully");
     return Error::Ok;
 }
@@ -154,6 +161,13 @@ void VkGfxSwapChain::destroySwapChain()
         vkDestroyFramebuffer(m_device, framebuffer, nullptr);
     }
     m_frameBuffers.clear();
+
+    for (uint32_t i = 0u; i < m_imagesCount; i++)
+    {
+        vkDestroySemaphore(m_device, m_renderFinishedSemaphores[i], nullptr);
+        vkDestroySemaphore(m_device, m_imageAvailableSemaphores[i], nullptr);
+        vkDestroyFence(m_device, m_inFlightFences[i], nullptr);
+    }
 }
 
 // TODO: this functionality should go into VkGfxDevice
@@ -197,6 +211,47 @@ void VkGfxSwapChain::destroyImageViews()
     {
         vkDestroyImageView(m_device, imageView, nullptr);
     }
+}
+
+Error VkGfxSwapChain::createSyncObjects()
+{
+    m_imageAvailableSemaphores.resize(m_imagesCount);
+    m_renderFinishedSemaphores.resize(m_imagesCount);
+    m_inFlightFences.resize(m_imagesCount);
+    m_imagesInFlight.resize(m_imagesCount);
+
+    VkSemaphoreCreateInfo semaphoreInfo {};
+    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+    VkFenceCreateInfo fenceInfo {};
+    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+    for (uint32_t i = 0; i < m_imagesCount; ++i)
+    {
+        VulkanResult result = vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_imageAvailableSemaphores[i]);
+        if (result.hasError())
+        {
+            DUSK_ERROR("Unable to create imageAvailableSemaphore {}", result.toString());
+            return result.getErrorId();
+        }
+
+         result = vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_renderFinishedSemaphores[i]);
+        if (result.hasError())
+        {
+            DUSK_ERROR("Unable to create renderFinishedSemaphores {}", result.toString());
+            return result.getErrorId();
+        }
+
+        result = vkCreateFence(m_device, &fenceInfo, nullptr, &m_inFlightFences[i]);
+        if (result.hasError())
+        {
+            DUSK_ERROR("Unable to create inFlight fence {}", result.toString());
+            return result.getErrorId();
+        }
+    }
+
+    return Error::Ok;
 }
 
 VkSurfaceFormatKHR VkGfxSwapChain::getBestSurfaceFormat() const

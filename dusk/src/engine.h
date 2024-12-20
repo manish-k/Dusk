@@ -31,12 +31,16 @@ public:
 
     CLASS_UNCOPYABLE(Engine)
 
-    bool start(Shared<Application> app);
-    void run();
-    void stop();
-    void shutdown();
-    void onUpdate(TimeStep dt);
-    void onEvent(Event& ev);
+    bool           start(Shared<Application> app);
+    void           run();
+    void           stop();
+    void           shutdown();
+    void           onUpdate(TimeStep dt);
+    void           onEvent(Event& ev);
+
+    static Engine& get() { return *s_instance; }
+
+    Renderer*      getRenderer() { return m_renderer.get(); }
 
 private:
     Config              m_config;

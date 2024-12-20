@@ -1,30 +1,36 @@
 #include "file_system.h"
 
+#include "dusk.h"
+
 #include <fstream>
 
 namespace dusk
 {
-Buffer FileSystem::readFileBinary(const std::filesystem::path& filepath)
+DynamicArray<char> FileSystem::readFileBinary(const std::filesystem::path& filepath)
 {
-    std::ifstream stream(filepath, std::ios::binary | std::ios::ate);
+    std::ifstream file(filepath, std::ios::binary | std::ios::ate);
 
-    if (!stream)
+    if (!file)
     {
-        return Buffer(0);
+        DUSK_ERROR("Failed to open file {}", filepath.generic_string());
+        return DynamicArray<char>(0);
     }
 
-    std::streampos end = stream.tellg();
-    stream.seekg(0, std::ios::beg);
-    size_t size = end - stream.tellg();
+    size_t filesize = static_cast<size_t>(file.tellg());
 
-    if (size == 0)
+    file.seekg(0, std::ios::beg);
+
+    if (filesize == 0)
     {
-        return Buffer(0);
+        return DynamicArray<char>(0);
     }
 
-    Buffer buffer(size);
-    stream.read(buffer.as<char>(), size);
-    stream.close();
+    DynamicArray<char> buffer(filesize);
+
+    file.read(buffer.data(), filesize);
+
+    file.close();
+
     return buffer;
 }
 

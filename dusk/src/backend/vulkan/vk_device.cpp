@@ -23,7 +23,7 @@ Error VkGfxDevice::createInstance(const char* appName, uint32_t version, Dynamic
     appInfo.applicationVersion = VK_MAKE_VERSION(1, version, 0);
     appInfo.pEngineName        = "Dusk";
     appInfo.engineVersion      = VK_MAKE_VERSION(1, version, 0);
-    appInfo.apiVersion         = VK_API_VERSION_1_2;
+    appInfo.apiVersion         = VK_API_VERSION_1_3;
 
     VkInstanceCreateInfo createInfo {};
     createInfo.sType            = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -390,6 +390,8 @@ Error VkGfxDevice::createDevice(VulkanContext& vkContext)
         DUSK_ERROR("Unable to get graphic queue from vulkan device");
         return Error::NotFound;
     }
+    m_presentQueue          = m_graphicsQueue;
+
     vkContext.graphicsQueue = m_graphicsQueue;
     vkContext.presentQueue  = m_presentQueue;
 

@@ -22,13 +22,13 @@ VkGfxRenderPipeline::Builder& VkGfxRenderPipeline::Builder::addDynamicState(VkDy
     return *this;
 }
 
-VkGfxRenderPipeline::Builder& VkGfxRenderPipeline::Builder::setVertexShaderCode(Buffer* shaderCode)
+VkGfxRenderPipeline::Builder& VkGfxRenderPipeline::Builder::setVertexShaderCode(DynamicArray<char>& shaderCode)
 {
     m_renderConfig.vertexShaderCode = shaderCode;
     return *this;
 }
 
-VkGfxRenderPipeline::Builder& VkGfxRenderPipeline::Builder::setFragmentShaderCode(Buffer* shaderCode)
+VkGfxRenderPipeline::Builder& VkGfxRenderPipeline::Builder::setFragmentShaderCode(DynamicArray<char>& shaderCode)
 {
     m_renderConfig.fragmentShaderCode = shaderCode;
     return *this;
@@ -147,11 +147,13 @@ VkGfxRenderPipeline::VkGfxRenderPipeline(VulkanContext& vkContext, VkGfxRenderPi
 
     // input state info
     VkPipelineVertexInputStateCreateInfo vertexInputInfo {};
-    vertexInputInfo.sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
-    vertexInputInfo.vertexBindingDescriptionCount   = static_cast<uint32_t>(bindingDescriptions.size());
-    vertexInputInfo.pVertexAttributeDescriptions    = attributeDescriptions.data();
-    vertexInputInfo.pVertexBindingDescriptions      = bindingDescriptions.data();
+    vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    // vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+    // vertexInputInfo.vertexBindingDescriptionCount   = static_cast<uint32_t>(bindingDescriptions.size());
+    // vertexInputInfo.pVertexAttributeDescriptions    = attributeDescriptions.data();
+    // vertexInputInfo.pVertexBindingDescriptions      = bindingDescriptions.data();
+    vertexInputInfo.vertexAttributeDescriptionCount = 0;
+    vertexInputInfo.vertexBindingDescriptionCount   = 0;
 
     // default rasterization info
     VkPipelineRasterizationStateCreateInfo rasterizationInfo {};
@@ -235,12 +237,17 @@ VkGfxRenderPipeline::~VkGfxRenderPipeline()
     }
 }
 
-void dusk::VkGfxRenderPipeline::createShaderModule(const Buffer* shaderCode, VkShaderModule* shaderModule) const
+void VkGfxRenderPipeline::bind(VkCommandBuffer commandBuffer) const
+{
+    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
+}
+
+void dusk::VkGfxRenderPipeline::createShaderModule(const DynamicArray<char>& shaderCode, VkShaderModule* shaderModule) const
 {
     VkShaderModuleCreateInfo createInfo {};
     createInfo.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    createInfo.codeSize = shaderCode->size();
-    createInfo.pCode    = reinterpret_cast<const uint32_t*>(shaderCode->data());
+    createInfo.codeSize = shaderCode.size();
+    createInfo.pCode    = reinterpret_cast<const uint32_t*>(shaderCode.data());
 
     VulkanResult result = vkCreateShaderModule(m_device, &createInfo, nullptr, shaderModule);
 

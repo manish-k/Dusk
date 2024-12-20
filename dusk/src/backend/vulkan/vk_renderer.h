@@ -15,13 +15,17 @@ public:
     VulkanRenderer(Shared<GLFWVulkanWindow> window);
     ~VulkanRenderer() override;
 
-    bool            init(const char* appName, uint32_t version) override;
+    bool                  init(const char* appName, uint32_t version) override;
 
-    VkCommandBuffer getCurrentCommandBuffer() const;
-    VkCommandBuffer beginFrame();
-    Error           endFrame();
-    void            beginSwapChainRenderPass(VkCommandBuffer commandBuffer, VkRenderPass renderPass);
-    void            endSwapChainRenderPass(VkCommandBuffer commandBuffer);
+    VkCommandBuffer       getCurrentCommandBuffer() const;
+    VkCommandBuffer       beginFrame();
+    Error                 endFrame();
+    void                  beginSwapChainRenderPass(VkCommandBuffer commandBuffer, VkRenderPass renderPass);
+    void                  endSwapChainRenderPass(VkCommandBuffer commandBuffer);
+
+    VkGfxSwapChain&       getSwapChain() { return *m_swapChain; }
+
+    static VulkanContext& getVulkanContext() { return s_context; }
 
 private:
     Error recreateSwapChain();

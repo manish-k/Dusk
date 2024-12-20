@@ -31,7 +31,8 @@ public:
     VkSwapchainKHR getSwapChain() const { return m_swapChain; }
     uint32_t       getImagesCount() const { return m_imagesCount; }
     VkExtent2D     getCurrentExtent() const { return m_currentExtent; }
-    VkFramebuffer  getFrameBuffer(uint32_t imageIndex) const { return m_frameBuffers[imageIndex]; }
+    VkFramebuffer  getFrameBuffer(uint32_t imageIndex) { return m_frameBuffers[imageIndex]; }
+    VkFormat       getImageFormat() const { return m_imageFormat; }
 
 private:
     Error              createSwapChain(const VkGfxSwapChainParams& params);
@@ -58,6 +59,7 @@ private:
     DynamicArray<VkImage>       m_swapChainImages;
     DynamicArray<VkImageView>   m_swapChainImageViews;
     DynamicArray<VkFramebuffer> m_frameBuffers;
+    VkFormat                    m_imageFormat;
 
     VkExtent2D                  m_currentExtent;
 

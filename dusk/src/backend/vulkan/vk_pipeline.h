@@ -18,13 +18,13 @@ struct VkGfxRenderPipelineConfig
     DynamicArray<VkDynamicState>        dynamicStates;
     VkPipelineColorBlendAttachmentState colorBlendAttachment {};
 
-    Buffer*                             vertexShaderCode   = nullptr;
-    Buffer*                             fragmentShaderCode = nullptr;
+    DynamicArray<char>                  vertexShaderCode;   // TODO: avoid copying buffer
+    DynamicArray<char>                  fragmentShaderCode; // TODO: avoid copying buffer
 
-    VkRenderPass                        renderPass         = VK_NULL_HANDLE;
-    uint32_t                            subpassIndex       = 0u;
+    VkRenderPass                        renderPass     = VK_NULL_HANDLE;
+    uint32_t                            subpassIndex   = 0u;
 
-    VkPipelineLayout                    pipelineLayout     = VK_NULL_HANDLE;
+    VkPipelineLayout                    pipelineLayout = VK_NULL_HANDLE;
 };
 
 class VkGfxRenderPipeline
@@ -36,8 +36,8 @@ public:
         Builder(VulkanContext& vkContext);
 
         Builder& addDynamicState(VkDynamicState state);
-        Builder& setVertexShaderCode(Buffer* shaderCode);
-        Builder& setFragmentShaderCode(Buffer* shaderCode);
+        Builder& setVertexShaderCode(DynamicArray<char>& shaderCode);
+        Builder& setFragmentShaderCode(DynamicArray<char>& shaderCode);
         Builder& setRenderPass(VkGfxRenderPass& renderPass);
         Builder& setSubPassIndex(uint32_t index);
         Builder& setPipelineLayout(VkGfxPipelineLayout& pipelineLayout);
@@ -60,9 +60,10 @@ public:
     CLASS_UNCOPYABLE(VkGfxRenderPipeline);
 
     bool isValid() const { return m_pipeline != VK_NULL_HANDLE; };
+    void bind(VkCommandBuffer commandBuffer) const;
 
 private:
-    void createShaderModule(const Buffer* shaderCode, VkShaderModule* shaderModule) const;
+    void createShaderModule(const DynamicArray<char>& shaderCode, VkShaderModule* shaderModule) const;
 
 private:
     VkDevice       m_device               = VK_NULL_HANDLE;

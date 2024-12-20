@@ -41,8 +41,8 @@ find_program(GLSL_VALIDATOR glslangValidator HINTS
 
 # get all .vert and .frag files in shaders directory
 file(GLOB_RECURSE GLSL_SOURCE_FILES
-  "${PROJECT_SOURCE_DIR}/shaders/*.frag"
-  "${PROJECT_SOURCE_DIR}/shaders/*.vert"
+  "${PROJECT_SOURCE_DIR}/assets/shaders/*.frag"
+  "${PROJECT_SOURCE_DIR}/assets/shaders/*.vert"
 )
 
 foreach(GLSL ${GLSL_SOURCE_FILES})

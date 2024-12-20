@@ -156,12 +156,14 @@ Error VkGfxSwapChain::createSwapChain(const VkGfxSwapChainParams& params)
 
     VkSurfaceFormatKHR surfaceFormat = getBestSurfaceFormat();
     DUSK_INFO("Selected surface format {}: colorspace {}", getVkFormatString(surfaceFormat.format), getVkColorSpaceString(surfaceFormat.colorSpace));
+    m_imageFormat                = surfaceFormat.format;
 
     VkPresentModeKHR presentMode = getPresentMode();
     DUSK_INFO("Selecting present mode {}", getVkPresentModeString(presentMode));
 
     VkExtent2D extent = getSwapExtent(params.windowWidth, params.windowHeight);
     DUSK_INFO("Selecting extent width={}, height={}", extent.width, extent.height);
+    m_currentExtent = extent;
 
     DUSK_INFO("Surface capabilities minImageCount={} and maxImageCount={}", m_capabilities.minImageCount, m_capabilities.maxImageCount);
     m_imagesCount = m_capabilities.minImageCount + 1;
@@ -185,7 +187,7 @@ Error VkGfxSwapChain::createSwapChain(const VkGfxSwapChainParams& params)
     createInfo.minImageCount         = m_imagesCount;
     createInfo.imageFormat           = surfaceFormat.format;
     createInfo.imageColorSpace       = surfaceFormat.colorSpace;
-    createInfo.imageExtent           = extent;
+    createInfo.imageExtent           = m_currentExtent;
     createInfo.imageArrayLayers      = 1;
     createInfo.imageUsage            = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
@@ -204,6 +206,21 @@ Error VkGfxSwapChain::createSwapChain(const VkGfxSwapChainParams& params)
     if (result.hasError())
     {
         DUSK_ERROR("Swap chain creation failed {}", result.toString());
+        return result.getErrorId();
+    }
+
+    result = vkGetSwapchainImagesKHR(m_device, m_swapChain, &m_imagesCount, nullptr);
+    if (result.hasError())
+    {
+        DUSK_ERROR("Unable to get images handle count {}", result.toString());
+        return result.getErrorId();
+    }
+
+    m_swapChainImages.resize(m_imagesCount);
+    result = vkGetSwapchainImagesKHR(m_device, m_swapChain, &m_imagesCount, m_swapChainImages.data());
+    if (result.hasError())
+    {
+        DUSK_ERROR("Unable to get images handle {}", result.toString());
         return result.getErrorId();
     }
 
@@ -227,12 +244,6 @@ Error VkGfxSwapChain::createSwapChain(const VkGfxSwapChainParams& params)
 
 void VkGfxSwapChain::destroySwapChain()
 {
-    for (auto imageView : m_swapChainImageViews)
-    {
-        vkDestroyImageView(m_device, imageView, nullptr);
-    }
-    m_swapChainImageViews.clear();
-
     if (m_swapChain != VK_NULL_HANDLE)
     {
         vkDestroySwapchainKHR(m_device, m_swapChain, nullptr);
@@ -295,6 +306,7 @@ void VkGfxSwapChain::destroyImageViews()
     {
         vkDestroyImageView(m_device, imageView, nullptr);
     }
+    m_swapChainImageViews.clear();
 }
 
 Error VkGfxSwapChain::createSyncObjects()

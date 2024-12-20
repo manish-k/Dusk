@@ -369,12 +369,6 @@ DynamicArray<VkVertexInputAttributeDescription> getVertexAtrributeDescription()
         auto& attribute = attribuitesInfo[attribIndex];
         attributeDescriptions.push_back(
             { attribute.location, 0, getVkVertexAttributeFormat(attribute.format), attribute.offset });
-        attributeDescriptions.push_back(
-            { attribute.location, 0, getVkVertexAttributeFormat(attribute.format), attribute.offset });
-        attributeDescriptions.push_back(
-            { attribute.location, 0, getVkVertexAttributeFormat(attribute.format), attribute.offset });
-        attributeDescriptions.push_back(
-            { attribute.location, 0, getVkVertexAttributeFormat(attribute.format), attribute.offset });
     }
 
     return attributeDescriptions;

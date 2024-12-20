@@ -30,7 +30,7 @@ struct BaseBuffer
     {
         release();
 
-        data = new uint8_t[size];
+        data = new uint8_t[allocationSize];
         size = allocationSize;
     }
 

@@ -23,6 +23,8 @@ public:
         Builder(VulkanContext& vkContext);
         ~Builder() = default;
 
+        CLASS_UNCOPYABLE(VkGfxPipelineLayout::Builder);
+
         Builder&                    addPushConstantRange(VkShaderStageFlags flags, uint32_t offset, uint32_t size);
         Builder&                    addDescriptorSetLayout(VkDescriptorSetLayout layout);
 

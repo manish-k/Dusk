@@ -38,7 +38,8 @@ public:
 
     CLASS_UNCOPYABLE(VkGfxRenderPass);
 
-    bool isValid() const { return m_renderPass != VK_NULL_HANDLE; }
+    bool         isValid() const { return m_renderPass != VK_NULL_HANDLE; }
+    VkRenderPass get() const { return m_renderPass; }
 
 private:
     VkDevice     m_device     = VK_NULL_HANDLE;

@@ -5,11 +5,11 @@
 
 using namespace dusk;
 
-class TestApp final : public dusk::Application
+class TestTriangle final : public dusk::Application
 {
 public:
-    TestApp();
-    ~TestApp();
+    TestTriangle();
+    ~TestTriangle();
 
     bool start() override;
     void shutdown() override;

@@ -63,7 +63,7 @@ Error VkGfxSwapChain::initFrameBuffers(VkGfxRenderPass& renderPass)
     return Error::Ok;
 }
 
-Error VkGfxSwapChain::acquireNextImage(uint32_t* imageIndex)
+VulkanResult VkGfxSwapChain::acquireNextImage(uint32_t* imageIndex)
 {
     vkWaitForFences(
         m_device, 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
@@ -73,13 +73,12 @@ Error VkGfxSwapChain::acquireNextImage(uint32_t* imageIndex)
     if (result.hasError())
     {
         DUSK_ERROR("Unable to acquire swapchain image {}", result.toString());
-        return result.getErrorId();
     }
 
-    return Error::Ok;
+    return result;
 }
 
-Error VkGfxSwapChain::submitCommandBuffers(const VkCommandBuffer* buffers, uint32_t* imageIndex)
+VulkanResult VkGfxSwapChain::submitCommandBuffers(const VkCommandBuffer* buffers, uint32_t* imageIndex)
 {
     if (m_imagesInFlight[*imageIndex] != VK_NULL_HANDLE)
     {
@@ -112,7 +111,7 @@ Error VkGfxSwapChain::submitCommandBuffers(const VkCommandBuffer* buffers, uint3
     if (result.hasError())
     {
         DUSK_ERROR("Failed to submit draw command buffer to queue {}", result.toString());
-        return result.getErrorId();
+        return result;
     }
 
     VkPresentInfoKHR presentInfo   = {};
@@ -133,13 +132,13 @@ Error VkGfxSwapChain::submitCommandBuffers(const VkCommandBuffer* buffers, uint3
     if (result.hasError())
     {
         DUSK_ERROR("Failed to present image {}", result.toString());
-        return result.getErrorId();
+        return result;
     }
 
     // go to next frame
     m_currentFrame = (m_currentFrame + 1) % m_imagesCount;
 
-    return Error::Ok;
+    return result;
 }
 
 Error VkGfxSwapChain::createSwapChain(const VkGfxSwapChainParams& params)

@@ -25,11 +25,13 @@ public:
 
     Error          initFrameBuffers(VkGfxRenderPass& renderPass);
 
-    Error          acquireNextImage(uint32_t* imageIndex);
-    Error          submitCommandBuffers(const VkCommandBuffer* buffers, uint32_t* imageIndex);
+    VulkanResult   acquireNextImage(uint32_t* imageIndex);
+    VulkanResult   submitCommandBuffers(const VkCommandBuffer* buffers, uint32_t* imageIndex);
 
     VkSwapchainKHR getSwapChain() const { return m_swapChain; }
     uint32_t       getImagesCount() const { return m_imagesCount; }
+    VkExtent2D     getCurrentExtent() const { return m_currentExtent; }
+    VkFramebuffer  getFrameBuffer(uint32_t imageIndex) const { return m_frameBuffers[imageIndex]; } 
 
 private:
     Error              createSwapChain(const VkGfxSwapChainParams& params);

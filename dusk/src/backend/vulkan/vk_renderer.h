@@ -15,11 +15,17 @@ public:
     VulkanRenderer(Shared<GLFWVulkanWindow> window);
     ~VulkanRenderer() override;
 
-    bool init(const char* appName, uint32_t version) override;
+    bool            init(const char* appName, uint32_t version) override;
+
+    VkCommandBuffer getCurrentCommandBuffer() const;
+    VkCommandBuffer beginFrame();
+    Error           endFrame();
+    void            beginSwapChainRenderPass(VkCommandBuffer commandBuffer, VkRenderPass renderPass);
+    void            endSwapChainRenderPass(VkCommandBuffer commandBuffer);
 
 private:
     Error recreateSwapChain();
-    
+
     Error createCommandBuffers();
     void  freeCommandBuffers();
     Error recreateCommandBuffers();
@@ -33,6 +39,10 @@ private:
     VkSurfaceKHR                  m_surface   = VK_NULL_HANDLE;
 
     DynamicArray<VkCommandBuffer> m_commandBuffers;
+
+    bool                          m_isFrameStarted    = false;
+    uint32_t                      m_currentImageIndex = 0u;
+    uint32_t                      m_currentFrameIndex = 0u;
 
 private:
     static VulkanContext s_context;

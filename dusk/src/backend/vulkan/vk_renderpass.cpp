@@ -67,7 +67,7 @@ VkGfxRenderPass::VkGfxRenderPass(const VulkanContext& vkContext, const VkGfxRend
 
     // create render pass
     VulkanResult result = vkCreateRenderPass(m_device, &renderPassInfo, nullptr, &m_renderPass);
-    
+
     // TODO: need better error handling
     if (result.hasError())
     {

@@ -176,6 +176,8 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
 if(CLANG_FORMAT_EXE)
     add_custom_target(
 		Code-Format COMMAND ${CLANG_FORMAT_EXE} -i -style=file ${PROJECT_FILES})
+
+	add_dependencies(${PROJECT_NAME} Code-Format)
 endif()
 
 if(ANDROID)

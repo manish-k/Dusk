@@ -17,17 +17,17 @@ public:
     VkGfxDevice();
     ~VkGfxDevice();
 
-    Error      createInstance(const char* appName, uint32_t version, DynamicArray<const char*> requiredExtensions, VulkanContext& vkContext);
-    void       destroyInstance();
+    Error createInstance(const char* appName, uint32_t version, DynamicArray<const char*> requiredExtensions, VulkanContext& vkContext);
+    void  destroyInstance();
 
-    Error      createDevice(VulkanContext& vkContext);
-    void       destroyDevice();
+    Error createDevice(VulkanContext& vkContext);
+    void  destroyDevice();
 
-    Error      populateLayerNames();
-    Error      populateLayerExtensionNames(const char* pLayerName);
+    Error populateLayerNames();
+    Error populateLayerExtensionNames(const char* pLayerName);
 
-    bool       hasLayer(const char* pLayerName);
-    bool       hasInstanceExtension(const char* pExtensionName);
+    bool  hasLayer(const char* pLayerName);
+    bool  hasInstanceExtension(const char* pExtensionName);
 
 #ifdef VK_RENDERER_DEBUG
     static VKAPI_ATTR VkBool32 VKAPI_CALL vulkanDebugMessengerCallback(

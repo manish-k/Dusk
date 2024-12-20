@@ -162,7 +162,7 @@ void VulkanRenderer::beginSwapChainRenderPass(VkCommandBuffer commandBuffer, VkR
     DASSERT(commandBuffer == getCurrentCommandBuffer(), "Can't begin render pass on command buffer from a different frame");
 
     VkExtent2D            currentExtent = m_swapChain->getCurrentExtent();
-    
+
     VkRenderPassBeginInfo renderPassInfo {};
     renderPassInfo.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     renderPassInfo.renderPass        = renderPass;

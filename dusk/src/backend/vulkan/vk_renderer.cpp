@@ -171,8 +171,8 @@ void VulkanRenderer::beginSwapChainRenderPass(VkCommandBuffer commandBuffer, VkR
     renderPassInfo.renderArea.offset = { 0, 0 };
     renderPassInfo.renderArea.extent = currentExtent;
 
-    std::array<VkClearValue, 2> clearValues {};
-    clearValues[0].color           = { 0.1f, 0.1f, 0.1f, 1.0f };
+    Array<VkClearValue, 2> clearValues {};
+    clearValues[0].color           = { 0.f, 0.f, 0.f, 1.0f };
     clearValues[1].depthStencil    = { 1.0f, 0 };
     renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
     renderPassInfo.pClearValues    = clearValues.data();

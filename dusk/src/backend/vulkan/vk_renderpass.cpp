@@ -6,7 +6,7 @@ namespace dusk
 VkGfxRenderPass::Builder::Builder(VulkanContext& vkContext) :
     m_context(vkContext)
 {
-    m_renderPassConfig.colorAttachment.flags             = VK_ATTACHMENT_DESCRIPTION_MAY_ALIAS_BIT;
+    m_renderPassConfig.colorAttachment.flags             = 0;
     m_renderPassConfig.colorAttachment.format            = VK_FORMAT_UNDEFINED;
     m_renderPassConfig.colorAttachment.samples           = VK_SAMPLE_COUNT_1_BIT;
     m_renderPassConfig.colorAttachment.loadOp            = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -16,7 +16,7 @@ VkGfxRenderPass::Builder::Builder(VulkanContext& vkContext) :
     m_renderPassConfig.colorAttachment.initialLayout     = VK_IMAGE_LAYOUT_UNDEFINED;
     m_renderPassConfig.colorAttachment.finalLayout       = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
-    m_renderPassConfig.subpassDependency.dependencyFlags = VK_DEPENDENCY_DEVICE_GROUP_BIT;
+    m_renderPassConfig.subpassDependency.dependencyFlags = 0;
     m_renderPassConfig.subpassDependency.srcSubpass      = VK_SUBPASS_EXTERNAL;
     m_renderPassConfig.subpassDependency.dstSubpass      = 0;
     m_renderPassConfig.subpassDependency.srcStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;

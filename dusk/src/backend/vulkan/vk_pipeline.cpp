@@ -34,9 +34,9 @@ VkGfxRenderPipeline::Builder& VkGfxRenderPipeline::Builder::setFragmentShaderCod
     return *this;
 }
 
-VkGfxRenderPipeline::Builder& VkGfxRenderPipeline::Builder::setRenderPass(VkGfxRenderPass& renderPass)
+VkGfxRenderPipeline::Builder& VkGfxRenderPipeline::Builder::setRenderPass(VkRenderPass renderPass)
 {
-    m_renderConfig.renderPass = renderPass.m_renderPass;
+    m_renderConfig.renderPass = renderPass;
     return *this;
 }
 

@@ -13,7 +13,6 @@ VulkanRenderer::VulkanRenderer(Shared<GLFWVulkanWindow> window) :
     m_window(window)
 {
     m_gfxDevice = createUnique<VkGfxDevice>();
-    m_swapChain = createUnique<VkGfxSwapChain>();
 }
 
 VulkanRenderer::~VulkanRenderer()
@@ -154,9 +153,11 @@ Error VulkanRenderer::endFrame()
 
     m_isFrameStarted    = false;
     m_currentFrameIndex = (m_currentFrameIndex + 1) % m_swapChain->getImagesCount();
+
+    return Error::Ok;
 }
 
-void VulkanRenderer::beginSwapChainRenderPass(VkCommandBuffer commandBuffer, VkRenderPass renderPass)
+void VulkanRenderer::beginSwapChainRenderPass(VkCommandBuffer commandBuffer)
 {
     DASSERT(m_isFrameStarted, "Can't begin render pass while frame is not in progress");
     DASSERT(commandBuffer == getCurrentCommandBuffer(), "Can't begin render pass on command buffer from a different frame");
@@ -165,7 +166,7 @@ void VulkanRenderer::beginSwapChainRenderPass(VkCommandBuffer commandBuffer, VkR
 
     VkRenderPassBeginInfo renderPassInfo {};
     renderPassInfo.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass        = renderPass;
+    renderPassInfo.renderPass        = m_swapChain->getRenderPass();
     renderPassInfo.framebuffer       = m_swapChain->getFrameBuffer(m_currentImageIndex);
 
     renderPassInfo.renderArea.offset = { 0, 0 };
@@ -204,15 +205,24 @@ void VulkanRenderer::endSwapChainRenderPass(VkCommandBuffer commandBuffer)
 
 Error VulkanRenderer::recreateSwapChain()
 {
-    auto&                context      = VulkanRenderer::s_context;
-    VkExtent2D           windowExtent = m_window->getFramebufferExtent();
+    auto&      context      = VulkanRenderer::s_context;
+    VkExtent2D windowExtent = m_window->getFramebufferExtent();
+
+    vkDeviceWaitIdle(context.device);
 
     VkGfxSwapChainParams params {};
-    params.windowWidth  = windowExtent.width;
-    params.windowHeight = windowExtent.height;
-    params.oldSwapChain = VK_NULL_HANDLE;
+    params.windowWidth                  = windowExtent.width;
+    params.windowHeight                 = windowExtent.height;
 
-    return m_swapChain->create(context, params);
+    Shared<VkGfxSwapChain> oldSwapChain = nullptr;
+    if (m_swapChain != nullptr)
+    {
+        oldSwapChain = std::move(m_swapChain);
+    }
+
+    m_swapChain = createUnique<VkGfxSwapChain>();
+
+    return m_swapChain->create(context, params, oldSwapChain);
 }
 
 Error VulkanRenderer::createCommandBuffers()

@@ -29,9 +29,6 @@ bool TestTriangle::start()
 
     m_fragShaderCode = FileSystem::readFileBinary("assets/shaders/simple.frag.spv");
 
-    m_renderPass     = VkGfxRenderPass::Builder(vkContext).setColorAttachmentFormat(swapChain.getImageFormat()).build();
-    swapChain.initFrameBuffers(*m_renderPass);
-
     m_pipelineLayout = VkGfxPipelineLayout::Builder(vkContext).build();
 
     // create pipeline
@@ -39,7 +36,7 @@ bool TestTriangle::start()
                            .setVertexShaderCode(m_vertShaderCode)
                            .setFragmentShaderCode(m_fragShaderCode)
                            .setPipelineLayout(*m_pipelineLayout)
-                           .setRenderPass(*m_renderPass)
+                           .setRenderPass(swapChain.getRenderPass())
                            .build();
 
     return true;
@@ -55,7 +52,7 @@ void TestTriangle::onUpdate(TimeStep dt)
 
     auto            commandBuffer = renderer->beginFrame();
 
-    renderer->beginSwapChainRenderPass(commandBuffer, m_renderPass->get());
+    renderer->beginSwapChainRenderPass(commandBuffer);
 
     m_renderPipeline->bind(commandBuffer);
 

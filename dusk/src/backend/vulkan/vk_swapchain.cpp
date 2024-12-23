@@ -5,23 +5,36 @@
 
 namespace dusk
 {
-Error VkGfxSwapChain::create(VulkanContext& context, VkGfxSwapChainParams& params)
+Error VkGfxSwapChain::create(VulkanContext& vkContext, VkGfxSwapChainParams& params, Shared<VkGfxSwapChain> oldSwapChain)
 {
-    m_physicalDevice = context.physicalDevice;
-    m_device         = context.device;
-    m_surface        = context.surface;
+    m_physicalDevice = vkContext.physicalDevice;
+    m_device         = vkContext.device;
+    m_surface        = vkContext.surface;
 
-    m_graphicsQueue  = context.graphicsQueue;
-    m_presentQueue   = context.presentQueue;
-    m_computeQueue   = context.computeQueue;
-    m_transferQueue  = context.transferQueue;
+    m_graphicsQueue  = vkContext.graphicsQueue;
+    m_presentQueue   = vkContext.presentQueue;
+    m_computeQueue   = vkContext.computeQueue;
+    m_transferQueue  = vkContext.transferQueue;
 
-    return createSwapChain(params);
+    m_oldSwapChain   = oldSwapChain;
+
+    Error err        = createSwapChain(params);
+    if (err != Error::Ok)
+    {
+        return err;
+    }
+
+    m_renderPass = VkGfxRenderPass::Builder(vkContext).setColorAttachmentFormat(m_imageFormat).build();
+    err          = initFrameBuffers();
+
+    return err;
 }
 
 void VkGfxSwapChain::destroy()
 {
     destroyImageViews();
+
+    m_oldSwapChain->destroy();
 
     // TODO: handle double destroy of swapchain,
     // can trigger after failed image view creation
@@ -32,7 +45,7 @@ void VkGfxSwapChain::resize()
 {
 }
 
-Error VkGfxSwapChain::initFrameBuffers(VkGfxRenderPass& renderPass)
+Error VkGfxSwapChain::initFrameBuffers()
 {
     m_frameBuffers.resize(m_swapChainImageViews.size());
 
@@ -44,7 +57,7 @@ Error VkGfxSwapChain::initFrameBuffers(VkGfxRenderPass& renderPass)
 
         VkFramebufferCreateInfo framebufferInfo {};
         framebufferInfo.sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        framebufferInfo.renderPass      = renderPass.m_renderPass;
+        framebufferInfo.renderPass      = m_renderPass->get();
         framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments->size());
         framebufferInfo.pAttachments    = attachments->data();
         framebufferInfo.width           = m_currentExtent.width;
@@ -80,11 +93,11 @@ VulkanResult VkGfxSwapChain::acquireNextImage(uint32_t* imageIndex)
 
 VulkanResult VkGfxSwapChain::submitCommandBuffers(const VkCommandBuffer* buffers, uint32_t* imageIndex)
 {
-    if (m_imagesInFlight[*imageIndex] != VK_NULL_HANDLE)
-    {
-        vkWaitForFences(m_device, 1, &m_imagesInFlight[*imageIndex], VK_TRUE, UINT64_MAX);
-    }
-    m_imagesInFlight[*imageIndex] = m_inFlightFences[m_currentFrame];
+    // if (m_imagesInFlight[*imageIndex] != VK_NULL_HANDLE)
+    //{
+    //     vkWaitForFences(m_device, 1, &m_imagesInFlight[*imageIndex], VK_TRUE, UINT64_MAX);
+    // }
+    // m_imagesInFlight[*imageIndex] = m_inFlightFences[m_currentFrame];
 
     // wait semaphores
     VkSemaphore          waitSemaphores[] = { m_imageAvailableSemaphores[m_currentFrame] };
@@ -199,7 +212,11 @@ Error VkGfxSwapChain::createSwapChain(const VkGfxSwapChainParams& params)
     createInfo.compositeAlpha        = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
     createInfo.presentMode           = presentMode;
     createInfo.clipped               = VK_TRUE;
-    createInfo.oldSwapchain          = params.oldSwapChain;
+
+    if (m_oldSwapChain != nullptr)
+    {
+        createInfo.oldSwapchain = m_oldSwapChain->getSwapChain();
+    }
 
     // create swapchain now
     result = vkCreateSwapchainKHR(m_device, &createInfo, nullptr, &m_swapChain);

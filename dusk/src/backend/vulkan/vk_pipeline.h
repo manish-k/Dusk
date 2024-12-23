@@ -38,7 +38,7 @@ public:
         Builder& addDynamicState(VkDynamicState state);
         Builder& setVertexShaderCode(DynamicArray<char>& shaderCode);
         Builder& setFragmentShaderCode(DynamicArray<char>& shaderCode);
-        Builder& setRenderPass(VkGfxRenderPass& renderPass);
+        Builder& setRenderPass(VkRenderPass renderPass);
         Builder& setSubPassIndex(uint32_t index);
         Builder& setPipelineLayout(VkGfxPipelineLayout& pipelineLayout);
 

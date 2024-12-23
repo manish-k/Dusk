@@ -23,7 +23,6 @@ public:
 private:
     Unique<VkGfxRenderPipeline> m_renderPipeline = nullptr;
     Unique<VkGfxPipelineLayout> m_pipelineLayout = nullptr;
-    Unique<VkGfxRenderPass>     m_renderPass     = nullptr;
 
     DynamicArray<char>          m_vertShaderCode;
     DynamicArray<char>          m_fragShaderCode;

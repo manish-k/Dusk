@@ -9,21 +9,19 @@ namespace dusk
 {
 struct VkGfxSwapChainParams
 {
-    uint32_t       windowWidth;
-    uint32_t       windowHeight;
-
-    VkSwapchainKHR oldSwapChain;
+    uint32_t windowWidth;
+    uint32_t windowHeight;
 };
 
 class VkGfxSwapChain
 {
 public:
-    Error          create(VulkanContext& vkContext, VkGfxSwapChainParams& params);
+    Error          create(VulkanContext& vkContext, VkGfxSwapChainParams& params, Shared<VkGfxSwapChain> oldSwapChain = nullptr);
     void           destroy();
 
     void           resize();
 
-    Error          initFrameBuffers(VkGfxRenderPass& renderPass);
+    Error          initFrameBuffers();
 
     VulkanResult   acquireNextImage(uint32_t* imageIndex);
     VulkanResult   submitCommandBuffers(const VkCommandBuffer* buffers, uint32_t* imageIndex);
@@ -32,7 +30,7 @@ public:
     uint32_t       getImagesCount() const { return m_imagesCount; }
     VkExtent2D     getCurrentExtent() const { return m_currentExtent; }
     VkFramebuffer  getFrameBuffer(uint32_t imageIndex) { return m_frameBuffers[imageIndex]; }
-    VkFormat       getImageFormat() const { return m_imageFormat; }
+    VkRenderPass   getRenderPass() const { return m_renderPass->get(); }
 
 private:
     Error              createSwapChain(const VkGfxSwapChainParams& params);
@@ -52,6 +50,9 @@ private:
     VkDevice                    m_device         = VK_NULL_HANDLE;
     VkSurfaceKHR                m_surface        = VK_NULL_HANDLE;
     VkSwapchainKHR              m_swapChain      = VK_NULL_HANDLE;
+
+    Shared<VkGfxSwapChain>      m_oldSwapChain   = nullptr;
+    Unique<VkGfxRenderPass>     m_renderPass     = nullptr;
 
     VkSurfaceCapabilitiesKHR    m_capabilities;
 

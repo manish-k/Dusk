@@ -20,7 +20,7 @@ public:
     VkCommandBuffer       getCurrentCommandBuffer() const;
     VkCommandBuffer       beginFrame();
     Error                 endFrame();
-    void                  beginSwapChainRenderPass(VkCommandBuffer commandBuffer, VkRenderPass renderPass);
+    void                  beginSwapChainRenderPass(VkCommandBuffer commandBuffer);
     void                  endSwapChainRenderPass(VkCommandBuffer commandBuffer);
 
     VkGfxSwapChain&       getSwapChain() { return *m_swapChain; }

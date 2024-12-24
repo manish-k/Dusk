@@ -115,6 +115,16 @@ void GLFWVulkanWindow::setEventCallback(const EventCallbackFn& cb)
                                        currentWindow->onEvent(ev);
                                    });
 
+    // window minimized/maximized event
+    glfwSetWindowIconifyCallback(m_window,
+                                 [](GLFWwindow* window, int iconified)
+                                 {
+                                     auto                 currentWindow = reinterpret_cast<GLFWVulkanWindow*>(glfwGetWindowUserPointer(window));
+
+                                     WindowIconifiedEvent ev(iconified);
+                                     currentWindow->onEvent(ev);
+                                 });
+
     // keyboard event
     glfwSetKeyCallback(m_window,
                        [](GLFWwindow* window, int key, int scancode, int action, int mods)

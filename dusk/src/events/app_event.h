@@ -36,6 +36,27 @@ public:
     EVENT_CLASS_CATEGORY(EventCategoryApplication)
 };
 
+class WindowIconifiedEvent : public Event
+{
+public:
+    WindowIconifiedEvent(bool iconified) :
+        m_iconified(iconified) { };
+
+    bool        isIconified() const { return m_iconified; }
+
+    std::string toString() const override
+    {
+        std::stringstream ss;
+        ss << "WindowIconifiedEvent: status=" << m_iconified;
+        return ss.str();
+    }
+
+    EVENT_CLASS_TYPE(WindowIconify)
+    EVENT_CLASS_CATEGORY(EventCategoryApplication)
+private:
+    bool m_iconified;
+};
+
 class AppTickEvent : public Event
 {
 public:

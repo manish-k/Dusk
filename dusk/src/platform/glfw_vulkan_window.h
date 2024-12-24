@@ -82,6 +82,11 @@ public:
     void setEventCallback(const EventCallbackFn& cb) override;
 
     /**
+     * @brief wait for new events
+     */
+    void waitEvents() { glfwWaitEvents(); }
+
+    /**
      * @brief Get required vulkan extensions to enable for glfw
      * @return list of extensions
      */

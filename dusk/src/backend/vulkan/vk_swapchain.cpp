@@ -34,7 +34,12 @@ void VkGfxSwapChain::destroy()
 {
     destroyImageViews();
 
-    m_oldSwapChain->destroy();
+    if (m_oldSwapChain)
+    {
+        m_oldSwapChain->destroy();
+    }
+
+    m_renderPass->destroy();
 
     // TODO: handle double destroy of swapchain,
     // can trigger after failed image view creation

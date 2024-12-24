@@ -17,6 +17,7 @@ enum class EventType
 
     WindowClose,
     WindowResize,
+    WindowIconify,
     WindowFocus,
     WindowLostFocus,
     WindowMoved,

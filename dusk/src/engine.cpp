@@ -88,6 +88,24 @@ void Engine::onEvent(Event& ev)
             return false;
         });
 
+    dispatcher.dispatch<WindowIconifiedEvent>(
+        [this](WindowIconifiedEvent ev)
+        {
+            DUSK_INFO("WindowIconifiedEvent received");
+            if (ev.isIconified())
+            {
+                // DUSK_INFO("Window minimized, pausing engine");
+                m_paused = true;
+            }
+            else
+            {
+                // DUSK_INFO("Window restored, resuming engine");
+                m_paused = false;
+            }
+
+            return false;
+        });
+
     // pass event to UI layer
     // pass event to debug layer
 

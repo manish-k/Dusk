@@ -100,12 +100,13 @@ VkCommandBuffer VulkanRenderer::beginFrame()
     {
         recreateSwapChain();
         recreateCommandBuffers();
-        return nullptr;
+        return VK_NULL_HANDLE;
     }
 
     if (result.hasError() && result.vkResult != VK_SUBOPTIMAL_KHR)
     {
         DUSK_ERROR("beginFrame Failed to acquire swap chain image! {}", result.toString());
+        return VK_NULL_HANDLE;
     }
 
     m_isFrameStarted              = true;
@@ -128,9 +129,10 @@ VkCommandBuffer VulkanRenderer::beginFrame()
 Error VulkanRenderer::endFrame()
 {
     DASSERT(m_isFrameStarted, "Can't call endFrame while frame is not in progress");
-    auto         commandBuffer = getCurrentCommandBuffer();
+    VkCommandBuffer commandBuffer = getCurrentCommandBuffer();
 
-    VulkanResult result        = vkEndCommandBuffer(commandBuffer);
+    // finish recording command buffer
+    VulkanResult result = vkEndCommandBuffer(commandBuffer);
     if (result.hasError())
     {
         DUSK_ERROR("endFrame failed to record command buffer! {}", result.toString());
@@ -141,6 +143,7 @@ Error VulkanRenderer::endFrame()
 
     if (result.vkResult == VK_ERROR_OUT_OF_DATE_KHR || result.vkResult == VK_SUBOPTIMAL_KHR || m_window->isResized())
     {
+        DUSK_INFO("recreating swap chain and frame buffers");
         m_window->resetResizedState();
         recreateSwapChain();
         recreateCommandBuffers();
@@ -207,6 +210,12 @@ Error VulkanRenderer::recreateSwapChain()
 {
     auto&      context      = VulkanRenderer::s_context;
     VkExtent2D windowExtent = m_window->getFramebufferExtent();
+
+    while (windowExtent.width == 0 || windowExtent.height == 0)
+    {
+        windowExtent = m_window->getFramebufferExtent();
+        m_window->waitEvents();
+    }
 
     vkDeviceWaitIdle(context.device);
 

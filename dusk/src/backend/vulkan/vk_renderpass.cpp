@@ -79,6 +79,10 @@ VkGfxRenderPass::VkGfxRenderPass(const VulkanContext& vkContext, const VkGfxRend
 
 VkGfxRenderPass::~VkGfxRenderPass()
 {
+}
+
+void VkGfxRenderPass::destroy() const
+{
     if (m_renderPass != VK_NULL_HANDLE)
     {
         vkDestroyRenderPass(m_device, m_renderPass, nullptr);

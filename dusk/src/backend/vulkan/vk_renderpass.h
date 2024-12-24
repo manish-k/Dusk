@@ -38,6 +38,8 @@ public:
 
     CLASS_UNCOPYABLE(VkGfxRenderPass);
 
+    void         destroy() const;
+
     bool         isValid() const { return m_renderPass != VK_NULL_HANDLE; }
     VkRenderPass get() const { return m_renderPass; }
 

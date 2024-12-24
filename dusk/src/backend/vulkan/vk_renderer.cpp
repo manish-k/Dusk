@@ -27,6 +27,8 @@ VulkanRenderer::~VulkanRenderer()
 
     m_gfxDevice->destroyDevice();
     m_gfxDevice->destroyInstance();
+
+    volkFinalize();
 }
 
 bool VulkanRenderer::init(const char* appName, uint32_t version)

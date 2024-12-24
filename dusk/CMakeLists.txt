@@ -54,14 +54,10 @@ set(CORE_FILES
 	"${CORE_DIR}/log.cpp"
 )
 
-set (EVENTS_DIR "${PROJECT_SOURCE_DIR}/src/events")
-set(EVENTS_FILES
+set(DEBUG_DIR "${PROJECT_SOURCE_DIR}/src/debug")
+set(DEBUG_FILES
 	# Header files
-	"${EVENTS_DIR}/event.h"
-	"${EVENTS_DIR}/key_event.h"
-	"${EVENTS_DIR}/mouse_event.h"
-	"${EVENTS_DIR}/app_event.h"
-	"${EVENTS_DIR}/event_bus.h"
+	"${DEBUG_DIR}/renderdoc.h"
 	# Source files
 )
 
@@ -81,6 +77,7 @@ set(PLATFORM_FILES
 	"${PLATFORM_DIR}/window.h"
 	"${PLATFORM_DIR}/glfw_vulkan_window.h"
 	"${PLATFORM_DIR}/file_system.h"
+	"${PLATFORM_DIR}/platform.h"
 	# Source files
 	"${PLATFORM_DIR}/window.cpp"
 	"${PLATFORM_DIR}/glfw_vulkan_window.cpp"
@@ -122,6 +119,7 @@ set(UTILS_FILES
 source_group("\\" FILES ${ENGINE_FILES})
 source_group("backend/vulkan\\" FILES ${VULKAN_BACKEND_FILES})
 source_group("core\\" FILES ${CORE_FILES})
+source_group("debug\\" FILES ${DEBUG_FILES})
 source_group("events\\" FILES ${EVENTS_FILES})
 source_group("renderer\\" FILES ${RENDERER_FILES})
 source_group("scene\\" FILES ${SCENE_FILES})
@@ -133,6 +131,7 @@ set(PROJECT_FILES
 	${ENGINE_FILES}
 	${VULKAN_BACKEND_FILES}
 	${CORE_FILES}
+	${DEBUG_FILES}
 	${EVENTS_FILES}
 	${LOADERS_FILES}
 	${RENDERER_FILES}
@@ -146,6 +145,7 @@ target_include_directories(
 	${PROJECT_NAME} PUBLIC 
 	${ENGINE_DIR}
 	${CORE_DIR}
+	${DEBUG_DIR}
 	${VULKAN_BACKEND_DIR}
 	${EVENTS_DIR}
 	${LOADERS_DIR}
@@ -171,6 +171,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
 	volk
 	vma
 	excalibur_hash
+	renderdoc
 )
 
 if(CLANG_FORMAT_EXE)
@@ -200,3 +201,7 @@ elseif(UNIX)
 		DUSK_PLATFORM_UNIX
 	)
 endif()
+
+target_compile_definitions(${PROJECT_NAME} PUBLIC 
+		ENABLE_RENDERDOC
+	)

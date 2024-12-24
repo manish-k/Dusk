@@ -6,6 +6,7 @@
 #include "dusk.h"
 #include "engine.h"
 #include "core/application.h"
+#include "debug/renderdoc.h"
 
 using namespace dusk;
 
@@ -15,6 +16,10 @@ int                              main(int argc, char** argv)
 {
     // start logger
     dusk::Logger::init();
+
+#ifdef ENABLE_RENDERDOC
+    if (!renderdoc::init()) DUSK_ERROR("Unable to load renderdoc library");
+#endif
 
     auto                engineConfig = Engine::Config::defaultConfig();
     auto                engine       = createUnique<Engine>(engineConfig);

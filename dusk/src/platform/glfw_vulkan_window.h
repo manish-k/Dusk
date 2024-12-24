@@ -82,7 +82,8 @@ public:
     void setEventCallback(const EventCallbackFn& cb) override;
 
     /**
-     * @brief wait for new events
+     * @brief wait for new events. It will put calling thread to sleep untill one window
+     * event is available.
      */
     void waitEvents() { glfwWaitEvents(); }
 

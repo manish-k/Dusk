@@ -23,6 +23,7 @@ bool Engine::start(Shared<Application> app)
 
     // create window
     auto windowProps = Window::Properties::defaultWindowProperties();
+    windowProps.mode = Window::Mode::Maximized;
     m_window         = std::move(Window::createWindow(windowProps));
     if (!m_window)
     {

@@ -30,6 +30,7 @@ public:
         Headless,
         Fullscreen,
         FullscreenBorderless,
+        Maximized,
         Default
     };
 

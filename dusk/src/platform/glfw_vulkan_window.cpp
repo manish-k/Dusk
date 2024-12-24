@@ -66,6 +66,11 @@ void GLFWVulkanWindow::createWindow()
             break;
         }
 
+        case Window::Mode::Maximized:
+        {
+            glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
+        }
+
         default:
             m_window = glfwCreateWindow(m_props.width, m_props.height, m_props.title.c_str(), nullptr, nullptr);
     }

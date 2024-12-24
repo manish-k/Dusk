@@ -27,6 +27,7 @@ set(VULKAN_BACKEND_FILES
 	"${VULKAN_BACKEND_DIR}/vk_pipeline_layout.h"
 	"${VULKAN_BACKEND_DIR}/vk_renderpass.h"
 	"${VULKAN_BACKEND_DIR}/vk_pipeline.h"
+	"${VULKAN_BACKEND_DIR}/vk_debug.h"
 	# Source files
 	"${VULKAN_BACKEND_DIR}/vk.cpp"
 	"${VULKAN_BACKEND_DIR}/vk_renderer.cpp"
@@ -35,6 +36,7 @@ set(VULKAN_BACKEND_FILES
 	"${VULKAN_BACKEND_DIR}/vk_pipeline_layout.cpp"
 	"${VULKAN_BACKEND_DIR}/vk_renderpass.cpp"
 	"${VULKAN_BACKEND_DIR}/vk_pipeline.cpp"
+	"${VULKAN_BACKEND_DIR}/vk_debug.cpp"
 )
 
 set(CORE_DIR "${PROJECT_SOURCE_DIR}/src/core")

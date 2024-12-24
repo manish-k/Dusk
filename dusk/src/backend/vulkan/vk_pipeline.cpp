@@ -123,6 +123,8 @@ VkGfxRenderPipeline::VkGfxRenderPipeline(VulkanContext& vkContext, VkGfxRenderPi
     dynamicStatesInfo.pDynamicStates    = renderConfig.dynamicStates.data();
 
     createShaderModule(renderConfig.vertexShaderCode, &m_vertexShaderModule);
+    vkdebug::setObjectName(m_device, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)m_vertexShaderModule, "Vertex shader");
+
     VkPipelineShaderStageCreateInfo vertShaderStageInfo {};
     vertShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     vertShaderStageInfo.stage  = VK_SHADER_STAGE_VERTEX_BIT;
@@ -130,6 +132,7 @@ VkGfxRenderPipeline::VkGfxRenderPipeline(VulkanContext& vkContext, VkGfxRenderPi
     vertShaderStageInfo.pName  = "main";
 
     createShaderModule(renderConfig.fragmentShaderCode, &m_fragmentShaderModule);
+    vkdebug::setObjectName(m_device, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)m_fragmentShaderModule, "Fragment shader");
     VkPipelineShaderStageCreateInfo fragShaderStageInfo {};
     fragShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     fragShaderStageInfo.stage  = VK_SHADER_STAGE_FRAGMENT_BIT;

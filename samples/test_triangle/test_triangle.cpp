@@ -6,6 +6,7 @@
 #include "events/mouse_event.h"
 #include "platform/file_system.h"
 #include "backend/vulkan/vk_renderer.h"
+#include "backend/vulkan/vk_debug.h"
 
 TestTriangle::TestTriangle() { }
 
@@ -56,7 +57,9 @@ void TestTriangle::onUpdate(TimeStep dt)
 
     m_renderPipeline->bind(commandBuffer);
 
+    vkdebug::cmdBeginLabel(commandBuffer, "draw", glm::vec4(0.0f, 0.8f, 0.0f, 1.0f));
     vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+    vkdebug::cmdEndLabel(commandBuffer);
 
     renderer->endSwapChainRenderPass(commandBuffer);
 

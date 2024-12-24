@@ -21,10 +21,11 @@ int                              main(int argc, char** argv)
     if (!renderdoc::init()) DUSK_ERROR("Unable to load renderdoc library");
 #endif
 
-    auto                engineConfig = Engine::Config::defaultConfig();
-    auto                engine       = createUnique<Engine>(engineConfig);
+    auto engineConfig = Engine::Config::defaultConfig();
+    auto engine       = createUnique<Engine>(engineConfig);
 
-    Shared<Application> app          = std::move(dusk::createApplication(argc, argv));
+    // create application
+    Shared<Application> app = std::move(dusk::createApplication(argc, argv));
 
     if (!engine->start(app))
     {

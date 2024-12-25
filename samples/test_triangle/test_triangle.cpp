@@ -37,7 +37,7 @@ bool TestTriangle::start()
                            .setVertexShaderCode(m_vertShaderCode)
                            .setFragmentShaderCode(m_fragShaderCode)
                            .setPipelineLayout(*m_pipelineLayout)
-                           .setRenderPass(swapChain.getRenderPass())
+                           .addColorAttachmentFormat(swapChain.getImageFormat())
                            .build();
 
     return true;
@@ -53,7 +53,8 @@ void TestTriangle::onUpdate(TimeStep dt)
 
     auto            commandBuffer = renderer->beginFrame();
 
-    renderer->beginSwapChainRenderPass(commandBuffer);
+    //renderer->beginSwapChainRenderPass(commandBuffer);
+    renderer->beginRendering(commandBuffer);
 
     m_renderPipeline->bind(commandBuffer);
 
@@ -61,7 +62,8 @@ void TestTriangle::onUpdate(TimeStep dt)
     vkCmdDraw(commandBuffer, 3, 1, 0, 0);
     vkdebug::cmdEndLabel(commandBuffer);
 
-    renderer->endSwapChainRenderPass(commandBuffer);
+    //renderer->endSwapChainRenderPass(commandBuffer);
+    renderer->endRendering(commandBuffer);
 
     renderer->endFrame();
 

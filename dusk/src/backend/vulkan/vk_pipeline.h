@@ -21,6 +21,8 @@ struct VkGfxRenderPipelineConfig
     DynamicArray<char>                  vertexShaderCode;   // TODO: avoid copying buffer
     DynamicArray<char>                  fragmentShaderCode; // TODO: avoid copying buffer
 
+    DynamicArray<VkFormat>              colorAttachmentFormats;
+
     VkRenderPass                        renderPass     = VK_NULL_HANDLE;
     uint32_t                            subpassIndex   = 0u;
 
@@ -38,9 +40,10 @@ public:
         Builder& addDynamicState(VkDynamicState state);
         Builder& setVertexShaderCode(DynamicArray<char>& shaderCode);
         Builder& setFragmentShaderCode(DynamicArray<char>& shaderCode);
-        Builder& setRenderPass(VkRenderPass renderPass);
+        // Builder& setRenderPass(VkRenderPass renderPass);
         Builder& setSubPassIndex(uint32_t index);
         Builder& setPipelineLayout(VkGfxPipelineLayout& pipelineLayout);
+        Builder& addColorAttachmentFormat(VkFormat format);
 
         /**
          * @brief build VkGfxPipeline object with given config

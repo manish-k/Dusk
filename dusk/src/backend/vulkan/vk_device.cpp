@@ -144,6 +144,9 @@ Error VkGfxDevice::createDevice(VulkanContext& vkContext)
 
     DynamicArray<PhysicalDeviceInfo> physicalDeviceInfo(deviceCount);
 
+    // dynamic rendering feature info
+    VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingFeature = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR };
+
     for (uint32_t deviceIndex = 0u; deviceIndex < deviceCount; ++deviceIndex)
     {
         const VkPhysicalDevice physicalDevice = physicalDevices[deviceIndex];
@@ -255,6 +258,16 @@ Error VkGfxDevice::createDevice(VulkanContext& vkContext)
             continue;
         }
         pDeviceInfo->activeDeviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+
+        // Enable dynamic rendering
+        if (!availableExtensionsSet.has(hash(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)))
+        {
+            DUSK_INFO("Skipping device because it does not support dynamic rendering {}", VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+            continue;
+        }
+
+        dynamicRenderingFeature.dynamicRendering = VK_TRUE;
+        pDeviceInfo->activeDeviceExtensions.push_back(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
 
         // Feature checks
         if (!pDeviceInfo->deviceFeatures.samplerAnisotropy)
@@ -369,6 +382,7 @@ Error VkGfxDevice::createDevice(VulkanContext& vkContext)
     deviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(
         pSelectedDeviceInfo->activeDeviceExtensions.size());
     deviceCreateInfo.ppEnabledExtensionNames = pSelectedDeviceInfo->activeDeviceExtensions.data();
+    deviceCreateInfo.pNext                   = &dynamicRenderingFeature;
 
     result                                   = vkCreateDevice(m_physicalDevice, &deviceCreateInfo, nullptr, &m_device);
 

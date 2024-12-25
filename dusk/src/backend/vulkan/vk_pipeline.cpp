@@ -34,11 +34,11 @@ VkGfxRenderPipeline::Builder& VkGfxRenderPipeline::Builder::setFragmentShaderCod
     return *this;
 }
 
-VkGfxRenderPipeline::Builder& VkGfxRenderPipeline::Builder::setRenderPass(VkRenderPass renderPass)
-{
-    m_renderConfig.renderPass = renderPass;
-    return *this;
-}
+// VkGfxRenderPipeline::Builder& VkGfxRenderPipeline::Builder::setRenderPass(VkRenderPass renderPass)
+//{
+//     m_renderConfig.renderPass = renderPass;
+//     return *this;
+// }
 
 VkGfxRenderPipeline::Builder& VkGfxRenderPipeline::Builder::setSubPassIndex(uint32_t index)
 {
@@ -52,10 +52,17 @@ VkGfxRenderPipeline::Builder& VkGfxRenderPipeline::Builder::setPipelineLayout(Vk
     return *this;
 }
 
+VkGfxRenderPipeline::Builder& VkGfxRenderPipeline::Builder::addColorAttachmentFormat(VkFormat format)
+{
+    m_renderConfig.colorAttachmentFormats.push_back(format);
+    return *this;
+}
+
 Unique<VkGfxRenderPipeline> VkGfxRenderPipeline::Builder::build()
 {
-    DASSERT(m_renderConfig.renderPass != VK_NULL_HANDLE, "render pass is required for rendering");
+    // DASSERT(m_renderConfig.renderPass != VK_NULL_HANDLE, "render pass is required for rendering");
     DASSERT(m_renderConfig.pipelineLayout != VK_NULL_HANDLE, "pipeline layout is required for rendering");
+    DASSERT(m_renderConfig.colorAttachmentFormats.size() != 0, "No color attachment format provided")
 
     auto pipeline = createUnique<VkGfxRenderPipeline>(m_context, m_renderConfig);
 
@@ -208,9 +215,16 @@ VkGfxRenderPipeline::VkGfxRenderPipeline(VulkanContext& vkContext, VkGfxRenderPi
     pipelineInfo.pDepthStencilState  = &depthStencilInfo;
     pipelineInfo.pDynamicState       = &dynamicStatesInfo;
 
-    pipelineInfo.renderPass          = renderConfig.renderPass;
+    pipelineInfo.renderPass          = VK_NULL_HANDLE;
     pipelineInfo.subpass             = renderConfig.subpassIndex;
     pipelineInfo.layout              = renderConfig.pipelineLayout;
+
+    // dynamic rendering is enabled
+    VkPipelineRenderingCreateInfo renderingCreateInfo { VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO };
+    renderingCreateInfo.colorAttachmentCount    = static_cast<size_t>(renderConfig.colorAttachmentFormats.size());
+    renderingCreateInfo.pColorAttachmentFormats = renderConfig.colorAttachmentFormats.data();
+
+    pipelineInfo.pNext                          = &renderingCreateInfo;
 
     // create pipeline
     VulkanResult result = vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_pipeline);

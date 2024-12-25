@@ -30,7 +30,9 @@ public:
     uint32_t       getImagesCount() const { return m_imagesCount; }
     VkExtent2D     getCurrentExtent() const { return m_currentExtent; }
     VkFramebuffer  getFrameBuffer(uint32_t imageIndex) { return m_frameBuffers[imageIndex]; }
+    VkImageView    getImageView(uint32_t imageIndex) { return m_swapChainImageViews[imageIndex]; }
     VkRenderPass   getRenderPass() const { return m_renderPass->get(); }
+    VkFormat       getImageFormat() const { return m_imageFormat; }
 
 private:
     Error              createSwapChain(const VkGfxSwapChainParams& params);

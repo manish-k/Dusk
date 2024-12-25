@@ -208,6 +208,51 @@ void VulkanRenderer::endSwapChainRenderPass(VkCommandBuffer commandBuffer)
     vkCmdEndRenderPass(commandBuffer);
 }
 
+void VulkanRenderer::beginRendering(VkCommandBuffer commandBuffer)
+{
+    DASSERT(m_isFrameStarted, "Can't begin rendering while frame is not in progress");
+
+    VkExtent2D currentExtent = m_swapChain->getCurrentExtent();
+
+    // define color attachments info
+    VkRenderingAttachmentInfo colorAttachmentInfo { VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
+    colorAttachmentInfo.imageView   = m_swapChain->getImageView(m_currentImageIndex);
+    colorAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR;
+    colorAttachmentInfo.loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    colorAttachmentInfo.storeOp     = VK_ATTACHMENT_STORE_OP_STORE;
+    colorAttachmentInfo.clearValue  = { 0.f, 0.f, 0.f, 1.0f };
+
+    VkRenderingInfo renderingInfo { VK_STRUCTURE_TYPE_RENDERING_INFO };
+    renderingInfo.renderArea.offset    = { 0u, 0u };
+    renderingInfo.renderArea.extent    = currentExtent;
+    renderingInfo.layerCount           = 1u;
+    renderingInfo.colorAttachmentCount = 1u;
+    renderingInfo.pColorAttachments    = &colorAttachmentInfo;
+
+    vkCmdBeginRendering(commandBuffer, &renderingInfo);
+
+    VkViewport viewport {};
+    viewport.x        = 0.0f;
+    viewport.y        = 0.0f;
+    viewport.width    = static_cast<float>(currentExtent.width);
+    viewport.height   = static_cast<float>(currentExtent.height);
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+    vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+
+    VkRect2D scissor {};
+    scissor.offset = { 0, 0 };
+    scissor.extent = currentExtent;
+    vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+}
+
+void VulkanRenderer::endRendering(VkCommandBuffer commandBuffer)
+{
+    DASSERT(m_isFrameStarted, "Can't end rendering while frame is not in progress");
+
+    vkCmdEndRendering(commandBuffer);
+}
+
 Error VulkanRenderer::recreateSwapChain()
 {
     auto&      context      = VulkanRenderer::s_context;

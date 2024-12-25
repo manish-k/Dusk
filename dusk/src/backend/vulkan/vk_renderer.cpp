@@ -133,6 +133,26 @@ Error VulkanRenderer::endFrame()
     DASSERT(m_isFrameStarted, "Can't call endFrame while frame is not in progress");
     VkCommandBuffer commandBuffer = getCurrentCommandBuffer();
 
+    // dynamic rendering is being used sotransition image layout for presentation.
+    VkImageMemoryBarrier imageBarrier { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
+    imageBarrier.srcAccessMask    = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    imageBarrier.oldLayout        = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    imageBarrier.newLayout        = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    imageBarrier.image            = m_swapChain->getImage(m_currentImageIndex);
+    imageBarrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+
+    vkCmdPipelineBarrier(
+        commandBuffer,
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, // srcStageMask
+        VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,          // dstStageMask
+        0,
+        0,
+        nullptr,
+        0,
+        nullptr,
+        1,
+        &imageBarrier);
+
     // finish recording command buffer
     VulkanResult result = vkEndCommandBuffer(commandBuffer);
     if (result.hasError())
@@ -213,6 +233,26 @@ void VulkanRenderer::beginRendering(VkCommandBuffer commandBuffer)
     DASSERT(m_isFrameStarted, "Can't begin rendering while frame is not in progress");
 
     VkExtent2D currentExtent = m_swapChain->getCurrentExtent();
+
+    // add image barrier to transition color attachment to optimal layout
+    VkImageMemoryBarrier imageBarrier { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
+    imageBarrier.dstAccessMask    = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    imageBarrier.oldLayout        = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageBarrier.newLayout        = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    imageBarrier.image            = m_swapChain->getImage(m_currentImageIndex);
+    imageBarrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+
+    vkCmdPipelineBarrier(
+        commandBuffer,
+        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,             // srcStageMask
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, // dstStageMask
+        0,
+        0,
+        nullptr,
+        0,
+        nullptr,
+        1,
+        &imageBarrier);
 
     // define color attachments info
     VkRenderingAttachmentInfo colorAttachmentInfo { VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };

@@ -33,6 +33,7 @@ public:
     VkImageView    getImageView(uint32_t imageIndex) { return m_swapChainImageViews[imageIndex]; }
     VkRenderPass   getRenderPass() const { return m_renderPass->get(); }
     VkFormat       getImageFormat() const { return m_imageFormat; }
+    VkImage        getImage(uint32_t imageIndex) const { return m_swapChainImages[imageIndex]; }
 
 private:
     Error              createSwapChain(const VkGfxSwapChainParams& params);

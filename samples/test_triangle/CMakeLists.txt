@@ -25,7 +25,7 @@ set (ASSETS_DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}")
 file(COPY ${ASSETS_SOURCE_DIR} DESTINATION ${ASSETS_DEST_DIR})
 
 ## https://github.com/vblanco20-1/vulkan-guide/blob/all-chapters/CMakeLists.txt
-find_program(GLSL_VALIDATOR glslc HINTS 
+find_program(GLSL_VALIDATOR glslang HINTS 
   ${Vulkan_GLSLANG_VALIDATOR_EXECUTABLE} 
   /usr/bin 
   /usr/local/bin 
@@ -46,7 +46,7 @@ foreach(GLSL ${GLSL_SOURCE_FILES})
   set(SPIRV "${PROJECT_SOURCE_DIR}/assets//shaders/${FILE_NAME}.spv")
   add_custom_command(
     OUTPUT ${SPIRV}
-    COMMAND ${GLSL_VALIDATOR} -V ${GLSL} -o ${SPIRV}
+    COMMAND ${GLSL_VALIDATOR} -g -V ${GLSL} -o ${SPIRV}
     DEPENDS ${GLSL})
   list(APPEND SPIRV_BINARY_FILES ${SPIRV})
 endforeach(GLSL)

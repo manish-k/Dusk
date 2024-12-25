@@ -34,8 +34,11 @@
 # Visual Studio
 .vs/
 
-#Cmake
+# Cmake
 CMakeSettings.json
+
+# Shaders
+*.spv
 
 # Folders
 out/

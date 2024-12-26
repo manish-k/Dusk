@@ -67,10 +67,11 @@ set(LOADERS_DIR "${PROJECT_SOURCE_DIR}/src/loaders")
 set(LOADERS_FILES
 	# Header files
 	"${LOADERS_DIR}/gltf_loader.h"
-	"${LOADERS_DIR}/obj_loader.h"
+	"${LOADERS_DIR}/assimp_loader.h"
 	"${LOADERS_DIR}/stb_image_loader.h"
 	# Source files
 	"${LOADERS_DIR}/gltf_loader.cpp"
+	"${LOADERS_DIR}/assimp_loader.cpp"
 )
 
 set(PLATFORM_DIR "${PROJECT_SOURCE_DIR}/src/platform")
@@ -92,6 +93,7 @@ set(RENDERER_FILES
 	"${RENDERER_DIR}/render_api.h"
 	"${RENDERER_DIR}/renderer.h"
 	"${RENDERER_DIR}/vertex.h"
+	"${RENDERER_DIR}/mesh.h"
 	# Source files
 )
 
@@ -174,6 +176,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
 	vma
 	excalibur_hash
 	renderdoc
+	assimp
 )
 
 if(CLANG_FORMAT_EXE)

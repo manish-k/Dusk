@@ -19,8 +19,6 @@ public:
     GameObject();
     ~GameObject() override;
 
-    CLASS_UNCOPYABLE(GameObject)
-
     /**
      * @brief Set name of the game object
      * @param name

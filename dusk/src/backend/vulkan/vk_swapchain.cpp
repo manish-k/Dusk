@@ -286,7 +286,7 @@ void VkGfxSwapChain::destroySwapChain()
     }
 }
 
-// TODO: this functionality should go into VkGfxDevice
+// TODO: maybe this functionality should go into VkGfxDevice
 Error VkGfxSwapChain::createImageViews(VkFormat format)
 {
     m_swapChainImageViews.resize(m_swapChainImages.size());

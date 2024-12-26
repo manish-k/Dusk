@@ -3,7 +3,7 @@
 
 namespace dusk
 {
-Scene::Scene(std::string_view name) :
+Scene::Scene(const std::string_view name) :
     m_name { name }
 {
     DUSK_DEBUG("Creating scene {}", name);

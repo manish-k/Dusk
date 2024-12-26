@@ -32,3 +32,6 @@
 [submodule "dusk/vendor/excalibur-hash"]
 	path = dusk/vendor/excalibur-hash
 	url = https://github.com/SergeyMakeev/ExcaliburHash.git
+[submodule "dusk/vendor/assimp"]
+	path = dusk/vendor/assimp
+	url = https://github.com/assimp/assimp.git

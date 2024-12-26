@@ -20,7 +20,7 @@ public:
      * @brief Create scene with a given name
      * @param name of the scene
      */
-    Scene(std::string_view name);
+    Scene(const std::string_view name);
     ~Scene();
 
     CLASS_UNCOPYABLE(Scene)
@@ -72,7 +72,7 @@ public:
         std::string_view fileName);
 
 private:
-    std::string_view       m_name;
+    const std::string      m_name;
     EntityId               m_root = NULL_ENTITY;
     DynamicArray<EntityId> m_children {};
     GameObject::UMap       m_sceneGameObjects {};

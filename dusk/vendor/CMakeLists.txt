@@ -83,7 +83,7 @@ target_include_directories(excalibur_hash SYSTEM INTERFACE ${EXCALIBUR_HASH_INCL
 add_library(renderdoc INTERFACE)
 set(RENDERDOC_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/renderdoc)
 target_sources(renderdoc INTERFACE ${RENDERDOC_INCLUDE_DIR}/renderdoc_app.h)
-target_include_directories(excalibur_hash SYSTEM INTERFACE ${RENDERDOC_INCLUDE_DIR})
+target_include_directories(renderdoc SYSTEM INTERFACE ${RENDERDOC_INCLUDE_DIR})
 
 # assimp
 add_subdirectory(assimp)

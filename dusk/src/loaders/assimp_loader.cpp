@@ -23,7 +23,7 @@ Unique<Scene> AssimpLoader::readScene(std::string& fileName)
         return nullptr;
     }
 
-    return createUnique<Scene>(parseScene(assimpScene));
+    return parseScene(assimpScene);
 }
 
 Unique<Scene> AssimpLoader::parseScene(const aiScene* scene)

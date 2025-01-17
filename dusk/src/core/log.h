@@ -2,7 +2,8 @@
 
 #include "base.h"
 
-#include "spdlog/spdlog.h"
+#include <spdlog/spdlog.h>
+#include <string>
 
 namespace dusk
 {
@@ -35,6 +36,28 @@ public:
      * @return Shared pointer to static instance
      */
     static Shared<spdlog::logger>& getVulkanLogger() { return s_vulkanLogger; }
+
+    /**
+     * @brief app assertion log with msg
+     * @param msg 
+     */
+    static void                    appAssertLog(const std::string& msg);
+
+    /**
+     * @brief app assertion log without any msg
+     */
+    static void                    appAssertLog();
+
+    /**
+     * @brief engine assertion log with msg
+     * @param msg 
+     */
+    static void                    engineAssertLog(const std::string& msg);
+
+    /**
+     * @brief engine assertion log without any msg
+     */
+    static void                    engineAssertLog();
 
 private:
     static Shared<spdlog::logger> s_engineLogger;

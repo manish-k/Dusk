@@ -48,4 +48,25 @@ void                   Logger::init()
 
     s_engineLogger->info("Initialized logger.");
 }
+
+void Logger::appAssertLog(const std::string& msg)
+{
+    getAppLogger()->critical("Assertion failed: {}", msg);
+}
+
+void Logger::appAssertLog()
+{
+    getAppLogger()->critical("Assertion failed");
+}
+
+void Logger::engineAssertLog(const std::string& msg)
+{
+    getEngineLogger()->critical("Assertion failed: {}", msg);
+}
+
+void Logger::engineAssertLog()
+{
+    getEngineLogger()->critical("Assertion failed");
+}
+
 } // namespace dusk

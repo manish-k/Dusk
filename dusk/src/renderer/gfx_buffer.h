@@ -2,9 +2,8 @@
 
 namespace dusk
 {
-class GfxBuffer
+struct GfxBuffer
 {
-public:
     GfxBuffer()  = default;
     ~GfxBuffer() = default;
 };

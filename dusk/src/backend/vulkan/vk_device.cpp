@@ -55,12 +55,22 @@ Error VkGfxDevice::initGfxDevice()
         return err;
     }
 
+    // create GPU allocator using vma
+    result = vulkan::createGPUAllocator(s_sharedVkContext, m_gpuAllocator);
+    if (result.hasError())
+    {
+        DUSK_ERROR("Error in creating vma gpu allocator {}", result.toString());
+        return Error::InitializationFailed;
+    }
+
     return Error::Ok;
 }
 
 void VkGfxDevice::cleanupGfxDevice()
 {
     vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
+
+    vulkan::destroyGPUAllocator(m_gpuAllocator);
 
     destroyDevice();
     destroyInstance();

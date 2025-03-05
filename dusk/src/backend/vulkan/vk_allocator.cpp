@@ -53,8 +53,8 @@ VulkanResult vulkan::createGPUAllocator(const VulkanContext& context, VulkanGPUA
     if (result.hasError())
     {
         destroyGPUAllocator(gpuAllocator);
-        return result;
     }
+    return result;
 }
 
 void vulkan::destroyGPUAllocator(VulkanGPUAllocator& gpuAllocator)

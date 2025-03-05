@@ -43,7 +43,15 @@ bool TestTriangle::start()
     return true;
 }
 
-void TestTriangle::shutdown() { }
+void TestTriangle::shutdown() { 
+    // TODO: Ideally destruction of graphics objects should not be handled by Applications.
+    // I think gfxdevice should track allocated all gfx objects and should handle order of 
+    // destruction of gfx objects and vulkan objects.
+    // For now setting unique ptr to nullptr can trigger destruction
+
+    m_renderPipeline = nullptr;
+    m_pipelineLayout = nullptr;
+}
 
 void TestTriangle::onUpdate(TimeStep dt)
 {
@@ -53,7 +61,6 @@ void TestTriangle::onUpdate(TimeStep dt)
 
     auto            commandBuffer = renderer->beginFrame();
 
-    // renderer->beginSwapChainRenderPass(commandBuffer);
     renderer->beginRendering(commandBuffer);
 
     m_renderPipeline->bind(commandBuffer);
@@ -62,12 +69,11 @@ void TestTriangle::onUpdate(TimeStep dt)
     vkCmdDraw(commandBuffer, 3, 1, 0, 0);
     vkdebug::cmdEndLabel(commandBuffer);
 
-    // renderer->endSwapChainRenderPass(commandBuffer);
     renderer->endRendering(commandBuffer);
 
     renderer->endFrame();
 
-    vkDeviceWaitIdle(vkContext.device);
+    renderer->deviceWaitIdle();
 }
 
 void TestTriangle::onEvent(Event& ev)

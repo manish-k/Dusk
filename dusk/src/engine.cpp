@@ -76,6 +76,7 @@ void Engine::stop() { m_running = false; }
 
 void Engine::shutdown()
 {
+    m_renderer->cleanup();
     m_gfxDevice->cleanupGfxDevice();
 }
 

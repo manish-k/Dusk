@@ -3,6 +3,7 @@
 #include "dusk.h"
 #include "vk.h"
 #include "vk_types.h"
+#include "vk_allocator.h"
 #include "renderer/gfx_device.h"
 #include "renderer/gfx_buffer.h"
 #include "platform/glfw_vulkan_window.h"
@@ -50,21 +51,23 @@ public:
 #endif
 
 private:
-    GLFWVulkanWindow& m_window;
+    GLFWVulkanWindow&  m_window;
 
-    VkInstance        m_instance       = VK_NULL_HANDLE;
-    VkPhysicalDevice  m_physicalDevice = VK_NULL_HANDLE;
-    VkDevice          m_device         = VK_NULL_HANDLE;
-    VkCommandPool     m_commandPool    = VK_NULL_HANDLE;
-    VkSurfaceKHR      m_surface        = VK_NULL_HANDLE;
+    VkInstance         m_instance       = VK_NULL_HANDLE;
+    VkPhysicalDevice   m_physicalDevice = VK_NULL_HANDLE;
+    VkDevice           m_device         = VK_NULL_HANDLE;
+    VkCommandPool      m_commandPool    = VK_NULL_HANDLE;
+    VkSurfaceKHR       m_surface        = VK_NULL_HANDLE;
 
-    HashSet<size_t>   m_instanceExtensionsSet;
-    HashSet<size_t>   m_layersSet;
+    VulkanGPUAllocator m_gpuAllocator;
 
-    VkQueue           m_graphicsQueue = VK_NULL_HANDLE;
-    VkQueue           m_presentQueue  = VK_NULL_HANDLE;
-    VkQueue           m_computeQueue  = VK_NULL_HANDLE;
-    VkQueue           m_transferQueue = VK_NULL_HANDLE;
+    HashSet<size_t>    m_instanceExtensionsSet;
+    HashSet<size_t>    m_layersSet;
+
+    VkQueue            m_graphicsQueue = VK_NULL_HANDLE;
+    VkQueue            m_presentQueue  = VK_NULL_HANDLE;
+    VkQueue            m_computeQueue  = VK_NULL_HANDLE;
+    VkQueue            m_transferQueue = VK_NULL_HANDLE;
 
 #ifdef VK_RENDERER_DEBUG
     VkDebugUtilsMessengerEXT m_debugMessenger = VK_NULL_HANDLE;

@@ -14,13 +14,12 @@ VulkanRenderer::VulkanRenderer(GLFWVulkanWindow& window) :
 
 VulkanRenderer::~VulkanRenderer()
 {
-    freeCommandBuffers();
-
-    m_swapChain->destroy();
 }
 
 bool VulkanRenderer::init()
 {
+    DUSK_INFO("initializing vulkan renderer");
+
     Error err = recreateSwapChain();
     if (err != Error::Ok)
     {
@@ -34,6 +33,15 @@ bool VulkanRenderer::init()
     }
 
     return true;
+}
+
+void VulkanRenderer::cleanup()
+{
+    DUSK_INFO("cleaning up vulkan renderer");
+
+    freeCommandBuffers();
+
+    m_swapChain->destroy();
 }
 
 VkCommandBuffer VulkanRenderer::getCurrentCommandBuffer() const

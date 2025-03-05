@@ -16,6 +16,7 @@ public:
     ~VulkanRenderer() override;
 
     bool            init() override;
+    void            cleanup() override;
 
     VkCommandBuffer getCurrentCommandBuffer() const;
     VkCommandBuffer beginFrame();

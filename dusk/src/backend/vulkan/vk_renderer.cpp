@@ -7,71 +7,21 @@
 
 namespace dusk
 {
-VulkanContext VulkanRenderer::s_context = VulkanContext {};
-
-VulkanRenderer::VulkanRenderer(Shared<GLFWVulkanWindow> window) :
+VulkanRenderer::VulkanRenderer(GLFWVulkanWindow& window) :
     m_window(window)
 {
-    m_gfxDevice = createUnique<VkGfxDevice>();
 }
 
 VulkanRenderer::~VulkanRenderer()
 {
-    auto& context = VulkanRenderer::s_context;
-
     freeCommandBuffers();
 
     m_swapChain->destroy();
-
-    vkDestroySurfaceKHR(context.vulkanInstance, m_surface, nullptr);
-
-    m_gfxDevice->destroyDevice();
-    m_gfxDevice->destroyInstance();
-
-    volkFinalize();
 }
 
-bool VulkanRenderer::init(const char* appName, uint32_t version)
+bool VulkanRenderer::init()
 {
-    auto& context = VulkanRenderer::s_context;
-
-    // Initialize instance function pointers
-    VulkanResult result = volkInitialize();
-    if (result.hasError())
-    {
-        DUSK_ERROR("Volk initialization failed. Vulkan loader might not be present {}", result.toString());
-        return false;
-    }
-
-    DynamicArray<const char*> extensions = m_window->getRequiredWindowExtensions();
-    DUSK_INFO("Required {} vulkan extensions for GLFW", extensions.size());
-    for (int i = 0; i < extensions.size(); ++i)
-    {
-        DUSK_INFO(" - {}", extensions[i]);
-    }
-
-    Error err = m_gfxDevice->createInstance(appName, version, extensions, context);
-
-    if (err != Error::Ok)
-    {
-        return false;
-    }
-
-    err = m_window->createWindowSurface(context.vulkanInstance, &m_surface);
-    if (err != Error::Ok)
-    {
-        return false;
-    }
-    context.surface = m_surface;
-
-    // pick physical device and create logical device
-    err = m_gfxDevice->createDevice(context);
-    if (err != Error::Ok)
-    {
-        return false;
-    }
-
-    err = recreateSwapChain();
+    Error err = recreateSwapChain();
     if (err != Error::Ok)
     {
         return false;
@@ -163,10 +113,10 @@ Error VulkanRenderer::endFrame()
 
     result = m_swapChain->submitCommandBuffers(&commandBuffer, &m_currentImageIndex);
 
-    if (result.vkResult == VK_ERROR_OUT_OF_DATE_KHR || result.vkResult == VK_SUBOPTIMAL_KHR || m_window->isResized())
+    if (result.vkResult == VK_ERROR_OUT_OF_DATE_KHR || result.vkResult == VK_SUBOPTIMAL_KHR || m_window.isResized())
     {
         DUSK_INFO("recreating swap chain and frame buffers");
-        m_window->resetResizedState();
+        m_window.resetResizedState();
         recreateSwapChain();
         recreateCommandBuffers();
     }
@@ -180,6 +130,12 @@ Error VulkanRenderer::endFrame()
     m_currentFrameIndex = (m_currentFrameIndex + 1) % m_swapChain->getImagesCount();
 
     return Error::Ok;
+}
+
+void VulkanRenderer::deviceWaitIdle()
+{
+    auto& context = VkGfxDevice::getSharedVulkanContext();
+    vkDeviceWaitIdle(context.device);
 }
 
 void VulkanRenderer::beginSwapChainRenderPass(VkCommandBuffer commandBuffer)
@@ -295,13 +251,13 @@ void VulkanRenderer::endRendering(VkCommandBuffer commandBuffer)
 
 Error VulkanRenderer::recreateSwapChain()
 {
-    auto&      context      = VulkanRenderer::s_context;
-    VkExtent2D windowExtent = m_window->getFramebufferExtent();
+    auto&      context      = VkGfxDevice::getSharedVulkanContext();
+    VkExtent2D windowExtent = m_window.getFramebufferExtent();
 
     while (windowExtent.width == 0 || windowExtent.height == 0)
     {
-        windowExtent = m_window->getFramebufferExtent();
-        m_window->waitEvents();
+        windowExtent = m_window.getFramebufferExtent();
+        m_window.waitEvents();
     }
 
     vkDeviceWaitIdle(context.device);
@@ -323,7 +279,7 @@ Error VulkanRenderer::recreateSwapChain()
 
 Error VulkanRenderer::createCommandBuffers()
 {
-    auto& context = VulkanRenderer::s_context;
+    auto& context = VkGfxDevice::getSharedVulkanContext();
 
     m_commandBuffers.resize(m_swapChain->getImagesCount());
 
@@ -349,7 +305,7 @@ Error VulkanRenderer::createCommandBuffers()
 
 void VulkanRenderer::freeCommandBuffers()
 {
-    auto& context = VulkanRenderer::s_context;
+    auto& context = VkGfxDevice::getSharedVulkanContext();
     vkFreeCommandBuffers(context.device, context.commandPool, static_cast<uint32_t>(m_commandBuffers.size()), m_commandBuffers.data());
     m_commandBuffers.clear();
 }

@@ -20,7 +20,7 @@ Unique<dusk::Application> dusk::createApplication(int argc, char** argv)
 
 bool TestTriangle::start()
 {
-    VulkanContext&  vkContext = VulkanRenderer::getVulkanContext();
+    VulkanContext&  vkContext = VkGfxDevice::getSharedVulkanContext();
     Engine&         engine    = Engine::get();
     VulkanRenderer* renderer  = static_cast<VulkanRenderer*>(engine.getRenderer());
     VkGfxSwapChain& swapChain = renderer->getSwapChain();
@@ -49,11 +49,11 @@ void TestTriangle::onUpdate(TimeStep dt)
 {
     Engine&         engine        = Engine::get();
     VulkanRenderer* renderer      = static_cast<VulkanRenderer*>(engine.getRenderer());
-    VulkanContext&  vkContext     = VulkanRenderer::getVulkanContext();
+    VulkanContext&  vkContext     = VkGfxDevice::getSharedVulkanContext();
 
     auto            commandBuffer = renderer->beginFrame();
 
-    //renderer->beginSwapChainRenderPass(commandBuffer);
+    // renderer->beginSwapChainRenderPass(commandBuffer);
     renderer->beginRendering(commandBuffer);
 
     m_renderPipeline->bind(commandBuffer);
@@ -62,7 +62,7 @@ void TestTriangle::onUpdate(TimeStep dt)
     vkCmdDraw(commandBuffer, 3, 1, 0, 0);
     vkdebug::cmdEndLabel(commandBuffer);
 
-    //renderer->endSwapChainRenderPass(commandBuffer);
+    // renderer->endSwapChainRenderPass(commandBuffer);
     renderer->endRendering(commandBuffer);
 
     renderer->endFrame();

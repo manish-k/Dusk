@@ -19,9 +19,11 @@ public:
 
 private:
     Unique<Scene> parseScene(const aiScene* scene);
+    void          parseMeshes(Scene& scene, const aiScene* aiScene);
 
-    void          traverseSceneNodes(Scene& scene, aiNode* node, EntityId parentId);
-    GameObject    parseAssimpNode(aiNode* node);
+    void          traverseSceneNodes(Scene& scene, const aiNode* node, const aiScene* aiScene, EntityId parentId);
+
+    GameObject    parseAssimpNode(const aiNode* node);
 
 private:
     Assimp::Importer m_importer;

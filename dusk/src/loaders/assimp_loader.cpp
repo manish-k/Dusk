@@ -26,14 +26,19 @@ Unique<Scene> AssimpLoader::readScene(std::string& fileName)
     return parseScene(assimpScene);
 }
 
-Unique<Scene> AssimpLoader::parseScene(const aiScene* scene)
+Unique<Scene> AssimpLoader::parseScene(const aiScene* assimpScene)
 {
-    auto newScene = createUnique<Scene>(scene->mName.C_Str());
+    auto newScene = createUnique<Scene>(assimpScene->mName.C_Str());
+
+    if (assimpScene->mNumMeshes > 0)
+    {
+        parseMeshes(*newScene, assimpScene);
+    }
 
     return newScene;
 }
 
-void AssimpLoader::traverseSceneNodes(Scene& scene, aiNode* node, EntityId parentId)
+void AssimpLoader::traverseSceneNodes(Scene& scene, const aiNode* node, const aiScene* aiScene, EntityId parentId)
 {
     auto gameObject   = createUnique<GameObject>(parseAssimpNode(node));
     auto gameObjectId = gameObject->getId();
@@ -41,6 +46,10 @@ void AssimpLoader::traverseSceneNodes(Scene& scene, aiNode* node, EntityId paren
     gameObject->setName(node->mName.C_Str());
 
     // parse mesh
+    if (node->mNumMeshes > 0)
+    {
+        scene.initMeshes(node->mNumMeshes);
+    }
 
     // attach object to the scene
     scene.addGameObject(std::move(gameObject), parentId);
@@ -48,14 +57,14 @@ void AssimpLoader::traverseSceneNodes(Scene& scene, aiNode* node, EntityId paren
     // traverse children
     if (node->mNumChildren > 0)
     {
-        for (uint32_t childIndex = 0; childIndex < node->mNumChildren; ++childIndex)
+        for (uint32_t childIndex = 0u; childIndex < node->mNumChildren; ++childIndex)
         {
-            traverseSceneNodes(scene, node->mChildren[childIndex], gameObjectId);
+            traverseSceneNodes(scene, node->mChildren[childIndex], aiScene, gameObjectId);
         }
     }
 }
 
-GameObject AssimpLoader::parseAssimpNode(aiNode* node)
+GameObject AssimpLoader::parseAssimpNode(const aiNode* node)
 {
     GameObject newGameObject;
     auto&      transform = newGameObject.getComponent<TransformComponent>();
@@ -95,6 +104,37 @@ GameObject AssimpLoader::parseAssimpNode(aiNode* node)
     transform.setRotation(rotation);
 
     return newGameObject;
+}
+
+void AssimpLoader::parseMeshes(Scene& scene, const aiScene* aiScene)
+{
+    for (uint32_t meshIndex = 0u; meshIndex < aiScene->mNumMeshes; ++meshIndex)
+    {
+        DynamicArray<Vertex>   vertices {};
+        DynamicArray<uint32_t> indices {};
+
+        aiMesh*                mesh = aiScene->mMeshes[meshIndex];
+
+        vertices.reserve(mesh->mNumVertices);
+        indices.reserve(mesh->mNumVertices * 3); // Assumption face is triangular
+
+        for (uint32_t vertexIndex = 0u; vertexIndex < mesh->mNumVertices; ++vertexIndex)
+        {
+            Vertex v;
+            v.position = glm::vec3(mesh->mVertices[vertexIndex].x, mesh->mVertices[vertexIndex].y, mesh->mVertices[vertexIndex].z);
+
+            vertices.push_back(v);
+        }
+
+        for (uint32_t faceIndex = 0u; faceIndex < mesh->mNumFaces; ++faceIndex)
+        {
+            DASSERT(mesh->mFaces[faceIndex].mNumIndices == 3, "Face is not triangular");
+            for (uint32_t vertexIndex = 0u; vertexIndex < 3; ++vertexIndex)
+                indices.push_back(mesh->mFaces[faceIndex].mIndices[vertexIndex]);
+        }
+
+        scene.initSubMesh(meshIndex, vertices, indices);
+    }
 }
 
 } // namespace dusk

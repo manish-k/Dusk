@@ -3,6 +3,9 @@
 #include "dusk.h"
 #include "vk.h"
 #include "vk_types.h"
+#include "renderer/gfx_device.h"
+#include "renderer/gfx_buffer.h"
+#include "platform/glfw_vulkan_window.h"
 
 #include <volk.h>
 
@@ -11,23 +14,29 @@
 
 namespace dusk
 {
-class VkGfxDevice
+class VkGfxDevice : public GfxDevice
 {
 public:
-    VkGfxDevice();
+    VkGfxDevice(GLFWVulkanWindow& window);
     ~VkGfxDevice();
 
-    Error createInstance(const char* appName, uint32_t version, DynamicArray<const char*> requiredExtensions, VulkanContext& vkContext);
-    void  destroyInstance();
+    Error      initGfxDevice() override;
+    void       cleanupGfxDevice() override;
 
-    Error createDevice(VulkanContext& vkContext);
-    void  destroyDevice();
+    Error      createInstance(const char* appName, uint32_t version, DynamicArray<const char*> requiredExtensions);
+    void       destroyInstance();
 
-    Error populateLayerNames();
-    Error populateLayerExtensionNames(const char* pLayerName);
+    Error      createDevice();
+    void       destroyDevice();
 
-    bool  hasLayer(const char* pLayerName);
-    bool  hasInstanceExtension(const char* pExtensionName);
+    Error      populateLayerNames();
+    Error      populateLayerExtensionNames(const char* pLayerName);
+
+    bool       hasLayer(const char* pLayerName);
+    bool       hasInstanceExtension(const char* pExtensionName);
+
+    GfxBuffer* createBuffer() override;
+    void       freeBuffer(GfxBuffer* buffer) override;
 
 #ifdef VK_RENDERER_DEBUG
     static VKAPI_ATTR VkBool32 VKAPI_CALL vulkanDebugMessengerCallback(
@@ -35,24 +44,33 @@ public:
         VkDebugUtilsMessageTypeFlagsEXT             messageType,
         const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
         void*                                       pUserData);
+
+    static VulkanContext& getSharedVulkanContext() { return s_sharedVkContext; }
+
 #endif
 
 private:
-    VkInstance       m_instance       = VK_NULL_HANDLE;
-    VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
-    VkDevice         m_device         = VK_NULL_HANDLE;
-    VkCommandPool    m_commandPool    = VK_NULL_HANDLE;
+    GLFWVulkanWindow& m_window;
 
-    HashSet<size_t>  m_instanceExtensionsSet;
-    HashSet<size_t>  m_layersSet;
+    VkInstance        m_instance       = VK_NULL_HANDLE;
+    VkPhysicalDevice  m_physicalDevice = VK_NULL_HANDLE;
+    VkDevice          m_device         = VK_NULL_HANDLE;
+    VkCommandPool     m_commandPool    = VK_NULL_HANDLE;
+    VkSurfaceKHR      m_surface        = VK_NULL_HANDLE;
 
-    VkQueue          m_graphicsQueue = VK_NULL_HANDLE;
-    VkQueue          m_presentQueue  = VK_NULL_HANDLE;
-    VkQueue          m_computeQueue  = VK_NULL_HANDLE;
-    VkQueue          m_transferQueue = VK_NULL_HANDLE;
+    HashSet<size_t>   m_instanceExtensionsSet;
+    HashSet<size_t>   m_layersSet;
+
+    VkQueue           m_graphicsQueue = VK_NULL_HANDLE;
+    VkQueue           m_presentQueue  = VK_NULL_HANDLE;
+    VkQueue           m_computeQueue  = VK_NULL_HANDLE;
+    VkQueue           m_transferQueue = VK_NULL_HANDLE;
 
 #ifdef VK_RENDERER_DEBUG
-    VkDebugUtilsMessengerEXT m_debugMessenger;
+    VkDebugUtilsMessengerEXT m_debugMessenger = VK_NULL_HANDLE;
 #endif
+
+private:
+    static VulkanContext s_sharedVkContext;
 };
 } // namespace dusk

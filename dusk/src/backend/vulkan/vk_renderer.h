@@ -12,24 +12,23 @@ namespace dusk
 class VulkanRenderer final : public Renderer
 {
 public:
-    VulkanRenderer(Shared<GLFWVulkanWindow> window);
+    VulkanRenderer(GLFWVulkanWindow& window);
     ~VulkanRenderer() override;
 
-    bool                  init(const char* appName, uint32_t version) override;
+    bool            init() override;
 
-    VkCommandBuffer       getCurrentCommandBuffer() const;
-    VkCommandBuffer       beginFrame();
-    Error                 endFrame();
+    VkCommandBuffer getCurrentCommandBuffer() const;
+    VkCommandBuffer beginFrame();
+    Error           endFrame();
+    void            deviceWaitIdle();
 
-    void                  beginSwapChainRenderPass(VkCommandBuffer commandBuffer);
-    void                  endSwapChainRenderPass(VkCommandBuffer commandBuffer);
+    void            beginSwapChainRenderPass(VkCommandBuffer commandBuffer);
+    void            endSwapChainRenderPass(VkCommandBuffer commandBuffer);
 
-    void                  beginRendering(VkCommandBuffer commandBuffer);
-    void                  endRendering(VkCommandBuffer commandBuffer);
+    void            beginRendering(VkCommandBuffer commandBuffer);
+    void            endRendering(VkCommandBuffer commandBuffer);
 
-    VkGfxSwapChain&       getSwapChain() { return *m_swapChain; }
-
-    static VulkanContext& getVulkanContext() { return s_context; }
+    VkGfxSwapChain& getSwapChain() const { return *m_swapChain; }
 
 private:
     Error recreateSwapChain();
@@ -39,20 +38,13 @@ private:
     Error recreateCommandBuffers();
 
 private:
-    Unique<VkGfxDevice>           m_gfxDevice = nullptr;
     Unique<VkGfxSwapChain>        m_swapChain = nullptr;
-
-    Shared<GLFWVulkanWindow>      m_window    = nullptr;
-
-    VkSurfaceKHR                  m_surface   = VK_NULL_HANDLE;
+    GLFWVulkanWindow&             m_window;
 
     DynamicArray<VkCommandBuffer> m_commandBuffers;
 
     bool                          m_isFrameStarted    = false;
     uint32_t                      m_currentImageIndex = 0u;
     uint32_t                      m_currentFrameIndex = 0u;
-
-private:
-    static VulkanContext s_context;
 };
 } // namespace dusk

@@ -33,21 +33,21 @@
 
 // Assert Macro
 #ifdef ENABLE_ASSERT
-#    define DASSERT(check, ...)          \
-        {                                \
-            if (!(check))                \
-            {                            \
-                DUSK_ERROR(__VA_ARGS__); \
-                __debugbreak();          \
-            }                            \
+#    define DASSERT(check, ...)                             \
+        {                                                   \
+            if (!(check))                                   \
+            {                                               \
+                dusk::Logger::engineAssertLog(__VA_ARGS__); \
+                __debugbreak();                             \
+            }                                               \
         }
-#    define ASSERT(check, ...)          \
-        {                               \
-            if (!(check))               \
-            {                           \
-                APP_ERROR(__VA_ARGS__); \
-                __debugbreak();         \
-            }                           \
+#    define ASSERT(check, ...)                           \
+        {                                                \
+            if (!(check))                                \
+            {                                            \
+                dusk::Logger::appAssertLog(__VA_ARGS__); \
+                __debugbreak();                          \
+            }                                            \
         }
 #else
 #    define DASSERT(...)

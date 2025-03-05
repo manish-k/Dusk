@@ -7,7 +7,10 @@
 
 namespace dusk
 {
-VkGfxDevice::VkGfxDevice()
+VulkanContext VkGfxDevice::s_sharedVkContext = VulkanContext {};
+
+VkGfxDevice::VkGfxDevice(GLFWVulkanWindow& window) :
+    m_window(window)
 {
 }
 
@@ -15,7 +18,57 @@ VkGfxDevice::~VkGfxDevice()
 {
 }
 
-Error VkGfxDevice::createInstance(const char* appName, uint32_t version, DynamicArray<const char*> requiredExtensionNames, VulkanContext& vkContext)
+Error VkGfxDevice::initGfxDevice()
+{
+    // Initialize instance function pointers
+    VulkanResult result = volkInitialize();
+    if (result.hasError())
+    {
+        DUSK_ERROR("Volk initialization failed. Vulkan loader might not be present {}", result.toString());
+        return Error::InitializationFailed;
+    }
+
+    DynamicArray<const char*> extensions = m_window.getRequiredWindowExtensions();
+    DUSK_INFO("Required {} vulkan extensions for GLFW", extensions.size());
+    for (int i = 0; i < extensions.size(); ++i)
+    {
+        DUSK_INFO(" - {}", extensions[i]);
+    }
+
+    Error err = createInstance("DUSK", 1, extensions);
+
+    if (err != Error::Ok)
+    {
+        return err;
+    }
+
+    err = m_window.createWindowSurface(m_instance, &m_surface);
+    if (err != Error::Ok)
+    {
+        return err;
+    }
+
+    // pick physical device and create logical device
+    err = createDevice();
+    if (err != Error::Ok)
+    {
+        return err;
+    }
+
+    return Error::Ok;
+}
+
+void VkGfxDevice::cleanupGfxDevice()
+{
+    vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
+
+    destroyDevice();
+    destroyInstance();
+
+    volkFinalize();
+}
+
+Error VkGfxDevice::createInstance(const char* appName, uint32_t version, DynamicArray<const char*> requiredExtensionNames)
 {
     VkApplicationInfo appInfo {};
     appInfo.sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -71,8 +124,6 @@ Error VkGfxDevice::createInstance(const char* appName, uint32_t version, Dynamic
         return result.getErrorId();
     }
 
-    vkContext.vulkanInstance = m_instance;
-
     volkLoadInstance(m_instance);
 
 #ifdef VK_RENDERER_DEBUG
@@ -99,10 +150,10 @@ Error VkGfxDevice::createInstance(const char* appName, uint32_t version, Dynamic
     return Error::Ok;
 }
 
-Error VkGfxDevice::createDevice(VulkanContext& vkContext)
+Error VkGfxDevice::createDevice()
 {
     DASSERT(m_instance != VK_NULL_HANDLE, "VkInstance is not present");
-    DASSERT(vkContext.surface != VK_NULL_HANDLE, "Invalid surface given");
+    DASSERT(m_surface != VK_NULL_HANDLE, "Invalid surface given");
 
     uint32_t     deviceCount = 0u;
     VulkanResult result      = vkEnumeratePhysicalDevices(m_instance, &deviceCount, nullptr);
@@ -188,7 +239,7 @@ Error VkGfxDevice::createDevice(VulkanContext& vkContext)
             DUSK_INFO("- - - supports transfer {}", supportsTransfer);
 
             VkBool32     supportsPresent = false;
-            VulkanResult result          = vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, familyIndex, vkContext.surface, &supportsPresent);
+            VulkanResult result          = vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, familyIndex, m_surface, &supportsPresent);
             if (result.hasError())
             {
                 DUSK_ERROR("Unable to query surface support {}", result.toString());
@@ -313,15 +364,7 @@ Error VkGfxDevice::createDevice(VulkanContext& vkContext)
     m_physicalDevice                              = physicalDevices[selectedPhysicalDeviceIndex.value()];
     const PhysicalDeviceInfo* pSelectedDeviceInfo = &physicalDeviceInfo[selectedPhysicalDeviceIndex.value()];
 
-    // set physical device info in the vulkan context
-    vkContext.physicalDevice                = m_physicalDevice;
-    vkContext.physicalDeviceFeatures        = pSelectedDeviceInfo->deviceFeatures;
-    vkContext.physicalDeviceProperties      = pSelectedDeviceInfo->deviceProperties;
-    vkContext.graphicsQueueFamilyIndex      = pSelectedDeviceInfo->graphicsQueueIndex;
-    vkContext.presentQueueFamilyIndex       = pSelectedDeviceInfo->graphicsQueueIndex;
-    vkContext.computeQueueFamilyIndex       = pSelectedDeviceInfo->computeQueueIndex;
-    vkContext.transferQueueFamilyIndex      = pSelectedDeviceInfo->transferQueueIndex;
-
+    // queues identification
     constexpr float   transferQueuePriority = 0.0f;
     constexpr float   graphicsQueuePriority = 1.0f;
     constexpr float   computeQueuePriority  = 1.0f;
@@ -393,8 +436,6 @@ Error VkGfxDevice::createDevice(VulkanContext& vkContext)
     }
     DUSK_INFO("Logical device creation successful");
 
-    vkContext.device = m_device;
-
     volkLoadDevice(m_device);
 
     // fetch graphic queue handle
@@ -404,10 +445,7 @@ Error VkGfxDevice::createDevice(VulkanContext& vkContext)
         DUSK_ERROR("Unable to get graphic queue from vulkan device");
         return Error::NotFound;
     }
-    m_presentQueue          = m_graphicsQueue;
-
-    vkContext.graphicsQueue = m_graphicsQueue;
-    vkContext.presentQueue  = m_presentQueue;
+    m_presentQueue = m_graphicsQueue;
 
     // fetch compute queue handle
     vkGetDeviceQueue(m_device, pSelectedDeviceInfo->computeQueueIndex, 0, &m_computeQueue);
@@ -416,7 +454,6 @@ Error VkGfxDevice::createDevice(VulkanContext& vkContext)
         DUSK_ERROR("Unable to get compute queue from vulkan device");
         return Error::NotFound;
     }
-    vkContext.computeQueue = m_computeQueue;
 
     // fetch transfer queue handle
     vkGetDeviceQueue(m_device, pSelectedDeviceInfo->transferQueueIndex, 0, &m_transferQueue);
@@ -425,7 +462,6 @@ Error VkGfxDevice::createDevice(VulkanContext& vkContext)
         DUSK_ERROR("Unable to get transfer queue from vulkan device");
         return Error::NotFound;
     }
-    vkContext.transferQueue = m_transferQueue;
 
     VkCommandPoolCreateInfo poolInfo {};
     poolInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -439,9 +475,29 @@ Error VkGfxDevice::createDevice(VulkanContext& vkContext)
         DUSK_ERROR("Failed to create command pool {}", result.toString());
         return result.getErrorId();
     }
-    vkContext.commandPool = m_commandPool;
 
     DUSK_INFO("Command pool created with graphics queue");
+
+    s_sharedVkContext.vulkanInstance           = m_instance;
+    s_sharedVkContext.physicalDevice           = m_physicalDevice;
+    s_sharedVkContext.device                   = m_device;
+    s_sharedVkContext.surface                  = m_surface;
+    s_sharedVkContext.commandPool              = m_commandPool;
+
+    s_sharedVkContext.physicalDeviceProperties = pSelectedDeviceInfo->deviceProperties;
+    s_sharedVkContext.physicalDeviceFeatures   = pSelectedDeviceInfo->deviceFeatures;
+
+    s_sharedVkContext.graphicsQueueFamilyIndex = pSelectedDeviceInfo->graphicsQueueIndex;
+    s_sharedVkContext.presentQueueFamilyIndex  = pSelectedDeviceInfo->presentQueueIndex;
+    s_sharedVkContext.computeQueueFamilyIndex  = pSelectedDeviceInfo->computeQueueIndex;
+    s_sharedVkContext.transferQueueFamilyIndex = pSelectedDeviceInfo->transferQueueIndex;
+
+    s_sharedVkContext.graphicsQueue            = m_graphicsQueue;
+    s_sharedVkContext.presentQueue             = m_presentQueue;
+    s_sharedVkContext.computeQueue             = m_computeQueue;
+    s_sharedVkContext.transferQueue            = m_transferQueue;
+    s_sharedVkContext.transferQueue            = m_transferQueue;
+    s_sharedVkContext.transferQueue            = m_transferQueue;
 
     return Error::Ok;
 }
@@ -500,6 +556,15 @@ Error VkGfxDevice::populateLayerExtensionNames(const char* pLayerName)
 bool VkGfxDevice::hasInstanceExtension(const char* pExtensionName)
 {
     return m_instanceExtensionsSet.has(hash(pExtensionName));
+}
+
+GfxBuffer* VkGfxDevice::createBuffer()
+{
+    return nullptr;
+}
+
+void VkGfxDevice::freeBuffer(GfxBuffer* buffer)
+{
 }
 
 #ifdef VK_RENDERER_DEBUG

@@ -33,8 +33,16 @@ bool Engine::start(Shared<Application> app)
     m_window->setEventCallback([this](Event& ev)
                                { this->onEvent(ev); });
 
-    m_renderer = createUnique<VulkanRenderer>(std::dynamic_pointer_cast<GLFWVulkanWindow>(m_window));
-    if (!m_renderer->init("Test", 1))
+    // device creation
+    m_gfxDevice = createUnique<VkGfxDevice>(*dynamic_cast<GLFWVulkanWindow*>(m_window.get()));
+    if (m_gfxDevice->initGfxDevice() != Error::Ok)
+    {
+        DUSK_ERROR("Gfx device creation failed");
+        return false;
+    }
+
+    m_renderer = createUnique<VulkanRenderer>(*dynamic_cast<GLFWVulkanWindow*>(m_window.get()));
+    if (!m_renderer->init())
     {
         DUSK_ERROR("Renderer initialization failed");
         return false;
@@ -66,7 +74,10 @@ void Engine::run()
 
 void Engine::stop() { m_running = false; }
 
-void Engine::shutdown() { }
+void Engine::shutdown()
+{
+    m_gfxDevice->cleanupGfxDevice();
+}
 
 void Engine::onUpdate(TimeStep dt) { }
 

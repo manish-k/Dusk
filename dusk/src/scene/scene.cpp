@@ -55,6 +55,11 @@ GameObject& Scene::getGameObject(EntityId objectId)
     return *m_sceneGameObjects[objectId];
 }
 
+void Scene::initSubMesh(uint32_t meshIndex, const DynamicArray<Vertex>& vertices, const DynamicArray<uint32_t> indices)
+{
+    DASSERT(meshIndex < m_subMeshes.size());
+}
+
 Unique<Scene> Scene::createSceneFromGLTF(std::string_view fileName)
 {
     auto loader = createUnique<GLTFLoader>();

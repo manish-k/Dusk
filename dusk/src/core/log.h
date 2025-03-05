@@ -39,25 +39,25 @@ public:
 
     /**
      * @brief app assertion log with msg
-     * @param msg 
+     * @param msg
      */
-    static void                    appAssertLog(const std::string& msg);
+    static void appAssertLog(const std::string& msg);
 
     /**
      * @brief app assertion log without any msg
      */
-    static void                    appAssertLog();
+    static void appAssertLog();
 
     /**
      * @brief engine assertion log with msg
-     * @param msg 
+     * @param msg
      */
-    static void                    engineAssertLog(const std::string& msg);
+    static void engineAssertLog(const std::string& msg);
 
     /**
      * @brief engine assertion log without any msg
      */
-    static void                    engineAssertLog();
+    static void engineAssertLog();
 
 private:
     static Shared<spdlog::logger> s_engineLogger;

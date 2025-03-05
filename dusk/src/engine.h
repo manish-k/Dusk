@@ -7,6 +7,7 @@
 #include "platform/window.h"
 #include "renderer/render_api.h"
 #include "renderer/renderer.h"
+#include "renderer/gfx_device.h"
 
 namespace dusk
 {
@@ -31,27 +32,29 @@ public:
 
     CLASS_UNCOPYABLE(Engine)
 
-    bool           start(Shared<Application> app);
-    void           run();
-    void           stop();
-    void           shutdown();
-    void           onUpdate(TimeStep dt);
-    void           onEvent(Event& ev);
+    bool                  start(Shared<Application> app);
+    void                  run();
+    void                  stop();
+    void                  shutdown();
+    void                  onUpdate(TimeStep dt);
+    void                  onEvent(Event& ev);
 
-    static Engine& get() { return *s_instance; }
+    static Engine&        get() { return *s_instance; }
+    static RenderAPI::API getRenderAPI() { return s_instance->m_config.renderAPI; }
 
-    Renderer*      getRenderer() { return m_renderer.get(); }
+    Renderer*             getRenderer() { return m_renderer.get(); }
 
 private:
     Config              m_config;
 
-    Unique<Renderer>    m_renderer = nullptr;
+    Unique<GfxDevice>   m_gfxDevice = nullptr;
+    Unique<Renderer>    m_renderer  = nullptr;
 
-    Shared<Window>      m_window   = nullptr;
-    Shared<Application> m_app      = nullptr;
+    Shared<Window>      m_window    = nullptr;
+    Shared<Application> m_app       = nullptr;
 
-    bool                m_running  = false;
-    bool                m_paused   = false;
+    bool                m_running   = false;
+    bool                m_paused    = false;
 
     TimePoint           m_lastFrameTime;
     TimeStep            m_deltaTime;

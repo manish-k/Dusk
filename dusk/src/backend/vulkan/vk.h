@@ -1,15 +1,18 @@
 #pragma once
 
 #include "dusk.h"
-#include "core/error.h"
 #include "vk_base.h"
-#include "renderer/vertex.h"
 #include "vk_debug.h"
+#include "platform/platform.h"
+#include "core/error.h"
+#include "renderer/vertex.h"
+#include "renderer/gfx_buffer.h"
 
 #include <volk.h>
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <vk_mem_alloc.h>
 
 namespace dusk
 {
@@ -45,5 +48,9 @@ VkFormat getVkVertexAttributeFormat(VertexAttributeFormat format);
 // vertex descriptor functions
 DynamicArray<VkVertexInputBindingDescription>   getVertexBindingDescription();
 DynamicArray<VkVertexInputAttributeDescription> getVertexAtrributeDescription();
+
+// Buffer usage and type related funcs
+VkBufferUsageFlags          getBufferUsageFlagBits(uint32_t usage);
+VmaAllocationCreateFlagBits getVmaAllocationCreateFlagBits(uint32_t flags);
 
 } // namespace dusk

@@ -6,7 +6,6 @@
 #include "renderer/gfx_buffer.h"
 
 #include <volk/volk.h>
-#include <vk_mem_alloc.h>
 
 namespace dusk
 {
@@ -24,6 +23,8 @@ struct VulkanGfxBuffer : public GfxBuffer
     void*                 mappedMemory;
     size_t                sizeInBytes;
     VkMemoryPropertyFlags memoryFlags;
+
+    ~VulkanGfxBuffer() = default;
 };
 
 namespace vulkan

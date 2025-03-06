@@ -374,4 +374,28 @@ DynamicArray<VkVertexInputAttributeDescription> getVertexAtrributeDescription()
     return attributeDescriptions;
 }
 
+VkBufferUsageFlags getBufferUsageFlagBits(uint32_t usage)
+{
+    VkBufferUsageFlags flags = 0u;
+    if (usage & GfxBufferUsageFlags::TransferSource) flags |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    if (usage & GfxBufferUsageFlags::TransferTarget) flags |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    if (usage & GfxBufferUsageFlags::UniformBuffer) flags |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    if (usage & GfxBufferUsageFlags::VertexBuffer) flags |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    if (usage & GfxBufferUsageFlags::IndexBuffer) flags |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+
+    return flags;
+}
+
+VmaAllocationCreateFlagBits getVmaAllocationCreateFlagBits(uint32_t flags)
+{
+    VmaAllocationCreateFlagBits creationFlags;
+
+    if (flags & GfxBufferMemoryTypeFlags::PersistentlyMapped) flags |= VMA_ALLOCATION_CREATE_MAPPED_BIT;
+    if (flags & GfxBufferMemoryTypeFlags::HostSequentialWrite) flags |= VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
+    if (flags & GfxBufferMemoryTypeFlags::HostRandomAccess) flags |= VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
+    if (flags & GfxBufferMemoryTypeFlags::DedicatedDeviceMemory) flags |= VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
+
+    return creationFlags;
+}
+
 } // namespace dusk

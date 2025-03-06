@@ -74,7 +74,7 @@ VulkanResult vulkan::allocateGPUBuffer(VulkanGPUAllocator& gpuAllocator, const V
     allocationCreateInfo.usage                   = usage;
     allocationCreateInfo.flags                   = flags;
 
-    VmaAllocationInfo allocationInfo;
+    VmaAllocationInfo allocationInfo {};
     VulkanResult      result = vmaCreateBuffer(gpuAllocator.vmaAllocator, &bufferCreateInfo, &allocationCreateInfo, &bufferResult->buffer, &bufferResult->allocation, &allocationInfo);
 
     if (result.hasError())

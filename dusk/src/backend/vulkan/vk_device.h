@@ -21,23 +21,23 @@ public:
     VkGfxDevice(GLFWVulkanWindow& window);
     ~VkGfxDevice();
 
-    Error      initGfxDevice() override;
-    void       cleanupGfxDevice() override;
+    Error             initGfxDevice() override;
+    void              cleanupGfxDevice() override;
 
-    Error      createInstance(const char* appName, uint32_t version, DynamicArray<const char*> requiredExtensions);
-    void       destroyInstance();
+    Error             createInstance(const char* appName, uint32_t version, DynamicArray<const char*> requiredExtensions);
+    void              destroyInstance();
 
-    Error      createDevice();
-    void       destroyDevice();
+    Error             createDevice();
+    void              destroyDevice();
 
-    Error      populateLayerNames();
-    Error      populateLayerExtensionNames(const char* pLayerName);
+    Error             populateLayerNames();
+    Error             populateLayerExtensionNames(const char* pLayerName);
 
-    bool       hasLayer(const char* pLayerName);
-    bool       hasInstanceExtension(const char* pExtensionName);
+    bool              hasLayer(const char* pLayerName);
+    bool              hasInstanceExtension(const char* pExtensionName);
 
-    GfxBuffer* createBuffer() override;
-    void       freeBuffer(GfxBuffer* buffer) override;
+    Unique<GfxBuffer> createBuffer(const GfxBufferParams& params) override;
+    void              freeBuffer(GfxBuffer* buffer) override;
 
 #ifdef VK_RENDERER_DEBUG
     static VKAPI_ATTR VkBool32 VKAPI_CALL vulkanDebugMessengerCallback(

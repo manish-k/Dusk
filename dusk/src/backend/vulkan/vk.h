@@ -6,7 +6,6 @@
 #include "platform/platform.h"
 #include "core/error.h"
 #include "renderer/vertex.h"
-#include "renderer/gfx_buffer.h"
 
 #include <volk.h>
 #include <string>

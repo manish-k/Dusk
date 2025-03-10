@@ -4,7 +4,6 @@
 #include "vk.h"
 #include "vk_types.h"
 #include "vk_allocator.h"
-#include "renderer/gfx_device.h"
 #include "renderer/gfx_buffer.h"
 #include "platform/glfw_vulkan_window.h"
 
@@ -15,29 +14,29 @@
 
 namespace dusk
 {
-class VkGfxDevice : public GfxDevice
+class VkGfxDevice
 {
 public:
     VkGfxDevice(GLFWVulkanWindow& window);
     ~VkGfxDevice();
 
-    Error             initGfxDevice() override;
-    void              cleanupGfxDevice() override;
+    Error                   initGfxDevice();
+    void                    cleanupGfxDevice();
 
-    Error             createInstance(const char* appName, uint32_t version, DynamicArray<const char*> requiredExtensions);
-    void              destroyInstance();
+    Error                   createInstance(const char* appName, uint32_t version, DynamicArray<const char*> requiredExtensions);
+    void                    destroyInstance();
 
-    Error             createDevice();
-    void              destroyDevice();
+    Error                   createDevice();
+    void                    destroyDevice();
 
-    Error             populateLayerNames();
-    Error             populateLayerExtensionNames(const char* pLayerName);
+    Error                   populateLayerNames();
+    Error                   populateLayerExtensionNames(const char* pLayerName);
 
-    bool              hasLayer(const char* pLayerName);
-    bool              hasInstanceExtension(const char* pExtensionName);
+    bool                    hasLayer(const char* pLayerName);
+    bool                    hasInstanceExtension(const char* pExtensionName);
 
-    Unique<GfxBuffer> createBuffer(const GfxBufferParams& params) override;
-    void              freeBuffer(GfxBuffer* buffer) override;
+    Unique<VulkanGfxBuffer> createBuffer(const GfxBufferParams& params);
+    void                    freeBuffer(VulkanGfxBuffer* buffer);
 
 #ifdef VK_RENDERER_DEBUG
     static VKAPI_ATTR VkBool32 VKAPI_CALL vulkanDebugMessengerCallback(

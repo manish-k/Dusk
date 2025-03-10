@@ -3,7 +3,6 @@
 #include "dusk.h"
 #include "vk.h"
 #include "vk_types.h"
-#include "renderer/gfx_buffer.h"
 
 #include <volk/volk.h>
 
@@ -16,15 +15,13 @@ struct VulkanGPUAllocator
     VmaAllocator vmaAllocator;
 };
 
-struct VulkanGfxBuffer : public GfxBuffer
+struct VulkanGfxBuffer
 {
     VkBuffer              buffer;
     VmaAllocation         allocation;
     void*                 mappedMemory;
     size_t                sizeInBytes;
     VkMemoryPropertyFlags memoryFlags;
-
-    ~VulkanGfxBuffer() = default;
 };
 
 namespace vulkan

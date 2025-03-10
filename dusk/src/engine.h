@@ -7,7 +7,7 @@
 #include "platform/window.h"
 #include "renderer/render_api.h"
 #include "renderer/renderer.h"
-#include "renderer/gfx_device.h"
+#include "backend/vulkan/vk_device.h"
 
 namespace dusk
 {
@@ -47,7 +47,7 @@ public:
 private:
     Config              m_config;
 
-    Unique<GfxDevice>   m_gfxDevice = nullptr;
+    Unique<VkGfxDevice> m_gfxDevice = nullptr;
     Unique<Renderer>    m_renderer  = nullptr;
 
     Shared<Window>      m_window    = nullptr;

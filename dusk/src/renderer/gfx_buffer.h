@@ -1,5 +1,7 @@
 #pragma once
 
+#include "backend/vulkan/vk_allocator.h"
+
 namespace dusk
 {
 enum GfxBufferUsageFlags : uint32_t
@@ -27,9 +29,9 @@ struct GfxBufferParams
     size_t   alignment;
 };
 
-struct GfxBuffer
-{
-    GfxBuffer()          = default;
-    virtual ~GfxBuffer() = default;
-};
+// struct GfxBuffer
+//{
+//     GfxBuffer()          = default;
+//     virtual ~GfxBuffer() = default;
+// };
 } // namespace dusk

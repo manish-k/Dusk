@@ -21,10 +21,10 @@ private:
     Error initGfxIndexBuffer(DynamicArray<uint32_t>& indices);
 
 private:
-    GfxBuffer m_vertexBuffer;
-    uint32_t  m_vertexCount = 0u;
+    VulkanGfxBuffer m_vertexBuffer;
+    uint32_t        m_vertexCount = 0u;
 
-    GfxBuffer m_indexBuffer;
-    uint32_t  m_indexCount = 0u;
+    VulkanGfxBuffer m_indexBuffer;
+    uint32_t        m_indexCount = 0u;
 };
 } // namespace dusk

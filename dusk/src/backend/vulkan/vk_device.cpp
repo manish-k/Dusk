@@ -568,7 +568,7 @@ bool VkGfxDevice::hasInstanceExtension(const char* pExtensionName)
     return m_instanceExtensionsSet.has(hash(pExtensionName));
 }
 
-Unique<GfxBuffer> VkGfxDevice::createBuffer(const GfxBufferParams& params)
+Unique<VulkanGfxBuffer> VkGfxDevice::createBuffer(const GfxBufferParams& params)
 {
     VkBufferCreateInfo bufferCreateInfo { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
     bufferCreateInfo.size        = params.sizeInBytes;
@@ -589,10 +589,9 @@ Unique<GfxBuffer> VkGfxDevice::createBuffer(const GfxBufferParams& params)
     return outBuffer;
 }
 
-void VkGfxDevice::freeBuffer(GfxBuffer* buffer)
+void VkGfxDevice::freeBuffer(VulkanGfxBuffer* buffer)
 {
-    // TODO: Unsafe static cast
-    vulkan::freeGPUBuffer(m_gpuAllocator, static_cast<VulkanGfxBuffer*>(buffer));
+    vulkan::freeGPUBuffer(m_gpuAllocator, buffer);
 }
 
 #ifdef VK_RENDERER_DEBUG

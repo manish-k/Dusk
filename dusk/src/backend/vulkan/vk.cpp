@@ -1,5 +1,5 @@
 #include "vk.h"
-
+#include "renderer/gfx_buffer.h"
 namespace dusk
 {
 Error VulkanResult::getErrorId() const

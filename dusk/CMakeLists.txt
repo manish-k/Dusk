@@ -98,7 +98,6 @@ set(RENDERER_FILES
 	"${RENDERER_DIR}/sub_mesh.h"
 	"${RENDERER_DIR}/material.h"
 	"${RENDERER_DIR}/gfx_buffer.h"
-	"${RENDERER_DIR}/gfx_device.h"
 	# Source files
 	"${RENDERER_DIR}/sub_mesh.cpp"
 )

@@ -1,4 +1,5 @@
 #include "sub_mesh.h"
+#include "backend/vulkan/vk_allocator.h"
 
 #include "engine.h"
 #include "render_api.h"
@@ -24,22 +25,88 @@ Error SubMesh::init(DynamicArray<Vertex>& vertices, DynamicArray<uint32_t>& indi
 
 Error SubMesh::initGfxVertexBuffer(DynamicArray<Vertex>& vertices)
 {
-    if (Engine::getRenderAPI() == RenderAPI::API::VULKAN)
+    auto& device = Engine::get().getGfxDevice();
+
+    // vertex info
+    uint32_t     vertexSize = sizeof(vertices[0]);
+    VkDeviceSize bufferSize = vertexSize * vertices.size();
+
+    // staging buffer params for creation
+    GfxBufferParams stagingBufferParams {};
+    stagingBufferParams.sizeInBytes = bufferSize;
+    stagingBufferParams.usage       = GfxBufferUsageFlags::TransferSource;
+    stagingBufferParams.memoryType  = GfxBufferMemoryTypeFlags::HostSequentialWrite | GfxBufferMemoryTypeFlags::PersistentlyMapped;
+
+    // create staging
+    Unique<VulkanGfxBuffer> stagingBuffer = device.createBuffer(stagingBufferParams);
+    if (!stagingBuffer)
     {
-        return Error::Ok;
+        DUSK_ERROR("Unable to create staging buffer for uploading vertex data");
+        return Error::OutOfMemory;
     }
 
-    return Error::NotSupported;
+    memcpy(stagingBuffer->mappedMemory, vertices.data(), bufferSize);
+
+    // device vertex buffer
+    GfxBufferParams vertexBufferParams {};
+    vertexBufferParams.sizeInBytes = bufferSize;
+    vertexBufferParams.usage       = GfxBufferUsageFlags::VertexBuffer | GfxBufferUsageFlags::TransferTarget;
+    vertexBufferParams.memoryType  = GfxBufferMemoryTypeFlags::DedicatedDeviceMemory;
+
+    // create vertex buffer
+    m_vertexBuffer = device.createBuffer(vertexBufferParams);
+    if (!m_vertexBuffer)
+    {
+        DUSK_ERROR("Unable to create device local vertex buffer for uploading vertex data");
+        return Error::OutOfMemory;
+    }
+
+    // copy buffer
+
+    return Error::Ok;
 }
 
 Error SubMesh::initGfxIndexBuffer(DynamicArray<uint32_t>& indices)
 {
-    if (Engine::getRenderAPI() == RenderAPI::API::VULKAN)
+    auto& device = Engine::get().getGfxDevice();
+
+    // vertex info
+    uint32_t     indexSize  = sizeof(indices[0]);
+    VkDeviceSize bufferSize = indexSize * indices.size();
+
+    // staging buffer params for creation
+    GfxBufferParams stagingBufferParams {};
+    stagingBufferParams.sizeInBytes = bufferSize;
+    stagingBufferParams.usage       = GfxBufferUsageFlags::TransferSource;
+    stagingBufferParams.memoryType  = GfxBufferMemoryTypeFlags::HostSequentialWrite | GfxBufferMemoryTypeFlags::PersistentlyMapped;
+
+    // create staging
+    Unique<VulkanGfxBuffer> stagingBuffer = device.createBuffer(stagingBufferParams);
+    if (!stagingBuffer)
     {
-        return Error::Ok;
+        DUSK_ERROR("Unable to create staging buffer for uploading indices data");
+        return Error::OutOfMemory;
     }
 
-    return Error::NotSupported;
+    memcpy(stagingBuffer->mappedMemory, indices.data(), bufferSize);
+
+    // device vertex buffer
+    GfxBufferParams indexBufferParams {};
+    indexBufferParams.sizeInBytes = bufferSize;
+    indexBufferParams.usage       = GfxBufferUsageFlags::IndexBuffer | GfxBufferUsageFlags::TransferTarget;
+    indexBufferParams.memoryType  = GfxBufferMemoryTypeFlags::DedicatedDeviceMemory;
+
+    // create vertex buffer
+    m_indexBuffer = device.createBuffer(indexBufferParams);
+    if (!m_indexBuffer)
+    {
+        DUSK_ERROR("Unable to create device local index buffer for uploading indices data");
+        return Error::OutOfMemory;
+    }
+
+    // copy buffer
+
+    return Error::Ok;
 }
 
 } // namespace dusk

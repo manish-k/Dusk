@@ -22,8 +22,8 @@ bool TestTriangle::start()
 {
     VulkanContext&  vkContext = VkGfxDevice::getSharedVulkanContext();
     Engine&         engine    = Engine::get();
-    VulkanRenderer* renderer  = static_cast<VulkanRenderer*>(engine.getRenderer());
-    VkGfxSwapChain& swapChain = renderer->getSwapChain();
+    VulkanRenderer& renderer  = engine.getRenderer();
+    VkGfxSwapChain& swapChain = renderer.getSwapChain();
 
     // load shaders
     m_vertShaderCode = FileSystem::readFileBinary("assets/shaders/simple.vert.spv");
@@ -43,9 +43,10 @@ bool TestTriangle::start()
     return true;
 }
 
-void TestTriangle::shutdown() { 
+void TestTriangle::shutdown()
+{
     // TODO: Ideally destruction of graphics objects should not be handled by Applications.
-    // I think gfxdevice should track allocated all gfx objects and should handle order of 
+    // I think gfxdevice should track allocated all gfx objects and should handle order of
     // destruction of gfx objects and vulkan objects.
     // For now setting unique ptr to nullptr can trigger destruction
 
@@ -56,12 +57,12 @@ void TestTriangle::shutdown() {
 void TestTriangle::onUpdate(TimeStep dt)
 {
     Engine&         engine        = Engine::get();
-    VulkanRenderer* renderer      = static_cast<VulkanRenderer*>(engine.getRenderer());
+    VulkanRenderer& renderer      = engine.getRenderer();
     VulkanContext&  vkContext     = VkGfxDevice::getSharedVulkanContext();
 
-    auto            commandBuffer = renderer->beginFrame();
+    auto            commandBuffer = renderer.beginFrame();
 
-    renderer->beginRendering(commandBuffer);
+    renderer.beginRendering(commandBuffer);
 
     m_renderPipeline->bind(commandBuffer);
 
@@ -69,11 +70,11 @@ void TestTriangle::onUpdate(TimeStep dt)
     vkCmdDraw(commandBuffer, 3, 1, 0, 0);
     vkdebug::cmdEndLabel(commandBuffer);
 
-    renderer->endRendering(commandBuffer);
+    renderer.endRendering(commandBuffer);
 
-    renderer->endFrame();
+    renderer.endFrame();
 
-    renderer->deviceWaitIdle();
+    renderer.deviceWaitIdle();
 }
 
 void TestTriangle::onEvent(Event& ev)

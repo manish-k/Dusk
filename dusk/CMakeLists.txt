@@ -122,6 +122,7 @@ set(UTILS_DIR "${PROJECT_SOURCE_DIR}/src/utils/")
 set(UTILS_FILES
 	# Header files
 	"${UTILS_DIR}/hash.h"
+	"${UTILS_DIR}/utils.h"
 	# Source files
 )
 

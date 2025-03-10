@@ -6,8 +6,8 @@
 #include "events/event.h"
 #include "platform/window.h"
 #include "renderer/render_api.h"
-#include "renderer/renderer.h"
 #include "backend/vulkan/vk_device.h"
+#include "backend/vulkan/vk_renderer.h"
 
 namespace dusk
 {
@@ -42,22 +42,23 @@ public:
     static Engine&        get() { return *s_instance; }
     static RenderAPI::API getRenderAPI() { return s_instance->m_config.renderAPI; }
 
-    Renderer*             getRenderer() { return m_renderer.get(); }
+    VulkanRenderer&       getRenderer() { return *m_renderer; }
+    VkGfxDevice&          getGfxDevice() { return *m_gfxDevice; }
 
 private:
-    Config              m_config;
+    Config                 m_config;
 
-    Unique<VkGfxDevice> m_gfxDevice = nullptr;
-    Unique<Renderer>    m_renderer  = nullptr;
+    Unique<VkGfxDevice>    m_gfxDevice = nullptr;
+    Unique<VulkanRenderer> m_renderer  = nullptr;
 
-    Shared<Window>      m_window    = nullptr;
-    Shared<Application> m_app       = nullptr;
+    Shared<Window>         m_window    = nullptr;
+    Shared<Application>    m_app       = nullptr;
 
-    bool                m_running   = false;
-    bool                m_paused    = false;
+    bool                   m_running   = false;
+    bool                   m_paused    = false;
 
-    TimePoint           m_lastFrameTime;
-    TimeStep            m_deltaTime;
+    TimePoint              m_lastFrameTime;
+    TimeStep               m_deltaTime;
 
 private:
     static Engine* s_instance;

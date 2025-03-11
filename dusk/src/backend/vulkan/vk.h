@@ -12,6 +12,11 @@
 #include <iostream>
 #include <sstream>
 #include <vk_mem_alloc.h>
+#include <spdlog/fmt/bundled/printf.h>
+
+// VMA loggin macros
+#define VMA_DEBUG_LOG(str)                DUSK_DEBUG("{}", str);
+#define VMA_DEBUG_LOG_FORMAT(format, ...) DUSK_DEBUG(fmt::sprintf(format, __VA_ARGS__));
 
 namespace dusk
 {
@@ -49,7 +54,7 @@ DynamicArray<VkVertexInputBindingDescription>   getVertexBindingDescription();
 DynamicArray<VkVertexInputAttributeDescription> getVertexAtrributeDescription();
 
 // Buffer usage and type related funcs
-VkBufferUsageFlags          getBufferUsageFlagBits(uint32_t usage);
-VmaAllocationCreateFlagBits getVmaAllocationCreateFlagBits(uint32_t flags);
+VkBufferUsageFlags getBufferUsageFlagBits(uint32_t usage);
+uint32_t           getVmaAllocationCreateFlagBits(uint32_t flags);
 
 } // namespace dusk

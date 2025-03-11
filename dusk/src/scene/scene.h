@@ -76,6 +76,11 @@ public:
     void initSubMesh(uint32_t meshIndex, const DynamicArray<Vertex>& vertices, const DynamicArray<uint32_t> indices);
 
     /**
+     * @brief
+     */
+    void freeSubMeshes();
+
+    /**
      * @brief Create a scene from a gltf file
      * @param fileName
      * @return unique pointer to the scene object

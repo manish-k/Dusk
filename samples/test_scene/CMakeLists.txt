@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.29)
 
-project(test_triangle)
+project(test_scene)
 set(CMAKE_CXX_STANDARD 20)
 
 file(
@@ -52,7 +52,7 @@ foreach(GLSL ${GLSL_SOURCE_FILES})
 endforeach(GLSL)
 
 add_custom_target(
-    Test_Triangle_Shaders
+    Test_Scene_Shaders
     DEPENDS ${SPIRV_BINARY_FILES}
 )
-add_dependencies(${PROJECT_NAME} Test_Triangle_Shaders)
+add_dependencies(${PROJECT_NAME} Test_Scene_Shaders)

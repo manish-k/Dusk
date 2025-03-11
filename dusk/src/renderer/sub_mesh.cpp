@@ -21,6 +21,17 @@ Error SubMesh::init(const DynamicArray<Vertex>& vertices, const DynamicArray<uin
     return Error();
 }
 
+void SubMesh::free()
+{
+    auto& device = Engine::get().getGfxDevice();
+
+    device.freeBuffer(m_indexBuffer.get());
+    m_indexBuffer = nullptr;
+
+    device.freeBuffer(m_vertexBuffer.get());
+    m_vertexBuffer = nullptr;
+}
+
 Error SubMesh::initGfxVertexBuffer(const DynamicArray<Vertex>& vertices)
 {
     auto& device = Engine::get().getGfxDevice();
@@ -61,6 +72,8 @@ Error SubMesh::initGfxVertexBuffer(const DynamicArray<Vertex>& vertices)
 
     // copy buffer
     device.copyBuffer(stagingBuffer->buffer, m_vertexBuffer->buffer, bufferSize);
+
+    device.freeBuffer(stagingBuffer.get());
 
     return Error::Ok;
 }
@@ -105,6 +118,8 @@ Error SubMesh::initGfxIndexBuffer(const DynamicArray<uint32_t>& indices)
 
     // copy buffer
     device.copyBuffer(stagingBuffer->buffer, m_indexBuffer->buffer, bufferSize);
+
+    device.freeBuffer(stagingBuffer.get());
 
     return Error::Ok;
 }

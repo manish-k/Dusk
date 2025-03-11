@@ -610,10 +610,10 @@ Unique<VulkanGfxBuffer> VkGfxDevice::createBuffer(const GfxBufferParams& params)
     bufferCreateInfo.usage       = getBufferUsageFlagBits(params.usage);
     bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    Unique<VulkanGfxBuffer> outBuffer;
+    VulkanGfxBuffer outBuffer;
 
     // allocation
-    VulkanResult result = vulkan::allocateGPUBuffer(m_gpuAllocator, bufferCreateInfo, VMA_MEMORY_USAGE_AUTO, getVmaAllocationCreateFlagBits(params.memoryType), outBuffer.get());
+    VulkanResult result = vulkan::allocateGPUBuffer(m_gpuAllocator, bufferCreateInfo, VMA_MEMORY_USAGE_AUTO, getVmaAllocationCreateFlagBits(params.memoryType), &outBuffer);
 
     if (result.hasError())
     {
@@ -621,7 +621,7 @@ Unique<VulkanGfxBuffer> VkGfxDevice::createBuffer(const GfxBufferParams& params)
         return nullptr;
     }
 
-    return outBuffer;
+    return createUnique<VulkanGfxBuffer>(outBuffer);
 }
 
 void VkGfxDevice::freeBuffer(VulkanGfxBuffer* buffer)

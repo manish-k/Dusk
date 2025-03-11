@@ -15,6 +15,7 @@ public:
     CLASS_UNCOPYABLE(SubMesh);
 
     Error init(const DynamicArray<Vertex>& vertices, const DynamicArray<uint32_t>& indices);
+    void  free();
 
 private:
     Error initGfxVertexBuffer(const DynamicArray<Vertex>& vertices);

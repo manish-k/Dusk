@@ -1,5 +1,6 @@
 #include "vk.h"
 #include "renderer/gfx_buffer.h"
+
 namespace dusk
 {
 Error VulkanResult::getErrorId() const
@@ -386,14 +387,18 @@ VkBufferUsageFlags getBufferUsageFlagBits(uint32_t usage)
     return flags;
 }
 
-VmaAllocationCreateFlagBits getVmaAllocationCreateFlagBits(uint32_t flags)
+uint32_t getVmaAllocationCreateFlagBits(uint32_t flags)
 {
-    VmaAllocationCreateFlagBits creationFlags;
+    uint32_t creationFlags = 0u;
 
-    if (flags & GfxBufferMemoryTypeFlags::PersistentlyMapped) flags |= VMA_ALLOCATION_CREATE_MAPPED_BIT;
-    if (flags & GfxBufferMemoryTypeFlags::HostSequentialWrite) flags |= VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
-    if (flags & GfxBufferMemoryTypeFlags::HostRandomAccess) flags |= VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
-    if (flags & GfxBufferMemoryTypeFlags::DedicatedDeviceMemory) flags |= VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
+    if (flags & GfxBufferMemoryTypeFlags::PersistentlyMapped)
+        creationFlags |= VMA_ALLOCATION_CREATE_MAPPED_BIT;
+    if (flags & GfxBufferMemoryTypeFlags::HostSequentialWrite)
+        creationFlags |= VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
+    if (flags & GfxBufferMemoryTypeFlags::HostRandomAccess)
+        creationFlags |= VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
+    if (flags & GfxBufferMemoryTypeFlags::DedicatedDeviceMemory)
+        creationFlags |= VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
 
     return creationFlags;
 }

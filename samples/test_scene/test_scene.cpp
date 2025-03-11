@@ -1,0 +1,44 @@
+#include "test_scene.h"
+
+#include "core/entrypoint.h"
+#include "loaders/assimp_loader.h"
+#include <format>
+
+#include <spdlog/fmt/bundled/printf.h>
+
+TestScene::TestScene()
+{
+}
+
+TestScene::~TestScene()
+{
+    APP_INFO("Destroying test scene application");
+}
+
+Unique<dusk::Application> dusk::createApplication(int argc, char** argv)
+{
+    APP_INFO("Creating Test scene application");
+    return createUnique<TestScene>();
+}
+
+bool TestScene::start()
+{
+    AssimpLoader loader {};
+    std::string  scenePath = "assets/scenes/test_scene.gltf";
+    m_testScene            = loader.readScene(scenePath);
+
+    return true;
+}
+
+void TestScene::shutdown()
+{
+    m_testScene = nullptr;
+}
+
+void TestScene::onUpdate(TimeStep dt)
+{
+}
+
+void TestScene::onEvent(dusk::Event& ev)
+{
+}

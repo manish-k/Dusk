@@ -18,6 +18,9 @@ Scene::Scene(const std::string_view name) :
 Scene::~Scene()
 {
     DUSK_DEBUG("Destroying scene {}", m_name);
+
+    freeSubMeshes();
+
     Registry::getRegistry().clear();
 }
 
@@ -61,6 +64,14 @@ void Scene::initSubMesh(uint32_t meshIndex, const DynamicArray<Vertex>& vertices
     DASSERT(meshIndex < m_subMeshes.size(), "mesh index can't be greater than total sub meshes");
 
     m_subMeshes[meshIndex].init(vertices, indices);
+}
+
+void Scene::freeSubMeshes()
+{
+    for (uint32_t meshIndex = 0u; meshIndex < m_subMeshes.size(); ++meshIndex)
+    {
+        m_subMeshes[meshIndex].free();
+    }
 }
 
 Unique<Scene> Scene::createSceneFromGLTF(std::string_view fileName)

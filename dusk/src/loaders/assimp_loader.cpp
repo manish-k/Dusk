@@ -32,6 +32,7 @@ Unique<Scene> AssimpLoader::parseScene(const aiScene* assimpScene)
 
     if (assimpScene->mNumMeshes > 0)
     {
+        newScene->initMeshes(assimpScene->mNumMeshes);
         parseMeshes(*newScene, assimpScene);
     }
 
@@ -44,12 +45,6 @@ void AssimpLoader::traverseSceneNodes(Scene& scene, const aiNode* node, const ai
     auto gameObjectId = gameObject->getId();
 
     gameObject->setName(node->mName.C_Str());
-
-    // parse mesh
-    if (node->mNumMeshes > 0)
-    {
-        scene.initMeshes(node->mNumMeshes);
-    }
 
     // attach object to the scene
     scene.addGameObject(std::move(gameObject), parentId);

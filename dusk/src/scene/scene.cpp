@@ -57,7 +57,10 @@ GameObject& Scene::getGameObject(EntityId objectId)
 
 void Scene::initSubMesh(uint32_t meshIndex, const DynamicArray<Vertex>& vertices, const DynamicArray<uint32_t> indices)
 {
-    DASSERT(meshIndex < m_subMeshes.size());
+    DASSERT(meshIndex >= 0, "mesh index can't be negative");
+    DASSERT(meshIndex < m_subMeshes.size(), "mesh index can't be greater than total sub meshes");
+
+    m_subMeshes[meshIndex].init(vertices, indices);
 }
 
 Unique<Scene> Scene::createSceneFromGLTF(std::string_view fileName)

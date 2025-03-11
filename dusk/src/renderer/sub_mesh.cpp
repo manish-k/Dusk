@@ -1,12 +1,10 @@
 #include "sub_mesh.h"
-#include "backend/vulkan/vk_allocator.h"
-
 #include "engine.h"
-#include "render_api.h"
+#include "backend/vulkan/vk_allocator.h"
 
 namespace dusk
 {
-Error SubMesh::init(DynamicArray<Vertex>& vertices, DynamicArray<uint32_t>& indices)
+Error SubMesh::init(const DynamicArray<Vertex>& vertices, const DynamicArray<uint32_t>& indices)
 {
     Error err = initGfxVertexBuffer(vertices);
     if (err != Error::Ok)
@@ -23,7 +21,7 @@ Error SubMesh::init(DynamicArray<Vertex>& vertices, DynamicArray<uint32_t>& indi
     return Error();
 }
 
-Error SubMesh::initGfxVertexBuffer(DynamicArray<Vertex>& vertices)
+Error SubMesh::initGfxVertexBuffer(const DynamicArray<Vertex>& vertices)
 {
     auto& device = Engine::get().getGfxDevice();
 
@@ -62,11 +60,12 @@ Error SubMesh::initGfxVertexBuffer(DynamicArray<Vertex>& vertices)
     }
 
     // copy buffer
+    device.copyBuffer(stagingBuffer->buffer, m_vertexBuffer->buffer, bufferSize);
 
     return Error::Ok;
 }
 
-Error SubMesh::initGfxIndexBuffer(DynamicArray<uint32_t>& indices)
+Error SubMesh::initGfxIndexBuffer(const DynamicArray<uint32_t>& indices)
 {
     auto& device = Engine::get().getGfxDevice();
 
@@ -105,6 +104,7 @@ Error SubMesh::initGfxIndexBuffer(DynamicArray<uint32_t>& indices)
     }
 
     // copy buffer
+    device.copyBuffer(stagingBuffer->buffer, m_indexBuffer->buffer, bufferSize);
 
     return Error::Ok;
 }

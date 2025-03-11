@@ -14,11 +14,11 @@ public:
 
     CLASS_UNCOPYABLE(SubMesh);
 
-    Error init(DynamicArray<Vertex>& vertices, DynamicArray<uint32_t>& indices);
+    Error init(const DynamicArray<Vertex>& vertices, const DynamicArray<uint32_t>& indices);
 
 private:
-    Error initGfxVertexBuffer(DynamicArray<Vertex>& vertices);
-    Error initGfxIndexBuffer(DynamicArray<uint32_t>& indices);
+    Error initGfxVertexBuffer(const DynamicArray<Vertex>& vertices);
+    Error initGfxIndexBuffer(const DynamicArray<uint32_t>& indices);
 
 private:
     Unique<VulkanGfxBuffer> m_vertexBuffer;

@@ -35,8 +35,12 @@ public:
     bool                    hasLayer(const char* pLayerName);
     bool                    hasInstanceExtension(const char* pExtensionName);
 
+    VkCommandBuffer         beginSingleTimeCommands();
+    void                    endSingleTimeCommands(VkCommandBuffer commandBuffer);
+
     Unique<VulkanGfxBuffer> createBuffer(const GfxBufferParams& params);
     void                    freeBuffer(VulkanGfxBuffer* buffer);
+    void                    copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
 #ifdef VK_RENDERER_DEBUG
     static VKAPI_ATTR VkBool32 VKAPI_CALL vulkanDebugMessengerCallback(

@@ -15,7 +15,7 @@ public:
     AssimpLoader();
     ~AssimpLoader();
 
-    Unique<Scene> readScene(std::string& fileName);
+    Unique<Scene> readScene(const std::string& fileName);
 
 private:
     Unique<Scene> parseScene(const aiScene* scene);

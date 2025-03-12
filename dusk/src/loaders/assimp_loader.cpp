@@ -13,7 +13,7 @@ AssimpLoader::~AssimpLoader()
 {
 }
 
-Unique<Scene> AssimpLoader::readScene(std::string& fileName)
+Unique<Scene> AssimpLoader::readScene(const std::string& fileName)
 {
     const aiScene* assimpScene = m_importer.ReadFile(fileName, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices);
 

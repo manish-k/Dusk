@@ -86,7 +86,7 @@ public:
      * @return unique pointer to the scene object
      */
     static Unique<Scene> createSceneFromGLTF(
-        std::string_view fileName);
+        const std::string& fileName);
 
 private:
     const std::string      m_name;

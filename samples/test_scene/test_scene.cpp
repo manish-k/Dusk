@@ -1,8 +1,6 @@
 #include "test_scene.h"
 
 #include "core/entrypoint.h"
-#include "loaders/assimp_loader.h"
-#include <format>
 
 #include <spdlog/fmt/bundled/printf.h>
 
@@ -23,9 +21,8 @@ Unique<dusk::Application> dusk::createApplication(int argc, char** argv)
 
 bool TestScene::start()
 {
-    AssimpLoader loader {};
-    std::string  scenePath = "assets/scenes/test_scene.gltf";
-    m_testScene            = loader.readScene(scenePath);
+    std::string scenePath = "assets/scenes/test_scene.gltf";
+    m_testScene           = Scene::createSceneFromGLTF(scenePath);
 
     return true;
 }

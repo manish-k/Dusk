@@ -5,6 +5,7 @@
 #include "core/application.h"
 #include "events/event.h"
 #include "platform/window.h"
+#include "scene/scene.h"
 #include "renderer/render_api.h"
 #include "backend/vulkan/vk_device.h"
 #include "backend/vulkan/vk_renderer.h"
@@ -27,7 +28,7 @@ public:
     };
 
 public:
-    Engine(Config& conf);
+    Engine(const Config& conf);
     ~Engine();
 
     CLASS_UNCOPYABLE(Engine)
@@ -38,6 +39,7 @@ public:
     void                  shutdown();
     void                  onUpdate(TimeStep dt);
     void                  onEvent(Event& ev);
+    void                  loadScene(Scene* scene);
 
     static Engine&        get() { return *s_instance; }
     static RenderAPI::API getRenderAPI() { return s_instance->m_config.renderAPI; }
@@ -56,6 +58,8 @@ private:
 
     bool                   m_running   = false;
     bool                   m_paused    = false;
+
+    Scene*                 m_currentScene = nullptr;
 
     TimePoint              m_lastFrameTime;
     TimeStep               m_deltaTime;

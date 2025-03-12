@@ -1,5 +1,6 @@
 #include "scene.h"
-#include "loaders/gltf_loader.h"
+
+#include "loaders/assimp_loader.h"
 
 namespace dusk
 {
@@ -74,9 +75,9 @@ void Scene::freeSubMeshes()
     }
 }
 
-Unique<Scene> Scene::createSceneFromGLTF(std::string_view fileName)
+Unique<Scene> Scene::createSceneFromGLTF(const std::string& fileName)
 {
-    auto loader = createUnique<GLTFLoader>();
-    return loader->readScene(fileName);
+    AssimpLoader loader {};
+    return loader.readScene(fileName);
 }
 } // namespace dusk

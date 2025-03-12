@@ -6,7 +6,7 @@ namespace dusk
 {
 Engine* Engine::s_instance = nullptr;
 
-Engine::Engine(Engine::Config& config) :
+Engine::Engine(const Engine::Config& config) :
     m_config(config)
 {
     DASSERT(!s_instance, "Engine instance already exists");
@@ -80,7 +80,11 @@ void Engine::shutdown()
     m_gfxDevice->cleanupGfxDevice();
 }
 
-void Engine::onUpdate(TimeStep dt) { }
+void Engine::onUpdate(TimeStep dt) { 
+    if (!m_currentScene) return;
+
+    // get game objects and render system
+}
 
 void Engine::onEvent(Event& ev)
 {
@@ -128,4 +132,10 @@ void Engine::onEvent(Event& ev)
         m_app->onEvent(ev);
     }
 }
+
+void Engine::loadScene(Scene* scene)
+{
+    m_currentScene = scene;
+}
+
 } // namespace dusk

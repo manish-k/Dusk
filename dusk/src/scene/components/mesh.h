@@ -6,6 +6,6 @@ namespace dusk
 {
 	struct MeshComponent
 	{
-
+            DynamicArray<uint32_t> meshes {};
 	};
 }

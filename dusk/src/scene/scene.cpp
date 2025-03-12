@@ -13,7 +13,12 @@ Scene::Scene(const std::string_view name) :
 
     auto rootId = root->getId();
     m_sceneGameObjects.emplace(rootId, std::move(root));
-    m_root = rootId;
+    m_root      = rootId;
+
+    auto camera = createUnique<GameObject>();
+    camera->setName("Camera");
+    camera->addComponent<CameraComponent>();
+    addGameObject(std::move(camera), rootId);
 }
 
 Scene::~Scene()

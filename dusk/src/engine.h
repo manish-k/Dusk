@@ -50,14 +50,14 @@ public:
 private:
     Config                 m_config;
 
-    Unique<VkGfxDevice>    m_gfxDevice = nullptr;
-    Unique<VulkanRenderer> m_renderer  = nullptr;
+    Unique<VkGfxDevice>    m_gfxDevice    = nullptr;
+    Unique<VulkanRenderer> m_renderer     = nullptr;
 
-    Shared<Window>         m_window    = nullptr;
-    Shared<Application>    m_app       = nullptr;
+    Shared<Window>         m_window       = nullptr;
+    Shared<Application>    m_app          = nullptr;
 
-    bool                   m_running   = false;
-    bool                   m_paused    = false;
+    bool                   m_running      = false;
+    bool                   m_paused       = false;
 
     Scene*                 m_currentScene = nullptr;
 

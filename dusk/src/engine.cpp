@@ -80,7 +80,8 @@ void Engine::shutdown()
     m_gfxDevice->cleanupGfxDevice();
 }
 
-void Engine::onUpdate(TimeStep dt) { 
+void Engine::onUpdate(TimeStep dt)
+{
     if (!m_currentScene) return;
 
     // get game objects and render system

@@ -53,7 +53,7 @@ void AssimpLoader::traverseSceneNodes(Scene& scene, const aiNode* node, const ai
 
     if (node->mNumMeshes > 0)
     {
-        auto meshComponent = gameObject->addComponent<MeshComponent>();
+        auto& meshComponent = gameObject->addComponent<MeshComponent>();
 
         for (uint32_t index = 0u; index < node->mNumMeshes; ++index)
         {
@@ -126,7 +126,7 @@ void AssimpLoader::parseMeshes(Scene& scene, const aiScene* aiScene)
         aiMesh*                mesh = aiScene->mMeshes[meshIndex];
 
         vertices.reserve(mesh->mNumVertices);
-        indices.reserve(mesh->mNumVertices * 3); // Assumption face is triangular
+        indices.reserve(mesh->mNumFaces * 3); // Assumption, face is triangular
 
         for (uint32_t vertexIndex = 0u; vertexIndex < mesh->mNumVertices; ++vertexIndex)
         {

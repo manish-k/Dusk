@@ -17,7 +17,10 @@ Scene::Scene(const std::string_view name) :
 
     auto camera = createUnique<GameObject>();
     camera->setName("Camera");
-    camera->addComponent<CameraComponent>();
+    auto& component = camera->addComponent<CameraComponent>();
+    component.setViewTarget({ 0.f, -2.f, -5.f }, { 0.f, 0.f, 0.f }, { 0.f, -1.f, 0.f });
+
+    m_cameraId = camera->getId();
     addGameObject(std::move(camera), rootId);
 }
 
@@ -78,6 +81,11 @@ void Scene::freeSubMeshes()
     {
         m_subMeshes[meshIndex].free();
     }
+}
+
+CameraComponent& Scene::getMainCamera()
+{
+    return Registry::getRegistry().get<CameraComponent>(m_cameraId);
 }
 
 Unique<Scene> Scene::createSceneFromGLTF(const std::string& fileName)

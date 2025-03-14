@@ -15,6 +15,10 @@
 
 #define VA_COUNT(...) ((int)(sizeof((int[]) { __VA_ARGS__ }) / sizeof(int)))
 
+// Macro value to string
+#define STR(str)    #str
+#define STRING(str) STR(str)
+
 // Engine Logger Macros
 #define DUSK_DEBUG(...)    dusk::Logger::getEngineLogger()->debug(__VA_ARGS__)
 #define DUSK_INFO(...)     dusk::Logger::getEngineLogger()->info(__VA_ARGS__)

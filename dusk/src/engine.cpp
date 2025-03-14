@@ -1,6 +1,7 @@
 #include "engine.h"
 #include "events/app_event.h"
 #include "backend/vulkan/vk_renderer.h"
+#include "renderer/frame_data.h"
 
 namespace dusk
 {
@@ -25,6 +26,7 @@ bool Engine::start(Shared<Application> app)
     auto windowProps = Window::Properties::defaultWindowProperties();
     windowProps.mode = Window::Mode::Maximized;
     m_window         = std::move(Window::createWindow(windowProps));
+
     if (!m_window)
     {
         DUSK_ERROR("Window creation failed");
@@ -48,8 +50,10 @@ bool Engine::start(Shared<Application> app)
         return false;
     }
 
-    m_running = true;
-    m_paused  = false;
+    m_running           = true;
+    m_paused            = false;
+
+    m_basicRenderSystem = createUnique<BasicRenderSystem>(*m_gfxDevice);
 
     return true;
 }
@@ -76,6 +80,8 @@ void Engine::stop() { m_running = false; }
 
 void Engine::shutdown()
 {
+    m_basicRenderSystem = nullptr;
+
     m_renderer->cleanup();
     m_gfxDevice->cleanupGfxDevice();
 }
@@ -85,6 +91,29 @@ void Engine::onUpdate(TimeStep dt)
     if (!m_currentScene) return;
 
     // get game objects and render system
+    if (VkCommandBuffer commandBuffer = m_renderer->beginFrame())
+    {
+        FrameData frameData {
+            m_renderer->getCurrentFrameIndex(),
+            dt,
+            commandBuffer,
+            *m_currentScene
+        };
+
+        CameraComponent& camera = m_currentScene->getMainCamera();
+
+        camera.setPerspectiveProjection(glm::radians(50.f), m_renderer->getAspectRatio(), 0.5f, 100.f);
+
+        m_renderer->beginRendering(commandBuffer);
+
+        m_basicRenderSystem->renderGameObjects(frameData);
+
+        m_renderer->endRendering(commandBuffer);
+
+        m_renderer->endFrame();
+
+        m_renderer->deviceWaitIdle();
+    }
 }
 
 void Engine::onEvent(Event& ev)

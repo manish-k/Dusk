@@ -37,8 +37,9 @@ Error SubMesh::initGfxVertexBuffer(const DynamicArray<Vertex>& vertices)
     auto& device = Engine::get().getGfxDevice();
 
     // vertex info
-    uint32_t     vertexSize = sizeof(vertices[0]);
-    VkDeviceSize bufferSize = vertexSize * vertices.size();
+    uint32_t vertexSize     = sizeof(vertices[0]);
+    m_vertexCount           = vertices.size();
+    VkDeviceSize bufferSize = vertexSize * m_vertexCount;
 
     // staging buffer params for creation
     GfxBufferParams stagingBufferParams {};
@@ -83,8 +84,9 @@ Error SubMesh::initGfxIndexBuffer(const DynamicArray<uint32_t>& indices)
     auto& device = Engine::get().getGfxDevice();
 
     // vertex info
-    uint32_t     indexSize  = sizeof(indices[0]);
-    VkDeviceSize bufferSize = indexSize * indices.size();
+    uint32_t indexSize      = sizeof(indices[0]);
+    m_indexCount            = indices.size();
+    VkDeviceSize bufferSize = indexSize * m_indexCount;
 
     // staging buffer params for creation
     GfxBufferParams stagingBufferParams {};

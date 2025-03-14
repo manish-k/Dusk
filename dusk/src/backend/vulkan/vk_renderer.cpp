@@ -257,6 +257,12 @@ void VulkanRenderer::endRendering(VkCommandBuffer commandBuffer)
     vkCmdEndRendering(commandBuffer);
 }
 
+float VulkanRenderer::getAspectRatio() const
+{
+    auto extent = m_swapChain->getCurrentExtent();
+    return static_cast<float>(extent.width) / static_cast<float>(extent.height);
+}
+
 Error VulkanRenderer::recreateSwapChain()
 {
     auto&      context      = VkGfxDevice::getSharedVulkanContext();

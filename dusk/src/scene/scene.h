@@ -62,7 +62,7 @@ public:
     template <typename... Components>
     auto GetGameObjectsWith()
     {
-        return Scene::s_registry.view<Components...>();
+        return Registry::getRegistry().view<Components...>();
     }
 
     void initMeshes(uint32_t meshCount)
@@ -78,7 +78,11 @@ public:
     /**
      * @brief
      */
-    void freeSubMeshes();
+    void             freeSubMeshes();
+
+    const SubMesh&   getSubMesh(uint32_t meshId) const { return m_subMeshes[meshId]; }
+
+    CameraComponent& getMainCamera();
 
     /**
      * @brief Create a scene from a gltf file
@@ -94,5 +98,6 @@ private:
     DynamicArray<EntityId> m_children {};
     GameObject::UMap       m_sceneGameObjects {};
     DynamicArray<SubMesh>  m_subMeshes {};
+    EntityId               m_cameraId;
 };
 } // namespace dusk

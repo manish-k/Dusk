@@ -31,6 +31,9 @@ public:
 
     VkGfxSwapChain& getSwapChain() const { return *m_swapChain; }
 
+    uint32_t        getCurrentFrameIndex() const { return m_currentFrameIndex; }
+    float           getAspectRatio() const;
+
 private:
     Error recreateSwapChain();
 

@@ -90,6 +90,8 @@ set(PLATFORM_FILES
 )
 
 set(RENDERER_DIR "${PROJECT_SOURCE_DIR}/src/renderer")
+set(RENDERER_SYSTEMS_DIR "${RENDERER_DIR}/systems")
+set(RENDERER_SHADERS_DIR "${RENDERER_SYSTEMS_DIR}/shaders")
 set(RENDERER_FILES
 	# Header files
 	"${RENDERER_DIR}/render_api.h"
@@ -98,8 +100,11 @@ set(RENDERER_FILES
 	"${RENDERER_DIR}/sub_mesh.h"
 	"${RENDERER_DIR}/material.h"
 	"${RENDERER_DIR}/gfx_buffer.h"
+	"${RENDERER_DIR}/frame_data.h"
+	"${RENDERER_SYSTEMS_DIR}/basic_render_system.h"
 	# Source files
 	"${RENDERER_DIR}/sub_mesh.cpp"
+	"${RENDERER_SYSTEMS_DIR}/basic_render_system.cpp"
 )
 
 set(SCENE_DIR "${PROJECT_SOURCE_DIR}/src/scene")
@@ -133,6 +138,8 @@ source_group("core\\" FILES ${CORE_FILES})
 source_group("debug\\" FILES ${DEBUG_FILES})
 source_group("events\\" FILES ${EVENTS_FILES})
 source_group("renderer\\" FILES ${RENDERER_FILES})
+source_group("renderer/systems\\" FILES ${RENDERER_SYSTEMS_DIR})
+source_group("renderer/systems/shaders\\" FILES ${RENDERER_SHADERS_DIR})
 source_group("scene\\" FILES ${SCENE_FILES})
 source_group("loaders\\" FILES ${LOADERS_FILES})
 source_group("platform\\" FILES ${PLATFORM_FILES})
@@ -217,3 +224,43 @@ endif()
 target_compile_definitions(${PROJECT_NAME} PUBLIC 
 		ENABLE_RENDERDOC
 	)
+
+## TODO: Try with symlink approach
+set (ENGINE_SHADERS_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/systems/shaders")
+set (ENGINE_SHADERS_DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+file(COPY ${ENGINE_SHADERS_SOURCE_DIR} DESTINATION ${ENGINE_SHADERS_DEST_DIR})
+
+target_compile_definitions(${PROJECT_NAME} PUBLIC DUSK_BUILD_PATH=${CMAKE_CURRENT_BINARY_DIR})
+
+## https://github.com/vblanco20-1/vulkan-guide/blob/all-chapters/CMakeLists.txt
+find_program(GLSL_VALIDATOR glslang HINTS 
+  ${Vulkan_GLSLANG_VALIDATOR_EXECUTABLE} 
+  /usr/bin 
+  /usr/local/bin 
+  ${VULKAN_SDK_PATH}/Bin
+  ${VULKAN_SDK_PATH}/Bin32
+  $ENV{VULKAN_SDK}/Bin/ 
+  $ENV{VULKAN_SDK}/Bin32/
+)
+
+# get all .vert and .frag files in shaders directory
+file(GLOB_RECURSE DUSK_GLSL_SOURCE_FILES
+  "${PROJECT_SOURCE_DIR}/src/renderer/systems/shaders/*.frag"
+  "${PROJECT_SOURCE_DIR}/src/renderer/systems/shaders/*.vert"
+)
+
+foreach(GLSL ${DUSK_GLSL_SOURCE_FILES})
+  get_filename_component(FILE_NAME ${GLSL} NAME)
+  set(SPIRV "${PROJECT_SOURCE_DIR}/src/renderer/systems/shaders/${FILE_NAME}.spv")
+  add_custom_command(
+    OUTPUT ${SPIRV}
+    COMMAND ${GLSL_VALIDATOR} -g -V ${GLSL} -o ${SPIRV}
+    DEPENDS ${GLSL})
+  list(APPEND SPIRV_BINARY_FILES ${SPIRV})
+endforeach(GLSL)
+
+add_custom_target(
+    Dusk_Shaders
+    DEPENDS ${SPIRV_BINARY_FILES}
+)
+add_dependencies(${PROJECT_NAME} Dusk_Shaders)

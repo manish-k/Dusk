@@ -45,7 +45,7 @@ VkGfxPipelineLayout::VkGfxPipelineLayout(const VulkanContext& vkContext, const V
     pipelineLayoutInfo.pSetLayouts    = layoutConfig.descriptorSetLayouts.data();
 
     // push constants
-    DynamicArray<VkPushConstantRange> pushConstantRanges(layoutConfig.pushConstantRangesMap.size());
+    DynamicArray<VkPushConstantRange> pushConstantRanges;
 
     for (auto pushConstantRange : layoutConfig.pushConstantRangesMap.values())
     {

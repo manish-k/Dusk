@@ -9,6 +9,7 @@
 #include "renderer/render_api.h"
 #include "backend/vulkan/vk_device.h"
 #include "backend/vulkan/vk_renderer.h"
+#include "renderer/systems/basic_render_system.h"
 
 namespace dusk
 {
@@ -48,21 +49,23 @@ public:
     VkGfxDevice&          getGfxDevice() { return *m_gfxDevice; }
 
 private:
-    Config                 m_config;
+    Config                    m_config;
 
-    Unique<VkGfxDevice>    m_gfxDevice    = nullptr;
-    Unique<VulkanRenderer> m_renderer     = nullptr;
+    Unique<VkGfxDevice>       m_gfxDevice         = nullptr;
+    Unique<VulkanRenderer>    m_renderer          = nullptr;
 
-    Shared<Window>         m_window       = nullptr;
-    Shared<Application>    m_app          = nullptr;
+    Shared<Window>            m_window            = nullptr;
+    Shared<Application>       m_app               = nullptr;
 
-    bool                   m_running      = false;
-    bool                   m_paused       = false;
+    Unique<BasicRenderSystem> m_basicRenderSystem = nullptr;
 
-    Scene*                 m_currentScene = nullptr;
+    bool                      m_running           = false;
+    bool                      m_paused            = false;
 
-    TimePoint              m_lastFrameTime;
-    TimeStep               m_deltaTime;
+    Scene*                    m_currentScene      = nullptr;
+
+    TimePoint                 m_lastFrameTime;
+    TimeStep                  m_deltaTime;
 
 private:
     static Engine* s_instance;

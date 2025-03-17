@@ -15,7 +15,7 @@ struct VkGfxDescriptorSetLayout
 
     VkGfxDescriptorSetLayout() = delete;
 
-    VkGfxDescriptorSetLayout(const VulkanContext& ctx)
+    explicit VkGfxDescriptorSetLayout(const VulkanContext& ctx)
     {
         device = ctx.device;
     }
@@ -55,7 +55,7 @@ struct VkGfxDescriptorPool
     DynamicArray<VkDescriptorPoolSize> poolSizes {};
 
     VkGfxDescriptorPool() = delete;
-    VkGfxDescriptorPool(const VulkanContext& ctx)
+    explicit VkGfxDescriptorPool(const VulkanContext& ctx)
     {
         device = ctx.device;
     }
@@ -91,7 +91,7 @@ struct VkGfxDescriptorPool
      * @param descriptorSet to be allocated
      * @return result of the api
      */
-    VulkanResult allocateDescriptorSet(VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet& descriptorSet) const;
+    VulkanResult allocateDescriptorSet(VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet descriptorSet) const;
 
     /**
      * @brief Free on or more descriptor sets
@@ -107,28 +107,52 @@ struct VkGfxDescriptorPool
     void resetPool();
 };
 
-struct VkGfxDescriptorSetWriter
+struct VkGfxDescriptorSet
 {
-    VkDevice                           device;
-    VkDescriptorSet                    set;
+    VkDevice                           device = VK_NULL_HANDLE;
+    VkDescriptorSet                    set    = VK_NULL_HANDLE;
+
     VkGfxDescriptorPool&               pool;
-    VkGfxDescriptorSetLayout&          layout;
+    VkGfxDescriptorSetLayout&          setLayout;
     DynamicArray<VkWriteDescriptorSet> writes;
 
-    VkGfxDescriptorSetWriter() = delete;
-    VkGfxDescriptorSetWriter(
+    VkGfxDescriptorSet() = delete;
+    explicit VkGfxDescriptorSet(
         VulkanContext             ctx,
         VkGfxDescriptorSetLayout& layout,
-        VkGfxDescriptorPool&      pool,
-        VkDescriptorSet           set) :
-        device(ctx.device), set(set), pool(pool), layout(layout)
+        VkGfxDescriptorPool&      pool) :
+        device(ctx.device), pool(pool), setLayout(layout)
     {
     }
 
-    VkGfxDescriptorSetWriter& writeBuffer(uint32_t binding, VkDescriptorBufferInfo* bufferInfo);
-    VkGfxDescriptorSetWriter& writeImage(uint32_t binding, VkDescriptorType type, VkDescriptorImageInfo* imageInfo);
+    /**
+     * @brief Configure buffer which is part of descriptor
+     * @param binding number in the set
+     * @param bufferInfo contains buffer details for linking to the descriptor
+     * @return gfx descriptor set
+     */
+    VkGfxDescriptorSet& configureBuffer(uint32_t binding, VkDescriptorBufferInfo* bufferInfo);
 
-    void                      flush();
+    /**
+     * @brief Configure image which is part of descriptor
+     * @param binding number in the set
+     * @param type
+     * @param imageInfo contains image deatils for linking to the descriptor
+     * @return gfx descriptor set
+     */
+    VkGfxDescriptorSet& configureImage(uint32_t binding, VkDescriptorType type, VkDescriptorImageInfo* imageInfo);
+
+    /**
+     * @brief apply buffer/image configurations on the set. It will overwrite any
+     * existing configurations
+     */
+    void applyConfiguration();
+
+    /**
+     * @brief create the descriptor set and apply any give configurations
+     * @return vulkan result of the api command
+     */
+    VulkanResult create();
 };
 
 } // namespace dusk

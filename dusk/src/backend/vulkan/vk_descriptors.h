@@ -109,5 +109,26 @@ struct VkGfxDescriptorPool
 
 struct VkGfxDescriptorSetWriter
 {
+    VkDevice                           device;
+    VkDescriptorSet                    set;
+    VkGfxDescriptorPool&               pool;
+    VkGfxDescriptorSetLayout&          layout;
+    DynamicArray<VkWriteDescriptorSet> writes;
+
+    VkGfxDescriptorSetWriter() = delete;
+    VkGfxDescriptorSetWriter(
+        VulkanContext             ctx,
+        VkGfxDescriptorSetLayout& layout,
+        VkGfxDescriptorPool&      pool,
+        VkDescriptorSet           set) :
+        device(ctx.device), set(set), pool(pool), layout(layout)
+    {
+    }
+
+    VkGfxDescriptorSetWriter& writeBuffer(uint32_t binding, VkDescriptorBufferInfo* bufferInfo);
+    VkGfxDescriptorSetWriter& writeImage(uint32_t binding, VkDescriptorType type, VkDescriptorImageInfo* imageInfo);
+
+    void                      flush();
 };
+
 } // namespace dusk

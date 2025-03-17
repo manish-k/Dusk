@@ -9,7 +9,7 @@ VkGfxDescriptorSetLayout& VkGfxDescriptorSetLayout::addBinding(
     VkShaderStageFlags stageFlags,
     uint32_t           count)
 {
-    DASSERT(bindingsMap.has(bindingIndex), "Binding already exists for given index");
+    DASSERT(!bindingsMap.has(bindingIndex), "Binding already exists for given index");
 
     VkDescriptorSetLayoutBinding layoutBinding {};
     layoutBinding.binding         = bindingIndex;
@@ -24,7 +24,7 @@ VkGfxDescriptorSetLayout& VkGfxDescriptorSetLayout::addBinding(
 
 VulkanResult VkGfxDescriptorSetLayout::create()
 {
-    DASSERT(!device, "invalid vulkan logical device");
+    DASSERT(device, "invalid vulkan logical device");
 
     DynamicArray<VkDescriptorSetLayoutBinding> setLayoutBindings {};
     for (auto& key : bindingsMap.keys())
@@ -41,7 +41,7 @@ VulkanResult VkGfxDescriptorSetLayout::create()
 
 void VkGfxDescriptorSetLayout::destroy()
 {
-    DASSERT(!device, "invalid vulkan logical device");
+    DASSERT(device, "invalid vulkan logical device");
 
     vkDestroyDescriptorSetLayout(device, layout, nullptr);
     layout = VK_NULL_HANDLE;
@@ -55,7 +55,7 @@ VkGfxDescriptorPool& VkGfxDescriptorPool::addPoolSize(VkDescriptorType descripto
 
 VulkanResult VkGfxDescriptorPool::create(uint32_t maxSets, VkDescriptorPoolCreateFlags poolFlags)
 {
-    DASSERT(!device, "invalid vulkan logical device");
+    DASSERT(device, "invalid vulkan logical device");
 
     VkDescriptorPoolCreateInfo descriptorPoolInfo { VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO };
     descriptorPoolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
@@ -68,15 +68,16 @@ VulkanResult VkGfxDescriptorPool::create(uint32_t maxSets, VkDescriptorPoolCreat
 
 void VkGfxDescriptorPool::destroy()
 {
-    DASSERT(!device, "invalid vulkan logical device");
-    DASSERT(!pool, "invalid vulkan descriptor pool");
+    DASSERT(device, "invalid vulkan logical device");
+    DASSERT(pool, "invalid vulkan descriptor pool");
 
     vkDestroyDescriptorPool(device, pool, nullptr);
+    pool = VK_NULL_HANDLE;
 }
 
 VulkanResult VkGfxDescriptorPool::allocateDescriptorSet(VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet& descriptorSet) const
 {
-    DASSERT(!device, "invalid vulkan logical device");
+    DASSERT(device, "invalid vulkan logical device");
 
     VkDescriptorSetAllocateInfo allocInfo { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
     allocInfo.descriptorPool     = pool;
@@ -88,17 +89,65 @@ VulkanResult VkGfxDescriptorPool::allocateDescriptorSet(VkDescriptorSetLayout de
 
 void VkGfxDescriptorPool::freeDescriptorSets(DynamicArray<VkDescriptorSet>& descriptorSets) const
 {
-    DASSERT(!device, "invalid vulkan logical device");
+    DASSERT(device, "invalid vulkan logical device");
 
     vkFreeDescriptorSets(device, pool, static_cast<uint32_t>(descriptorSets.size()), descriptorSets.data());
 }
 
 void VkGfxDescriptorPool::resetPool()
 {
-    DASSERT(!device, "invalid vulkan logical device");
-    DASSERT(!pool, "invalid vulkan descriptor pool");
+    DASSERT(device, "invalid vulkan logical device");
+    DASSERT(pool, "invalid vulkan descriptor pool");
 
     vkResetDescriptorPool(device, pool, 0);
+}
+
+VkGfxDescriptorSetWriter& VkGfxDescriptorSetWriter::writeBuffer(uint32_t binding, VkDescriptorBufferInfo* bufferInfo)
+{
+    DASSERT(layout.bindingsMap.has(binding), "Layout doesn't contain specified binding");
+    auto& bindingDescription = layout.bindingsMap[binding];
+
+    // TODO: Support write multiple descriptors
+    DASSERT(bindingDescription.descriptorCount == 1, "Binding single descriptor info, but binding expects multiple");
+
+    VkWriteDescriptorSet write { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+    write.descriptorType  = bindingDescription.descriptorType;
+    write.dstBinding      = binding;
+    write.pBufferInfo     = bufferInfo;
+    write.descriptorCount = 1;
+    write.dstSet          = set;
+
+    writes.push_back(write);
+
+    return *this;
+}
+
+VkGfxDescriptorSetWriter& VkGfxDescriptorSetWriter::writeImage(uint32_t binding, VkDescriptorType type, VkDescriptorImageInfo* imageInfo)
+{
+    DASSERT(layout.bindingsMap.has(binding), "Layout doesn't contain specified binding");
+    auto& bindingDescription = layout.bindingsMap[binding];
+
+    // TODO: Support write multiple descriptors
+    DASSERT(bindingDescription.descriptorCount == 1, "Binding single descriptor info, but binding expects multiple");
+
+    VkWriteDescriptorSet write { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+    write.descriptorType  = bindingDescription.descriptorType;
+    write.dstBinding      = binding;
+    write.pImageInfo      = imageInfo;
+    write.descriptorCount = 1;
+    write.descriptorType  = type;
+    write.dstSet          = set;
+
+    writes.push_back(write);
+
+    return *this;
+}
+
+void VkGfxDescriptorSetWriter::flush()
+{
+    if (writes.empty()) return;
+
+    vkUpdateDescriptorSets(device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 }
 
 } // namespace dusk

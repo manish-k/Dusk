@@ -196,11 +196,55 @@ bool Engine::setupGlobals()
         return false;
     }
 
+    m_globalUbos = DynamicArray<VulkanGfxBuffer>(maxFramesCount);
+
+    // uniform buffer params for creation
+    GfxBufferParams uboParams {};
+    uboParams.sizeInBytes = sizeof(GlobalUbo);
+    uboParams.usage       = GfxBufferUsageFlags::UniformBuffer;
+    uboParams.memoryType  = GfxBufferMemoryTypeFlags::HostSequentialWrite;
+
+    for (uint32_t uboIndex = 0u; uboIndex < maxFramesCount; ++uboIndex)
+    {
+        result = m_gfxDevice->createBuffer(uboParams, &m_globalUbos[uboIndex]);
+        if (result.hasError())
+        {
+            DUSK_ERROR("Unable to create uniform buffer {}", result.toString());
+            return false;
+        }
+        m_gfxDevice->mapBuffer(&m_globalUbos[uboIndex]);
+    }
+
+    for (uint32_t setIndex = 0u; setIndex < maxFramesCount; ++setIndex)
+    {
+        VkGfxDescriptorSet     set { ctx, *m_globalDescritptorSetLayout, *m_globalDescriptorPool };
+        VulkanGfxBuffer&       ubo = m_globalUbos[setIndex];
+        VkDescriptorBufferInfo bufferInfo { ubo.buffer, VK_WHOLE_SIZE, 0 };
+
+        result = set.create();
+        if (result.hasError())
+        {
+            DUSK_ERROR("Unable to create global descriptor set {}", result.toString());
+            return false;
+        }
+        set.applyConfiguration();
+
+        m_globalDescriptorSets.push_back(set);
+    }
+
     return true;
 }
 
 void Engine::cleanupGlobals()
 {
+    for (uint32_t uboIndex = 0u; uboIndex < m_globalUbos.size(); ++uboIndex)
+    {
+        m_gfxDevice->unmapBuffer(&m_globalUbos[uboIndex]);
+        m_gfxDevice->freeBuffer(&m_globalUbos[uboIndex]);
+    }
+
+    m_globalDescriptorPool->resetPool();
+
     m_globalDescritptorSetLayout->destroy();
     m_globalDescriptorPool->destroy();
 }

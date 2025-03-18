@@ -639,6 +639,21 @@ void VkGfxDevice::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSiz
     endSingleTimeCommands(commandBuffer);
 }
 
+void VkGfxDevice::mapBuffer(VulkanGfxBuffer* buffer)
+{
+    vulkan::mapGPUMemory(m_gpuAllocator, buffer->allocation, buffer->mappedMemory);
+}
+
+void VkGfxDevice::unmapBuffer(VulkanGfxBuffer* buffer)
+{
+    vulkan::unmapGPUMemory(m_gpuAllocator, buffer->allocation);
+}
+
+void VkGfxDevice::flushBuffer(VulkanGfxBuffer* buffer)
+{
+    vulkan::flushCPUMemory(m_gpuAllocator, { buffer->allocation }, { 0 }, { buffer->sizeInBytes });
+}
+
 #ifdef VK_RENDERER_DEBUG
 VKAPI_ATTR VkBool32 VKAPI_CALL VkGfxDevice::vulkanDebugMessengerCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT      messageSeverity,

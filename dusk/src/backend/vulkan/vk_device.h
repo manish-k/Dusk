@@ -41,6 +41,9 @@ public:
     VulkanResult    createBuffer(const GfxBufferParams& params, VulkanGfxBuffer* pOutBuffer);
     void            freeBuffer(VulkanGfxBuffer* buffer);
     void            copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+    void            mapBuffer(VulkanGfxBuffer* buffer);
+    void            unmapBuffer(VulkanGfxBuffer* buffer);
+    void            flushBuffer(VulkanGfxBuffer* buffer);
 
 #ifdef VK_RENDERER_DEBUG
     static VKAPI_ATTR VkBool32 VKAPI_CALL vulkanDebugMessengerCallback(

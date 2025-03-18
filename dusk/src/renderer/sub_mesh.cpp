@@ -25,11 +25,9 @@ void SubMesh::free()
 {
     auto& device = Engine::get().getGfxDevice();
 
-    device.freeBuffer(m_indexBuffer.get());
-    m_indexBuffer = nullptr;
+    device.freeBuffer(&m_indexBuffer);
 
-    device.freeBuffer(m_vertexBuffer.get());
-    m_vertexBuffer = nullptr;
+    device.freeBuffer(&m_vertexBuffer);
 }
 
 Error SubMesh::initGfxVertexBuffer(const DynamicArray<Vertex>& vertices)
@@ -48,14 +46,16 @@ Error SubMesh::initGfxVertexBuffer(const DynamicArray<Vertex>& vertices)
     stagingBufferParams.memoryType  = GfxBufferMemoryTypeFlags::HostSequentialWrite | GfxBufferMemoryTypeFlags::PersistentlyMapped;
 
     // create staging
-    Unique<VulkanGfxBuffer> stagingBuffer = device.createBuffer(stagingBufferParams);
-    if (!stagingBuffer)
+    VulkanGfxBuffer stagingBuffer {};
+
+    VulkanResult    result = device.createBuffer(stagingBufferParams, &stagingBuffer);
+    if (result.hasError())
     {
         DUSK_ERROR("Unable to create staging buffer for uploading vertex data");
         return Error::OutOfMemory;
     }
 
-    memcpy(stagingBuffer->mappedMemory, vertices.data(), bufferSize);
+    memcpy(stagingBuffer.mappedMemory, vertices.data(), bufferSize);
 
     // device vertex buffer
     GfxBufferParams vertexBufferParams {};
@@ -64,17 +64,18 @@ Error SubMesh::initGfxVertexBuffer(const DynamicArray<Vertex>& vertices)
     vertexBufferParams.memoryType  = GfxBufferMemoryTypeFlags::DedicatedDeviceMemory;
 
     // create vertex buffer
-    m_vertexBuffer = device.createBuffer(vertexBufferParams);
-    if (!m_vertexBuffer)
+    result = device.createBuffer(vertexBufferParams, &m_vertexBuffer);
+    if (result.hasError())
     {
         DUSK_ERROR("Unable to create device local vertex buffer for uploading vertex data");
+        // TODO: figure out correct error type
         return Error::OutOfMemory;
     }
 
     // copy buffer
-    device.copyBuffer(stagingBuffer->buffer, m_vertexBuffer->buffer, bufferSize);
+    device.copyBuffer(stagingBuffer.buffer, m_vertexBuffer.buffer, bufferSize);
 
-    device.freeBuffer(stagingBuffer.get());
+    device.freeBuffer(&stagingBuffer);
 
     return Error::Ok;
 }
@@ -95,14 +96,15 @@ Error SubMesh::initGfxIndexBuffer(const DynamicArray<uint32_t>& indices)
     stagingBufferParams.memoryType  = GfxBufferMemoryTypeFlags::HostSequentialWrite | GfxBufferMemoryTypeFlags::PersistentlyMapped;
 
     // create staging
-    Unique<VulkanGfxBuffer> stagingBuffer = device.createBuffer(stagingBufferParams);
-    if (!stagingBuffer)
+    VulkanGfxBuffer stagingBuffer {};
+    VulkanResult    result = device.createBuffer(stagingBufferParams, &stagingBuffer);
+    if (result.hasError())
     {
         DUSK_ERROR("Unable to create staging buffer for uploading indices data");
         return Error::OutOfMemory;
     }
 
-    memcpy(stagingBuffer->mappedMemory, indices.data(), bufferSize);
+    memcpy(stagingBuffer.mappedMemory, indices.data(), bufferSize);
 
     // device vertex buffer
     GfxBufferParams indexBufferParams {};
@@ -111,17 +113,17 @@ Error SubMesh::initGfxIndexBuffer(const DynamicArray<uint32_t>& indices)
     indexBufferParams.memoryType  = GfxBufferMemoryTypeFlags::DedicatedDeviceMemory;
 
     // create vertex buffer
-    m_indexBuffer = device.createBuffer(indexBufferParams);
-    if (!m_indexBuffer)
+    result = device.createBuffer(indexBufferParams, &m_indexBuffer);
+    if (result.hasError())
     {
         DUSK_ERROR("Unable to create device local index buffer for uploading indices data");
         return Error::OutOfMemory;
     }
 
     // copy buffer
-    device.copyBuffer(stagingBuffer->buffer, m_indexBuffer->buffer, bufferSize);
+    device.copyBuffer(stagingBuffer.buffer, m_indexBuffer.buffer, bufferSize);
 
-    device.freeBuffer(stagingBuffer.get());
+    device.freeBuffer(&stagingBuffer);
 
     return Error::Ok;
 }

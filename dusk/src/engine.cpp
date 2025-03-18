@@ -50,8 +50,11 @@ bool Engine::start(Shared<Application> app)
         return false;
     }
 
-    m_running           = true;
-    m_paused            = false;
+    m_running          = true;
+    m_paused           = false;
+
+    bool globalsStatus = setupGlobals();
+    if (!globalsStatus) return false;
 
     m_basicRenderSystem = createUnique<BasicRenderSystem>(*m_gfxDevice);
 
@@ -81,6 +84,8 @@ void Engine::stop() { m_running = false; }
 void Engine::shutdown()
 {
     m_basicRenderSystem = nullptr;
+
+    cleanupGlobals();
 
     m_renderer->cleanup();
     m_gfxDevice->cleanupGfxDevice();
@@ -166,6 +171,38 @@ void Engine::onEvent(Event& ev)
 void Engine::loadScene(Scene* scene)
 {
     m_currentScene = scene;
+}
+
+bool Engine::setupGlobals()
+{
+    uint32_t      maxFramesCount = m_renderer->getMaxFramesCount();
+    VulkanContext ctx            = VkGfxDevice::getSharedVulkanContext();
+
+    // create global descriptor pool
+    m_globalDescriptorPool = createUnique<VkGfxDescriptorPool>(ctx);
+    VulkanResult result    = m_globalDescriptorPool->addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1).create(maxFramesCount, 0);
+    if (result.hasError())
+    {
+        DUSK_ERROR("Error in creation of global descriptor pool {}", result.toString());
+        return false;
+    }
+
+    m_globalDescritptorSetLayout = createUnique<VkGfxDescriptorSetLayout>(ctx);
+    result                       = m_globalDescritptorSetLayout->addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS, 1)
+                 .create();
+    if (result.hasError())
+    {
+        DUSK_ERROR("Error in creation of global descriptor set layout {}", result.toString());
+        return false;
+    }
+
+    return true;
+}
+
+void Engine::cleanupGlobals()
+{
+    m_globalDescritptorSetLayout->destroy();
+    m_globalDescriptorPool->destroy();
 }
 
 } // namespace dusk

@@ -98,12 +98,6 @@ VulkanResult VkGfxSwapChain::acquireNextImage(uint32_t* imageIndex)
 
 VulkanResult VkGfxSwapChain::submitCommandBuffers(const VkCommandBuffer* buffers, uint32_t* imageIndex)
 {
-    // if (m_imagesInFlight[*imageIndex] != VK_NULL_HANDLE)
-    //{
-    //     vkWaitForFences(m_device, 1, &m_imagesInFlight[*imageIndex], VK_TRUE, UINT64_MAX);
-    // }
-    // m_imagesInFlight[*imageIndex] = m_inFlightFences[m_currentFrame];
-
     // wait semaphores
     VkSemaphore          waitSemaphores[] = { m_imageAvailableSemaphores[m_currentFrame] };
     VkPipelineStageFlags waitStages[]     = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };

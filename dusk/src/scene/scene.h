@@ -80,7 +80,7 @@ public:
      */
     void             freeSubMeshes();
 
-    const SubMesh&   getSubMesh(uint32_t meshId) const { return m_subMeshes[meshId]; }
+    SubMesh&         getSubMesh(uint32_t meshId) { return m_subMeshes[meshId]; }
 
     CameraComponent& getMainCamera();
 

@@ -6,9 +6,10 @@
 #include "events/event.h"
 #include "platform/window.h"
 #include "scene/scene.h"
-#include "renderer/render_api.h"
 #include "backend/vulkan/vk_device.h"
 #include "backend/vulkan/vk_renderer.h"
+#include "backend/vulkan/vk_descriptors.h"
+#include "renderer/render_api.h"
 #include "renderer/systems/basic_render_system.h"
 
 namespace dusk
@@ -48,24 +49,32 @@ public:
     VulkanRenderer&       getRenderer() { return *m_renderer; }
     VkGfxDevice&          getGfxDevice() { return *m_gfxDevice; }
 
+    bool                  setupGlobals();
+    void                  cleanupGlobals();
+
 private:
-    Config                    m_config;
+    Config                           m_config;
 
-    Unique<VkGfxDevice>       m_gfxDevice         = nullptr;
-    Unique<VulkanRenderer>    m_renderer          = nullptr;
+    Unique<VkGfxDevice>              m_gfxDevice         = nullptr;
+    Unique<VulkanRenderer>           m_renderer          = nullptr;
 
-    Shared<Window>            m_window            = nullptr;
-    Shared<Application>       m_app               = nullptr;
+    Shared<Window>                   m_window            = nullptr;
+    Shared<Application>              m_app               = nullptr;
 
-    Unique<BasicRenderSystem> m_basicRenderSystem = nullptr;
+    Unique<BasicRenderSystem>        m_basicRenderSystem = nullptr;
 
-    bool                      m_running           = false;
-    bool                      m_paused            = false;
+    bool                             m_running           = false;
+    bool                             m_paused            = false;
 
-    Scene*                    m_currentScene      = nullptr;
+    Scene*                           m_currentScene      = nullptr;
 
-    TimePoint                 m_lastFrameTime;
-    TimeStep                  m_deltaTime;
+    TimePoint                        m_lastFrameTime;
+    TimeStep                         m_deltaTime;
+
+    Unique<VkGfxDescriptorPool>      m_globalDescriptorPool       = nullptr;
+    Unique<VkGfxDescriptorSetLayout> m_globalDescritptorSetLayout = nullptr;
+    DynamicArray<VulkanGfxBuffer>    m_globalUbos {};
+    DynamicArray<VkGfxDescriptorSet> m_globalDescriptorSets {};
 
 private:
     static Engine* s_instance;

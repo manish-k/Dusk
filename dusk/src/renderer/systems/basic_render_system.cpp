@@ -74,9 +74,9 @@ void BasicRenderSystem::renderGameObjects(const FrameData& frameData)
 
         for (uint32_t meshId : meshData.meshes)
         {
-            const SubMesh& mesh      = scene.getSubMesh(meshId);
-            VkBuffer       buffers[] = { mesh.getVertexBuffer().buffer };
-            VkDeviceSize   offsets[] = { 0 };
+            SubMesh&     mesh      = scene.getSubMesh(meshId);
+            VkBuffer     buffers[] = { mesh.getVertexBuffer().buffer };
+            VkDeviceSize offsets[] = { 0 };
 
             vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
 

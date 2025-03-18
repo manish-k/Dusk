@@ -17,9 +17,9 @@ public:
     Error            init(const DynamicArray<Vertex>& vertices, const DynamicArray<uint32_t>& indices);
     void             free();
 
-    VulkanGfxBuffer& getVertexBuffer() const { return *m_vertexBuffer; };
+    VulkanGfxBuffer& getVertexBuffer() { return m_vertexBuffer; };
     uint32_t         getVertexCount() const { return m_vertexCount; };
-    VulkanGfxBuffer& getIndexBuffer() const { return *m_indexBuffer; };
+    VulkanGfxBuffer& getIndexBuffer() { return m_indexBuffer; };
     uint32_t         getIndexCount() const { return m_indexCount; };
 
 private:
@@ -27,10 +27,10 @@ private:
     Error initGfxIndexBuffer(const DynamicArray<uint32_t>& indices);
 
 private:
-    Unique<VulkanGfxBuffer> m_vertexBuffer;
-    uint32_t                m_vertexCount = 0u;
+    VulkanGfxBuffer m_vertexBuffer {};
+    uint32_t        m_vertexCount = 0u;
 
-    Unique<VulkanGfxBuffer> m_indexBuffer;
-    uint32_t                m_indexCount = 0u;
+    VulkanGfxBuffer m_indexBuffer {};
+    uint32_t        m_indexCount = 0u;
 };
 } // namespace dusk

@@ -20,27 +20,27 @@ public:
     VkGfxDevice(GLFWVulkanWindow& window);
     ~VkGfxDevice();
 
-    Error                   initGfxDevice();
-    void                    cleanupGfxDevice();
+    Error           initGfxDevice();
+    void            cleanupGfxDevice();
 
-    Error                   createInstance(const char* appName, uint32_t version, DynamicArray<const char*> requiredExtensions);
-    void                    destroyInstance();
+    Error           createInstance(const char* appName, uint32_t version, DynamicArray<const char*> requiredExtensions);
+    void            destroyInstance();
 
-    Error                   createDevice();
-    void                    destroyDevice();
+    Error           createDevice();
+    void            destroyDevice();
 
-    Error                   populateLayerNames();
-    Error                   populateLayerExtensionNames(const char* pLayerName);
+    Error           populateLayerNames();
+    Error           populateLayerExtensionNames(const char* pLayerName);
 
-    bool                    hasLayer(const char* pLayerName);
-    bool                    hasInstanceExtension(const char* pExtensionName);
+    bool            hasLayer(const char* pLayerName);
+    bool            hasInstanceExtension(const char* pExtensionName);
 
-    VkCommandBuffer         beginSingleTimeCommands();
-    void                    endSingleTimeCommands(VkCommandBuffer commandBuffer);
+    VkCommandBuffer beginSingleTimeCommands();
+    void            endSingleTimeCommands(VkCommandBuffer commandBuffer);
 
-    Unique<VulkanGfxBuffer> createBuffer(const GfxBufferParams& params);
-    void                    freeBuffer(VulkanGfxBuffer* buffer);
-    void                    copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+    VulkanResult    createBuffer(const GfxBufferParams& params, VulkanGfxBuffer* pOutBuffer);
+    void            freeBuffer(VulkanGfxBuffer* buffer);
+    void            copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
 #ifdef VK_RENDERER_DEBUG
     static VKAPI_ATTR VkBool32 VKAPI_CALL vulkanDebugMessengerCallback(

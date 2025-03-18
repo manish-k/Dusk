@@ -33,6 +33,7 @@ public:
 
     uint32_t        getCurrentFrameIndex() const { return m_currentFrameIndex; }
     float           getAspectRatio() const;
+    uint32_t        getMaxFramesCount() const { return m_swapChain->getImagesCount(); }
 
 private:
     Error recreateSwapChain();

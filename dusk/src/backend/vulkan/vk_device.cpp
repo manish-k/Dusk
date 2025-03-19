@@ -654,6 +654,11 @@ void VkGfxDevice::flushBuffer(VulkanGfxBuffer* buffer)
     vulkan::flushCPUMemory(m_gpuAllocator, { buffer->allocation }, { 0 }, { buffer->sizeInBytes });
 }
 
+void VkGfxDevice::writeToBuffer(VulkanGfxBuffer* buffer, void* hostBlock, VkDeviceSize offset, VkDeviceSize size)
+{
+    vulkan::writeToAllocation(m_gpuAllocator, hostBlock, buffer->allocation, offset, size);
+}
+
 #ifdef VK_RENDERER_DEBUG
 VKAPI_ATTR VkBool32 VKAPI_CALL VkGfxDevice::vulkanDebugMessengerCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT      messageSeverity,

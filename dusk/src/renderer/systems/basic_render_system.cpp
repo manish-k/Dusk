@@ -5,10 +5,10 @@
 
 namespace dusk
 {
-BasicRenderSystem::BasicRenderSystem(VkGfxDevice device) :
+BasicRenderSystem::BasicRenderSystem(VkGfxDevice& device, VkGfxDescriptorSetLayout& globalSetLayout) :
     m_device(device)
 {
-    createPipelineLayout();
+    createPipelineLayout(globalSetLayout.layout);
     createPipeLine();
 }
 
@@ -42,11 +42,12 @@ void BasicRenderSystem::createPipeLine()
                            .build();
 }
 
-void BasicRenderSystem::createPipelineLayout()
+void BasicRenderSystem::createPipelineLayout(VkDescriptorSetLayout globalSetLayout)
 {
     VulkanContext& vkContext = VkGfxDevice::getSharedVulkanContext();
     m_pipelineLayout         = VkGfxPipelineLayout::Builder(vkContext)
                            .addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(BasicPushConstantsData))
+                           .addDescriptorSetLayout(globalSetLayout)
                            .build();
 }
 
@@ -58,12 +59,23 @@ void BasicRenderSystem::renderGameObjects(const FrameData& frameData)
 
     m_renderPipeline->bind(commandBuffer);
 
+    vkCmdBindDescriptorSets(
+        frameData.commandBuffer,
+        VK_PIPELINE_BIND_POINT_GRAPHICS,
+        m_pipelineLayout->get(),
+        0,
+        1,
+        &frameData.globalDescriptorSet,
+        0,
+        nullptr);
+
     auto renderablesView = scene.GetGameObjectsWith<TransformComponent, MeshComponent>();
 
     for (auto [entity, transform, meshData] : renderablesView.each())
     {
         BasicPushConstantsData push {};
-        push.mvpMatrix = camera.projectionMatrix * camera.viewMatrix * transform.mat4();
+        push.model = transform.mat4();
+        push.normal = transform.normalMat4();
 
         vkCmdPushConstants(commandBuffer,
                            m_pipelineLayout->get(),

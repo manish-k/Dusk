@@ -5,6 +5,7 @@
 
 namespace dusk
 {
+// already aligned
 struct GlobalUbo
 {
     glm::mat4 prjoection { 1.f };
@@ -15,9 +16,10 @@ struct GlobalUbo
 
 struct FrameData
 {
-    int             frameIndex;
+    uint32_t        frameIndex;
     TimeStep        frameTime;
     VkCommandBuffer commandBuffer;
     Scene&          scene;
+    VkDescriptorSet globalDescriptorSet;
 };
 } // namespace dusk

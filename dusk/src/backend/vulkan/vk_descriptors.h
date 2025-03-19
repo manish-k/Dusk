@@ -91,7 +91,7 @@ struct VkGfxDescriptorPool
      * @param descriptorSet to be allocated
      * @return result of the api
      */
-    VulkanResult allocateDescriptorSet(VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet descriptorSet) const;
+    VulkanResult allocateDescriptorSet(VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet* descriptorSet) const;
 
     /**
      * @brief Free on or more descriptor sets
@@ -131,7 +131,7 @@ struct VkGfxDescriptorSet
      * @param bufferInfo contains buffer details for linking to the descriptor
      * @return gfx descriptor set
      */
-    VkGfxDescriptorSet& configureBuffer(uint32_t binding, VkDescriptorBufferInfo* bufferInfo);
+    VkGfxDescriptorSet& configureBuffer(uint32_t binding, VkDescriptorType type, VkDescriptorBufferInfo* bufferInfo);
 
     /**
      * @brief Configure image which is part of descriptor

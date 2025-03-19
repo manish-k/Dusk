@@ -4,26 +4,28 @@
 #include "backend/vulkan/vk_device.h"
 #include "backend/vulkan/vk_pipeline.h"
 #include "backend/vulkan/vk_pipeline_layout.h"
+#include "backend/vulkan/vk_descriptors.h"
 #include "renderer/frame_data.h"
 
 namespace dusk
 {
 struct BasicPushConstantsData
 {
-    glm::mat4 mvpMatrix { 1.f };
+    glm::mat4 model { 1.f };
+    glm::mat4 normal { 1.f };
 };
 
 class BasicRenderSystem
 {
 public:
-    BasicRenderSystem(VkGfxDevice device);
+    BasicRenderSystem(VkGfxDevice& device, VkGfxDescriptorSetLayout& globalSetLayout);
     ~BasicRenderSystem();
 
     void renderGameObjects(const FrameData& frameData);
 
 private:
     void createPipeLine();
-    void createPipelineLayout();
+    void createPipelineLayout(VkDescriptorSetLayout globalSetLayout);
 
 private:
     VkGfxDevice&                m_device;

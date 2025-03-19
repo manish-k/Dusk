@@ -75,7 +75,7 @@ void VkGfxDescriptorPool::destroy()
     pool = VK_NULL_HANDLE;
 }
 
-VulkanResult VkGfxDescriptorPool::allocateDescriptorSet(VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet descriptorSet) const
+VulkanResult VkGfxDescriptorPool::allocateDescriptorSet(VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet* descriptorSet) const
 {
     DASSERT(device, "invalid vulkan logical device");
 
@@ -84,7 +84,7 @@ VulkanResult VkGfxDescriptorPool::allocateDescriptorSet(VkDescriptorSetLayout de
     allocInfo.descriptorSetCount = 1;
     allocInfo.pSetLayouts        = &descriptorSetLayout;
 
-    return vkAllocateDescriptorSets(device, &allocInfo, &descriptorSet);
+    return vkAllocateDescriptorSets(device, &allocInfo, descriptorSet);
 }
 
 void VkGfxDescriptorPool::freeDescriptorSets(DynamicArray<VkDescriptorSet>& descriptorSets) const
@@ -102,7 +102,7 @@ void VkGfxDescriptorPool::resetPool()
     vkResetDescriptorPool(device, pool, 0);
 }
 
-VkGfxDescriptorSet& VkGfxDescriptorSet::configureBuffer(uint32_t binding, VkDescriptorBufferInfo* bufferInfo)
+VkGfxDescriptorSet& VkGfxDescriptorSet::configureBuffer(uint32_t binding, VkDescriptorType type, VkDescriptorBufferInfo* bufferInfo)
 {
     DASSERT(setLayout.bindingsMap.has(binding), "Layout doesn't contain specified binding");
     auto& bindingDescription = setLayout.bindingsMap[binding];
@@ -115,6 +115,7 @@ VkGfxDescriptorSet& VkGfxDescriptorSet::configureBuffer(uint32_t binding, VkDesc
     write.dstBinding      = binding;
     write.pBufferInfo     = bufferInfo;
     write.descriptorCount = 1;
+    write.descriptorType  = type;
 
     writes.push_back(write);
 
@@ -155,7 +156,7 @@ void VkGfxDescriptorSet::applyConfiguration()
 
 VulkanResult VkGfxDescriptorSet::create()
 {
-    VulkanResult result = pool.allocateDescriptorSet(setLayout.layout, set);
+    VulkanResult result = pool.allocateDescriptorSet(setLayout.layout, &set);
     if (!result.isOk())
     {
         DUSK_ERROR("Unable to create descriptor set {}", result.toString());

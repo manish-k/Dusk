@@ -56,7 +56,7 @@ bool Engine::start(Shared<Application> app)
     bool globalsStatus = setupGlobals();
     if (!globalsStatus) return false;
 
-    m_basicRenderSystem = createUnique<BasicRenderSystem>(*m_gfxDevice);
+    m_basicRenderSystem = createUnique<BasicRenderSystem>(*m_gfxDevice, *m_globalDescritptorSetLayout);
 
     return true;
 }
@@ -98,16 +98,26 @@ void Engine::onUpdate(TimeStep dt)
     // get game objects and render system
     if (VkCommandBuffer commandBuffer = m_renderer->beginFrame())
     {
+        uint32_t  currentFrameIndex = m_renderer->getCurrentFrameIndex();
         FrameData frameData {
-            m_renderer->getCurrentFrameIndex(),
+            currentFrameIndex,
             dt,
             commandBuffer,
-            *m_currentScene
+            *m_currentScene,
+            m_globalDescriptorSets[currentFrameIndex].set
         };
 
         CameraComponent& camera = m_currentScene->getMainCamera();
 
         camera.setPerspectiveProjection(glm::radians(50.f), m_renderer->getAspectRatio(), 0.5f, 100.f);
+
+        GlobalUbo ubo {};
+        ubo.view              = camera.viewMatrix;
+        ubo.prjoection        = camera.projectionMatrix;
+        ubo.inverseView       = camera.inverseViewMatrix;
+        ubo.ambientLightColor = glm::vec4(0.7f, 0.8f, 0.8f, 0.f);
+
+        memcpy(m_globalUbos[currentFrameIndex].mappedMemory, &ubo, sizeof(GlobalUbo));
 
         m_renderer->beginRendering(commandBuffer);
 
@@ -202,7 +212,7 @@ bool Engine::setupGlobals()
     GfxBufferParams uboParams {};
     uboParams.sizeInBytes = sizeof(GlobalUbo);
     uboParams.usage       = GfxBufferUsageFlags::UniformBuffer;
-    uboParams.memoryType  = GfxBufferMemoryTypeFlags::HostSequentialWrite;
+    uboParams.memoryType  = GfxBufferMemoryTypeFlags::HostSequentialWrite | GfxBufferMemoryTypeFlags::PersistentlyMapped;
 
     for (uint32_t uboIndex = 0u; uboIndex < maxFramesCount; ++uboIndex)
     {
@@ -219,7 +229,10 @@ bool Engine::setupGlobals()
     {
         VkGfxDescriptorSet     set { ctx, *m_globalDescritptorSetLayout, *m_globalDescriptorPool };
         VulkanGfxBuffer&       ubo = m_globalUbos[setIndex];
-        VkDescriptorBufferInfo bufferInfo { ubo.buffer, VK_WHOLE_SIZE, 0 };
+        VkDescriptorBufferInfo bufferInfo{};
+        bufferInfo.buffer = ubo.buffer;
+        bufferInfo.offset = 0;
+        bufferInfo.range  = sizeof(GlobalUbo);
 
         result = set.create();
         if (result.hasError())
@@ -227,6 +240,8 @@ bool Engine::setupGlobals()
             DUSK_ERROR("Unable to create global descriptor set {}", result.toString());
             return false;
         }
+
+        set.configureBuffer(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, &bufferInfo);
         set.applyConfiguration();
 
         m_globalDescriptorSets.push_back(set);

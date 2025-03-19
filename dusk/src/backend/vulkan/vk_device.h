@@ -44,6 +44,7 @@ public:
     void            mapBuffer(VulkanGfxBuffer* buffer);
     void            unmapBuffer(VulkanGfxBuffer* buffer);
     void            flushBuffer(VulkanGfxBuffer* buffer);
+    void            writeToBuffer(VulkanGfxBuffer* buffer, void* hostBlock, VkDeviceSize offset, VkDeviceSize size);
 
 #ifdef VK_RENDERER_DEBUG
     static VKAPI_ATTR VkBool32 VKAPI_CALL vulkanDebugMessengerCallback(

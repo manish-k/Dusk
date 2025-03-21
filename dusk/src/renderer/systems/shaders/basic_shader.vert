@@ -12,6 +12,7 @@ layout(set = 0, binding = 0) uniform GlobalUbo
 	mat4 projection;
 	mat4 view;
 	mat4 inverseView;
+	vec4 lightDirection;
 	vec4 ambientLightColor;
 } ubo;
 
@@ -26,5 +27,9 @@ void main() {
 	
 	gl_Position = ubo.projection * (ubo.view * worldPos);
 
-	fragColor = ubo.ambientLightColor.xyz;
+	 vec3 normalWorldSpace = normalize(mat3(push.normal) * normal);
+
+	float lightIntensity = ubo.ambientLightColor.w + max(dot(normalWorldSpace, ubo.lightDirection.xyz), 0);
+
+	fragColor = lightIntensity * ubo.ambientLightColor.xyz;
 }

@@ -131,7 +131,13 @@ void AssimpLoader::parseMeshes(Scene& scene, const aiScene* aiScene)
         for (uint32_t vertexIndex = 0u; vertexIndex < mesh->mNumVertices; ++vertexIndex)
         {
             Vertex v;
+
             v.position = glm::vec3(mesh->mVertices[vertexIndex].x, mesh->mVertices[vertexIndex].y, mesh->mVertices[vertexIndex].z);
+
+            if (mesh->HasNormals())
+            {
+                v.normal = glm::vec3(mesh->mNormals[vertexIndex].x, mesh->mNormals[vertexIndex].y, mesh->mNormals[vertexIndex].z);
+            }
 
             vertices.push_back(v);
         }

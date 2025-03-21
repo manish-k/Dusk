@@ -115,7 +115,8 @@ void Engine::onUpdate(TimeStep dt)
         ubo.view              = camera.viewMatrix;
         ubo.prjoection        = camera.projectionMatrix;
         ubo.inverseView       = camera.inverseViewMatrix;
-        ubo.ambientLightColor = glm::vec4(0.7f, 0.8f, 0.8f, 0.f);
+        ubo.lightDirection    = glm::vec4(normalize(glm::vec3(1.0, -3.0, -1.0)), 0.f);
+        ubo.ambientLightColor = glm::vec4(0.7f, 0.8f, 0.8f, 0.8f);
 
         memcpy(m_globalUbos[currentFrameIndex].mappedMemory, &ubo, sizeof(GlobalUbo));
 

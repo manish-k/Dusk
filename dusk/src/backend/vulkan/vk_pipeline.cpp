@@ -221,6 +221,8 @@ VkGfxRenderPipeline::VkGfxRenderPipeline(VulkanContext& vkContext, VkGfxRenderPi
     VkPipelineRenderingCreateInfo renderingCreateInfo { VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO };
     renderingCreateInfo.colorAttachmentCount    = static_cast<size_t>(renderConfig.colorAttachmentFormats.size());
     renderingCreateInfo.pColorAttachmentFormats = renderConfig.colorAttachmentFormats.data();
+    renderingCreateInfo.depthAttachmentFormat   = VK_FORMAT_D32_SFLOAT_S8_UINT;
+    renderingCreateInfo.stencilAttachmentFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
 
     pipelineInfo.pNext                          = &renderingCreateInfo;
 

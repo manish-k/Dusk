@@ -91,7 +91,7 @@ Error VulkanRenderer::endFrame()
     DASSERT(m_isFrameStarted, "Can't call endFrame while frame is not in progress");
     VkCommandBuffer commandBuffer = getCurrentCommandBuffer();
 
-    // dynamic rendering is being used sotransition image layout for presentation.
+    // dynamic rendering is being used so transitioning image layout for presentation.
     VkImageMemoryBarrier imageBarrier { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
     imageBarrier.srcAccessMask    = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     imageBarrier.oldLayout        = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -218,6 +218,26 @@ void VulkanRenderer::beginRendering(VkCommandBuffer commandBuffer)
         1,
         &imageBarrier);
 
+    // add image barrier to transition depth attachment to optimal layout
+    VkImageMemoryBarrier depthBarrier { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
+    depthBarrier.dstAccessMask    = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    depthBarrier.oldLayout        = VK_IMAGE_LAYOUT_UNDEFINED;
+    depthBarrier.newLayout        = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    depthBarrier.image            = m_swapChain->getDepthImage(m_currentImageIndex);
+    depthBarrier.subresourceRange = { VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1 };
+
+    vkCmdPipelineBarrier(
+        commandBuffer,
+        VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, // srcStageMask
+        VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, // dstStageMask
+        0,
+        0,
+        nullptr,
+        0,
+        nullptr,
+        1,
+        &depthBarrier);
+
     // define color attachments info
     VkRenderingAttachmentInfo colorAttachmentInfo { VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
     colorAttachmentInfo.imageView   = m_swapChain->getImageView(m_currentImageIndex);
@@ -226,12 +246,21 @@ void VulkanRenderer::beginRendering(VkCommandBuffer commandBuffer)
     colorAttachmentInfo.storeOp     = VK_ATTACHMENT_STORE_OP_STORE;
     colorAttachmentInfo.clearValue  = { 0.f, 0.f, 0.f, 1.0f };
 
+    VkRenderingAttachmentInfoKHR depthStencilAttachment { VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR };
+    depthStencilAttachment.imageView               = m_swapChain->getDepthImageView(m_currentImageIndex);
+    depthStencilAttachment.imageLayout             = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    depthStencilAttachment.loadOp                  = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    depthStencilAttachment.storeOp                 = VK_ATTACHMENT_STORE_OP_STORE;
+    depthStencilAttachment.clearValue.depthStencil = { 1.0f, 0 };
+
     VkRenderingInfo renderingInfo { VK_STRUCTURE_TYPE_RENDERING_INFO };
     renderingInfo.renderArea.offset    = { 0u, 0u };
     renderingInfo.renderArea.extent    = currentExtent;
     renderingInfo.layerCount           = 1u;
     renderingInfo.colorAttachmentCount = 1u;
     renderingInfo.pColorAttachments    = &colorAttachmentInfo;
+    renderingInfo.pDepthAttachment     = &depthStencilAttachment;
+    renderingInfo.pStencilAttachment   = &depthStencilAttachment;
 
     vkCmdBeginRendering(commandBuffer, &renderingInfo);
 

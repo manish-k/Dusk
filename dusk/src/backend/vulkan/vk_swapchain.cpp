@@ -18,6 +18,8 @@ Error VkGfxSwapChain::create(VulkanContext& vkContext, VkGfxSwapChainParams& par
 
     m_oldSwapChain   = oldSwapChain;
 
+    m_gpuAllocator   = &vkContext.gpuAllocator;
+
     Error err        = createSwapChain(params);
     if (err != Error::Ok)
     {
@@ -254,6 +256,13 @@ Error VkGfxSwapChain::createSwapChain(const VkGfxSwapChainParams& params)
         return err;
     }
 
+    err = createDepthResources();
+    if (err != Error::Ok)
+    {
+        destroySwapChain();
+        return err;
+    }
+
     DUSK_INFO("Swapchain created successfully");
     return Error::Ok;
 }
@@ -278,6 +287,8 @@ void VkGfxSwapChain::destroySwapChain()
         vkDestroySemaphore(m_device, m_imageAvailableSemaphores[i], nullptr);
         vkDestroyFence(m_device, m_inFlightFences[i], nullptr);
     }
+
+    destroyDepthResources();
 }
 
 // TODO: maybe this functionality should go into VkGfxDevice
@@ -364,6 +375,81 @@ Error VkGfxSwapChain::createSyncObjects()
     }
 
     return Error::Ok;
+}
+
+Error VkGfxSwapChain::createDepthResources()
+{
+    VkFormat depthFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
+
+    m_depthImages.resize(m_imagesCount);
+    m_depthImageViews.resize(m_imagesCount);
+
+    for (uint32_t depthImageIndex = 0u; depthImageIndex < m_imagesCount; ++depthImageIndex)
+    {
+        VkImageCreateInfo imageInfo { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
+        imageInfo.imageType     = VK_IMAGE_TYPE_2D;
+        imageInfo.extent.width  = m_currentExtent.width;
+        imageInfo.extent.height = m_currentExtent.height;
+        imageInfo.extent.depth  = 1;
+        imageInfo.mipLevels     = 1;
+        imageInfo.arrayLayers   = 1;
+        imageInfo.format        = depthFormat;
+        imageInfo.tiling        = VK_IMAGE_TILING_OPTIMAL;
+        imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        imageInfo.usage         = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+        imageInfo.samples       = VK_SAMPLE_COUNT_1_BIT;
+        imageInfo.sharingMode   = VK_SHARING_MODE_EXCLUSIVE;
+        imageInfo.flags         = 0;
+
+        // create image
+        VulkanResult result = vulkan::allocateGPUImage(
+            *m_gpuAllocator,
+            imageInfo,
+            VMA_MEMORY_USAGE_AUTO,
+            VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
+            &m_depthImages[depthImageIndex]);
+        if (result.hasError())
+        {
+            DUSK_ERROR("Unable to create images for depth attachment {}", result.toString());
+            return Error::Generic;
+        }
+
+        VkImageViewCreateInfo viewInfo {};
+        viewInfo.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        viewInfo.image                           = m_depthImages[depthImageIndex].image;
+        viewInfo.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
+        viewInfo.format                          = depthFormat;
+        viewInfo.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_DEPTH_BIT;
+        viewInfo.subresourceRange.baseMipLevel   = 0;
+        viewInfo.subresourceRange.levelCount     = 1;
+        viewInfo.subresourceRange.baseArrayLayer = 0;
+        viewInfo.subresourceRange.layerCount     = 1;
+
+        // create image views
+        result = vkCreateImageView(m_device, &viewInfo, nullptr, &m_depthImageViews[depthImageIndex]);
+        if (result.hasError())
+        {
+            DUSK_ERROR("Unable to create depth image views {}", result.toString());
+            return Error::Generic;
+        }
+    }
+
+    return Error();
+}
+
+void VkGfxSwapChain::destroyDepthResources()
+{
+    for (auto& imageView : m_depthImageViews)
+    {
+        vkDestroyImageView(m_device, imageView, nullptr);
+    }
+    m_depthImageViews.clear();
+
+    for (auto& depthImage: m_depthImages)
+    {
+        vulkan::freeGPUImage(*m_gpuAllocator, &depthImage);
+    }
+    m_depthImages.clear();
 }
 
 VkSurfaceFormatKHR VkGfxSwapChain::getBestSurfaceFormat() const
@@ -454,6 +540,24 @@ VkExtent2D VkGfxSwapChain::getSwapExtent(uint32_t width, uint32_t height) const
 
         return actualExtent;
     }
+}
+
+VkFormat VkGfxSwapChain::findDepthFormat()
+{
+    DynamicArray<VkFormat> candidates { VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT };
+    
+    for (VkFormat format : candidates)
+    {
+        VkFormatProperties props;
+        vkGetPhysicalDeviceFormatProperties(m_physicalDevice, format, &props);
+
+        if ((props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) == VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)
+        {
+            return format;
+        }
+    }
+
+    return VkFormat();
 }
 
 } // namespace dusk

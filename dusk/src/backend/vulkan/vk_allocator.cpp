@@ -66,47 +66,62 @@ void vulkan::destroyGPUAllocator(VulkanGPUAllocator& gpuAllocator)
     }
 }
 
-VulkanResult vulkan::allocateGPUBuffer(VulkanGPUAllocator& gpuAllocator, const VkBufferCreateInfo& bufferCreateInfo, VmaMemoryUsage usage, VmaAllocationCreateFlags flags, VulkanGfxBuffer* bufferResult)
+VulkanResult vulkan::allocateGPUBuffer(
+    VulkanGPUAllocator&       gpuAllocator,
+    const VkBufferCreateInfo& bufferCreateInfo,
+    VmaMemoryUsage            usage,
+    VmaAllocationCreateFlags  flags,
+    VulkanGfxBuffer*          pBufferResult)
 {
-    DASSERT(bufferResult != nullptr, "out bufferResult should not be null");
+    DASSERT(pBufferResult != nullptr, "out bufferResult should not be null");
 
     VmaAllocationCreateInfo allocationCreateInfo = {};
     allocationCreateInfo.usage                   = usage;
     allocationCreateInfo.flags                   = flags;
 
     VmaAllocationInfo allocationInfo {};
-    VulkanResult      result = vmaCreateBuffer(gpuAllocator.vmaAllocator, &bufferCreateInfo, &allocationCreateInfo, &bufferResult->buffer, &bufferResult->allocation, &allocationInfo);
+    VulkanResult      result = vmaCreateBuffer(
+        gpuAllocator.vmaAllocator,
+        &bufferCreateInfo,
+        &allocationCreateInfo,
+        &pBufferResult->buffer,
+        &pBufferResult->allocation,
+        &allocationInfo);
 
     if (result.hasError())
     {
         return result;
     }
 
-    vmaGetMemoryTypeProperties(gpuAllocator.vmaAllocator, allocationInfo.memoryType, &bufferResult->memoryFlags);
+    vmaGetMemoryTypeProperties(gpuAllocator.vmaAllocator, allocationInfo.memoryType, &pBufferResult->memoryFlags);
 
-    bufferResult->mappedMemory = nullptr;
+    pBufferResult->mappedMemory = nullptr;
     if (allocationCreateInfo.flags & VMA_ALLOCATION_CREATE_MAPPED_BIT)
     {
         // TODO check allignment of the mapped memory pointer
-        bufferResult->mappedMemory = allocationInfo.pMappedData;
+        pBufferResult->mappedMemory = allocationInfo.pMappedData;
     }
-    bufferResult->sizeInBytes = allocationInfo.size;
+    pBufferResult->sizeInBytes = allocationInfo.size;
 
     return result;
 }
 
-void vulkan::freeGPUBuffer(VulkanGPUAllocator& gpuAllocator, VulkanGfxBuffer* gfxBuffer)
+void vulkan::freeGPUBuffer(
+    VulkanGPUAllocator& gpuAllocator,
+    VulkanGfxBuffer*    pGfxBuffer)
 {
-    DASSERT(gfxBuffer != nullptr, "attempt to free a nullptr");
-    if (gfxBuffer->buffer != VK_NULL_HANDLE)
+    DASSERT(pGfxBuffer != nullptr, "attempt to free a nullptr");
+    if (pGfxBuffer->buffer != VK_NULL_HANDLE)
     {
-        vmaDestroyBuffer(gpuAllocator.vmaAllocator, gfxBuffer->buffer, gfxBuffer->allocation);
+        vmaDestroyBuffer(gpuAllocator.vmaAllocator, pGfxBuffer->buffer, pGfxBuffer->allocation);
     }
 }
 
-VulkanResult vulkan::mapGPUMemory(VulkanGPUAllocator& gpuAllocator, VmaAllocation allocation, void* pMappedBlock)
+VulkanResult vulkan::mapGPUMemory(
+    VulkanGPUAllocator& gpuAllocator,
+    VmaAllocation       allocation,
+    void*               pMappedBlock)
 {
-    void*        mappedBlock;
     VulkanResult result = vmaMapMemory(gpuAllocator.vmaAllocator, allocation, &pMappedBlock);
     if (result.hasError())
     {
@@ -121,19 +136,83 @@ void vulkan::unmapGPUMemory(VulkanGPUAllocator& gpuAllocator, VmaAllocation allo
     vmaUnmapMemory(gpuAllocator.vmaAllocator, allocation);
 }
 
-VulkanResult vulkan::flushCPUMemory(VulkanGPUAllocator& gpuAllocator, DynamicArray<VmaAllocation> allocations, DynamicArray<VkDeviceSize> offsets, DynamicArray<VkDeviceSize> sizes)
+VulkanResult vulkan::allocateGPUImage(
+    VulkanGPUAllocator&      gpuAllocator,
+    const VkImageCreateInfo& imageCreateInfo,
+    VmaMemoryUsage           usage,
+    VmaAllocationCreateFlags flags,
+    VulkanGfxImage*          pImageResult)
 {
-    return vmaFlushAllocations(gpuAllocator.vmaAllocator, allocations.size(), allocations.data(), offsets.data(), sizes.data());
+    DASSERT(pImageResult != nullptr, "out imageResult should not be null");
+
+    VmaAllocationCreateInfo allocCreateInfo {};
+    allocCreateInfo.usage = usage;
+    allocCreateInfo.flags = flags;
+
+    VmaAllocationInfo allocationInfo {};
+    VulkanResult      result = vmaCreateImage(
+        gpuAllocator.vmaAllocator,
+        &imageCreateInfo,
+        &allocCreateInfo,
+        &pImageResult->image,
+        &pImageResult->allocation,
+        &allocationInfo);
+
+    pImageResult->sizeInBytes = allocationInfo.size;
+
+    return result;
 }
 
-VulkanResult vulkan::invalidateCPUMemory(VulkanGPUAllocator& gpuAllocator, DynamicArray<VmaAllocation> allocations, DynamicArray<VkDeviceSize> offsets, DynamicArray<VkDeviceSize> sizes)
+void vulkan::freeGPUImage(VulkanGPUAllocator& gpuAllocator, VulkanGfxImage* pGfxImage)
 {
-    return vmaInvalidateAllocations(gpuAllocator.vmaAllocator, allocations.size(), allocations.data(), offsets.data(), sizes.data());
+    DASSERT(pGfxImage != nullptr, "attempt to free a nullptr image");
+    if (pGfxImage->image)
+    {
+        vmaDestroyImage(gpuAllocator.vmaAllocator, pGfxImage->image, pGfxImage->allocation);
+    }
 }
 
-VulkanResult vulkan::writeToAllocation(VulkanGPUAllocator& gpuAllocator, const void* pSrcHostBlock, VmaAllocation dstAllocation, VkDeviceSize dstOffset, VkDeviceSize size)
+VulkanResult vulkan::flushCPUMemory(
+    VulkanGPUAllocator&         gpuAllocator,
+    DynamicArray<VmaAllocation> allocations,
+    DynamicArray<VkDeviceSize>  offsets,
+    DynamicArray<VkDeviceSize>  sizes)
 {
-    return vmaCopyMemoryToAllocation(gpuAllocator.vmaAllocator, pSrcHostBlock, dstAllocation, dstOffset, size);
+    return vmaFlushAllocations(
+        gpuAllocator.vmaAllocator,
+        allocations.size(),
+        allocations.data(),
+        offsets.data(),
+        sizes.data());
+}
+
+VulkanResult vulkan::invalidateCPUMemory(
+    VulkanGPUAllocator&         gpuAllocator,
+    DynamicArray<VmaAllocation> allocations,
+    DynamicArray<VkDeviceSize>  offsets,
+    DynamicArray<VkDeviceSize>  sizes)
+{
+    return vmaInvalidateAllocations(
+        gpuAllocator.vmaAllocator,
+        allocations.size(),
+        allocations.data(),
+        offsets.data(),
+        sizes.data());
+}
+
+VulkanResult vulkan::writeToAllocation(
+    VulkanGPUAllocator& gpuAllocator,
+    const void*         pSrcHostBlock,
+    VmaAllocation       dstAllocation,
+    VkDeviceSize        dstOffset,
+    VkDeviceSize        size)
+{
+    return vmaCopyMemoryToAllocation(
+        gpuAllocator.vmaAllocator,
+        pSrcHostBlock,
+        dstAllocation,
+        dstOffset,
+        size);
 }
 
 } // namespace dusk

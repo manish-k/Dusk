@@ -66,10 +66,10 @@ private:
     VkCommandPool      m_commandPool    = VK_NULL_HANDLE;
     VkSurfaceKHR       m_surface        = VK_NULL_HANDLE;
 
-    VulkanGPUAllocator m_gpuAllocator;
+    VulkanGPUAllocator m_gpuAllocator {};
 
-    HashSet<size_t>    m_instanceExtensionsSet;
-    HashSet<size_t>    m_layersSet;
+    HashSet<size_t>    m_instanceExtensionsSet {};
+    HashSet<size_t>    m_layersSet {};
 
     VkQueue            m_graphicsQueue = VK_NULL_HANDLE;
     VkQueue            m_presentQueue  = VK_NULL_HANDLE;

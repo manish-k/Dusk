@@ -4,6 +4,30 @@
 
 namespace dusk
 {
+// TODO:: check if synchronization is required for vmaAllocation access
+struct VulkanGPUAllocator
+{
+    VmaAllocator vmaAllocator;
+};
+
+struct VulkanGfxBuffer
+{
+    VkBuffer              buffer;
+    VmaAllocation         allocation;
+    void*                 mappedMemory;
+    size_t                sizeInBytes;
+    VkMemoryPropertyFlags memoryFlags;
+};
+
+struct VulkanGfxImage
+{
+    VkImage               image;
+    VmaAllocation         allocation;
+    void*                 mappedMemory;
+    size_t                sizeInBytes;
+    VkMemoryPropertyFlags memoryFlags;
+};
+
 struct VulkanContext
 {
     VkInstance                 vulkanInstance;
@@ -25,5 +49,7 @@ struct VulkanContext
     VkQueue                    presentQueue;
     VkQueue                    computeQueue;
     VkQueue                    transferQueue;
+
+    VulkanGPUAllocator         gpuAllocator;
 };
 } // namespace dusk

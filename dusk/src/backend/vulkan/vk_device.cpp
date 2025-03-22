@@ -62,6 +62,7 @@ Error VkGfxDevice::initGfxDevice()
         DUSK_ERROR("Error in creating vma gpu allocator {}", result.toString());
         return Error::InitializationFailed;
     }
+    VkGfxDevice::s_sharedVkContext.gpuAllocator = m_gpuAllocator;
 
     return Error::Ok;
 }

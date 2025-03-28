@@ -119,11 +119,13 @@ set(SCENE_FILES
 	"${SCENE_DIR}/game_object.h"
 	"${SCENE_DIR}/scene.h"
 	"${SCENE_DIR}/registry.h"
+	"${SCENE_DIR}/camera_controller.h"
 	# Source files
 	"${SCENE_DIR}/entity.cpp"
 	"${SCENE_DIR}/game_object.cpp"
 	"${SCENE_DIR}/scene.cpp"
 	"${SCENE_DIR}/registry.cpp"
+	"${SCENE_DIR}/camera_controller.cpp"
 )
 
 set(UTILS_DIR "${PROJECT_SOURCE_DIR}/src/utils/")

@@ -95,6 +95,8 @@ void Engine::onUpdate(TimeStep dt)
 {
     if (!m_currentScene) return;
 
+    m_currentScene->onUpdate(dt);
+
     // get game objects and render system
     if (VkCommandBuffer commandBuffer = m_renderer->beginFrame())
     {
@@ -115,6 +117,7 @@ void Engine::onUpdate(TimeStep dt)
         ubo.view              = camera.viewMatrix;
         ubo.prjoection        = camera.projectionMatrix;
         ubo.inverseView       = camera.inverseViewMatrix;
+        
         ubo.lightDirection    = glm::vec4(normalize(glm::vec3(1.0, -3.0, -1.0)), 0.f);
         ubo.ambientLightColor = glm::vec4(0.7f, 0.8f, 0.8f, 0.8f);
 
@@ -144,13 +147,6 @@ void Engine::onEvent(Event& ev)
             return false;
         });
 
-    dispatcher.dispatch<WindowResizeEvent>(
-        [this](WindowResizeEvent ev)
-        {
-            // DUSK_INFO("WindowResizeEvent received");
-            return false;
-        });
-
     dispatcher.dispatch<WindowIconifiedEvent>(
         [this](WindowIconifiedEvent ev)
         {
@@ -171,6 +167,12 @@ void Engine::onEvent(Event& ev)
 
     // pass event to UI layer
     // pass event to debug layer
+
+    // pass event to the scene
+    if (m_currentScene && !ev.isHandled())
+    {
+        m_currentScene->onEvent(ev);
+    }
 
     // pass unhandled event to application
     if (!ev.isHandled())

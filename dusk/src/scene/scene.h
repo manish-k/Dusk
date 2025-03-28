@@ -2,6 +2,9 @@
 
 #include "game_object.h"
 #include "registry.h"
+#include "camera_controller.h"
+#include "events/event.h"
+#include "core/dtime.h"
 
 // include all components for other files
 #include "components/camera.h"
@@ -25,7 +28,19 @@ public:
     Scene(const std::string_view name);
     ~Scene();
 
-    CLASS_UNCOPYABLE(Scene)
+    CLASS_UNCOPYABLE(Scene);
+
+    /**
+     * @brief Handle incoming events;
+     * @param event
+     */
+    void onEvent(Event& ev);
+
+    /**
+     * @brief update loop of the scene
+     * @param dt time since last frame
+     */
+    void onUpdate(TimeStep dt);
 
     /**
      * @brief Get root entity id for the scene
@@ -93,11 +108,12 @@ public:
         const std::string& fileName);
 
 private:
-    const std::string      m_name;
-    EntityId               m_root = NULL_ENTITY;
-    DynamicArray<EntityId> m_children {};
-    GameObject::UMap       m_sceneGameObjects {};
-    DynamicArray<SubMesh>  m_subMeshes {};
-    EntityId               m_cameraId;
+    const std::string        m_name;
+    EntityId                 m_root = NULL_ENTITY;
+    DynamicArray<EntityId>   m_children {};
+    GameObject::UMap         m_sceneGameObjects {};
+    DynamicArray<SubMesh>    m_subMeshes {};
+    EntityId                 m_cameraId;
+    Unique<CameraController> m_cameraController;
 };
 } // namespace dusk

@@ -3,12 +3,18 @@
 #include "dusk.h"
 
 #include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <limits>
 
 namespace dusk
 {
 struct CameraComponent
 {
+    glm::vec3 forwardDirection  = glm::vec3 { 0.f, 0.f, 1.f };  // default; looking in z axis dir
+    glm::vec3 upDirection       = glm::vec3 { 0.f, -1.f, 0.f }; // default; -y axis is up dir
+    glm::vec3 rightDirection    = glm::vec3 { 1.f, 0.f, 0.f };
+
     glm::mat4 projectionMatrix  = glm::mat4 { 1.0f };
     glm::mat4 viewMatrix        = glm::mat4 { 1.0f };
     glm::mat4 inverseViewMatrix = glm::mat4 { 1.0f };
@@ -56,15 +62,56 @@ struct CameraComponent
     /**
      * @brief Set view direction
      * @param position of the camera
-     * @param lookAtDirection direction to look at
+     * @param lookAt direction to look at
      * @param up vector of camera
      */
-    void setViewDirection(glm::vec3 position, glm::vec3 lookAtDirection, glm::vec3 up)
+    void setViewDirection(glm::vec3 position, glm::vec3 lookAt, glm::vec3 up)
     {
-        const glm::vec3 w { glm::normalize(lookAtDirection) };
-        const glm::vec3 u { glm::normalize(glm::cross(w, up)) };
-        const glm::vec3 v { glm::cross(w, u) };
+        forwardDirection = glm::normalize(lookAt);
+        rightDirection   = glm::normalize(glm::cross(forwardDirection, glm::normalize(up)));
+        upDirection      = glm::cross(forwardDirection, rightDirection);
 
+        // const glm::vec3 w { lookAtDirection };
+        // const glm::vec3 u { glm::normalize(glm::cross(w, upDirection)) };
+        // const glm::vec3 v { glm::cross(w, u) };
+
+        updateViewMatrix(position, rightDirection, upDirection, forwardDirection);
+    };
+
+    /**
+     * @brief Set view target of camera
+     * @param position of the camera
+     * @param target position
+     * @param up vector of camera
+     */
+    void setViewTarget(glm::vec3 position, glm::vec3 target, glm::vec3 up)
+    {
+        setViewDirection(position, target - position, up);
+    };
+
+    /**
+     * @brief Set view as per camera's position and rotation
+     * @param position position of the camera
+     * @param rotation rotation to be applied on the camera
+     */
+    void setView(glm::vec3 position, glm::quat rotation)
+    {
+        forwardDirection = rotation * forwardDirection;
+        upDirection      = rotation * upDirection;
+        rightDirection   = rotation * rightDirection;
+
+        updateViewMatrix(position, rightDirection, upDirection, forwardDirection);
+    }
+
+    /**
+     * @brief update view and inverseview matrices for given position and camera's bases vectors
+     * @param position of the camera
+     * @param u basis in right direction perpendicular to v and w
+     * @param v basis of camera toward up direction
+     * @param w basis of camera toward lookAt direction
+     */
+    void updateViewMatrix(glm::vec3 position, glm::vec3 u, glm::vec3 v, glm::vec3 w)
+    {
         viewMatrix = glm::mat4 { 1.f };
 
         /// TODO: reasoning not clear
@@ -97,17 +144,6 @@ struct CameraComponent
         inverseViewMatrix[3][0] = position.x;
         inverseViewMatrix[3][1] = position.y;
         inverseViewMatrix[3][2] = position.z;
-    };
-
-    /**
-     * @brief Set view target of camera
-     * @param position of the camera
-     * @param target position
-     * @param up vector of camera
-     */
-    void setViewTarget(glm::vec3 position, glm::vec3 target, glm::vec3 up)
-    {
-        setViewDirection(position, target - position, up);
-    };
+    }
 };
 } // namespace dusk

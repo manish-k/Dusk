@@ -1,5 +1,6 @@
 #include "scene.h"
 
+#include "engine.h"
 #include "loaders/assimp_loader.h"
 
 namespace dusk
@@ -17,10 +18,17 @@ Scene::Scene(const std::string_view name) :
 
     auto camera = createUnique<GameObject>();
     camera->setName("Camera");
-    auto& component = camera->addComponent<CameraComponent>();
-    component.setViewTarget({ 0.f, -2.f, -5.f }, { 0.f, 0.f, 0.f }, { 0.f, -1.f, 0.f });
 
-    m_cameraId = camera->getId();
+    TransformComponent& cameraTransform = camera->getComponent<TransformComponent>();
+    cameraTransform.translation         = { 0.f, 2.f, -5.f };
+
+    auto& cameraComponent               = camera->addComponent<CameraComponent>();
+    cameraComponent.setView(cameraTransform.translation, cameraTransform.rotation);
+
+    const auto& currentExtent = Engine::get().getRenderer().getSwapChain().getCurrentExtent();
+    m_cameraController        = createUnique<CameraController>(*camera, currentExtent.width, currentExtent.height);
+
+    m_cameraId         = camera->getId();
     addGameObject(std::move(camera), rootId);
 }
 
@@ -31,6 +39,16 @@ Scene::~Scene()
     freeSubMeshes();
 
     Registry::getRegistry().clear();
+}
+
+void Scene::onEvent(Event& ev)
+{
+    m_cameraController->onEvent(ev);
+}
+
+void Scene::onUpdate(TimeStep dt)
+{
+    m_cameraController->onUpdate(dt);
 }
 
 void Scene::addGameObject(

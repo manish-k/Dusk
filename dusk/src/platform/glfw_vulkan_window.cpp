@@ -181,7 +181,9 @@ void GLFWVulkanWindow::setEventCallback(const EventCallbackFn& cb)
                                        case GLFW_PRESS:
                                        {
                                            auto                    btnCode = MouseCode(button);
-                                           MouseButtonPressedEvent ev(btnCode);
+                                           double x, y;
+                                           glfwGetCursorPos(window, &x, &y);
+                                           MouseButtonPressedEvent ev(btnCode, x, y);
 
                                            currentWindow->onEvent(ev);
                                            break;
@@ -190,7 +192,9 @@ void GLFWVulkanWindow::setEventCallback(const EventCallbackFn& cb)
                                        case GLFW_RELEASE:
                                        {
                                            auto                     btnCode = MouseCode(button);
-                                           MouseButtonReleasedEvent ev(btnCode);
+                                           double x, y;
+                                           glfwGetCursorPos(window, &x, &y);
+                                           MouseButtonReleasedEvent ev(btnCode, x, y);
 
                                            currentWindow->onEvent(ev);
                                            break;

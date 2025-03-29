@@ -60,14 +60,26 @@ void CameraController::onEvent(Event& ev)
                 float deltaX = ev.getX() - m_mouseX;
                 float deltaY = ev.getY() - m_mouseY;
 
-                m_angleHorizontal += deltaX / 20.0f;
-                m_angleVertical += deltaY / 50.0f;
+                // 1.5 radians (~85 degrees) rotation for half screen
+                float verticalAngle = deltaY * 2 * 1.5 / m_height;
+
+                // 3.14 radians rotation for half screen
+                float horizontalAngle = deltaX * 2 * 3.14 / m_width;
+
+                // TODO: ineffecient code
+                // TODO: explore rotational axis as camera's up and right vectors
+                glm::quat newVerticalRotaion   = glm::angleAxis(verticalAngle, glm::vec3(1.0f, 0.f, 0.f));
+                glm::quat newHorizontalRotaion = glm::angleAxis(horizontalAngle, glm::vec3(0.0f, 1.f, 0.f));
+
+                if (m_isLeftShiftPressed)      // no vertical rotation
+                    m_cameraTransform.rotation = newHorizontalRotaion * m_cameraTransform.rotation;
+                else if (m_isLeftAltPressed) // no horizontal rotation
+                    m_cameraTransform.rotation = newVerticalRotaion * m_cameraTransform.rotation;
+                else                         // full rotation
+                    m_cameraTransform.rotation = newHorizontalRotaion * newVerticalRotaion * m_cameraTransform.rotation;
 
                 m_mouseX = ev.getX();
                 m_mouseY = ev.getY();
-
-                DUSK_INFO("horizontal {} delta {}", m_angleHorizontal, deltaX);
-                DUSK_INFO("vertical {} delta {}", m_angleVertical, deltaY);
             }
 
             return false;
@@ -104,6 +116,10 @@ void CameraController::onEvent(Event& ev)
                 }
             }
 
+            if (ev.getKeyCode() == Key::LeftShift) m_isLeftShiftPressed = true;
+
+            if (ev.getKeyCode() == Key::LeftAlt) m_isLeftAltPressed = true;
+
             return false;
         });
 
@@ -137,6 +153,10 @@ void CameraController::onEvent(Event& ev)
                     m_moveDirection += m_cameraComponent.forwardDirection;
                 }
             }
+
+            if (ev.getKeyCode() == Key::LeftShift) m_isLeftShiftPressed = false;
+
+            if (ev.getKeyCode() == Key::LeftAlt) m_isLeftAltPressed = false;
 
             return false;
         });

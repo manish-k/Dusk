@@ -26,13 +26,15 @@ public:
 private:
     TransformComponent& m_cameraTransform;
     CameraComponent&    m_cameraComponent;
-    float               m_width           = 0.0f;
-    float               m_height          = 0.0f;
+    float               m_width              = 0.0f;
+    float               m_height             = 0.0f;
 
-    float               m_cameraMoveSpeed = { 4.0f };
-    float               m_cameraLookSpeed = { 1.5f };
+    float               m_cameraMoveSpeed    = { 4.0f };
+    float               m_cameraLookSpeed    = { 1.5f };
 
-    bool                m_isRMBpressed    = false;
+    bool                m_isRMBpressed       = false;
+    bool                m_isLeftShiftPressed = false;
+    bool                m_isLeftAltPressed   = false;
 
     glm::vec3           m_moveDirection {};
     float               m_mouseX          = 0.f;

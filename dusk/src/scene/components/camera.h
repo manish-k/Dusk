@@ -71,10 +71,6 @@ struct CameraComponent
         rightDirection   = glm::normalize(glm::cross(forwardDirection, glm::normalize(up)));
         upDirection      = glm::cross(forwardDirection, rightDirection);
 
-        // const glm::vec3 w { lookAtDirection };
-        // const glm::vec3 u { glm::normalize(glm::cross(w, upDirection)) };
-        // const glm::vec3 v { glm::cross(w, u) };
-
         updateViewMatrix(position, rightDirection, upDirection, forwardDirection);
     };
 
@@ -96,11 +92,7 @@ struct CameraComponent
      */
     void setView(glm::vec3 position, glm::quat rotation)
     {
-        forwardDirection = rotation * forwardDirection;
-        upDirection      = rotation * upDirection;
-        rightDirection   = rotation * rightDirection;
-
-        updateViewMatrix(position, rightDirection, upDirection, forwardDirection);
+        updateViewMatrix(position, rotation * rightDirection, rotation * upDirection, rotation * forwardDirection);
     }
 
     /**

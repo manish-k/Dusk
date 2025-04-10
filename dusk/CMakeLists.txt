@@ -70,12 +70,11 @@ set(DEBUG_FILES
 set(LOADERS_DIR "${PROJECT_SOURCE_DIR}/src/loaders")
 set(LOADERS_FILES
 	# Header files
-	"${LOADERS_DIR}/gltf_loader.h"
 	"${LOADERS_DIR}/assimp_loader.h"
 	"${LOADERS_DIR}/stb_image_loader.h"
 	# Source files
-	"${LOADERS_DIR}/gltf_loader.cpp"
 	"${LOADERS_DIR}/assimp_loader.cpp"
+	"${LOADERS_DIR}/stb_image_loader.cpp"
 )
 
 set(PLATFORM_DIR "${PROJECT_SOURCE_DIR}/src/platform")
@@ -103,9 +102,13 @@ set(RENDERER_FILES
 	"${RENDERER_DIR}/material.h"
 	"${RENDERER_DIR}/gfx_buffer.h"
 	"${RENDERER_DIR}/frame_data.h"
+	"${RENDERER_DIR}/image.h"
+	"${RENDERER_DIR}/texture.h"
+	"${RENDERER_DIR}/material.h"
 	"${RENDERER_SYSTEMS_DIR}/basic_render_system.h"
 	# Source files
 	"${RENDERER_DIR}/sub_mesh.cpp"
+	"${RENDERER_DIR}/texture.cpp"
 	"${RENDERER_SYSTEMS_DIR}/basic_render_system.cpp"
 )
 
@@ -183,6 +186,7 @@ add_subdirectory(vendor)
 # TODO: making links private, does not work currently
 # because Apps are using engine references. eg. spdlog
 target_link_libraries(${PROJECT_NAME} PUBLIC
+	stb
 	spdlog
 	entt
 	imgui

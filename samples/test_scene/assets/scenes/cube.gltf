@@ -1,25 +1,46 @@
 {
   "asset": {
-    "version": "2.0",
-    "generator": "gltfeditor.com"
+    "generator": "VKTS glTF 2.0 exporter",
+    "version": "2.0"
   },
   "buffers": [
     {
-      "uri": "cube.bin",
-      "byteLength": 840
+      "uri": "Cube.bin",
+      "byteLength": 1800
     }
   ],
   "bufferViews": [
     {
       "buffer": 0,
       "byteOffset": 0,
-      "byteLength": 768,
-      "byteStride": 32,
+      "byteLength": 432,
+      "byteStride": 12,
       "target": 34962
     },
     {
       "buffer": 0,
-      "byteOffset": 768,
+      "byteOffset": 432,
+      "byteLength": 432,
+      "byteStride": 12,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 864,
+      "byteLength": 576,
+      "byteStride": 16,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 1440,
+      "byteLength": 288,
+      "byteStride": 8,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 1728,
       "byteLength": 72,
       "target": 34963
     }
@@ -30,7 +51,7 @@
       "byteOffset": 0,
       "componentType": 5126,
       "normalized": false,
-      "count": 24,
+      "count": 36,
       "min": [
         -1,
         -1,
@@ -44,32 +65,52 @@
       "type": "VEC3"
     },
     {
-      "bufferView": 0,
-      "byteOffset": 12,
+      "bufferView": 1,
+      "byteOffset": 0,
       "componentType": 5126,
       "normalized": false,
-      "count": 24,
+      "count": 36,
       "min": [
-        -1.0000001192092896,
-        -1.0000001192092896,
+        -1,
+        -1,
         -1
       ],
       "max": [
-        1.0000001192092896,
-        1.0000001192092896,
-        1
+        1,
+        1,
+        1.0000009536743164
       ],
       "type": "VEC3"
     },
     {
-      "bufferView": 0,
-      "byteOffset": 24,
+      "bufferView": 2,
+      "byteOffset": 0,
       "componentType": 5126,
       "normalized": false,
-      "count": 24,
+      "count": 36,
       "min": [
         0,
-        0
+        0,
+        -1,
+        -1
+      ],
+      "max": [
+        1,
+        0,
+        0,
+        1
+      ],
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 3,
+      "byteOffset": 0,
+      "componentType": 5126,
+      "normalized": false,
+      "count": 36,
+      "min": [
+        -1,
+        -1
       ],
       "max": [
         1,
@@ -78,7 +119,7 @@
       "type": "VEC2"
     },
     {
-      "bufferView": 1,
+      "bufferView": 4,
       "byteOffset": 0,
       "componentType": 5123,
       "normalized": false,
@@ -87,7 +128,7 @@
         0
       ],
       "max": [
-        23
+        35
       ],
       "type": "SCALAR"
     }
@@ -97,12 +138,18 @@
     {
       "nodes": [
         0
-      ]
+      ],
+      "name": "Cube"
     }
   ],
   "nodes": [
     {
       "name": "Cube",
+      "extensions": {
+        "KHR_node_visibility": {
+          "visible": true
+        }
+      },
       "mesh": 0
     }
   ],
@@ -113,27 +160,36 @@
           "material": 0,
           "mode": 4,
           "attributes": {
-            "POSITION": 0,
-            "NORMAL": 1,
-            "TEXCOORD_0": 2
+            "NORMAL": 0,
+            "POSITION": 1,
+            "TANGENT": 2,
+            "TEXCOORD_0": 3
           },
-          "indices": 3
+          "indices": 4
         }
       ]
     }
   ],
   "materials": [
     {
-      "name": "",
+      "name": "Cube",
       "pbrMetallicRoughness": {
         "baseColorFactor": [
-          0.9176470588235294,
-          0.043137254901960784,
-          0.043137254901960784,
+          1,
+          1,
+          1,
           1
         ],
-        "metallicFactor": 0,
-        "roughnessFactor": 0.5
+        "metallicFactor": 1,
+        "roughnessFactor": 1,
+        "baseColorTexture": {
+          "index": 0,
+          "texCoord": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 1,
+          "texCoord": 0
+        }
       },
       "emissiveFactor": [
         0,
@@ -143,5 +199,46 @@
       "alphaMode": "OPAQUE",
       "doubleSided": false
     }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "name": "Cube_BaseColor.png",
+      "source": 0
+    },
+    {
+      "sampler": 1,
+      "name": "Cube_MetallicRoughness.png",
+      "source": 1
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    },
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "images": [
+    {
+      "uri": "Cube_BaseColor.png",
+      "mimeType": "image/png",
+      "name": "Cube_BaseColor.png"
+    },
+    {
+      "uri": "Cube_MetallicRoughness.png",
+      "mimeType": "image/png",
+      "name": "Cube_MetallicRoughness.png"
+    }
+  ],
+  "extensionsUsed": [
+    "KHR_node_visibility"
   ]
 }

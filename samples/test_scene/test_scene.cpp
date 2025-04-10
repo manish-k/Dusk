@@ -1,6 +1,7 @@
 #include "test_scene.h"
 
 #include "core/entrypoint.h"
+#include "renderer/texture.h"
 
 #include <spdlog/fmt/bundled/printf.h>
 
@@ -21,10 +22,13 @@ Unique<dusk::Application> dusk::createApplication(int argc, char** argv)
 
 bool TestScene::start()
 {
-    std::string scenePath = "assets/scenes/cube.gltf";
+    std::string scenePath = "assets/scenes/Cube.gltf";
     m_testScene           = Scene::createSceneFromGLTF(scenePath);
 
     Engine::get().loadScene(m_testScene.get());
+
+    std::string     texturePath = "assets/scenes/Cube_BaseColor.png";
+    Unique<Texture> img         = dusk::Texture::loadFromFile(texturePath);
 
     return true;
 }

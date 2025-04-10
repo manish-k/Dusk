@@ -33,6 +33,7 @@ private:
     float               m_cameraLookSpeed    = { 1.5f };
 
     bool                m_isRMBpressed       = false;
+    bool                m_isLMBpressed       = false;
     bool                m_isLeftShiftPressed = false;
     bool                m_isLeftAltPressed   = false;
 

@@ -31,6 +31,11 @@ void CameraController::onEvent(Event& ev)
             if (ev.getMouseButton() == Mouse::ButtonRight)
             {
                 m_isRMBpressed    = true;
+            }
+
+            if (ev.getMouseButton() == Mouse::ButtonLeft)
+            {
+                m_isLMBpressed = true;
 
                 m_mouseX          = ev.getClickedPosX();
                 m_mouseY          = ev.getClickedPosY();
@@ -49,13 +54,18 @@ void CameraController::onEvent(Event& ev)
                 m_moveDirection = {};
             }
 
+            if (ev.getMouseButton() == Mouse::ButtonLeft)
+            {
+                m_isLMBpressed = false;
+            }
+
             return false;
         });
 
     dispatcher.dispatch<MouseMovedEvent>(
         [this](MouseMovedEvent& ev)
         {
-            if (m_isRMBpressed)
+            if (m_isRMBpressed && m_isLMBpressed)
             {
                 float deltaX = ev.getX() - m_mouseX;
                 float deltaY = ev.getY() - m_mouseY;
@@ -67,11 +77,10 @@ void CameraController::onEvent(Event& ev)
                 float horizontalAngle = deltaX * 2 * 3.14 / m_width;
 
                 // TODO: ineffecient code
-                // TODO: explore rotational axis as camera's up and right vectors
                 glm::quat newVerticalRotaion   = glm::angleAxis(verticalAngle, glm::vec3(1.0f, 0.f, 0.f));
                 glm::quat newHorizontalRotaion = glm::angleAxis(horizontalAngle, glm::vec3(0.0f, 1.f, 0.f));
 
-                if (m_isLeftShiftPressed)      // no vertical rotation
+                if (m_isLeftShiftPressed)    // no vertical rotation
                     m_cameraTransform.rotation = newHorizontalRotaion * m_cameraTransform.rotation;
                 else if (m_isLeftAltPressed) // no horizontal rotation
                     m_cameraTransform.rotation = newVerticalRotaion * m_cameraTransform.rotation;

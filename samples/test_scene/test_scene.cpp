@@ -1,7 +1,6 @@
 #include "test_scene.h"
 
 #include "core/entrypoint.h"
-#include "renderer/texture.h"
 #include "loaders/stb_image_loader.h"
 
 #include <spdlog/fmt/bundled/printf.h>
@@ -31,10 +30,9 @@ bool TestScene::start()
     std::string     texturePath = "assets/scenes/Cube_BaseColor.png";
     Unique<Image>   image       = ImageLoader::readImage(texturePath);
     
-    Texture         tex(1);
-    tex.init(*image);
-
-    tex.free();
+    m_testTexture               = createUnique<Texture>(1);
+    m_testTexture->init(*image);
+;
     ImageLoader::freeImage(*image);
     
     return true;
@@ -42,6 +40,8 @@ bool TestScene::start()
 
 void TestScene::shutdown()
 {
+    m_testTexture->free();
+
     m_testScene = nullptr;
 }
 

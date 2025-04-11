@@ -3,6 +3,7 @@
 #include "dusk.h"
 #include "core/application.h"
 #include "scene/scene.h"
+#include "renderer/texture.h"
 
 using namespace dusk;
 
@@ -18,5 +19,6 @@ public:
     void onEvent(dusk::Event& ev) override;
 
 private:
-    Unique<Scene> m_testScene;
+    Unique<Scene>   m_testScene;
+    Unique<Texture> m_testTexture;
 };

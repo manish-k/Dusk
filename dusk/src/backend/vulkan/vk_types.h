@@ -52,4 +52,16 @@ struct VulkanContext
 
     VulkanGPUAllocator         gpuAllocator;
 };
+
+struct VulkanTexture
+{
+    VulkanGfxImage image;
+    VkImageView    imageView;
+};
+
+struct VulkanSampler
+{
+    VkSampler sampler;
+};
+
 } // namespace dusk

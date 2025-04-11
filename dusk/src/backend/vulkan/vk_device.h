@@ -46,6 +46,21 @@ public:
     void            flushBuffer(VulkanGfxBuffer* buffer);
     void            writeToBuffer(VulkanGfxBuffer* buffer, void* hostBlock, VkDeviceSize offset, VkDeviceSize size);
 
+    void            copyBufferToImage(VulkanGfxBuffer* buffer,
+                                      VulkanGfxImage*  img,
+                                      uint32_t         width,
+                                      uint32_t         height);
+
+    Error           transitionImageWithLayout(VulkanGfxImage* img,
+                                              VkFormat        format,
+                                              VkImageLayout   oldLayout,
+                                              VkImageLayout   newLayout);
+
+    VulkanResult    createImageView(VulkanGfxImage* img, VkFormat format, VkImageView* pImageView) const;
+    void            freeImageView(VkImageView* pImageView) const;
+    VulkanResult    createImageSampler(VulkanSampler* sampler) const;
+    void            freeImageSampler(VulkanSampler* sampler) const;
+
 #ifdef VK_RENDERER_DEBUG
     static VKAPI_ATTR VkBool32 VKAPI_CALL vulkanDebugMessengerCallback(
         VkDebugUtilsMessageSeverityFlagBitsEXT      messageSeverity,

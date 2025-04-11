@@ -2,6 +2,7 @@
 
 #include "core/entrypoint.h"
 #include "renderer/texture.h"
+#include "loaders/stb_image_loader.h"
 
 #include <spdlog/fmt/bundled/printf.h>
 
@@ -28,8 +29,14 @@ bool TestScene::start()
     Engine::get().loadScene(m_testScene.get());
 
     std::string     texturePath = "assets/scenes/Cube_BaseColor.png";
-    Unique<Texture> img         = dusk::Texture::loadFromFile(texturePath);
+    Unique<Image>   image       = ImageLoader::readImage(texturePath);
+    
+    Texture         tex(1);
+    tex.init(*image);
 
+    tex.free();
+    ImageLoader::freeImage(*image);
+    
     return true;
 }
 

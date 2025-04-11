@@ -28,10 +28,4 @@ struct GfxBufferParams
     uint32_t memoryType;
     size_t   alignment;
 };
-
-// struct GfxBuffer
-//{
-//     GfxBuffer()          = default;
-//     virtual ~GfxBuffer() = default;
-// };
 } // namespace dusk

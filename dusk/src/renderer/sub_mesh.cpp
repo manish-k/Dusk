@@ -68,6 +68,7 @@ Error SubMesh::initGfxVertexBuffer(const DynamicArray<Vertex>& vertices)
     if (result.hasError())
     {
         DUSK_ERROR("Unable to create device local vertex buffer for uploading vertex data");
+        device.freeBuffer(&stagingBuffer);
         // TODO: figure out correct error type
         return Error::OutOfMemory;
     }

@@ -13,6 +13,8 @@
 #include "components/transform.h"
 
 #include "renderer/sub_mesh.h"
+#include "renderer/texture.h"
+#include "renderer/material.h"
 
 #include <string>
 
@@ -80,7 +82,7 @@ public:
         return Registry::getRegistry().view<Components...>();
     }
 
-    void initMeshes(uint32_t meshCount)
+    void initMeshesCache(uint32_t meshCount)
     {
         m_subMeshes = DynamicArray<SubMesh>(meshCount);
     }
@@ -99,6 +101,26 @@ public:
 
     CameraComponent& getMainCamera();
 
+    void             initTexturesCache(uint32_t textureCount)
+    {
+        m_textures.reserve(textureCount);
+    };
+
+    int  loadTexture(std::string& path);
+
+    void freeTextures();
+
+    void initMaterialCache(uint32_t materialCount)
+    {
+        m_materials.reserve(materialCount);
+    };
+
+    void      addMaterial(Material& mat);
+
+    Material& getMaterial(uint32_t matId) { return m_materials[matId]; };
+
+    void      freeMaterials();
+
     /**
      * @brief Create a scene from a gltf file
      * @param fileName
@@ -108,12 +130,19 @@ public:
         const std::string& fileName);
 
 private:
-    const std::string        m_name;
-    EntityId                 m_root = NULL_ENTITY;
-    DynamicArray<EntityId>   m_children {};
-    GameObject::UMap         m_sceneGameObjects {};
-    DynamicArray<SubMesh>    m_subMeshes {};
-    EntityId                 m_cameraId;
-    Unique<CameraController> m_cameraController;
+    const std::string              m_name;
+    EntityId                       m_root = NULL_ENTITY;
+    DynamicArray<EntityId>         m_children {};
+    GameObject::UMap               m_sceneGameObjects {};
+
+    DynamicArray<SubMesh>          m_subMeshes {};
+
+    EntityId                       m_cameraId;
+    Unique<CameraController>       m_cameraController;
+
+    HashMap<std::string, uint32_t> m_texPathMap; // currently loaded textures
+    DynamicArray<Texture>          m_textures;
+
+    DynamicArray<Material>         m_materials;
 };
 } // namespace dusk

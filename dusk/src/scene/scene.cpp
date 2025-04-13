@@ -2,6 +2,7 @@
 
 #include "engine.h"
 #include "loaders/assimp_loader.h"
+#include "loaders/stb_image_loader.h"
 
 namespace dusk
 {
@@ -28,7 +29,7 @@ Scene::Scene(const std::string_view name) :
     const auto& currentExtent = Engine::get().getRenderer().getSwapChain().getCurrentExtent();
     m_cameraController        = createUnique<CameraController>(*camera, currentExtent.width, currentExtent.height);
 
-    m_cameraId         = camera->getId();
+    m_cameraId                = camera->getId();
     addGameObject(std::move(camera), rootId);
 }
 
@@ -37,6 +38,8 @@ Scene::~Scene()
     DUSK_DEBUG("Destroying scene {}", m_name);
 
     freeSubMeshes();
+    freeTextures();
+    freeMaterials();
 
     Registry::getRegistry().clear();
 }
@@ -111,4 +114,64 @@ Unique<Scene> Scene::createSceneFromGLTF(const std::string& fileName)
     AssimpLoader loader {};
     return loader.readScene(fileName);
 }
+
+int Scene::loadTexture(std::string& path)
+{
+    if (path.empty())
+    {
+        DUSK_ERROR("empty path for loading th texture");
+        return -1;
+    }
+
+    if (!m_texPathMap.has(path))
+    {
+        // Texture was not loaded earlier
+        auto img = ImageLoader::readImage(path);
+        if (img)
+        {
+            uint32_t newId = m_textures.size();
+            Texture  newTex(newId);
+
+            Error    err = newTex.init(*img);
+            if (err != Error::Ok)
+            {
+                return -1;
+            }
+
+            m_texPathMap.emplace(path, newId);
+            m_textures.push_back(std::move(newTex));
+
+            return newId;
+        }
+        else
+            return -1; // file not found
+    }
+
+    // Texture has been loaded already
+    return m_texPathMap[path];
+}
+
+void Scene::freeTextures()
+{
+    uint32_t texCount = m_textures.size();
+    for (uint32_t texIndex = 0u; texIndex < texCount; ++texIndex)
+    {
+        m_textures[texIndex].free();
+    }
+
+    m_textures.clear();
+    m_texPathMap.clear();
+}
+
+void Scene::addMaterial(Material& mat)
+{
+    mat.id = m_materials.size();
+    m_materials.push_back(std::move(mat));
+}
+
+void Scene::freeMaterials()
+{
+    m_materials.clear();
+}
+
 } // namespace dusk

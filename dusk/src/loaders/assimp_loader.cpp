@@ -1,6 +1,9 @@
 #include "assimp_loader.h"
 
+#include "renderer/texture.h"
+
 #include <glm/gtx/matrix_decompose.hpp>
+#include <assimp/pbrmaterial.h>
 
 namespace dusk
 {
@@ -32,8 +35,14 @@ Unique<Scene> AssimpLoader::parseScene(const aiScene* assimpScene)
 
     if (assimpScene->mNumMeshes > 0)
     {
-        newScene->initMeshes(assimpScene->mNumMeshes);
+        newScene->initMeshesCache(assimpScene->mNumMeshes);
         parseMeshes(*newScene, assimpScene);
+    }
+
+    if (assimpScene->HasMaterials())
+    {
+        newScene->initMaterialCache(assimpScene->mNumMaterials);
+        parseMaterials(*newScene, assimpScene);
     }
 
     if (assimpScene->mRootNode)
@@ -57,7 +66,9 @@ void AssimpLoader::traverseSceneNodes(Scene& scene, const aiNode* node, const ai
 
         for (uint32_t index = 0u; index < node->mNumMeshes; ++index)
         {
-            meshComponent.meshes.push_back(node->mMeshes[index]);
+            uint32_t sceneMeshIndex = node->mMeshes[index];
+            meshComponent.meshes.push_back(sceneMeshIndex);
+            meshComponent.materials.push_back(aiScene->mMeshes[sceneMeshIndex]->mMaterialIndex);
         }
     }
 
@@ -150,6 +161,58 @@ void AssimpLoader::parseMeshes(Scene& scene, const aiScene* aiScene)
         }
 
         scene.initSubMesh(meshIndex, vertices, indices);
+    }
+}
+
+std::string AssimpLoader::getTexturePath(aiMaterial* mat, aiTextureType type)
+{
+    aiString path;
+    aiReturn result = mat->GetTexture(type, 0, &path);
+
+    if (result == aiReturn_FAILURE)
+        return "";
+
+    return std::string(path.C_Str());
+}
+
+void AssimpLoader::parseMaterials(Scene& scene, const aiScene* aiScene)
+{
+    std::string textureSubDir = "assets/scenes/";
+
+    for (uint32_t matIndex = 0; matIndex < aiScene->mNumMaterials; ++matIndex)
+    {
+        aiMaterial* aiMat = aiScene->mMaterials[matIndex];
+
+        // load diffuse texture
+        std::string baseColorTexturePath =  getTexturePath(aiMat, aiTextureType_BASE_COLOR);
+
+        uint32_t    diffuseTexId         = -1;
+        if (!baseColorTexturePath.empty())
+        {
+            auto texturePath = textureSubDir + baseColorTexturePath;
+            diffuseTexId     = scene.loadTexture(texturePath);
+        }
+        else
+        {
+            continue;
+        }
+
+        aiColor3D diffuseColor { 1.0f };
+        aiMat->Get(AI_MATKEY_COLOR_DIFFUSE, diffuseColor);
+
+        aiColor3D pbrBaseColor { 1.0f };
+        aiMat->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_BASE_COLOR_FACTOR, pbrBaseColor);
+
+        float alpha = 1.f;
+        aiMat->Get(AI_MATKEY_OPACITY, alpha);
+
+        Material mat;
+
+        mat.albedoColor = glm::vec4(diffuseColor.r, diffuseColor.g, diffuseColor.b, alpha);
+
+        mat.albedoTexId = diffuseTexId;
+
+        scene.addMaterial(mat);
     }
 }
 

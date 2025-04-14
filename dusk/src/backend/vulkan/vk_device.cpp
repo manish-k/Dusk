@@ -193,21 +193,25 @@ Error VkGfxDevice::createDevice()
     struct PhysicalDeviceInfo
     {
         VkPhysicalDeviceProperties deviceProperties;
-        VkPhysicalDeviceFeatures   deviceFeatures;
-        DynamicArray<const char*>  activeDeviceExtensions;
 
-        uint32_t                   graphicsQueueIndex;
-        uint32_t                   computeQueueIndex;
-        uint32_t                   transferQueueIndex;
-        uint32_t                   presentQueueIndex;
+        // set features info which have to be enabled
+        VkPhysicalDeviceFeatures2                deviceFeatures2         = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, &deviceFeaturesVk11 };
+        VkPhysicalDeviceVulkan11Features         deviceFeaturesVk11      = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES, &deviceFeaturesVk12 };
+        VkPhysicalDeviceVulkan12Features         deviceFeaturesVk12      = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES, &dynamicRenderingFeature };
+        VkPhysicalDeviceDynamicRenderingFeatures dynamicRenderingFeature = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR };
 
-        bool                       isSupported = false;
+        DynamicArray<const char*>                activeDeviceExtensions;
+
+        uint32_t                                 graphicsQueueIndex;
+        uint32_t                                 computeQueueIndex;
+        uint32_t                                 transferQueueIndex;
+        uint32_t                                 presentQueueIndex;
+
+        // device is eligible for use
+        bool isSupported = false;
     };
 
     DynamicArray<PhysicalDeviceInfo> physicalDeviceInfo(deviceCount);
-
-    // dynamic rendering feature info
-    VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingFeature = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR };
 
     for (uint32_t deviceIndex = 0u; deviceIndex < deviceCount; ++deviceIndex)
     {
@@ -219,12 +223,16 @@ Error VkGfxDevice::createDevice()
         DUSK_INFO("Vulkan Device #{} {}", deviceIndex, pDeviceInfo->deviceProperties.deviceName);
         DUSK_INFO("- api version {}", deviceIndex, pDeviceInfo->deviceProperties.apiVersion);
         DUSK_INFO("- vendor id {}", deviceIndex, pDeviceInfo->deviceProperties.vendorID);
-        DUSK_INFO("- device id {}", deviceIndex, pDeviceInfo->deviceProperties.deviceID);
-        // DUSK_INFO("- device type {}", deviceIndex, pDeviceInfo->deviceProperties.deviceType);
-        DUSK_INFO("- driver version {}", deviceIndex, pDeviceInfo->deviceProperties.driverVersion);
+        DUSK_INFO("- device id {}", deviceIndex, pDeviceInfo->deviceProperties.deviceID);        DUSK_INFO("- driver version {}", deviceIndex, pDeviceInfo->deviceProperties.driverVersion);
 
-        // Get supported features
-        vkGetPhysicalDeviceFeatures(physicalDevice, &pDeviceInfo->deviceFeatures);
+        // pNext chaining to gather all the supported features
+        VkPhysicalDeviceVulkan12Features deviceFeaturesVk12 = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES };
+        VkPhysicalDeviceVulkan11Features deviceFeaturesVk11 = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES, &deviceFeaturesVk12 };
+        VkPhysicalDeviceFeatures2        deviceFeatures2    = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, &deviceFeaturesVk11 };
+        const VkPhysicalDeviceFeatures&  deviceFeatures     = deviceFeatures2.features;
+
+        // Get supported features for this device
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
 
         // check available queue families
         uint32_t familyCount = 0u;
@@ -321,24 +329,40 @@ Error VkGfxDevice::createDevice()
         }
         pDeviceInfo->activeDeviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 
+        // Checking required features and enabling them for the current device
+        
         // Enable dynamic rendering
         if (!availableExtensionsSet.has(hash(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)))
         {
             DUSK_INFO("Skipping device because it does not support dynamic rendering {}", VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
             continue;
         }
-
-        dynamicRenderingFeature.dynamicRendering = VK_TRUE;
+        pDeviceInfo->dynamicRenderingFeature.dynamicRendering = VK_TRUE;
         pDeviceInfo->activeDeviceExtensions.push_back(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
 
-        // Feature checks
-        if (!pDeviceInfo->deviceFeatures.samplerAnisotropy)
+        // check samplerAnisotropy
+        if (!deviceFeatures.samplerAnisotropy)
         {
             DUSK_INFO("Skipping device because it does not support samplerAnisotropy");
             continue;
         }
+        pDeviceInfo->deviceFeatures2.features.samplerAnisotropy = VK_TRUE;
 
-        pDeviceInfo->isSupported = true;
+        // check for descriptor indexing
+        if (!deviceFeaturesVk12.descriptorIndexing)
+        {
+            DUSK_INFO("Skipping device because it does not support descriptor indexing");
+            continue;
+        }
+        pDeviceInfo->deviceFeaturesVk12.descriptorIndexing = VK_TRUE;
+
+        // additional features required with descriptor indexing
+        pDeviceInfo->deviceFeaturesVk12.shaderSampledImageArrayNonUniformIndexing  = VK_TRUE;
+        pDeviceInfo->deviceFeaturesVk12.shaderStorageBufferArrayNonUniformIndexing = VK_TRUE;
+        pDeviceInfo->deviceFeaturesVk12.shaderStorageImageArrayNonUniformIndexing  = VK_TRUE;
+        pDeviceInfo->deviceFeaturesVk12.descriptorBindingVariableDescriptorCount   = VK_TRUE;
+
+        pDeviceInfo->isSupported                                                   = true;
     }
 
     std::optional<uint32_t> selectedPhysicalDeviceIndex;
@@ -436,7 +460,7 @@ Error VkGfxDevice::createDevice()
     deviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(
         pSelectedDeviceInfo->activeDeviceExtensions.size());
     deviceCreateInfo.ppEnabledExtensionNames = pSelectedDeviceInfo->activeDeviceExtensions.data();
-    deviceCreateInfo.pNext                   = &dynamicRenderingFeature;
+    deviceCreateInfo.pNext                   = &pSelectedDeviceInfo->deviceFeatures2;
 
     result                                   = vkCreateDevice(m_physicalDevice, &deviceCreateInfo, nullptr, &m_device);
 
@@ -496,7 +520,7 @@ Error VkGfxDevice::createDevice()
     s_sharedVkContext.commandPool              = m_commandPool;
 
     s_sharedVkContext.physicalDeviceProperties = pSelectedDeviceInfo->deviceProperties;
-    s_sharedVkContext.physicalDeviceFeatures   = pSelectedDeviceInfo->deviceFeatures;
+    s_sharedVkContext.physicalDeviceFeatures   = pSelectedDeviceInfo->deviceFeatures2.features;
 
     s_sharedVkContext.graphicsQueueFamilyIndex = pSelectedDeviceInfo->graphicsQueueIndex;
     s_sharedVkContext.presentQueueFamilyIndex  = pSelectedDeviceInfo->presentQueueIndex;

@@ -74,7 +74,7 @@ void BasicRenderSystem::renderGameObjects(const FrameData& frameData)
     for (auto [entity, transform, meshData] : renderablesView.each())
     {
         BasicPushConstantsData push {};
-        push.model = transform.mat4();
+        push.model  = transform.mat4();
         push.normal = transform.normalMat4();
 
         vkCmdPushConstants(commandBuffer,

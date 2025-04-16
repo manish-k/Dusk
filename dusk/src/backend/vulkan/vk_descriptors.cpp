@@ -7,7 +7,8 @@ VkGfxDescriptorSetLayout& VkGfxDescriptorSetLayout::addBinding(
     uint32_t           bindingIndex,
     VkDescriptorType   descriptorType,
     VkShaderStageFlags stageFlags,
-    uint32_t           count)
+    uint32_t           count,
+    bool               isBindless)
 {
     DASSERT(!bindingsMap.has(bindingIndex), "Binding already exists for given index");
 
@@ -18,6 +19,16 @@ VkGfxDescriptorSetLayout& VkGfxDescriptorSetLayout::addBinding(
     layoutBinding.stageFlags      = stageFlags;
 
     bindingsMap.emplace(bindingIndex, layoutBinding);
+    if (isBindless)
+    {
+        bindingFlags.emplace(
+            bindingIndex,
+            VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
+    }
+    else
+    {
+        bindingFlags.emplace(bindingIndex, 0);
+    }
 
     return *this;
 }
@@ -26,15 +37,32 @@ VulkanResult VkGfxDescriptorSetLayout::create()
 {
     DASSERT(device, "invalid vulkan logical device");
 
-    DynamicArray<VkDescriptorSetLayoutBinding> setLayoutBindings {};
+    DynamicArray<VkDescriptorSetLayoutBinding> setLayoutBindings { bindingsMap.size() };
+    DynamicArray<VkDescriptorBindingFlags>     setBindingFlags { bindingsMap.size() };
+    bool                                       isBindless = false;
+
     for (auto& key : bindingsMap.keys())
     {
-        setLayoutBindings.push_back(bindingsMap[key]);
+        setLayoutBindings[key] = bindingsMap[key];
+        setBindingFlags[key]   = bindingFlags[key];
+        
+        if (bindingFlags[key]) isBindless = true;
     }
+
+    VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlagsInfo { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO };
+    bindingFlagsInfo.pNext         = nullptr;
+    bindingFlagsInfo.pBindingFlags = setBindingFlags.data();
+    bindingFlagsInfo.bindingCount  = setBindingFlags.size();
 
     VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
     descriptorSetLayoutInfo.bindingCount = static_cast<uint32_t>(setLayoutBindings.size());
     descriptorSetLayoutInfo.pBindings    = setLayoutBindings.data();
+
+    if (isBindless)
+    {
+        descriptorSetLayoutInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
+        descriptorSetLayoutInfo.pNext = &bindingFlagsInfo;
+    }
 
     return vkCreateDescriptorSetLayout(device, &descriptorSetLayoutInfo, nullptr, &layout);
 }

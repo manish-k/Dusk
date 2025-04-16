@@ -12,6 +12,7 @@ struct VkGfxDescriptorSetLayout
     VkDevice                                        device = VK_NULL_HANDLE;
     VkDescriptorSetLayout                           layout = VK_NULL_HANDLE;
     HashMap<uint32_t, VkDescriptorSetLayoutBinding> bindingsMap;
+    HashMap<uint32_t, VkDescriptorBindingFlags>     bindingFlags {};
 
     VkGfxDescriptorSetLayout() = delete;
 
@@ -28,12 +29,15 @@ struct VkGfxDescriptorSetLayout
      * @param descriptorType for the buffer/image resource
      * @param stageFlags
      * @param count, if passing buffer/image arrays
+     * @param isBindless, whether this binding is bindless or not
      * @return
      */
-    VkGfxDescriptorSetLayout& addBinding(uint32_t           bindingIndex,
-                                         VkDescriptorType   descriptorType,
-                                         VkShaderStageFlags stageFlags,
-                                         uint32_t           count);
+    VkGfxDescriptorSetLayout& addBinding(
+        uint32_t           bindingIndex,
+        VkDescriptorType   descriptorType,
+        VkShaderStageFlags stageFlags,
+        uint32_t           count,
+        bool               isBindless = false);
 
     /**
      * @brief create the descriptor set layout
@@ -53,6 +57,7 @@ struct VkGfxDescriptorPool
     VkDevice                           device = VK_NULL_HANDLE;
     VkDescriptorPool                   pool   = VK_NULL_HANDLE;
     DynamicArray<VkDescriptorPoolSize> poolSizes {};
+    bool                               isBindless = false;
 
     VkGfxDescriptorPool() = delete;
     explicit VkGfxDescriptorPool(const VulkanContext& ctx)

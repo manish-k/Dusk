@@ -83,7 +83,7 @@ struct VkGfxDescriptorPool
      * @param poolFlags for pool creation
      * @return result of the api
      */
-    VulkanResult create(uint32_t maxSets, VkDescriptorPoolCreateFlags poolFlags);
+    VulkanResult create(uint32_t maxSets, VkDescriptorPoolCreateFlags poolFlags = 0);
 
     /**
      * @brief destroy the pool and its resources

@@ -26,11 +26,17 @@ public:
 private:
     void createPipeLine();
     void createPipelineLayout(VkDescriptorSetLayout globalSetLayout);
+    void setupDescriptors();
 
 private:
-    VkGfxDevice&                m_device;
+    VkGfxDevice&                     m_device;
 
-    Unique<VkGfxRenderPipeline> m_renderPipeline = nullptr;
-    Unique<VkGfxPipelineLayout> m_pipelineLayout = nullptr;
+    Unique<VkGfxRenderPipeline>      m_renderPipeline            = nullptr;
+    Unique<VkGfxPipelineLayout>      m_pipelineLayout            = nullptr;
+
+    Unique<VkGfxDescriptorPool>      m_modelDescriptorPool       = nullptr;
+    Unique<VkGfxDescriptorSetLayout> m_modelDescritptorSetLayout = nullptr;
+
+    VulkanGfxBuffer                  m_modelsBuffer;
 };
 } // namespace dusk

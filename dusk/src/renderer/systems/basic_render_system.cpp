@@ -51,6 +51,38 @@ void BasicRenderSystem::createPipelineLayout(VkDescriptorSetLayout globalSetLayo
                            .build();
 }
 
+void BasicRenderSystem::setupDescriptors()
+{
+    auto& ctx             = m_device.getSharedVulkanContext();
+
+    m_modelDescriptorPool = createUnique<VkGfxDescriptorPool>(ctx);
+    VulkanResult result   = m_modelDescriptorPool
+                              ->addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1)
+                              .create(1);
+    if (result.hasError())
+    {
+        DUSK_ERROR("Unable to create descriptor pool for model descriptor {}", result.toString());
+        m_modelDescriptorPool = nullptr;
+        return; // TODO: need proper error handling
+    }
+
+    m_modelDescritptorSetLayout = createUnique<VkGfxDescriptorSetLayout>(ctx);
+    result                      = m_modelDescritptorSetLayout
+                 ->addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT, 1)
+                 .create();
+
+    if (result.hasError())
+    {
+        DUSK_ERROR("Unable to create descriptor pool layout for model descriptor {}", result.toString());
+        m_modelDescriptorPool = nullptr;
+        return; // TODO: need proper error handling
+    }
+
+    // create dynamic ubo 
+
+    // create descriptor set
+}
+
 void BasicRenderSystem::renderGameObjects(const FrameData& frameData)
 {
     Scene&           scene         = frameData.scene;

@@ -17,6 +17,7 @@ struct VulkanGfxBuffer
     void*                 mappedMemory;
     size_t                sizeInBytes;
     VkMemoryPropertyFlags memoryFlags;
+    size_t                alignmentSize;
 };
 
 struct VulkanGfxImage

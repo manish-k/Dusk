@@ -383,6 +383,7 @@ VkBufferUsageFlags getBufferUsageFlagBits(uint32_t usage)
     if (usage & GfxBufferUsageFlags::UniformBuffer) flags |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     if (usage & GfxBufferUsageFlags::VertexBuffer) flags |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     if (usage & GfxBufferUsageFlags::IndexBuffer) flags |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+    if (usage & GfxBufferUsageFlags::StorageBuffer) flags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 
     return flags;
 }

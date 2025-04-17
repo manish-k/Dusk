@@ -10,7 +10,8 @@ enum GfxBufferUsageFlags : uint32_t
     TransferTarget = 0x00000002,
     UniformBuffer  = 0x00000004,
     VertexBuffer   = 0x00000008,
-    IndexBuffer    = 0x00000010
+    IndexBuffer    = 0x00000010,
+    StorageBuffer  = 0x00000012
 };
 
 enum GfxBufferMemoryTypeFlags : uint32_t
@@ -26,6 +27,6 @@ struct GfxBufferParams
     size_t   sizeInBytes = 0u;
     uint32_t usage;
     uint32_t memoryType;
-    size_t   alignment;
+    size_t   alignmentSize = 1u;
 };
 } // namespace dusk

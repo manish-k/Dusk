@@ -59,6 +59,8 @@ void BasicRenderSystem::renderGameObjects(const FrameData& frameData)
 
     m_renderPipeline->bind(commandBuffer);
 
+    // TODO:: this might be required only once, check case
+    // where new textures are added on the fly
     vkCmdBindDescriptorSets(
         frameData.commandBuffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,

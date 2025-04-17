@@ -14,6 +14,8 @@
 
 namespace dusk
 {
+const uint32_t maxMaterialCount = 1000;
+
 class Engine final
 {
 public:
@@ -76,9 +78,14 @@ private:
 
     Unique<VkGfxDescriptorPool>      m_globalDescriptorPool       = nullptr;
     Unique<VkGfxDescriptorSetLayout> m_globalDescritptorSetLayout = nullptr;
-    VulkanGfxBuffer                  m_globalUbos;
 
+    VulkanGfxBuffer                  m_globalUbos;
     Unique<VkGfxDescriptorSet>       m_globalDescriptorSet;
+
+    Unique<VkGfxDescriptorPool>      m_materialDescriptorPool       = nullptr;
+    Unique<VkGfxDescriptorSetLayout> m_materialDescritptorSetLayout = nullptr;
+
+    VulkanGfxBuffer                  m_materialsBuffer;
     Unique<VkGfxDescriptorSet>       m_materialsDescriptorSet;
 
 private:

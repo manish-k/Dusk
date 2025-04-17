@@ -2,6 +2,7 @@
 #include "events/app_event.h"
 #include "backend/vulkan/vk_renderer.h"
 #include "renderer/frame_data.h"
+#include "utils/utils.h"
 
 namespace dusk
 {
@@ -185,7 +186,8 @@ void Engine::onEvent(Event& ev)
 void Engine::loadScene(Scene* scene)
 {
     m_currentScene = scene;
-     registerTextures(scene->getTextures());
+    registerTextures(scene->getTextures());
+    registerMaterials(scene->getMaterials());
 }
 
 bool Engine::setupGlobals()
@@ -197,7 +199,7 @@ bool Engine::setupGlobals()
     m_globalDescriptorPool = createUnique<VkGfxDescriptorPool>(ctx);
     VulkanResult result    = m_globalDescriptorPool
                               ->addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, maxFramesCount)
-                              .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 100)
+                              .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 100) // TODO: make count configurable
                               .create(1, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
 
     if (result.hasError())
@@ -209,7 +211,7 @@ bool Engine::setupGlobals()
     m_globalDescritptorSetLayout = createUnique<VkGfxDescriptorSetLayout>(ctx);
     result                       = m_globalDescritptorSetLayout
                  ->addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS, maxFramesCount)
-                 .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 100, true)
+                 .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 100, true) // TODO: make count configurable
                  .create();
     if (result.hasError())
     {
@@ -254,6 +256,54 @@ bool Engine::setupGlobals()
 
     m_globalDescriptorSet->applyConfiguration();
 
+    // create descriptor pool and layout for materials
+    m_materialDescriptorPool = createUnique<VkGfxDescriptorPool>(ctx);
+    result                   = m_materialDescriptorPool
+                 ->addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, maxMaterialCount) // TODO: make count configurable
+                 .create(1, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
+
+    if (result.hasError())
+    {
+        DUSK_ERROR("Error in creation of material descriptor pool {}", result.toString());
+        return false;
+    }
+
+    m_materialDescritptorSetLayout = createUnique<VkGfxDescriptorSetLayout>(ctx);
+    result                         = m_materialDescritptorSetLayout
+                 ->addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, maxMaterialCount, true) // TODO: make count configurable
+                 .create();
+
+    if (result.hasError())
+    {
+        DUSK_ERROR("Error in creation of materials descriptor set layout {}", result.toString());
+        return false;
+    }
+
+    // create storage buffer of storing materials;
+    size_t          alignmentSize = getAlignment(sizeof(Material), ctx.physicalDeviceProperties.limits.minStorageBufferOffsetAlignment);
+    GfxBufferParams matBufferParams {};
+    matBufferParams.sizeInBytes   = maxMaterialCount * alignmentSize;
+    matBufferParams.usage         = GfxBufferUsageFlags::StorageBuffer;
+    matBufferParams.memoryType    = GfxBufferMemoryTypeFlags::HostSequentialWrite | GfxBufferMemoryTypeFlags::PersistentlyMapped;
+    matBufferParams.alignmentSize = alignmentSize;
+
+    result                        = m_gfxDevice->createBuffer(matBufferParams, &m_materialsBuffer);
+    if (result.hasError())
+    {
+        DUSK_ERROR("Unable to create storage buffer for materials {}", result.toString());
+        return false;
+    }
+    m_gfxDevice->mapBuffer(&m_materialsBuffer);
+
+    m_materialsDescriptorSet = createUnique<VkGfxDescriptorSet>(ctx, *m_materialDescritptorSetLayout, *m_materialDescriptorPool);
+
+    result                   = m_materialsDescriptorSet->create();
+    if (result.hasError())
+    {
+        DUSK_ERROR("Unable to create material descriptor set {}", result.toString());
+        return false;
+    }
+
     return true;
 }
 
@@ -266,6 +316,14 @@ void Engine::cleanupGlobals()
 
     m_globalDescritptorSetLayout->destroy();
     m_globalDescriptorPool->destroy();
+
+    m_gfxDevice->unmapBuffer(&m_materialsBuffer);
+    m_gfxDevice->freeBuffer(&m_materialsBuffer);
+
+    m_materialDescriptorPool->resetPool();
+
+    m_materialDescritptorSetLayout->destroy();
+    m_materialDescriptorPool->destroy();
 }
 
 void Engine::registerTextures(DynamicArray<Texture>& textures)
@@ -285,6 +343,18 @@ void Engine::registerTextures(DynamicArray<Texture>& textures)
 
 void Engine::registerMaterials(DynamicArray<Material>& materials)
 {
+    DynamicArray<VkDescriptorBufferInfo> matInfo(materials.size());
+    for (uint32_t matIndex = 0u; matIndex < matInfo.size(); ++matIndex)
+    {
+        VkDescriptorBufferInfo& bufferInfo = matInfo[matIndex];
+        bufferInfo.buffer                  = m_materialsBuffer.buffer;
+        bufferInfo.offset                  = m_materialsBuffer.alignmentSize * matIndex;
+        bufferInfo.range                   = m_materialsBuffer.alignmentSize;
+    }
+
+    m_materialsDescriptorSet->configureBuffer(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0, materials.size(), matInfo.data());
+
+    m_materialsDescriptorSet->applyConfiguration();
 }
 
 } // namespace dusk

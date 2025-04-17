@@ -651,6 +651,7 @@ VulkanResult VkGfxDevice::createBuffer(const GfxBufferParams& params, VulkanGfxB
         DUSK_ERROR("Error in creating buffer {}", result.toString());
     }
 
+    pOutBuffer->alignmentSize = params.alignmentSize;
     return result;
 }
 

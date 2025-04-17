@@ -223,7 +223,8 @@ Error VkGfxDevice::createDevice()
         DUSK_INFO("Vulkan Device #{} {}", deviceIndex, pDeviceInfo->deviceProperties.deviceName);
         DUSK_INFO("- api version {}", deviceIndex, pDeviceInfo->deviceProperties.apiVersion);
         DUSK_INFO("- vendor id {}", deviceIndex, pDeviceInfo->deviceProperties.vendorID);
-        DUSK_INFO("- device id {}", deviceIndex, pDeviceInfo->deviceProperties.deviceID);        DUSK_INFO("- driver version {}", deviceIndex, pDeviceInfo->deviceProperties.driverVersion);
+        DUSK_INFO("- device id {}", deviceIndex, pDeviceInfo->deviceProperties.deviceID);
+        DUSK_INFO("- driver version {}", deviceIndex, pDeviceInfo->deviceProperties.driverVersion);
 
         // pNext chaining to gather all the supported features
         VkPhysicalDeviceVulkan12Features deviceFeaturesVk12 = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES };
@@ -330,7 +331,7 @@ Error VkGfxDevice::createDevice()
         pDeviceInfo->activeDeviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 
         // Checking required features and enabling them for the current device
-        
+
         // Enable dynamic rendering
         if (!availableExtensionsSet.has(hash(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)))
         {
@@ -357,12 +358,19 @@ Error VkGfxDevice::createDevice()
         pDeviceInfo->deviceFeaturesVk12.descriptorIndexing = VK_TRUE;
 
         // additional features required with descriptor indexing
-        pDeviceInfo->deviceFeaturesVk12.shaderSampledImageArrayNonUniformIndexing  = VK_TRUE;
-        pDeviceInfo->deviceFeaturesVk12.shaderStorageBufferArrayNonUniformIndexing = VK_TRUE;
-        pDeviceInfo->deviceFeaturesVk12.shaderStorageImageArrayNonUniformIndexing  = VK_TRUE;
-        pDeviceInfo->deviceFeaturesVk12.descriptorBindingVariableDescriptorCount   = VK_TRUE;
+        pDeviceInfo->deviceFeaturesVk12.shaderSampledImageArrayNonUniformIndexing     = VK_TRUE;
+        pDeviceInfo->deviceFeaturesVk12.descriptorBindingSampledImageUpdateAfterBind  = VK_TRUE;
 
-        pDeviceInfo->isSupported                                                   = true;
+        pDeviceInfo->deviceFeaturesVk12.shaderStorageBufferArrayNonUniformIndexing    = VK_TRUE;
+        pDeviceInfo->deviceFeaturesVk12.descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE;
+
+        pDeviceInfo->deviceFeaturesVk12.descriptorBindingStorageImageUpdateAfterBind  = VK_TRUE;
+        pDeviceInfo->deviceFeaturesVk12.shaderStorageImageArrayNonUniformIndexing     = VK_TRUE;
+
+        pDeviceInfo->deviceFeaturesVk12.descriptorBindingPartiallyBound               = VK_TRUE;
+
+        // device has all the expected features
+        pDeviceInfo->isSupported = true;
     }
 
     std::optional<uint32_t> selectedPhysicalDeviceIndex;

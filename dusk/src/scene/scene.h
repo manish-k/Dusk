@@ -115,11 +115,14 @@ public:
         m_materials.reserve(materialCount);
     };
 
-    void      addMaterial(Material& mat);
+    void                    addMaterial(Material& mat);
 
-    Material& getMaterial(uint32_t matId) { return m_materials[matId]; };
+    Material&               getMaterial(uint32_t matId) { return m_materials[matId]; };
 
-    void      freeMaterials();
+    void                    freeMaterials();
+
+    DynamicArray<Texture>&  getTextures() { return m_textures; }
+    DynamicArray<Material>& getMaterials() { return m_materials; }
 
     /**
      * @brief Create a scene from a gltf file

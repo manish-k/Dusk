@@ -16,7 +16,7 @@ struct Texture
     uint32_t      numChannels = 0;
 
     VulkanTexture vkTexture {};
-    VulkanSampler vkSampler {};
+    VulkanSampler vkSampler {}; //TODO: sampler can be a common one instead of per texture
 
     Texture(uint32_t id) :
         id(id) {};

@@ -52,6 +52,9 @@ public:
     bool                  setupGlobals();
     void                  cleanupGlobals();
 
+    void                  registerTextures(DynamicArray<Texture>& textures);
+    void                  registerMaterials(DynamicArray<Material>& materials);
+
 private:
     Config                           m_config;
 
@@ -73,8 +76,10 @@ private:
 
     Unique<VkGfxDescriptorPool>      m_globalDescriptorPool       = nullptr;
     Unique<VkGfxDescriptorSetLayout> m_globalDescritptorSetLayout = nullptr;
-    DynamicArray<VulkanGfxBuffer>    m_globalUbos {};
-    DynamicArray<VkGfxDescriptorSet> m_globalDescriptorSets {};
+    VulkanGfxBuffer                  m_globalUbos;
+
+    Unique<VkGfxDescriptorSet>       m_globalDescriptorSet;
+    Unique<VkGfxDescriptorSet>       m_materialsDescriptorSet;
 
 private:
     static Engine* s_instance;

@@ -106,7 +106,7 @@ void Engine::onUpdate(TimeStep dt)
             dt,
             commandBuffer,
             *m_currentScene,
-            m_globalDescriptorSets[currentFrameIndex].set
+            m_globalDescriptorSet->set
         };
 
         CameraComponent& camera = m_currentScene->getMainCamera();
@@ -117,11 +117,12 @@ void Engine::onUpdate(TimeStep dt)
         ubo.view              = camera.viewMatrix;
         ubo.prjoection        = camera.projectionMatrix;
         ubo.inverseView       = camera.inverseViewMatrix;
-        
+
         ubo.lightDirection    = glm::vec4(normalize(glm::vec3(1.0, -3.0, -1.0)), 0.f);
         ubo.ambientLightColor = glm::vec4(0.7f, 0.8f, 0.8f, 0.8f);
 
-        memcpy(m_globalUbos[currentFrameIndex].mappedMemory, &ubo, sizeof(GlobalUbo));
+        void* dst             = (char*)m_globalUbos.mappedMemory + sizeof(GlobalUbo) * currentFrameIndex;
+        memcpy(dst, &ubo, sizeof(GlobalUbo));
 
         m_renderer->beginRendering(commandBuffer);
 
@@ -184,6 +185,7 @@ void Engine::onEvent(Event& ev)
 void Engine::loadScene(Scene* scene)
 {
     m_currentScene = scene;
+     registerTextures(scene->getTextures());
 }
 
 bool Engine::setupGlobals()
@@ -193,7 +195,11 @@ bool Engine::setupGlobals()
 
     // create global descriptor pool
     m_globalDescriptorPool = createUnique<VkGfxDescriptorPool>(ctx);
-    VulkanResult result    = m_globalDescriptorPool->addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1).create(maxFramesCount, 0);
+    VulkanResult result    = m_globalDescriptorPool
+                              ->addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, maxFramesCount)
+                              .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 100)
+                              .create(1, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
+
     if (result.hasError())
     {
         DUSK_ERROR("Error in creation of global descriptor pool {}", result.toString());
@@ -201,7 +207,9 @@ bool Engine::setupGlobals()
     }
 
     m_globalDescritptorSetLayout = createUnique<VkGfxDescriptorSetLayout>(ctx);
-    result                       = m_globalDescritptorSetLayout->addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS, 1)
+    result                       = m_globalDescritptorSetLayout
+                 ->addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS, maxFramesCount)
+                 .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 100, true)
                  .create();
     if (result.hasError())
     {
@@ -209,62 +217,74 @@ bool Engine::setupGlobals()
         return false;
     }
 
-    m_globalUbos = DynamicArray<VulkanGfxBuffer>(maxFramesCount);
-
     // uniform buffer params for creation
     GfxBufferParams uboParams {};
-    uboParams.sizeInBytes = sizeof(GlobalUbo);
+    uboParams.sizeInBytes = maxFramesCount * sizeof(GlobalUbo);
     uboParams.usage       = GfxBufferUsageFlags::UniformBuffer;
     uboParams.memoryType  = GfxBufferMemoryTypeFlags::HostSequentialWrite | GfxBufferMemoryTypeFlags::PersistentlyMapped;
 
-    for (uint32_t uboIndex = 0u; uboIndex < maxFramesCount; ++uboIndex)
+    result                = m_gfxDevice->createBuffer(uboParams, &m_globalUbos);
+    if (result.hasError())
     {
-        result = m_gfxDevice->createBuffer(uboParams, &m_globalUbos[uboIndex]);
-        if (result.hasError())
-        {
-            DUSK_ERROR("Unable to create uniform buffer {}", result.toString());
-            return false;
-        }
-        m_gfxDevice->mapBuffer(&m_globalUbos[uboIndex]);
+        DUSK_ERROR("Unable to create uniform buffer {}", result.toString());
+        return false;
+    }
+    m_gfxDevice->mapBuffer(&m_globalUbos);
+
+    m_globalDescriptorSet = createUnique<VkGfxDescriptorSet>(ctx, *m_globalDescritptorSetLayout, *m_globalDescriptorPool);
+
+    result                = m_globalDescriptorSet->create();
+    if (result.hasError())
+    {
+        DUSK_ERROR("Unable to create global descriptor set {}", result.toString());
+        return false;
     }
 
-    for (uint32_t setIndex = 0u; setIndex < maxFramesCount; ++setIndex)
+    DynamicArray<VkDescriptorBufferInfo> buffersInfo(maxFramesCount);
+
+    for (uint32_t frameIndex = 0u; frameIndex < maxFramesCount; ++frameIndex)
     {
-        VkGfxDescriptorSet     set { ctx, *m_globalDescritptorSetLayout, *m_globalDescriptorPool };
-        VulkanGfxBuffer&       ubo = m_globalUbos[setIndex];
-        VkDescriptorBufferInfo bufferInfo{};
-        bufferInfo.buffer = ubo.buffer;
-        bufferInfo.offset = 0;
-        bufferInfo.range  = sizeof(GlobalUbo);
+        VkDescriptorBufferInfo& bufferInfo = buffersInfo[frameIndex];
+        bufferInfo.buffer                  = m_globalUbos.buffer;
+        bufferInfo.offset                  = sizeof(GlobalUbo) * frameIndex;
+        bufferInfo.range                   = sizeof(GlobalUbo);
 
-        result = set.create();
-        if (result.hasError())
-        {
-            DUSK_ERROR("Unable to create global descriptor set {}", result.toString());
-            return false;
-        }
-
-        set.configureBuffer(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, &bufferInfo);
-        set.applyConfiguration();
-
-        m_globalDescriptorSets.push_back(set);
+        m_globalDescriptorSet->configureBuffer(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, frameIndex, 1, &bufferInfo);
     }
+
+    m_globalDescriptorSet->applyConfiguration();
 
     return true;
 }
 
 void Engine::cleanupGlobals()
 {
-    for (uint32_t uboIndex = 0u; uboIndex < m_globalUbos.size(); ++uboIndex)
-    {
-        m_gfxDevice->unmapBuffer(&m_globalUbos[uboIndex]);
-        m_gfxDevice->freeBuffer(&m_globalUbos[uboIndex]);
-    }
+    m_gfxDevice->unmapBuffer(&m_globalUbos);
+    m_gfxDevice->freeBuffer(&m_globalUbos);
 
     m_globalDescriptorPool->resetPool();
 
     m_globalDescritptorSetLayout->destroy();
     m_globalDescriptorPool->destroy();
+}
+
+void Engine::registerTextures(DynamicArray<Texture>& textures)
+{
+    DynamicArray<VkDescriptorImageInfo> imagesInfo(textures.size());
+    for (uint32_t texIndex = 0u; texIndex < textures.size(); ++texIndex)
+    {
+        imagesInfo[texIndex].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imagesInfo[texIndex].imageView   = textures[texIndex].vkTexture.imageView;
+        imagesInfo[texIndex].sampler     = textures[texIndex].vkSampler.sampler;
+    }
+
+    m_globalDescriptorSet->configureImage(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 0, textures.size(), imagesInfo.data());
+
+    m_globalDescriptorSet->applyConfiguration();
+}
+
+void Engine::registerMaterials(DynamicArray<Material>& materials)
+{
 }
 
 } // namespace dusk

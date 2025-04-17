@@ -28,8 +28,8 @@ struct VkGfxDescriptorSetLayout
      * @param bindingIndex
      * @param descriptorType for the buffer/image resource
      * @param stageFlags
-     * @param count, if passing buffer/image arrays
-     * @param isBindless, whether this binding is bindless or not
+     * @param count if passing buffer/image arrays
+     * @param isBindless whether this binding is bindless or not
      * @return
      */
     VkGfxDescriptorSetLayout& addBinding(
@@ -59,7 +59,7 @@ struct VkGfxDescriptorPool
     DynamicArray<VkDescriptorPoolSize> poolSizes {};
     bool                               isBindless = false;
 
-    VkGfxDescriptorPool() = delete;
+    VkGfxDescriptorPool()                         = delete;
     explicit VkGfxDescriptorPool(const VulkanContext& ctx)
     {
         device = ctx.device;
@@ -123,7 +123,7 @@ struct VkGfxDescriptorSet
 
     VkGfxDescriptorSet() = delete;
     explicit VkGfxDescriptorSet(
-        VulkanContext             ctx,
+        const VulkanContext&            ctx,
         VkGfxDescriptorSetLayout& layout,
         VkGfxDescriptorPool&      pool) :
         device(ctx.device), pool(pool), setLayout(layout)
@@ -133,19 +133,33 @@ struct VkGfxDescriptorSet
     /**
      * @brief Configure buffer which is part of descriptor
      * @param binding number in the set
+     * @param dstIndex index of the element which has to be configured
+     * @param count number of descriptors to update
      * @param bufferInfo contains buffer details for linking to the descriptor
      * @return gfx descriptor set
      */
-    VkGfxDescriptorSet& configureBuffer(uint32_t binding, VkDescriptorType type, VkDescriptorBufferInfo* bufferInfo);
+    VkGfxDescriptorSet& configureBuffer(
+        uint32_t                binding,
+        VkDescriptorType        type,
+        uint32_t                dstIndex,
+        uint32_t                count,
+        VkDescriptorBufferInfo* bufferInfo);
 
     /**
      * @brief Configure image which is part of descriptor
      * @param binding number in the set
      * @param type
+     * @param dstIndex index of the element which has to be configured
+     * @param count number of descriptors to update
      * @param imageInfo contains image deatils for linking to the descriptor
      * @return gfx descriptor set
      */
-    VkGfxDescriptorSet& configureImage(uint32_t binding, VkDescriptorType type, VkDescriptorImageInfo* imageInfo);
+    VkGfxDescriptorSet& configureImage(
+        uint32_t               binding,
+        VkDescriptorType       type,
+        uint32_t               dstIndex,
+        uint32_t               count,
+        VkDescriptorImageInfo* imageInfo);
 
     /**
      * @brief apply buffer/image configurations on the set. It will overwrite any

@@ -37,15 +37,16 @@ VulkanResult VkGfxDescriptorSetLayout::create()
 {
     DASSERT(device, "invalid vulkan logical device");
 
-    DynamicArray<VkDescriptorSetLayoutBinding> setLayoutBindings { bindingsMap.size() };
-    DynamicArray<VkDescriptorBindingFlags>     setBindingFlags { bindingsMap.size() };
+    uint32_t                                   bindingsCount = bindingsMap.size();
+    DynamicArray<VkDescriptorSetLayoutBinding> setLayoutBindings(bindingsCount);
+    DynamicArray<VkDescriptorBindingFlags>     setBindingFlags(bindingsCount);
     bool                                       isBindless = false;
 
     for (auto& key : bindingsMap.keys())
     {
         setLayoutBindings[key] = bindingsMap[key];
         setBindingFlags[key]   = bindingFlags[key];
-        
+
         if (bindingFlags[key]) isBindless = true;
     }
 
@@ -130,40 +131,46 @@ void VkGfxDescriptorPool::resetPool()
     vkResetDescriptorPool(device, pool, 0);
 }
 
-VkGfxDescriptorSet& VkGfxDescriptorSet::configureBuffer(uint32_t binding, VkDescriptorType type, VkDescriptorBufferInfo* bufferInfo)
+VkGfxDescriptorSet& VkGfxDescriptorSet::configureBuffer(
+    uint32_t                binding,
+    VkDescriptorType        type,
+    uint32_t                dstIndex,
+    uint32_t                count,
+    VkDescriptorBufferInfo* bufferInfo)
 {
     DASSERT(setLayout.bindingsMap.has(binding), "Layout doesn't contain specified binding");
     auto& bindingDescription = setLayout.bindingsMap[binding];
-
-    // TODO: Support write multiple descriptors
-    DASSERT(bindingDescription.descriptorCount == 1, "Binding single descriptor info, but binding expects multiple");
 
     VkWriteDescriptorSet write { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
     write.descriptorType  = bindingDescription.descriptorType;
     write.dstBinding      = binding;
     write.pBufferInfo     = bufferInfo;
-    write.descriptorCount = 1;
+    write.descriptorCount = count;
     write.descriptorType  = type;
+    write.dstArrayElement = dstIndex;
 
     writes.push_back(write);
 
     return *this;
 }
 
-VkGfxDescriptorSet& VkGfxDescriptorSet::configureImage(uint32_t binding, VkDescriptorType type, VkDescriptorImageInfo* imageInfo)
+VkGfxDescriptorSet& VkGfxDescriptorSet::configureImage(
+    uint32_t               binding,
+    VkDescriptorType       type,
+    uint32_t               dstIndex,
+    uint32_t               count,
+    VkDescriptorImageInfo* imageInfo)
 {
     DASSERT(setLayout.bindingsMap.has(binding), "Layout doesn't contain specified binding");
     auto& bindingDescription = setLayout.bindingsMap[binding];
-
-    // TODO: Support write multiple descriptors
-    DASSERT(bindingDescription.descriptorCount == 1, "Binding single descriptor info, but binding expects multiple");
 
     VkWriteDescriptorSet write { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
     write.descriptorType  = bindingDescription.descriptorType;
     write.dstBinding      = binding;
     write.pImageInfo      = imageInfo;
-    write.descriptorCount = 1;
+    write.descriptorCount = count;
     write.descriptorType  = type;
+    write.dstArrayElement = dstIndex;
 
     writes.push_back(write);
 
@@ -180,6 +187,8 @@ void VkGfxDescriptorSet::applyConfiguration()
     }
 
     vkUpdateDescriptorSets(device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
+
+    writes.clear();
 }
 
 VulkanResult VkGfxDescriptorSet::create()

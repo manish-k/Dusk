@@ -358,15 +358,19 @@ Error VkGfxDevice::createDevice()
         pDeviceInfo->deviceFeaturesVk12.descriptorIndexing = VK_TRUE;
 
         // additional features required with descriptor indexing
-        pDeviceInfo->deviceFeaturesVk12.shaderSampledImageArrayNonUniformIndexing     = VK_TRUE;
         pDeviceInfo->deviceFeaturesVk12.descriptorBindingSampledImageUpdateAfterBind  = VK_TRUE;
+        pDeviceInfo->deviceFeaturesVk12.shaderSampledImageArrayNonUniformIndexing     = VK_TRUE;
 
-        pDeviceInfo->deviceFeaturesVk12.shaderStorageBufferArrayNonUniformIndexing    = VK_TRUE;
         pDeviceInfo->deviceFeaturesVk12.descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE;
+        pDeviceInfo->deviceFeaturesVk12.shaderStorageBufferArrayNonUniformIndexing    = VK_TRUE;
 
         pDeviceInfo->deviceFeaturesVk12.descriptorBindingStorageImageUpdateAfterBind  = VK_TRUE;
         pDeviceInfo->deviceFeaturesVk12.shaderStorageImageArrayNonUniformIndexing     = VK_TRUE;
 
+        pDeviceInfo->deviceFeaturesVk12.descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE;
+        pDeviceInfo->deviceFeaturesVk12.shaderUniformBufferArrayNonUniformIndexing    = VK_TRUE;
+
+        pDeviceInfo->deviceFeaturesVk12.runtimeDescriptorArray                        = VK_TRUE;
         pDeviceInfo->deviceFeaturesVk12.descriptorBindingPartiallyBound               = VK_TRUE;
 
         // device has all the expected features

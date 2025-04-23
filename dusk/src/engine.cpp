@@ -57,7 +57,7 @@ bool Engine::start(Shared<Application> app)
     bool globalsStatus = setupGlobals();
     if (!globalsStatus) return false;
 
-    m_basicRenderSystem = createUnique<BasicRenderSystem>(*m_gfxDevice, *m_globalDescritptorSetLayout);
+    m_basicRenderSystem = createUnique<BasicRenderSystem>(*m_gfxDevice, *m_globalDescriptorSetLayout, *m_materialDescriptorSetLayout);
 
     return true;
 }
@@ -107,7 +107,8 @@ void Engine::onUpdate(TimeStep dt)
             dt,
             commandBuffer,
             *m_currentScene,
-            m_globalDescriptorSet->set
+            m_globalDescriptorSet->set,
+            m_materialsDescriptorSet->set
         };
 
         CameraComponent& camera = m_currentScene->getMainCamera();
@@ -208,9 +209,9 @@ bool Engine::setupGlobals()
         return false;
     }
 
-    m_globalDescritptorSetLayout = createUnique<VkGfxDescriptorSetLayout>(ctx);
-    result                       = m_globalDescritptorSetLayout
-                 ->addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS, maxFramesCount)
+    m_globalDescriptorSetLayout = createUnique<VkGfxDescriptorSetLayout>(ctx);
+    result                       = m_globalDescriptorSetLayout
+                 ->addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS, maxFramesCount, true)
                  .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 100, true) // TODO: make count configurable
                  .create();
     if (result.hasError())
@@ -233,7 +234,7 @@ bool Engine::setupGlobals()
     }
     m_gfxDevice->mapBuffer(&m_globalUbos);
 
-    m_globalDescriptorSet = createUnique<VkGfxDescriptorSet>(ctx, *m_globalDescritptorSetLayout, *m_globalDescriptorPool);
+    m_globalDescriptorSet = createUnique<VkGfxDescriptorSet>(ctx, *m_globalDescriptorSetLayout, *m_globalDescriptorPool);
 
     result                = m_globalDescriptorSet->create();
     if (result.hasError())
@@ -268,8 +269,8 @@ bool Engine::setupGlobals()
         return false;
     }
 
-    m_materialDescritptorSetLayout = createUnique<VkGfxDescriptorSetLayout>(ctx);
-    result                         = m_materialDescritptorSetLayout
+    m_materialDescriptorSetLayout = createUnique<VkGfxDescriptorSetLayout>(ctx);
+    result                         = m_materialDescriptorSetLayout
                  ->addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, maxMaterialCount, true) // TODO: make count configurable
                  .create();
 
@@ -295,7 +296,7 @@ bool Engine::setupGlobals()
     }
     m_gfxDevice->mapBuffer(&m_materialsBuffer);
 
-    m_materialsDescriptorSet = createUnique<VkGfxDescriptorSet>(ctx, *m_materialDescritptorSetLayout, *m_materialDescriptorPool);
+    m_materialsDescriptorSet = createUnique<VkGfxDescriptorSet>(ctx, *m_materialDescriptorSetLayout, *m_materialDescriptorPool);
 
     result                   = m_materialsDescriptorSet->create();
     if (result.hasError())
@@ -314,7 +315,7 @@ void Engine::cleanupGlobals()
 
     m_globalDescriptorPool->resetPool();
 
-    m_globalDescritptorSetLayout->destroy();
+    m_globalDescriptorSetLayout->destroy();
     m_globalDescriptorPool->destroy();
 
     m_gfxDevice->unmapBuffer(&m_materialsBuffer);
@@ -322,7 +323,7 @@ void Engine::cleanupGlobals()
 
     m_materialDescriptorPool->resetPool();
 
-    m_materialDescritptorSetLayout->destroy();
+    m_materialDescriptorSetLayout->destroy();
     m_materialDescriptorPool->destroy();
 }
 

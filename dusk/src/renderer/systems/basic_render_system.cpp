@@ -7,11 +7,14 @@
 
 namespace dusk
 {
-BasicRenderSystem::BasicRenderSystem(VkGfxDevice& device, VkGfxDescriptorSetLayout& globalSetLayout) :
+BasicRenderSystem::BasicRenderSystem(
+    VkGfxDevice&              device,
+    VkGfxDescriptorSetLayout& globalSet,
+    VkGfxDescriptorSetLayout& materialSet) :
     m_device(device)
 {
     setupDescriptors();
-    createPipelineLayout(globalSetLayout.layout);
+    createPipelineLayout(globalSet, materialSet);
     createPipeLine();
 }
 
@@ -53,12 +56,16 @@ void BasicRenderSystem::createPipeLine()
                            .build();
 }
 
-void BasicRenderSystem::createPipelineLayout(VkDescriptorSetLayout globalSetLayout)
+void BasicRenderSystem::createPipelineLayout(
+    VkGfxDescriptorSetLayout& globalSet,
+    VkGfxDescriptorSetLayout& materialSet)
 {
     VulkanContext& vkContext = VkGfxDevice::getSharedVulkanContext();
     m_pipelineLayout         = VkGfxPipelineLayout::Builder(vkContext)
-                           .addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(BasicPushConstantsData))
-                           .addDescriptorSetLayout(globalSetLayout)
+                           .addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(DrawData))
+                           .addDescriptorSetLayout(globalSet.layout)
+                           .addDescriptorSetLayout(materialSet.layout)
+                           .addDescriptorSetLayout(m_modelDescriptorSetLayout->layout)
                            .build();
 }
 
@@ -90,9 +97,9 @@ void BasicRenderSystem::setupDescriptors()
     }
 
     // create dynamic ubo
-    size_t   alignmentSize = getAlignment(sizeof(ModelData), ctx.physicalDeviceProperties.limits.minUniformBufferOffsetAlignment);
+    size_t          alignmentSize = getAlignment(sizeof(ModelData), ctx.physicalDeviceProperties.limits.minUniformBufferOffsetAlignment);
 
-    uint32_t bufferSize    = maxRenderableMeshes * alignmentSize;
+    uint32_t        bufferSize    = maxRenderableMeshes * alignmentSize;
 
     GfxBufferParams dynamicUboParams {};
     dynamicUboParams.sizeInBytes   = bufferSize;
@@ -140,7 +147,7 @@ void BasicRenderSystem::renderGameObjects(const FrameData& frameData)
     m_renderPipeline->bind(commandBuffer);
 
     // TODO:: this might be required only once, check case
-    // where new textures are added on the fly
+    // where new textures are added on the fly (streaming textures)
     vkCmdBindDescriptorSets(
         frameData.commandBuffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -151,26 +158,53 @@ void BasicRenderSystem::renderGameObjects(const FrameData& frameData)
         0,
         nullptr);
 
+    vkCmdBindDescriptorSets(
+        frameData.commandBuffer,
+        VK_PIPELINE_BIND_POINT_GRAPHICS,
+        m_pipelineLayout->get(),
+        1,
+        1,
+        &frameData.materialDescriptorSet,
+        0,
+        nullptr);
+
     auto renderablesView = scene.GetGameObjectsWith<TransformComponent, MeshComponent>();
 
     for (auto [entity, transform, meshData] : renderablesView.each())
     {
-        BasicPushConstantsData push {};
-        push.model  = transform.mat4();
-        push.normal = transform.normalMat4();
-
-        vkCmdPushConstants(commandBuffer,
-                           m_pipelineLayout->get(),
-                           VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-                           0,
-                           sizeof(BasicPushConstantsData),
-                           &push);
-
         for (uint32_t meshId : meshData.meshes)
         {
             SubMesh&     mesh      = scene.getSubMesh(meshId);
             VkBuffer     buffers[] = { mesh.getVertexBuffer().buffer };
             VkDeviceSize offsets[] = { 0 };
+
+            DrawData     push {};
+            push.cameraIdx   = frameData.frameIndex;
+            push.materialIdx = meshId;
+
+            // update mesh transform data
+            ModelData md { transform.mat4(), transform.normalMat4() };
+            void*     dst = (char*)m_modelsBuffer.mappedMemory + sizeof(ModelData) * meshId;
+            memcpy(dst, &md, sizeof(ModelData));
+
+            uint32_t dynamicOffset = meshId * static_cast<uint32_t>(m_modelsBuffer.alignmentSize);
+            vkCmdBindDescriptorSets(
+                commandBuffer,
+                VK_PIPELINE_BIND_POINT_GRAPHICS,
+                m_pipelineLayout->get(),
+                2,
+                1,
+                &m_modelDescriptorSet->set,
+                1,
+                &dynamicOffset);
+
+            vkCmdPushConstants(
+                commandBuffer,
+                m_pipelineLayout->get(),
+                VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                0,
+                sizeof(DrawData),
+                &push);
 
             vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
 

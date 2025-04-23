@@ -77,13 +77,13 @@ private:
     TimeStep                         m_deltaTime;
 
     Unique<VkGfxDescriptorPool>      m_globalDescriptorPool       = nullptr;
-    Unique<VkGfxDescriptorSetLayout> m_globalDescritptorSetLayout = nullptr;
+    Unique<VkGfxDescriptorSetLayout> m_globalDescriptorSetLayout = nullptr;
 
     VulkanGfxBuffer                  m_globalUbos;
     Unique<VkGfxDescriptorSet>       m_globalDescriptorSet;
 
     Unique<VkGfxDescriptorPool>      m_materialDescriptorPool       = nullptr;
-    Unique<VkGfxDescriptorSetLayout> m_materialDescritptorSetLayout = nullptr;
+    Unique<VkGfxDescriptorSetLayout> m_materialDescriptorSetLayout = nullptr;
 
     VulkanGfxBuffer                  m_materialsBuffer;
     Unique<VkGfxDescriptorSet>       m_materialsDescriptorSet;

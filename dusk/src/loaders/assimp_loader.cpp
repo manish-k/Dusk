@@ -18,7 +18,7 @@ AssimpLoader::~AssimpLoader()
 
 Unique<Scene> AssimpLoader::readScene(const std::string& fileName)
 {
-    const aiScene* assimpScene = m_importer.ReadFile(fileName, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices);
+    const aiScene* assimpScene = m_importer.ReadFile(fileName, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices);
 
     if (assimpScene == nullptr)
     {
@@ -150,6 +150,11 @@ void AssimpLoader::parseMeshes(Scene& scene, const aiScene* aiScene)
                 v.normal = glm::vec3(mesh->mNormals[vertexIndex].x, mesh->mNormals[vertexIndex].y, mesh->mNormals[vertexIndex].z);
             }
 
+            if (mesh->HasTextureCoords(0))
+            {
+                v.uv = glm::vec2(mesh->mTextureCoords[0][vertexIndex].x, mesh->mTextureCoords[0][vertexIndex].y);
+            }
+
             vertices.push_back(v);
         }
 
@@ -184,7 +189,7 @@ void AssimpLoader::parseMaterials(Scene& scene, const aiScene* aiScene)
         aiMaterial* aiMat = aiScene->mMaterials[matIndex];
 
         // load diffuse texture
-        std::string baseColorTexturePath =  getTexturePath(aiMat, aiTextureType_BASE_COLOR);
+        std::string baseColorTexturePath = getTexturePath(aiMat, aiTextureType_BASE_COLOR);
 
         uint32_t    diffuseTexId         = -1;
         if (!baseColorTexturePath.empty())

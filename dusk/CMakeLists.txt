@@ -235,8 +235,7 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC
 
 ## TODO: Try with symlink approach
 set (ENGINE_SHADERS_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/systems/shaders")
-set (ENGINE_SHADERS_DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}")
-file(COPY ${ENGINE_SHADERS_SOURCE_DIR} DESTINATION ${ENGINE_SHADERS_DEST_DIR})
+set (ENGINE_SHADERS_DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/shaders")
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC DUSK_BUILD_PATH=${CMAKE_CURRENT_BINARY_DIR})
 
@@ -262,13 +261,23 @@ foreach(GLSL ${DUSK_GLSL_SOURCE_FILES})
   set(SPIRV "${PROJECT_SOURCE_DIR}/src/renderer/systems/shaders/${FILE_NAME}.spv")
   add_custom_command(
     OUTPUT ${SPIRV}
+	COMMAND ${CMAKE_COMMAND} -E echo "Compiling ${FILE_NAME}"
     COMMAND ${GLSL_VALIDATOR} -g -V ${GLSL} -o ${SPIRV}
     DEPENDS ${GLSL})
   list(APPEND SPIRV_BINARY_FILES ${SPIRV})
 endforeach(GLSL)
 
 add_custom_target(
-    Dusk_Shaders
+    DUSK_SHADERS_COMPILE ALL
     DEPENDS ${SPIRV_BINARY_FILES}
 )
-add_dependencies(${PROJECT_NAME} Dusk_Shaders)
+
+add_custom_target(
+    DUSK_SHADERS_COPY ALL
+	COMMAND ${CMAKE_COMMAND} -E echo "Copying compiled shaders"
+	COMMAND ${CMAKE_COMMAND} -E remove_directory ${ENGINE_SHADERS_DEST_DIR}
+	COMMAND ${CMAKE_COMMAND} -E copy_directory ${ENGINE_SHADERS_SOURCE_DIR} ${ENGINE_SHADERS_DEST_DIR}
+    DEPENDS DUSK_SHADERS_COMPILE
+)
+
+add_dependencies(${PROJECT_NAME} DUSK_SHADERS_COPY)

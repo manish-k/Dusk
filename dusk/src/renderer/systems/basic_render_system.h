@@ -9,16 +9,10 @@
 
 namespace dusk
 {
-struct BasicPushConstantsData
-{
-    glm::mat4 model { 1.f };
-    glm::mat4 normal { 1.f };
-};
 
 struct DrawData
 {
     uint32_t cameraIdx;
-    uint32_t modelIdx;
     uint32_t materialIdx;
 };
 
@@ -34,14 +28,19 @@ constexpr uint32_t maxRenderableMeshes = 10000;
 class BasicRenderSystem
 {
 public:
-    BasicRenderSystem(VkGfxDevice& device, VkGfxDescriptorSetLayout& globalSetLayout);
+    BasicRenderSystem(
+        VkGfxDevice& device, 
+        VkGfxDescriptorSetLayout& globalSet, 
+        VkGfxDescriptorSetLayout& materialSet);
     ~BasicRenderSystem();
 
     void renderGameObjects(const FrameData& frameData);
 
 private:
     void createPipeLine();
-    void createPipelineLayout(VkDescriptorSetLayout globalSetLayout);
+    void createPipelineLayout(
+        VkGfxDescriptorSetLayout& globalSet, 
+        VkGfxDescriptorSetLayout& materialSet);
     void setupDescriptors();
 
 private:

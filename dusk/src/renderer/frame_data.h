@@ -26,5 +26,6 @@ struct FrameData
     VkCommandBuffer  commandBuffer;
     Scene&           scene;
     VkDescriptorSet& globalDescriptorSet;
+    VkDescriptorSet& materialDescriptorSet;
 };
 } // namespace dusk

@@ -21,8 +21,8 @@ target_link_libraries(${PROJECT_NAME} PUBLIC dusk)
 
 ## TODO: Try with symlink approach
 set (ASSETS_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/assets")
-set (ASSETS_DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}")
-file(COPY ${ASSETS_SOURCE_DIR} DESTINATION ${ASSETS_DEST_DIR})
+set (ASSETS_DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/assets")
+#file(COPY ${ASSETS_SOURCE_DIR} DESTINATION ${ASSETS_DEST_DIR})
 
 ## https://github.com/vblanco20-1/vulkan-guide/blob/all-chapters/CMakeLists.txt
 find_program(GLSL_VALIDATOR glslang HINTS 
@@ -46,13 +46,23 @@ foreach(GLSL ${GLSL_SOURCE_FILES})
   set(SPIRV "${PROJECT_SOURCE_DIR}/assets//shaders/${FILE_NAME}.spv")
   add_custom_command(
     OUTPUT ${SPIRV}
+	COMMAND ${CMAKE_COMMAND} -E echo "Compiling ${FILE_NAME}"
     COMMAND ${GLSL_VALIDATOR} -g -V ${GLSL} -o ${SPIRV}
     DEPENDS ${GLSL})
   list(APPEND SPIRV_BINARY_FILES ${SPIRV})
 endforeach(GLSL)
 
 add_custom_target(
-    Test_Scene_Shaders
+    Test_Scene_Shaders ALL
     DEPENDS ${SPIRV_BINARY_FILES}
 )
-add_dependencies(${PROJECT_NAME} Test_Scene_Shaders)
+
+add_custom_target(
+    Test_Scene_Assets ALL
+	COMMAND ${CMAKE_COMMAND} -E echo "Copying assets"
+	COMMAND ${CMAKE_COMMAND} -E remove_directory ${ASSETS_DEST_DIR}
+	COMMAND ${CMAKE_COMMAND} -E copy_directory ${ASSETS_SOURCE_DIR} ${ASSETS_DEST_DIR}
+    DEPENDS Test_Scene_Shaders
+)
+
+add_dependencies(${PROJECT_NAME} Test_Scene_Assets)

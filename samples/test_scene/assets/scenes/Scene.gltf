@@ -1,0 +1,296 @@
+{
+  "asset": {
+    "generator": "Khronos Blender glTF 2.0 exporter",
+    "version": "2.0"
+  },
+  "buffers": [
+    {
+      "uri": "Scene.bin",
+      "byteLength": 558504
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 174672,
+      "byteStride": 12,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 174672,
+      "byteLength": 174672,
+      "byteStride": 12,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 349344,
+      "byteLength": 116448,
+      "byteStride": 8,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 465792,
+      "byteLength": 92712,
+      "target": 34963
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "byteOffset": 0,
+      "componentType": 5126,
+      "normalized": false,
+      "count": 14556,
+      "min": [
+        -1,
+        -1,
+        -1
+      ],
+      "max": [
+        1,
+        1,
+        1
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 0,
+      "componentType": 5126,
+      "normalized": false,
+      "count": 14556,
+      "min": [
+        -0.9474585652351379,
+        -1.18715500831604,
+        -0.9009949564933777
+      ],
+      "max": [
+        0.9424954056739807,
+        0.8128451108932495,
+        0.900973916053772
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 0,
+      "componentType": 5126,
+      "normalized": false,
+      "count": 14556,
+      "min": [
+        0.002448640065267682,
+        1.0005531311035156
+      ],
+      "max": [
+        0.9999759793281555,
+        1.9986660480499268
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "byteOffset": 0,
+      "componentType": 5123,
+      "normalized": false,
+      "count": 46356,
+      "min": [
+        0
+      ],
+      "max": [
+        14555
+      ],
+      "type": "SCALAR"
+    }
+  ],
+  "scene": 0,
+  "scenes": [
+    {
+      "nodes": [
+        0
+      ],
+      "name": "Scene"
+    }
+  ],
+  "nodes": [
+    {
+      "name": "node_damagedHelmet_-6514",
+      "matrix": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        -1.3435885648505064e-7,
+        1.0000001192092896,
+        0,
+        0,
+        -1.0000001192092896,
+        -1.3435885648505064e-7,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "extensions": {
+        "KHR_node_visibility": {
+          "visible": true
+        }
+      },
+      "mesh": 0
+    }
+  ],
+  "meshes": [
+    {
+      "primitives": [
+        {
+          "material": 0,
+          "mode": 4,
+          "attributes": {
+            "NORMAL": 0,
+            "POSITION": 1,
+            "TEXCOORD_0": 2
+          },
+          "indices": 3
+        }
+      ]
+    }
+  ],
+  "materials": [
+    {
+      "name": "Material_MR",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "metallicFactor": 1,
+        "roughnessFactor": 1,
+        "baseColorTexture": {
+          "index": 0,
+          "texCoord": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 1,
+          "texCoord": 0
+        }
+      },
+      "emissiveFactor": [
+        1,
+        1,
+        1
+      ],
+      "alphaMode": "OPAQUE",
+      "doubleSided": false,
+      "normalTexture": {
+        "index": 2,
+        "texCoord": 0,
+        "scale": 1
+      },
+      "occlusionTexture": {
+        "index": 3,
+        "texCoord": 0,
+        "strength": 1
+      },
+      "emissiveTexture": {
+        "index": 4,
+        "texCoord": 0
+      }
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "name": "base.png",
+      "source": 0
+    },
+    {
+      "sampler": 1,
+      "name": "metallicRoughness.png",
+      "source": 1
+    },
+    {
+      "sampler": 2,
+      "name": "normal.png",
+      "source": 2
+    },
+    {
+      "sampler": 3,
+      "name": "occlusion.png",
+      "source": 3
+    },
+    {
+      "sampler": 4,
+      "name": "emissive.png",
+      "source": 4
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    },
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    },
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    },
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    },
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "images": [
+    {
+      "uri": "base.png",
+      "mimeType": "image/png",
+      "name": "base.png"
+    },
+    {
+      "uri": "metallicRoughness.png",
+      "mimeType": "image/png",
+      "name": "metallicRoughness.png"
+    },
+    {
+      "uri": "normal.png",
+      "mimeType": "image/png",
+      "name": "normal.png"
+    },
+    {
+      "uri": "occlusion.png",
+      "mimeType": "image/png",
+      "name": "occlusion.png"
+    },
+    {
+      "uri": "emissive.png",
+      "mimeType": "image/png",
+      "name": "emissive.png"
+    }
+  ],
+  "extensionsUsed": [
+    "KHR_node_visibility"
+  ]
+}

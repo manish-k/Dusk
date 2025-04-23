@@ -22,18 +22,10 @@ Unique<dusk::Application> dusk::createApplication(int argc, char** argv)
 
 bool TestScene::start()
 {
-    std::string scenePath = "assets/scenes/Cube.gltf";
+    std::string scenePath = "assets/scenes/Scene.gltf";
     m_testScene           = Scene::createSceneFromGLTF(scenePath);
 
     Engine::get().loadScene(m_testScene.get());
-
-    std::string     texturePath = "assets/scenes/Cube_BaseColor.png";
-    Unique<Image>   image       = ImageLoader::readImage(texturePath);
-    
-    m_testTexture               = createUnique<Texture>(1);
-    m_testTexture->init(*image);
-;
-    ImageLoader::freeImage(*image);
     
     return true;
 }

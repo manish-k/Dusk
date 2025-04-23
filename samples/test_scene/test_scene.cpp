@@ -32,8 +32,6 @@ bool TestScene::start()
 
 void TestScene::shutdown()
 {
-    m_testTexture->free();
-
     m_testScene = nullptr;
 }
 

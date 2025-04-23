@@ -20,5 +20,4 @@ public:
 
 private:
     Unique<Scene>   m_testScene;
-    Unique<Texture> m_testTexture;
 };

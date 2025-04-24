@@ -21,7 +21,7 @@ Scene::Scene(const std::string_view name) :
     camera->setName("Camera");
 
     TransformComponent& cameraTransform = camera->getComponent<TransformComponent>();
-    cameraTransform.translation         = { 0.f, 0.f, -5.f };
+    cameraTransform.translation         = { 0.f, 0.f, 5.f };
 
     auto& cameraComponent               = camera->addComponent<CameraComponent>();
     cameraComponent.setView(cameraTransform.translation, cameraTransform.rotation);

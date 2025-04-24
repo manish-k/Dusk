@@ -11,7 +11,7 @@ namespace dusk
 {
 struct CameraComponent
 {
-    glm::vec3 forwardDirection  = glm::vec3 { 0.f, 0.f, 1.f };  // default; looking in z axis dir
+    glm::vec3 forwardDirection  = glm::vec3 { 0.f, 0.f, -1.f };  // default; looking in -z axis dir
     glm::vec3 upDirection       = glm::vec3 { 0.f, -1.f, 0.f }; // default; -y axis is up dir
     glm::vec3 rightDirection    = glm::vec3 { 1.f, 0.f, 0.f };
 

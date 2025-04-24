@@ -18,7 +18,7 @@ AssimpLoader::~AssimpLoader()
 
 Unique<Scene> AssimpLoader::readScene(const std::string& fileName)
 {
-    const aiScene* assimpScene = m_importer.ReadFile(fileName, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_MakeLeftHanded);
+    const aiScene* assimpScene = m_importer.ReadFile(fileName, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_FlipUVs);
 
     if (assimpScene == nullptr)
     {
@@ -152,7 +152,7 @@ void AssimpLoader::parseMeshes(Scene& scene, const aiScene* aiScene)
 
             if (mesh->HasTextureCoords(0))
             {
-                v.uv = glm::vec2(mesh->mTextureCoords[0][vertexIndex].x, mesh->mTextureCoords[0][vertexIndex].y);
+                v.uv = glm::vec2(mesh->mTextureCoords[0][vertexIndex].x, 1.f - mesh->mTextureCoords[0][vertexIndex].y);
             }
 
             vertices.push_back(v);

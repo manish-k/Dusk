@@ -19,9 +19,10 @@ public:
     void beginRendering();
     void endRendering(VkCommandBuffer cb);
     void onEvent();
-    void toggleDisplay();
+    void switchUIDisplay(bool state);
 
 private:
+    void        setupImGuiTheme();
     static void checkVkResult(VkResult err);
 
 private:

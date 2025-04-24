@@ -11,6 +11,7 @@
 #include "backend/vulkan/vk_descriptors.h"
 #include "renderer/render_api.h"
 #include "renderer/systems/basic_render_system.h"
+#include "ui/ui.h"
 
 namespace dusk
 {
@@ -67,6 +68,8 @@ private:
     Shared<Application>              m_app               = nullptr;
 
     Unique<BasicRenderSystem>        m_basicRenderSystem = nullptr;
+
+    Unique<UI>                       m_ui                = nullptr;
 
     bool                             m_running           = false;
     bool                             m_paused            = false;

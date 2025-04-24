@@ -59,6 +59,13 @@ bool Engine::start(Shared<Application> app)
 
     m_basicRenderSystem = createUnique<BasicRenderSystem>(*m_gfxDevice, *m_globalDescriptorSetLayout, *m_materialDescriptorSetLayout);
 
+    m_ui                = createUnique<UI>();
+    if (!m_ui->init(*m_window))
+    {
+        DUSK_ERROR("Unable to init UI");
+        return false;
+    }
+
     return true;
 }
 
@@ -72,11 +79,12 @@ void Engine::run()
         TimeStep  m_deltaTime = newTime - m_lastFrameTime;
         m_lastFrameTime       = newTime;
 
+        // poll events from window
+        m_window->onUpdate(m_deltaTime);
+
         onUpdate(m_deltaTime);
 
         m_app->onUpdate(m_deltaTime);
-
-        m_window->onUpdate(m_deltaTime);
     }
 }
 
@@ -85,6 +93,9 @@ void Engine::stop() { m_running = false; }
 void Engine::shutdown()
 {
     m_basicRenderSystem = nullptr;
+    
+    m_ui->shutdown();
+    m_ui = nullptr;
 
     cleanupGlobals();
 
@@ -98,7 +109,6 @@ void Engine::onUpdate(TimeStep dt)
 
     m_currentScene->onUpdate(dt);
 
-    // get game objects and render system
     if (VkCommandBuffer commandBuffer = m_renderer->beginFrame())
     {
         uint32_t  currentFrameIndex = m_renderer->getCurrentFrameIndex();
@@ -128,7 +138,11 @@ void Engine::onUpdate(TimeStep dt)
 
         m_renderer->beginRendering(commandBuffer);
 
+        m_ui->beginRendering();
+
         m_basicRenderSystem->renderGameObjects(frameData);
+
+        m_ui->endRendering(commandBuffer);
 
         m_renderer->endRendering(commandBuffer);
 
@@ -210,7 +224,7 @@ bool Engine::setupGlobals()
     }
 
     m_globalDescriptorSetLayout = createUnique<VkGfxDescriptorSetLayout>(ctx);
-    result                       = m_globalDescriptorSetLayout
+    result                      = m_globalDescriptorSetLayout
                  ->addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS, maxFramesCount, true)
                  .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 100, true) // TODO: make count configurable
                  .create();
@@ -270,7 +284,7 @@ bool Engine::setupGlobals()
     }
 
     m_materialDescriptorSetLayout = createUnique<VkGfxDescriptorSetLayout>(ctx);
-    result                         = m_materialDescriptorSetLayout
+    result                        = m_materialDescriptorSetLayout
                  ->addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, maxMaterialCount, true) // TODO: make count configurable
                  .create();
 

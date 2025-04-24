@@ -6,6 +6,14 @@ set(CMAKE_CXX_STANDARD 20)
 # spdlog
 add_subdirectory(spdlog)
 
+# glfw
+option(GLFW_BUILD_DOCS OFF)
+option(GLFW_BUILD_TESTS OFF)
+option(GLFW_BUILD_EXAMPLES OFF)
+option(GLFW_BUILD_TESTS OFF)
+option(GLFW_INSTALL OFF)
+add_subdirectory(glfw)
+
 # imgui
 set(IMGUI_DIR "${CMAKE_CURRENT_SOURCE_DIR}/imgui-docking")
 set(IMGUI_FILES
@@ -20,10 +28,8 @@ set(IMGUI_FILES
     "${IMGUI_DIR}/imstb_rectpack.h"
     "${IMGUI_DIR}/imstb_textedit.h"
     "${IMGUI_DIR}/imstb_truetype.h")
-
 add_library(imgui STATIC ${IMGUI_FILES})
-
-target_include_directories(imgui SYSTEM PUBLIC ${IMGUI_DIR})
+target_include_directories(imgui SYSTEM PUBLIC ${IMGUI_DIR} ${IMGUI_DIR}/backends)
 
 # entt
 add_library(entt INTERFACE)
@@ -36,16 +42,12 @@ add_library(glm INTERFACE)
 set(GLM_DIR ${CMAKE_CURRENT_SOURCE_DIR}/glm)
 target_sources(glm INTERFACE ${GLM_DIR}/glm/glm.hpp)
 target_include_directories(glm SYSTEM INTERFACE ${GLM_DIR})
-
 target_compile_definitions(glm INTERFACE
     GLM_FORCE_SWIZZLE
     GLM_FORCE_RADIANS
     GLM_FORCE_CTOR_INIT
     GLM_ENABLE_EXPERIMENTAL
 )
-
-# glfw
-add_subdirectory(glfw)
 
 # tinygltf
 set(TINYGLTF_HEADER_ONLY ON CACHE INTERNAL "" FORCE)

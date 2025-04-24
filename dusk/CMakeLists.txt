@@ -131,6 +131,16 @@ set(SCENE_FILES
 	"${SCENE_DIR}/camera_controller.cpp"
 )
 
+set(UI_DIR "${PROJECT_SOURCE_DIR}/src/ui")
+set(UI_FILES
+	# Header files
+	"${UI_DIR}/ui.h"
+	# Source files
+	"${UI_DIR}/ui.cpp"
+	"${UI_DIR}/../../vendor/imgui-docking/backends/imgui_impl_vulkan.cpp"
+	"${UI_DIR}/../../vendor/imgui-docking/backends/imgui_impl_glfw.cpp"
+)
+
 set(UTILS_DIR "${PROJECT_SOURCE_DIR}/src/utils/")
 set(UTILS_FILES
 	# Header files
@@ -150,7 +160,8 @@ source_group("renderer/systems/shaders\\" FILES ${RENDERER_SHADERS_DIR})
 source_group("scene\\" FILES ${SCENE_FILES})
 source_group("loaders\\" FILES ${LOADERS_FILES})
 source_group("platform\\" FILES ${PLATFORM_FILES})
-source_group("utilss\\" FILES ${UTILS_FILES})
+source_group("ui\\" FILES ${UI_FILES})
+source_group("utils\\" FILES ${UTILS_FILES})
 
 set(PROJECT_FILES
 	${ENGINE_FILES}
@@ -162,10 +173,11 @@ set(PROJECT_FILES
 	${RENDERER_FILES}
 	${SCENE_FILES}
 	${PLATFORM_FILES}
+	${UI_FILES}
 	${UTILS_FILES}
 )
 
-add_library(${PROJECT_NAME} OBJECT ${PROJECT_FILES} "src/backend/vulkan/vk_renderer.cpp")
+add_library(${PROJECT_NAME} OBJECT ${PROJECT_FILES})
 target_include_directories(
 	${PROJECT_NAME} PUBLIC 
 	${ENGINE_DIR}
@@ -178,6 +190,7 @@ target_include_directories(
 	${COMPONENTS_DIR}
 	${SCENE_DIR}
 	${PLATFORM_DIR}
+	${UI_DIR}
 	${UTILS_DIR}
 )
 
@@ -230,8 +243,12 @@ elseif(UNIX)
 endif()
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC 
-		ENABLE_RENDERDOC
-	)
+	ENABLE_RENDERDOC
+)
+
+target_compile_definitions(${PROJECT_NAME} PUBLIC 
+	IMGUI_IMPL_VULKAN_USE_VOLK
+)
 
 ## TODO: Try with symlink approach
 set (ENGINE_SHADERS_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/systems/shaders")

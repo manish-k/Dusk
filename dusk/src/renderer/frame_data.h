@@ -24,7 +24,7 @@ struct FrameData
     uint32_t         frameIndex;
     TimeStep         frameTime;
     VkCommandBuffer  commandBuffer;
-    Scene&           scene;
+    Scene*           scene;
     VkDescriptorSet& globalDescriptorSet;
     VkDescriptorSet& materialDescriptorSet;
 };

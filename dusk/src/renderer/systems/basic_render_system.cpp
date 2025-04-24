@@ -140,7 +140,9 @@ void BasicRenderSystem::setupDescriptors()
 
 void BasicRenderSystem::renderGameObjects(const FrameData& frameData)
 {
-    Scene&           scene         = frameData.scene;
+    if (!frameData.scene) return;
+
+    Scene&           scene         = *frameData.scene;
     VkCommandBuffer  commandBuffer = frameData.commandBuffer;
     CameraComponent& camera        = scene.getMainCamera();
 

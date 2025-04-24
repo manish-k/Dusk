@@ -25,7 +25,7 @@ bool TestScene::start()
     std::string scenePath = "assets/scenes/Scene.gltf";
     m_testScene           = Scene::createSceneFromGLTF(scenePath);
 
-    Engine::get().loadScene(m_testScene.get());
+    //Engine::get().loadScene(m_testScene.get());
     
     return true;
 }

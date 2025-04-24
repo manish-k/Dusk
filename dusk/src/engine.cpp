@@ -93,7 +93,7 @@ void Engine::stop() { m_running = false; }
 void Engine::shutdown()
 {
     m_basicRenderSystem = nullptr;
-    
+
     m_ui->shutdown();
     m_ui = nullptr;
 
@@ -105,21 +105,11 @@ void Engine::shutdown()
 
 void Engine::onUpdate(TimeStep dt)
 {
-    if (!m_currentScene) return;
+    uint32_t currentFrameIndex = m_renderer->getCurrentFrameIndex();
 
-    m_currentScene->onUpdate(dt);
-
-    if (VkCommandBuffer commandBuffer = m_renderer->beginFrame())
+    if (m_currentScene)
     {
-        uint32_t  currentFrameIndex = m_renderer->getCurrentFrameIndex();
-        FrameData frameData {
-            currentFrameIndex,
-            dt,
-            commandBuffer,
-            *m_currentScene,
-            m_globalDescriptorSet->set,
-            m_materialsDescriptorSet->set
-        };
+        m_currentScene->onUpdate(dt);
 
         CameraComponent& camera = m_currentScene->getMainCamera();
 
@@ -135,6 +125,18 @@ void Engine::onUpdate(TimeStep dt)
 
         void* dst             = (char*)m_globalUbos.mappedMemory + sizeof(GlobalUbo) * currentFrameIndex;
         memcpy(dst, &ubo, sizeof(GlobalUbo));
+    }
+
+    if (VkCommandBuffer commandBuffer = m_renderer->beginFrame())
+    {
+        FrameData frameData {
+            currentFrameIndex,
+            dt,
+            commandBuffer,
+            m_currentScene,
+            m_globalDescriptorSet->set,
+            m_materialsDescriptorSet->set
+        };
 
         m_renderer->beginRendering(commandBuffer);
 
@@ -147,9 +149,9 @@ void Engine::onUpdate(TimeStep dt)
         m_renderer->endRendering(commandBuffer);
 
         m_renderer->endFrame();
-
-        m_renderer->deviceWaitIdle();
     }
+
+    m_renderer->deviceWaitIdle();
 }
 
 void Engine::onEvent(Event& ev)

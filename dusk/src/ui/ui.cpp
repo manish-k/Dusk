@@ -1,6 +1,7 @@
 #include "ui.h"
 
 #include "engine.h"
+#include "scene_widgets.h"
 
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -92,6 +93,11 @@ void UI::endRendering(VkCommandBuffer cb)
 {
     ImGui::Render();
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cb);
+}
+
+void UI::renderSceneWidgets(Scene& scene)
+{
+    drawSceneGraphWidget(scene);
 }
 
 void UI::switchUIDisplay(bool state)

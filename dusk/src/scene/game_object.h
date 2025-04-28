@@ -49,6 +49,10 @@ public:
      */
     void setParent(EntityId parentId) { m_parent = parentId; }
 
+    DynamicArray<EntityId>& getChildren() { return m_children; }
+    std::string            getName() { return m_name; }
+    const char*             getCName() { return m_name.c_str(); }
+
 private:
     std::string            m_name   = "GameObject";
     EntityId               m_parent = NULL_ENTITY;

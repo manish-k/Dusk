@@ -123,6 +123,7 @@ public:
 
     DynamicArray<Texture>&  getTextures() { return m_textures; }
     DynamicArray<Material>& getMaterials() { return m_materials; }
+    DynamicArray<EntityId>&  getChildren() { return m_children; }
 
     /**
      * @brief Create a scene from a gltf file

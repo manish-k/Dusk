@@ -107,26 +107,6 @@ void Engine::onUpdate(TimeStep dt)
 {
     uint32_t currentFrameIndex = m_renderer->getCurrentFrameIndex();
 
-    if (m_currentScene)
-    {
-        m_currentScene->onUpdate(dt);
-
-        CameraComponent& camera = m_currentScene->getMainCamera();
-
-        camera.setPerspectiveProjection(glm::radians(50.f), m_renderer->getAspectRatio(), 0.5f, 100.f);
-
-        GlobalUbo ubo {};
-        ubo.view              = camera.viewMatrix;
-        ubo.prjoection        = camera.projectionMatrix;
-        ubo.inverseView       = camera.inverseViewMatrix;
-
-        ubo.lightDirection    = glm::vec4(normalize(glm::vec3(1.0, -3.0, -1.0)), 0.f);
-        ubo.ambientLightColor = glm::vec4(0.7f, 0.8f, 0.8f, 0.8f);
-
-        void* dst             = (char*)m_globalUbos.mappedMemory + sizeof(GlobalUbo) * currentFrameIndex;
-        memcpy(dst, &ubo, sizeof(GlobalUbo));
-    }
-
     if (VkCommandBuffer commandBuffer = m_renderer->beginFrame())
     {
         FrameData frameData {
@@ -141,6 +121,30 @@ void Engine::onUpdate(TimeStep dt)
         m_renderer->beginRendering(commandBuffer);
 
         m_ui->beginRendering();
+
+        if (m_currentScene)
+        {
+            m_currentScene->onUpdate(dt);
+
+            CameraComponent& camera = m_currentScene->getMainCamera();
+
+            camera.setPerspectiveProjection(glm::radians(50.f), m_renderer->getAspectRatio(), 0.5f, 100.f);
+
+            GlobalUbo ubo {};
+            ubo.view              = camera.viewMatrix;
+            ubo.prjoection        = camera.projectionMatrix;
+            ubo.inverseView       = camera.inverseViewMatrix;
+
+            ubo.lightDirection    = glm::vec4(normalize(glm::vec3(1.0, -3.0, -1.0)), 0.f);
+            ubo.ambientLightColor = glm::vec4(0.7f, 0.8f, 0.8f, 0.8f);
+
+            void* dst             = (char*)m_globalUbos.mappedMemory + sizeof(GlobalUbo) * currentFrameIndex;
+            memcpy(dst, &ubo, sizeof(GlobalUbo));
+
+
+            //TODO:: maybe scene onUpdate is the right place for this
+            m_ui->renderSceneWidgets(*m_currentScene);
+        }
 
         m_basicRenderSystem->renderGameObjects(frameData);
 

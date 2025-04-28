@@ -1,6 +1,7 @@
 #pragma once
 
 #include "dusk.h"
+#include "scene/scene.h"
 #include "platform/window.h"
 #include "backend/vulkan/vk_descriptors.h"
 
@@ -18,6 +19,8 @@ public:
     void shutdown();
     void beginRendering();
     void endRendering(VkCommandBuffer cb);
+    void renderSceneWidgets(Scene& scene);
+    void createLeftDockSpace();
     void onEvent();
     void switchUIDisplay(bool state);
 

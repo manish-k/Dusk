@@ -135,6 +135,7 @@ set(UI_DIR "${PROJECT_SOURCE_DIR}/src/ui")
 set(UI_FILES
 	# Header files
 	"${UI_DIR}/ui.h"
+	"${UI_DIR}/scene_widgets.h"
 	# Source files
 	"${UI_DIR}/ui.cpp"
 	"${UI_DIR}/../../vendor/imgui-docking/backends/imgui_impl_vulkan.cpp"

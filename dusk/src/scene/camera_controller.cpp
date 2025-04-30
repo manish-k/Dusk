@@ -31,17 +31,13 @@ void CameraController::onEvent(Event& ev)
             if (ev.getMouseButton() == Mouse::ButtonRight)
             {
                 m_isRMBpressed    = true;
-            }
-
-            if (ev.getMouseButton() == Mouse::ButtonLeft)
-            {
-                m_isLMBpressed = true;
 
                 m_mouseX          = ev.getClickedPosX();
                 m_mouseY          = ev.getClickedPosY();
                 m_angleHorizontal = 0.f;
                 m_angleVertical   = 0.f;
             }
+
             return false;
         });
 
@@ -51,12 +47,8 @@ void CameraController::onEvent(Event& ev)
             if (ev.getMouseButton() == Mouse::ButtonRight)
             {
                 m_isRMBpressed  = false;
+                m_changed       = false;
                 m_moveDirection = {};
-            }
-
-            if (ev.getMouseButton() == Mouse::ButtonLeft)
-            {
-                m_isLMBpressed = false;
             }
 
             return false;
@@ -65,30 +57,29 @@ void CameraController::onEvent(Event& ev)
     dispatcher.dispatch<MouseMovedEvent>(
         [this](MouseMovedEvent& ev)
         {
-            if (m_isRMBpressed && m_isLMBpressed)
+            if (m_isRMBpressed)
             {
-                float deltaX = ev.getX() - m_mouseX;
-                float deltaY = ev.getY() - m_mouseY;
+                float     deltaX                = ev.getX() - m_mouseX;
+                float     deltaY                = ev.getY() - m_mouseY;
 
-                float verticalAngle = deltaY * 2.f * 1.f / m_height;
-                float verticalAngle = deltaY * 2 * 1.5 / m_height;
+                float     verticalAngle         = deltaY * 1.f * 1.5f / m_height;
 
-                // 3.14 radians rotation for half screen
-                float horizontalAngle = deltaX * 2 * 3.14 / m_width;
+                float     horizontalAngle       = deltaX * 0.75f * 3.14f / m_width;
 
-                // TODO: ineffecient code
-                glm::quat newVerticalRotaion   = glm::angleAxis(verticalAngle, glm::vec3(1.0f, 0.f, 0.f));
-                glm::quat newHorizontalRotaion = glm::angleAxis(horizontalAngle, glm::vec3(0.0f, 1.f, 0.f));
+                glm::quat newVerticalRotation   = glm::angleAxis(-verticalAngle, m_cameraComponent.rightDirection);
+                glm::quat newHorizontalRotation = glm::angleAxis(-horizontalAngle, -m_cameraComponent.upDirection);
 
                 if (m_isLeftShiftPressed)    // no vertical rotation
-                    m_cameraTransform.rotation = newHorizontalRotaion * m_cameraTransform.rotation;
+                    m_cameraTransform.rotation = newHorizontalRotation * m_cameraTransform.rotation;
                 else if (m_isLeftAltPressed) // no horizontal rotation
-                    m_cameraTransform.rotation = newVerticalRotaion * m_cameraTransform.rotation;
+                    m_cameraTransform.rotation = newVerticalRotation * m_cameraTransform.rotation;
                 else                         // full rotation
-                    m_cameraTransform.rotation = newHorizontalRotaion * newVerticalRotaion * m_cameraTransform.rotation;
+                    m_cameraTransform.rotation = newHorizontalRotation * newVerticalRotation * m_cameraTransform.rotation;
 
-                m_mouseX = ev.getX();
-                m_mouseY = ev.getY();
+                m_mouseX  = ev.getX();
+                m_mouseY  = ev.getY();
+
+                m_changed = true;
             }
 
             return false;
@@ -101,19 +92,19 @@ void CameraController::onEvent(Event& ev)
             {
                 if (ev.getKeyCode() == Key::A)
                 {
-                    m_moveDirection += m_cameraComponent.rightDirection;
+                    m_moveDirection -= m_cameraComponent.rightDirection;
                 }
                 else if (ev.getKeyCode() == Key::D)
                 {
-                    m_moveDirection -= m_cameraComponent.rightDirection;
+                    m_moveDirection += m_cameraComponent.rightDirection;
                 }
                 else if (ev.getKeyCode() == Key::Space || ev.getKeyCode() == Key::E)
                 {
-                    m_moveDirection += m_cameraComponent.upDirection;
+                    m_moveDirection -= m_cameraComponent.upDirection;
                 }
                 else if (ev.getKeyCode() == Key::LeftControl || ev.getKeyCode() == Key::Q)
                 {
-                    m_moveDirection -= m_cameraComponent.upDirection;
+                    m_moveDirection += m_cameraComponent.upDirection;
                 }
                 else if (ev.getKeyCode() == Key::W)
                 {
@@ -123,6 +114,8 @@ void CameraController::onEvent(Event& ev)
                 {
                     m_moveDirection -= m_cameraComponent.forwardDirection;
                 }
+
+                m_changed = true;
             }
 
             if (ev.getKeyCode() == Key::LeftShift) m_isLeftShiftPressed = true;
@@ -139,19 +132,19 @@ void CameraController::onEvent(Event& ev)
             {
                 if (ev.getKeyCode() == Key::A)
                 {
-                    m_moveDirection -= m_cameraComponent.rightDirection;
+                    m_moveDirection += m_cameraComponent.rightDirection;
                 }
                 else if (ev.getKeyCode() == Key::D)
                 {
-                    m_moveDirection += m_cameraComponent.rightDirection;
+                    m_moveDirection -= m_cameraComponent.rightDirection;
                 }
                 else if (ev.getKeyCode() == Key::Space || ev.getKeyCode() == Key::E)
                 {
-                    m_moveDirection -= m_cameraComponent.upDirection;
+                    m_moveDirection += m_cameraComponent.upDirection;
                 }
                 else if (ev.getKeyCode() == Key::LeftControl || ev.getKeyCode() == Key::Q)
                 {
-                    m_moveDirection += m_cameraComponent.upDirection;
+                    m_moveDirection -= m_cameraComponent.upDirection;
                 }
                 else if (ev.getKeyCode() == Key::W)
                 {
@@ -161,6 +154,8 @@ void CameraController::onEvent(Event& ev)
                 {
                     m_moveDirection += m_cameraComponent.forwardDirection;
                 }
+
+                m_changed = true;
             }
 
             if (ev.getKeyCode() == Key::LeftShift) m_isLeftShiftPressed = false;
@@ -173,9 +168,11 @@ void CameraController::onEvent(Event& ev)
 
 void CameraController::onUpdate(TimeStep dt)
 {
-    m_cameraTransform.translation += m_cameraMoveSpeed * dt.count() * m_moveDirection;
-
-    m_cameraComponent.setView(m_cameraTransform.translation, m_cameraTransform.rotation);
+    if (m_changed)
+    {
+        m_cameraTransform.translation += m_cameraMoveSpeed * dt.count() * m_moveDirection;
+        m_cameraComponent.setView(m_cameraTransform.translation, m_cameraTransform.rotation);
+    }
 }
 
 } // namespace dusk

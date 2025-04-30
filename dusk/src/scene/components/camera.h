@@ -9,11 +9,15 @@
 
 namespace dusk
 {
+constexpr glm::vec3 baseForwardDir = glm::vec3 { 0.f, 0.f, -1.f };
+constexpr glm::vec3 baseUpDir      = glm::vec3 { 0.f, -1.f, 0.f };
+constexpr glm::vec3 baseRightDir   = glm::vec3 { 1.f, 0.f, 0.f };
+
 struct CameraComponent
 {
-    glm::vec3 forwardDirection  = glm::vec3 { 0.f, 0.f, -1.f };  // default; looking in -z axis dir
-    glm::vec3 upDirection       = glm::vec3 { 0.f, -1.f, 0.f }; // default; -y axis is up dir
-    glm::vec3 rightDirection    = glm::vec3 { 1.f, 0.f, 0.f };
+    glm::vec3 forwardDirection  = baseForwardDir; // default; looking in -z axis dir
+    glm::vec3 upDirection       = baseUpDir;      // default; -y axis is up dir
+    glm::vec3 rightDirection    = baseRightDir;
 
     glm::mat4 projectionMatrix  = glm::mat4 { 1.0f };
     glm::mat4 viewMatrix        = glm::mat4 { 1.0f };
@@ -88,11 +92,15 @@ struct CameraComponent
     /**
      * @brief Set view as per camera's position and rotation
      * @param position position of the camera
-     * @param rotation rotation to be applied on the camera
+     * @param total rotation to be applied on the camera
      */
     void setView(glm::vec3 position, glm::quat rotation)
     {
-        updateViewMatrix(position, rotation * rightDirection, rotation * upDirection, rotation * forwardDirection);
+        rightDirection   = glm::normalize(rotation * baseRightDir);
+        upDirection      = glm::normalize(rotation * baseUpDir);
+        forwardDirection = glm::normalize(rotation * baseForwardDir);
+
+        updateViewMatrix(position, rightDirection, upDirection, forwardDirection);
     }
 
     /**

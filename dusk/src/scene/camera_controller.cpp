@@ -67,7 +67,11 @@ void CameraController::onEvent(Event& ev)
                 float     horizontalAngle       = deltaX * 0.75f * 3.14f / m_width;
 
                 glm::quat newVerticalRotation   = glm::angleAxis(-verticalAngle, m_cameraComponent.rightDirection);
-                glm::quat newHorizontalRotation = glm::angleAxis(-horizontalAngle, -m_cameraComponent.upDirection);
+                
+                // fix for avoiding unintended roll is to use world up for
+                // yaw rotations
+                // https://gamedev.stackexchange.com/questions/103242/why-is-the-camera-tilting-around-the-z-axis-when-i-only-specified-x-and-y/103243#103243
+                glm::quat newHorizontalRotation = glm::angleAxis(-horizontalAngle, glm::vec3 { 0.f, 1.f, 0.f });
 
                 if (m_isLeftShiftPressed)    // no vertical rotation
                     m_cameraTransform.rotation = newHorizontalRotation * m_cameraTransform.rotation;

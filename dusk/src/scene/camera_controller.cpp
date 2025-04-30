@@ -70,7 +70,7 @@ void CameraController::onEvent(Event& ev)
                 float deltaX = ev.getX() - m_mouseX;
                 float deltaY = ev.getY() - m_mouseY;
 
-                // 1.5 radians (~85 degrees) rotation for half screen
+                float verticalAngle = deltaY * 2.f * 1.f / m_height;
                 float verticalAngle = deltaY * 2 * 1.5 / m_height;
 
                 // 3.14 radians rotation for half screen

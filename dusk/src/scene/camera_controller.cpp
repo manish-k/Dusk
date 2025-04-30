@@ -36,6 +36,13 @@ void CameraController::onEvent(Event& ev)
                 m_mouseY          = ev.getClickedPosY();
                 m_angleHorizontal = 0.f;
                 m_angleVertical   = 0.f;
+
+                bool m_isAPressed = false;
+                bool m_isDPressed = false;
+                bool m_isWPressed = false;
+                bool m_isSPressed = false;
+                bool m_isEPressed = false;
+                bool m_isQPressed = false;
             }
 
             return false;
@@ -48,7 +55,6 @@ void CameraController::onEvent(Event& ev)
             {
                 m_isRMBpressed  = false;
                 m_changed       = false;
-                m_moveDirection = {};
             }
 
             return false;
@@ -59,15 +65,15 @@ void CameraController::onEvent(Event& ev)
         {
             if (m_isRMBpressed)
             {
-                float     deltaX                = ev.getX() - m_mouseX;
-                float     deltaY                = ev.getY() - m_mouseY;
+                float     deltaX              = ev.getX() - m_mouseX;
+                float     deltaY              = ev.getY() - m_mouseY;
 
-                float     verticalAngle         = deltaY * 1.f * 1.5f / m_height;
+                float     verticalAngle       = deltaY * 1.f * 1.5f / m_height;
 
-                float     horizontalAngle       = deltaX * 0.75f * 3.14f / m_width;
+                float     horizontalAngle     = deltaX * 0.75f * 3.14f / m_width;
 
-                glm::quat newVerticalRotation   = glm::angleAxis(-verticalAngle, m_cameraComponent.rightDirection);
-                
+                glm::quat newVerticalRotation = glm::angleAxis(-verticalAngle, m_cameraComponent.rightDirection);
+
                 // fix for avoiding unintended roll is to use world up for
                 // yaw rotations
                 // https://gamedev.stackexchange.com/questions/103242/why-is-the-camera-tilting-around-the-z-axis-when-i-only-specified-x-and-y/103243#103243
@@ -96,27 +102,27 @@ void CameraController::onEvent(Event& ev)
             {
                 if (ev.getKeyCode() == Key::A)
                 {
-                    m_moveDirection -= m_cameraComponent.rightDirection;
+                    m_isAPressed = true;
                 }
                 else if (ev.getKeyCode() == Key::D)
                 {
-                    m_moveDirection += m_cameraComponent.rightDirection;
+                    m_isDPressed = true;
                 }
                 else if (ev.getKeyCode() == Key::Space || ev.getKeyCode() == Key::E)
                 {
-                    m_moveDirection -= m_cameraComponent.upDirection;
+                    m_isEPressed = true;
                 }
                 else if (ev.getKeyCode() == Key::LeftControl || ev.getKeyCode() == Key::Q)
                 {
-                    m_moveDirection += m_cameraComponent.upDirection;
+                    m_isQPressed = true;
                 }
                 else if (ev.getKeyCode() == Key::W)
                 {
-                    m_moveDirection += m_cameraComponent.forwardDirection;
+                    m_isWPressed = true;
                 }
                 else if (ev.getKeyCode() == Key::S)
                 {
-                    m_moveDirection -= m_cameraComponent.forwardDirection;
+                    m_isSPressed = true;
                 }
 
                 m_changed = true;
@@ -132,31 +138,31 @@ void CameraController::onEvent(Event& ev)
     dispatcher.dispatch<KeyReleasedEvent>(
         [this](KeyReleasedEvent& ev)
         {
-            if (m_isRMBpressed && m_moveDirection != glm::vec3 { 0.f, 0.f, 0.f })
+            if (m_isRMBpressed)
             {
                 if (ev.getKeyCode() == Key::A)
                 {
-                    m_moveDirection += m_cameraComponent.rightDirection;
+                    m_isAPressed = false;
                 }
                 else if (ev.getKeyCode() == Key::D)
                 {
-                    m_moveDirection -= m_cameraComponent.rightDirection;
+                    m_isDPressed = false;
                 }
                 else if (ev.getKeyCode() == Key::Space || ev.getKeyCode() == Key::E)
                 {
-                    m_moveDirection += m_cameraComponent.upDirection;
+                    m_isEPressed = false;
                 }
                 else if (ev.getKeyCode() == Key::LeftControl || ev.getKeyCode() == Key::Q)
                 {
-                    m_moveDirection -= m_cameraComponent.upDirection;
+                    m_isQPressed = false;
                 }
                 else if (ev.getKeyCode() == Key::W)
                 {
-                    m_moveDirection -= m_cameraComponent.forwardDirection;
+                    m_isWPressed = false;
                 }
                 else if (ev.getKeyCode() == Key::S)
                 {
-                    m_moveDirection += m_cameraComponent.forwardDirection;
+                    m_isSPressed = false;
                 }
 
                 m_changed = true;
@@ -174,7 +180,16 @@ void CameraController::onUpdate(TimeStep dt)
 {
     if (m_changed)
     {
-        m_cameraTransform.translation += m_cameraMoveSpeed * dt.count() * m_moveDirection;
+        glm::vec3 moveDirection = {};
+
+        if (m_isAPressed) moveDirection -= m_cameraComponent.rightDirection;
+        if (m_isDPressed) moveDirection += m_cameraComponent.rightDirection;
+        if (m_isWPressed) moveDirection += m_cameraComponent.forwardDirection;
+        if (m_isSPressed) moveDirection -= m_cameraComponent.forwardDirection;
+        if (m_isEPressed) moveDirection -= m_cameraComponent.upDirection;
+        if (m_isQPressed) moveDirection += m_cameraComponent.upDirection;
+
+        m_cameraTransform.translation += m_cameraMoveSpeed * dt.count() * moveDirection;
         m_cameraComponent.setView(m_cameraTransform.translation, m_cameraTransform.rotation);
     }
 }

@@ -29,16 +29,21 @@ private:
     float               m_width              = 0.0f;
     float               m_height             = 0.0f;
 
-    bool                m_changed            = false;
+    bool                m_changed            = false; // TODO:: might not be required
 
-    float               m_cameraMoveSpeed    = { 4.0f };
-    float               m_cameraLookSpeed    = { 1.5f };
+    float               m_cameraMoveSpeed    = { 2.0f };
 
+    // TODO:: create input state controller to track such states
     bool                m_isRMBpressed       = false;
     bool                m_isLeftShiftPressed = false;
     bool                m_isLeftAltPressed   = false;
+    bool                m_isAPressed         = false;
+    bool                m_isDPressed         = false;
+    bool                m_isWPressed         = false;
+    bool                m_isSPressed         = false;
+    bool                m_isEPressed         = false;
+    bool                m_isQPressed         = false;
 
-    glm::vec3           m_moveDirection {};
     float               m_mouseX          = 0.f;
     float               m_mouseY          = 0.f;
     float               m_angleHorizontal = 0.f;

@@ -11,6 +11,7 @@ CameraController::CameraController(GameObject& camera, float width, float height
     m_cameraTransform(camera.getComponent<TransformComponent>()), m_cameraComponent(camera.getComponent<CameraComponent>()),
     m_width(width), m_height(height)
 {
+    m_originalTransform = m_cameraTransform; // copy original transform
 }
 
 void CameraController::onEvent(Event& ev)
@@ -128,6 +129,11 @@ void CameraController::onEvent(Event& ev)
                 m_changed = true;
             }
 
+            if (ev.getKeyCode() == Key::R)
+            {
+                resetCamera();
+            }
+
             if (ev.getKeyCode() == Key::LeftShift) m_isLeftShiftPressed = true;
 
             if (ev.getKeyCode() == Key::LeftAlt) m_isLeftAltPressed = true;
@@ -192,6 +198,12 @@ void CameraController::onUpdate(TimeStep dt)
         m_cameraTransform.translation += m_cameraMoveSpeed * dt.count() * moveDirection;
         m_cameraComponent.setView(m_cameraTransform.translation, m_cameraTransform.rotation);
     }
+}
+
+void CameraController::resetCamera()
+{
+    m_cameraTransform = m_originalTransform; // copy back
+    m_cameraComponent.setView(m_cameraTransform.translation, m_cameraTransform.rotation);
 }
 
 } // namespace dusk

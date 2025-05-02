@@ -181,7 +181,7 @@ void BasicRenderSystem::renderGameObjects(const FrameData& frameData)
             VkDeviceSize offsets[] = { 0 };
 
             DrawData     push {};
-            push.cameraIdx   = frameData.frameIndex;
+            push.cameraBufferIdx   = frameData.frameIndex;
             push.materialIdx = meshId;
 
             // update mesh transform data

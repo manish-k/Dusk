@@ -57,9 +57,16 @@ bool Engine::start(Shared<Application> app)
     bool globalsStatus = setupGlobals();
     if (!globalsStatus) return false;
 
-    m_basicRenderSystem = createUnique<BasicRenderSystem>(*m_gfxDevice, *m_globalDescriptorSetLayout, *m_materialDescriptorSetLayout);
+    m_basicRenderSystem = createUnique<BasicRenderSystem>(
+        *m_gfxDevice,
+        *m_globalDescriptorSetLayout,
+        *m_materialDescriptorSetLayout);
 
-    m_ui                = createUnique<UI>();
+    m_gridRenderSystem = createUnique<GridRenderSystem>(
+        *m_gfxDevice,
+        *m_globalDescriptorSetLayout);
+
+    m_ui = createUnique<UI>();
     if (!m_ui->init(*m_window))
     {
         DUSK_ERROR("Unable to init UI");
@@ -93,6 +100,7 @@ void Engine::stop() { m_running = false; }
 void Engine::shutdown()
 {
     m_basicRenderSystem = nullptr;
+    m_gridRenderSystem  = nullptr;
 
     m_ui->shutdown();
     m_ui = nullptr;
@@ -141,12 +149,13 @@ void Engine::onUpdate(TimeStep dt)
             void* dst             = (char*)m_globalUbos.mappedMemory + sizeof(GlobalUbo) * currentFrameIndex;
             memcpy(dst, &ubo, sizeof(GlobalUbo));
 
-
-            //TODO:: maybe scene onUpdate is the right place for this
+            // TODO:: maybe scene onUpdate is the right place for this
             m_ui->renderSceneWidgets(*m_currentScene);
         }
 
         m_basicRenderSystem->renderGameObjects(frameData);
+
+        //m_gridRenderSystem->renderGrid(frameData);
 
         m_ui->endRendering(commandBuffer);
 

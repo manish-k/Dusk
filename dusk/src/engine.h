@@ -11,6 +11,7 @@
 #include "backend/vulkan/vk_descriptors.h"
 #include "renderer/render_api.h"
 #include "renderer/systems/basic_render_system.h"
+#include "renderer/systems/grid_render_system.h"
 #include "ui/ui.h"
 
 namespace dusk
@@ -68,6 +69,7 @@ private:
     Shared<Application>              m_app               = nullptr;
 
     Unique<BasicRenderSystem>        m_basicRenderSystem = nullptr;
+    Unique<GridRenderSystem>         m_gridRenderSystem  = nullptr;
 
     Unique<UI>                       m_ui                = nullptr;
 
@@ -79,13 +81,13 @@ private:
     TimePoint                        m_lastFrameTime;
     TimeStep                         m_deltaTime;
 
-    Unique<VkGfxDescriptorPool>      m_globalDescriptorPool       = nullptr;
+    Unique<VkGfxDescriptorPool>      m_globalDescriptorPool      = nullptr;
     Unique<VkGfxDescriptorSetLayout> m_globalDescriptorSetLayout = nullptr;
 
     VulkanGfxBuffer                  m_globalUbos;
     Unique<VkGfxDescriptorSet>       m_globalDescriptorSet;
 
-    Unique<VkGfxDescriptorPool>      m_materialDescriptorPool       = nullptr;
+    Unique<VkGfxDescriptorPool>      m_materialDescriptorPool      = nullptr;
     Unique<VkGfxDescriptorSetLayout> m_materialDescriptorSetLayout = nullptr;
 
     VulkanGfxBuffer                  m_materialsBuffer;

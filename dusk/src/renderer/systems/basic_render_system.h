@@ -12,7 +12,7 @@ namespace dusk
 
 struct DrawData
 {
-    uint32_t cameraIdx;
+    uint32_t cameraBufferIdx;
     uint32_t materialIdx;
 };
 

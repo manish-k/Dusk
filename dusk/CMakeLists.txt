@@ -106,10 +106,12 @@ set(RENDERER_FILES
 	"${RENDERER_DIR}/texture.h"
 	"${RENDERER_DIR}/material.h"
 	"${RENDERER_SYSTEMS_DIR}/basic_render_system.h"
+	"${RENDERER_SYSTEMS_DIR}/grid_render_system.h"
 	# Source files
 	"${RENDERER_DIR}/sub_mesh.cpp"
 	"${RENDERER_DIR}/texture.cpp"
 	"${RENDERER_SYSTEMS_DIR}/basic_render_system.cpp"
+	"${RENDERER_SYSTEMS_DIR}/grid_render_system.cpp"
 )
 
 set(SCENE_DIR "${PROJECT_SOURCE_DIR}/src/scene")

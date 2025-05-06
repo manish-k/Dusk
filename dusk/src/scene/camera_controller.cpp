@@ -193,7 +193,6 @@ void CameraController::onUpdate(TimeStep dt)
 {
     if (m_changed)
     {
-        DUSK_INFO("Key state {} {} {} {} {} {}", m_isAPressed, m_isDPressed, m_isWPressed, m_isSPressed, m_isQPressed, m_isEPressed);
         glm::vec3 moveDirection = {};
 
         if (m_isAPressed) moveDirection -= m_cameraComponent.rightDirection;

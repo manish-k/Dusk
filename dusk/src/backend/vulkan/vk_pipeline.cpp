@@ -58,6 +58,12 @@ VkGfxRenderPipeline::Builder& VkGfxRenderPipeline::Builder::addColorAttachmentFo
     return *this;
 }
 
+VkGfxRenderPipeline::Builder& VkGfxRenderPipeline::Builder::setCullMode(VkCullModeFlagBits flags)
+{
+    m_renderConfig.cullMode = flags;
+    return *this;
+}
+
 Unique<VkGfxRenderPipeline> VkGfxRenderPipeline::Builder::build()
 {
     // DASSERT(m_renderConfig.renderPass != VK_NULL_HANDLE, "render pass is required for rendering");
@@ -170,7 +176,7 @@ VkGfxRenderPipeline::VkGfxRenderPipeline(VulkanContext& vkContext, VkGfxRenderPi
     rasterizationInfo.rasterizerDiscardEnable = VK_FALSE;
     rasterizationInfo.polygonMode             = VK_POLYGON_MODE_FILL;
     rasterizationInfo.lineWidth               = 1.0f;
-    rasterizationInfo.cullMode                = VK_CULL_MODE_NONE;
+    rasterizationInfo.cullMode                = renderConfig.cullMode;
     rasterizationInfo.frontFace               = VK_FRONT_FACE_CLOCKWISE;
     rasterizationInfo.depthBiasEnable         = VK_FALSE;
     rasterizationInfo.depthBiasConstantFactor = 0.0f;

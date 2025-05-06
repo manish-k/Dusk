@@ -115,14 +115,14 @@ public:
         m_materials.reserve(materialCount);
     };
 
-    void                    addMaterial(Material& mat);
+    void                     addMaterial(Material& mat);
 
-    Material&               getMaterial(uint32_t matId) { return m_materials[matId]; };
+    Material&                getMaterial(uint32_t matId) { return m_materials[matId]; };
 
-    void                    freeMaterials();
+    void                     freeMaterials();
 
-    DynamicArray<Texture>&  getTextures() { return m_textures; }
-    DynamicArray<Material>& getMaterials() { return m_materials; }
+    DynamicArray<Texture2D>& getTextures() { return m_textures; }
+    DynamicArray<Material>&  getMaterials() { return m_materials; }
     DynamicArray<EntityId>&  getChildren() { return m_children; }
 
     /**
@@ -145,7 +145,7 @@ private:
     Unique<CameraController>       m_cameraController;
 
     HashMap<std::string, uint32_t> m_texPathMap; // currently loaded textures
-    DynamicArray<Texture>          m_textures;
+    DynamicArray<Texture2D>        m_textures;
 
     DynamicArray<Material>         m_materials;
 };

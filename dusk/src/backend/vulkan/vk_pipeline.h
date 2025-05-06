@@ -27,6 +27,8 @@ struct VkGfxRenderPipelineConfig
     uint32_t                            subpassIndex   = 0u;
 
     VkPipelineLayout                    pipelineLayout = VK_NULL_HANDLE;
+
+    VkCullModeFlagBits                  cullMode       = VK_CULL_MODE_NONE;
 };
 
 class VkGfxRenderPipeline
@@ -44,6 +46,7 @@ public:
         Builder& setSubPassIndex(uint32_t index);
         Builder& setPipelineLayout(VkGfxPipelineLayout& pipelineLayout);
         Builder& addColorAttachmentFormat(VkFormat format);
+        Builder& setCullMode(VkCullModeFlagBits flags);
 
         /**
          * @brief build VkGfxPipeline object with given config

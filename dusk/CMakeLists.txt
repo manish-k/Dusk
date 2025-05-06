@@ -107,11 +107,13 @@ set(RENDERER_FILES
 	"${RENDERER_DIR}/material.h"
 	"${RENDERER_SYSTEMS_DIR}/basic_render_system.h"
 	"${RENDERER_SYSTEMS_DIR}/grid_render_system.h"
+	"${RENDERER_SYSTEMS_DIR}/skybox_render_system.h"
 	# Source files
 	"${RENDERER_DIR}/sub_mesh.cpp"
 	"${RENDERER_DIR}/texture.cpp"
 	"${RENDERER_SYSTEMS_DIR}/basic_render_system.cpp"
 	"${RENDERER_SYSTEMS_DIR}/grid_render_system.cpp"
+	"${RENDERER_SYSTEMS_DIR}/skybox_render_system.cpp"
 )
 
 set(SCENE_DIR "${PROJECT_SOURCE_DIR}/src/scene")
@@ -253,7 +255,9 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC
 	IMGUI_IMPL_VULKAN_USE_VOLK
 )
 
-## TODO: Try with symlink approach
+set (ENGINE_TEXTURES_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/systems/textures")
+set (ENGINE_TEXTURES_DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/textures")
+
 set (ENGINE_SHADERS_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/systems/shaders")
 set (ENGINE_SHADERS_DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/shaders")
 
@@ -300,4 +304,12 @@ add_custom_target(
     DEPENDS DUSK_SHADERS_COMPILE
 )
 
-add_dependencies(${PROJECT_NAME} DUSK_SHADERS_COPY)
+add_custom_target(
+    DUSK_TEXTURES_COPY ALL
+	COMMAND ${CMAKE_COMMAND} -E echo "Copying textures"
+	COMMAND ${CMAKE_COMMAND} -E remove_directory ${ENGINE_TEXTURES_DEST_DIR}
+	COMMAND ${CMAKE_COMMAND} -E copy_directory ${ENGINE_TEXTURES_SOURCE_DIR} ${ENGINE_TEXTURES_DEST_DIR}
+	DEPENDS DUSK_SHADERS_COPY
+)
+
+add_dependencies(${PROJECT_NAME} DUSK_TEXTURES_COPY)

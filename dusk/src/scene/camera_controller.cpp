@@ -38,12 +38,12 @@ void CameraController::onEvent(Event& ev)
                 m_angleHorizontal = 0.f;
                 m_angleVertical   = 0.f;
 
-                bool m_isAPressed = false;
-                bool m_isDPressed = false;
-                bool m_isWPressed = false;
-                bool m_isSPressed = false;
-                bool m_isEPressed = false;
-                bool m_isQPressed = false;
+                m_isAPressed      = false;
+                m_isDPressed      = false;
+                m_isWPressed      = false;
+                m_isSPressed      = false;
+                m_isEPressed      = false;
+                m_isQPressed      = false;
             }
 
             return false;
@@ -54,8 +54,15 @@ void CameraController::onEvent(Event& ev)
         {
             if (ev.getMouseButton() == Mouse::ButtonRight)
             {
-                m_isRMBpressed  = false;
-                m_changed       = false;
+                m_isRMBpressed = false;
+                m_changed      = false;
+
+                m_isAPressed   = false;
+                m_isDPressed   = false;
+                m_isWPressed   = false;
+                m_isSPressed   = false;
+                m_isEPressed   = false;
+                m_isQPressed   = false;
             }
 
             return false;
@@ -186,6 +193,7 @@ void CameraController::onUpdate(TimeStep dt)
 {
     if (m_changed)
     {
+        DUSK_INFO("Key state {} {} {} {} {} {}", m_isAPressed, m_isDPressed, m_isWPressed, m_isSPressed, m_isQPressed, m_isEPressed);
         glm::vec3 moveDirection = {};
 
         if (m_isAPressed) moveDirection -= m_cameraComponent.rightDirection;

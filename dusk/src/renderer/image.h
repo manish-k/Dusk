@@ -8,6 +8,6 @@ struct Image
     int            height;
     int            channels;
     size_t         size;
-    unsigned char* data;
+    unsigned char* data; // TODO: copy of Image struct should not be allowed
 };
 } // namespace dusk

@@ -66,6 +66,10 @@ bool Engine::start(Shared<Application> app)
         *m_gfxDevice,
         *m_globalDescriptorSetLayout);
 
+    m_skyboxRenderSystem = createUnique<SkyboxRenderSystem>(
+        *m_gfxDevice,
+        *m_globalDescriptorSetLayout);
+
     m_ui = createUnique<UI>();
     if (!m_ui->init(*m_window))
     {
@@ -99,8 +103,9 @@ void Engine::stop() { m_running = false; }
 
 void Engine::shutdown()
 {
-    m_basicRenderSystem = nullptr;
-    m_gridRenderSystem  = nullptr;
+    m_basicRenderSystem  = nullptr;
+    m_gridRenderSystem   = nullptr;
+    m_skyboxRenderSystem = nullptr;
 
     m_ui->shutdown();
     m_ui = nullptr;
@@ -136,7 +141,7 @@ void Engine::onUpdate(TimeStep dt)
 
             CameraComponent& camera = m_currentScene->getMainCamera();
 
-            camera.setPerspectiveProjection(glm::radians(50.f), m_renderer->getAspectRatio(), 0.5f, 100.f);
+            camera.setPerspectiveProjection(glm::radians(50.f), m_renderer->getAspectRatio(), 0.5f, 1000.f);
 
             GlobalUbo ubo {};
             ubo.view              = camera.viewMatrix;
@@ -155,7 +160,8 @@ void Engine::onUpdate(TimeStep dt)
 
         m_basicRenderSystem->renderGameObjects(frameData);
 
-        //m_gridRenderSystem->renderGrid(frameData);
+        // m_gridRenderSystem->renderGrid(frameData);
+        m_skyboxRenderSystem->renderSkybox(frameData);
 
         m_ui->endRendering(commandBuffer);
 
@@ -356,7 +362,7 @@ void Engine::cleanupGlobals()
     m_materialDescriptorPool->destroy();
 }
 
-void Engine::registerTextures(DynamicArray<Texture>& textures)
+void Engine::registerTextures(DynamicArray<Texture2D>& textures)
 {
     DynamicArray<VkDescriptorImageInfo> imagesInfo(textures.size());
     for (uint32_t texIndex = 0u; texIndex < textures.size(); ++texIndex)

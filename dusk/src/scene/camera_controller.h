@@ -35,7 +35,7 @@ private:
 
     bool                m_changed           = false; // TODO:: might not be required
 
-    float               m_cameraMoveSpeed   = { 2.0f };
+    float               m_cameraMoveSpeed   = { 4.0f };
 
     // TODO:: create input state controller to track such states
     bool  m_isRMBpressed       = false;

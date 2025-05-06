@@ -12,6 +12,7 @@
 #include "renderer/render_api.h"
 #include "renderer/systems/basic_render_system.h"
 #include "renderer/systems/grid_render_system.h"
+#include "renderer/systems/skybox_render_system.h"
 #include "ui/ui.h"
 
 namespace dusk
@@ -56,27 +57,28 @@ public:
     bool                  setupGlobals();
     void                  cleanupGlobals();
 
-    void                  registerTextures(DynamicArray<Texture>& textures);
+    void                  registerTextures(DynamicArray<Texture2D>& textures);
     void                  registerMaterials(DynamicArray<Material>& materials);
 
 private:
     Config                           m_config;
 
-    Unique<VkGfxDevice>              m_gfxDevice         = nullptr;
-    Unique<VulkanRenderer>           m_renderer          = nullptr;
+    Unique<VkGfxDevice>              m_gfxDevice          = nullptr;
+    Unique<VulkanRenderer>           m_renderer           = nullptr;
 
-    Shared<Window>                   m_window            = nullptr;
-    Shared<Application>              m_app               = nullptr;
+    Shared<Window>                   m_window             = nullptr;
+    Shared<Application>              m_app                = nullptr;
 
-    Unique<BasicRenderSystem>        m_basicRenderSystem = nullptr;
-    Unique<GridRenderSystem>         m_gridRenderSystem  = nullptr;
+    Unique<BasicRenderSystem>        m_basicRenderSystem  = nullptr;
+    Unique<GridRenderSystem>         m_gridRenderSystem   = nullptr;
+    Unique<SkyboxRenderSystem>       m_skyboxRenderSystem = nullptr;
 
-    Unique<UI>                       m_ui                = nullptr;
+    Unique<UI>                       m_ui                 = nullptr;
 
-    bool                             m_running           = false;
-    bool                             m_paused            = false;
+    bool                             m_running            = false;
+    bool                             m_paused             = false;
 
-    Scene*                           m_currentScene      = nullptr;
+    Scene*                           m_currentScene       = nullptr;
 
     TimePoint                        m_lastFrameTime;
     TimeStep                         m_deltaTime;

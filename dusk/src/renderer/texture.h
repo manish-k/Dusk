@@ -8,7 +8,7 @@ namespace dusk
 {
 class Image;
 
-struct Texture
+struct Texture2D
 {
     uint32_t      id;
     uint32_t      width       = 0;
@@ -16,13 +16,32 @@ struct Texture
     uint32_t      numChannels = 0;
 
     VulkanTexture vkTexture {};
-    VulkanSampler vkSampler {}; //TODO: sampler can be a common one instead of per texture
+    VulkanSampler vkSampler {}; // TODO: sampler can be a common one instead of per texture
 
-    Texture(uint32_t id) :
+    Texture2D(uint32_t id) :
         id(id) {};
-    ~Texture() = default;
+    ~Texture2D() = default;
 
     Error init(Image& texImage);
+    void  free();
+};
+
+struct Texture3D
+{
+    uint32_t      id;
+    uint32_t      width       = 0;
+    uint32_t      height      = 0;
+    uint32_t      numChannels = 0;
+    uint32_t      numImages   = 0;
+
+    VulkanTexture vkTexture {};
+    VulkanSampler vkSampler {}; // TODO: sampler can be a common one instead of per texture
+
+    Texture3D(uint32_t id) :
+        id(id) {};
+    ~Texture3D() = default;
+
+    Error init(DynamicArray<Image>& texImages); // TODO: input params not ideal, maybe support with shared ptr?
     void  free();
 };
 

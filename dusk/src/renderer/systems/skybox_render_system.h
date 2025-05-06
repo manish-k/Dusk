@@ -1,0 +1,45 @@
+#pragma once
+
+#include "scene/scene.h"
+#include "backend/vulkan/vk_device.h"
+#include "backend/vulkan/vk_pipeline.h"
+#include "backend/vulkan/vk_pipeline_layout.h"
+#include "backend/vulkan/vk_descriptors.h"
+#include "renderer/frame_data.h"
+
+namespace dusk
+{
+struct SkyboxData
+{
+    uint32_t cameraBufferIdx;
+};
+
+class SkyboxRenderSystem
+{
+public:
+    SkyboxRenderSystem(
+        VkGfxDevice&              device,
+        VkGfxDescriptorSetLayout& globalSetLayout);
+    ~SkyboxRenderSystem();
+
+    void renderSkybox(const FrameData& frameData);
+
+private:
+    void createPipeLine();
+    void createPipelineLayout(VkGfxDescriptorSetLayout& globalSetLayout);
+    void setupDescriptors();
+
+private:
+    VkGfxDevice&                     m_device;
+
+    Unique<VkGfxRenderPipeline>      m_renderPipeline         = nullptr;
+    Unique<VkGfxPipelineLayout>      m_pipelineLayout         = nullptr;
+
+    Unique<VkGfxDescriptorPool>      m_texDescriptorPool      = nullptr;
+    Unique<VkGfxDescriptorSetLayout> m_texDescriptorSetLayout = nullptr;
+    Unique<VkGfxDescriptorSet>       m_texDescriptorSet       = nullptr;
+
+    SubMesh                          m_cubeMesh               = {};
+    Texture3D                        m_skyboxTexture          = { 999 }; // TODO:: for now some big enough id is given, need a failsafe id generation
+};
+} // namespace dusk

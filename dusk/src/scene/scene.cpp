@@ -129,10 +129,10 @@ int Scene::loadTexture(std::string& path)
         auto img = ImageLoader::readImage(path);
         if (img)
         {
-            uint32_t newId = m_textures.size();
-            Texture  newTex(newId);
+            uint32_t  newId = m_textures.size();
+            Texture2D newTex(newId);
 
-            Error    err = newTex.init(*img);
+            Error     err = newTex.init(*img);
             if (err != Error::Ok)
             {
                 return -1;
@@ -141,10 +141,14 @@ int Scene::loadTexture(std::string& path)
             m_texPathMap.emplace(path, newId);
             m_textures.push_back(std::move(newTex));
 
+            ImageLoader::freeImage(*img);
             return newId;
         }
         else
+        {
+            ImageLoader::freeImage(*img);
             return -1; // file not found
+        }
     }
 
     // Texture has been loaded already

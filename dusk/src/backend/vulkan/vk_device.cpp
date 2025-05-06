@@ -697,10 +697,11 @@ void VkGfxDevice::writeToBuffer(VulkanGfxBuffer* buffer, void* hostBlock, VkDevi
     vulkan::writeToAllocation(m_gpuAllocator, hostBlock, buffer->allocation, offset, size);
 }
 
-void VkGfxDevice::copyBufferToImage(VulkanGfxBuffer* buffer,
-                                    VulkanGfxImage*  img,
-                                    uint32_t         width,
-                                    uint32_t         height)
+void VkGfxDevice::copyBufferToImage(
+    VulkanGfxBuffer* buffer,
+    VulkanGfxImage*  img,
+    uint32_t         width,
+    uint32_t         height)
 {
     VkCommandBuffer   commandBuffer = beginSingleTimeCommands();
 
@@ -732,10 +733,31 @@ void VkGfxDevice::copyBufferToImage(VulkanGfxBuffer* buffer,
     endSingleTimeCommands(commandBuffer);
 }
 
-Error VkGfxDevice::transitionImageWithLayout(VulkanGfxImage* img,
-                                             VkFormat        format,
-                                             VkImageLayout   oldLayout,
-                                             VkImageLayout   newLayout)
+void VkGfxDevice::copyBufferToImageRegions(
+    VulkanGfxBuffer*                buffer,
+    VulkanGfxImage*                 img,
+    DynamicArray<VkBufferImageCopy>& regions)
+{
+    VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+
+    vkCmdCopyBufferToImage(
+        commandBuffer,
+        buffer->buffer,
+        img->image,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        regions.size(),
+        regions.data());
+
+    endSingleTimeCommands(commandBuffer);
+}
+
+Error VkGfxDevice::transitionImageWithLayout(
+    VulkanGfxImage* img,
+    VkFormat        format,
+    VkImageLayout   oldLayout,
+    VkImageLayout   newLayout,
+    uint32_t        mipLevelCount,
+    uint32_t        layersCount)
 {
     VkCommandBuffer      commandBuffer = beginSingleTimeCommands();
 
@@ -748,9 +770,9 @@ Error VkGfxDevice::transitionImageWithLayout(VulkanGfxImage* img,
     barrier.image                           = img->image;
     barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
     barrier.subresourceRange.baseMipLevel   = 0;
-    barrier.subresourceRange.levelCount     = 1;
+    barrier.subresourceRange.levelCount     = mipLevelCount;
     barrier.subresourceRange.baseArrayLayer = 0;
-    barrier.subresourceRange.layerCount     = 1;
+    barrier.subresourceRange.layerCount     = layersCount;
 
     VkPipelineStageFlags sourceStage;
     VkPipelineStageFlags destinationStage;
@@ -793,18 +815,24 @@ Error VkGfxDevice::transitionImageWithLayout(VulkanGfxImage* img,
     return Error::Ok;
 }
 
-VulkanResult VkGfxDevice::createImageView(VulkanGfxImage* img, VkFormat format, VkImageView* pImageView) const
+VulkanResult VkGfxDevice::createImageView(
+    VulkanGfxImage* img,
+    VkImageViewType type,
+    VkFormat        format,
+    uint32_t        mipLevelCount,
+    uint32_t        layersCount,
+    VkImageView*    pImageView) const
 {
     VkImageViewCreateInfo viewInfo {};
     viewInfo.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     viewInfo.image                           = img->image;
-    viewInfo.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
+    viewInfo.viewType                        = type;
     viewInfo.format                          = format;
     viewInfo.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
     viewInfo.subresourceRange.baseMipLevel   = 0;
-    viewInfo.subresourceRange.levelCount     = 1;
+    viewInfo.subresourceRange.levelCount     = mipLevelCount;
     viewInfo.subresourceRange.baseArrayLayer = 0;
-    viewInfo.subresourceRange.layerCount     = 1;
+    viewInfo.subresourceRange.layerCount     = layersCount;
 
     VulkanResult result                      = vkCreateImageView(m_device, &viewInfo, nullptr, pImageView);
 

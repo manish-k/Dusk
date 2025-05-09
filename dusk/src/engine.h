@@ -60,6 +60,8 @@ public:
     void                  registerTextures(DynamicArray<Texture2D>& textures);
     void                  registerMaterials(DynamicArray<Material>& materials);
 
+    TimeStep              getFrameDelta() const { return m_deltaTime; };
+
 private:
     Config                           m_config;
 

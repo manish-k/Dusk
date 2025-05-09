@@ -3,6 +3,7 @@
 #include "engine.h"
 #include "scene_widgets.h"
 #include "renderer_widgets.h"
+#include "stats_widgets.h"
 #include "events/key_event.h"
 
 #include <imgui.h>
@@ -94,8 +95,9 @@ void UI::beginRendering()
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
+    drawStatsWidget();
     drawRendererWidget();
-    // ImGui::ShowDemoWindow();
+    //ImGui::ShowDemoWindow();
 }
 
 void UI::endRendering(VkCommandBuffer cb)

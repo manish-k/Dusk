@@ -86,9 +86,9 @@ void Engine::run()
 
     while (m_running)
     {
-        TimePoint newTime     = Time::now();
-        TimeStep  m_deltaTime = newTime - m_lastFrameTime;
-        m_lastFrameTime       = newTime;
+        TimePoint newTime = Time::now();
+        m_deltaTime       = newTime - m_lastFrameTime;
+        m_lastFrameTime   = newTime;
 
         // poll events from window
         m_window->onUpdate(m_deltaTime);

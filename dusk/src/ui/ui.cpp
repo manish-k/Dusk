@@ -2,6 +2,7 @@
 
 #include "engine.h"
 #include "scene_widgets.h"
+#include "renderer_widgets.h"
 #include "events/key_event.h"
 
 #include <imgui.h>
@@ -93,6 +94,7 @@ void UI::beginRendering()
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
+    drawRendererWidget();
     // ImGui::ShowDemoWindow();
 }
 

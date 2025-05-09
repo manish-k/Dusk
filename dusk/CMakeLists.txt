@@ -141,6 +141,8 @@ set(UI_FILES
 	"${UI_DIR}/ui.h"
 	"${UI_DIR}/ui_states.h"
 	"${UI_DIR}/scene_widgets.h"
+	"${UI_DIR}/renderer_widgets.h"
+	"${UI_DIR}/stats_widgets.h"
 	# Source files
 	"${UI_DIR}/ui.cpp"
 	"${UI_DIR}/../../vendor/imgui-docking/backends/imgui_impl_vulkan.cpp"

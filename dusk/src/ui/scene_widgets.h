@@ -76,6 +76,23 @@ inline void drawSceneGraphWidget(Scene& scene)
             transform.setRotation(glm::quat(eulerRotation));
         }
 
+        if (selectedGameObject.hasComponent<MeshComponent>())
+        {
+            ImGui::SeparatorText("Material");
+
+            MeshComponent& mesh = selectedGameObject.getComponent<MeshComponent>();
+
+            for (uint32_t index = 0u; index < mesh.materials.size(); ++index)
+            {
+                Material& mat = scene.getMaterial(mesh.materials[index]);
+
+                ImGui::ColorEdit4("Albedo Color", (float*)&mat.albedoColor);
+
+                ImGui::Text("Albedo Texture: %g", mat.albedoTexId);
+                ImGui::Text("Normal Texture: %g", mat.albedoTexId);
+            }
+        }
+
         if (selectedGameObject.hasComponent<CameraComponent>())
         {
             ImGui::SeparatorText("Camera");

@@ -21,8 +21,7 @@ public:
     void beginRendering();
     void endRendering(VkCommandBuffer cb);
     void renderSceneWidgets(Scene& scene);
-    void onEvent();
-    void switchUIDisplay(bool state);
+    void onEvent(Event& ev);
 
     static UIState& state() { return s_uiState; }
 

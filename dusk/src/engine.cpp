@@ -203,6 +203,8 @@ void Engine::onEvent(Event& ev)
         });
 
     // pass event to UI layer
+    m_ui->onEvent(ev);
+
     // pass event to debug layer
 
     // pass event to the scene

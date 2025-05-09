@@ -79,15 +79,15 @@ inline void drawSceneGraphWidget(Scene& scene)
         if (selectedGameObject.hasComponent<CameraComponent>())
         {
             ImGui::SeparatorText("Camera");
-            
+
             CameraComponent& camera      = selectedGameObject.getComponent<CameraComponent>();
 
-            float nearPlane   = camera.nearPlane;
-            float farPlane    = camera.farPlane;
-            float aspectRatio = camera.aspectRatio;
-            float fovy        = glm::degrees(camera.fovY);
+            float            nearPlane   = camera.nearPlane;
+            float            farPlane    = camera.farPlane;
+            float            aspectRatio = camera.aspectRatio;
+            float            fovy        = glm::degrees(camera.fovY);
 
-            bool  changed     = false;
+            bool             changed     = false;
             if (ImGui::DragFloat("Near Plane", &nearPlane, 0.05f, 0.0f, FLT_MAX, "%.3f", ImGuiSliderFlags_None)) changed = true;
             if (ImGui::DragFloat("Far Plane", &farPlane, 0.05f, 0.0f, FLT_MAX, "%.3f", ImGuiSliderFlags_None)) changed = true;
             if (ImGui::DragFloat("FOV (Degree)", &fovy, 0.05f, 0.0f, 80, "%.3f", ImGuiSliderFlags_None)) changed = true;

@@ -2,6 +2,7 @@
 
 #include "engine.h"
 #include "scene_widgets.h"
+#include "events/key_event.h"
 
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -15,7 +16,7 @@ constexpr char imguiConfigFile[] = CONCAT(STRING(DUSK_BUILD_PATH), "/dusk_imgui.
 
 UIState        UI::s_uiState     = {};
 
-bool UI::init(Window& window)
+bool           UI::init(Window& window)
 {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -92,13 +93,15 @@ void UI::beginRendering()
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    //ImGui::ShowDemoWindow();
+    // ImGui::ShowDemoWindow();
 }
 
 void UI::endRendering(VkCommandBuffer cb)
 {
     ImGui::Render();
-    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cb);
+
+    if (m_isShowing)
+        ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cb);
 }
 
 void UI::renderSceneWidgets(Scene& scene)
@@ -106,9 +109,20 @@ void UI::renderSceneWidgets(Scene& scene)
     drawSceneGraphWidget(scene);
 }
 
-void UI::switchUIDisplay(bool state)
+void UI::onEvent(Event& ev)
 {
-    m_isShowing = state;
+    EventDispatcher dispatcher(ev);
+
+    dispatcher.dispatch<KeyPressedEvent>(
+        [this](KeyPressedEvent& ev)
+        {
+            if (ev.getKeyCode() == Key::F4)
+            {
+                m_isShowing = !m_isShowing;
+            }
+
+            return false;
+        });
 }
 
 void UI::setupImGuiTheme()

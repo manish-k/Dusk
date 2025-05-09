@@ -139,6 +139,7 @@ set(UI_DIR "${PROJECT_SOURCE_DIR}/src/ui")
 set(UI_FILES
 	# Header files
 	"${UI_DIR}/ui.h"
+	"${UI_DIR}/ui_states.h"
 	"${UI_DIR}/scene_widgets.h"
 	# Source files
 	"${UI_DIR}/ui.cpp"
@@ -261,6 +262,9 @@ set (ENGINE_TEXTURES_DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/textures")
 set (ENGINE_SHADERS_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/systems/shaders")
 set (ENGINE_SHADERS_DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/shaders")
 
+set(IMGUI_SRC_CONFIG_FILE "${UI_DIR}/dusk_imgui.ini")
+set(IMGUI_DST_CONFIG_FILE "${CMAKE_BINARY_DIR}/dusk_imgui.ini")
+
 target_compile_definitions(${PROJECT_NAME} PUBLIC DUSK_BUILD_PATH=${CMAKE_CURRENT_BINARY_DIR})
 
 ## https://github.com/vblanco20-1/vulkan-guide/blob/all-chapters/CMakeLists.txt
@@ -305,11 +309,12 @@ add_custom_target(
 )
 
 add_custom_target(
-    DUSK_TEXTURES_COPY ALL
-	COMMAND ${CMAKE_COMMAND} -E echo "Copying textures"
+    DUSK_ASSETS_COPY ALL
+	COMMAND ${CMAKE_COMMAND} -E echo "Copying assets"
 	COMMAND ${CMAKE_COMMAND} -E remove_directory ${ENGINE_TEXTURES_DEST_DIR}
 	COMMAND ${CMAKE_COMMAND} -E copy_directory ${ENGINE_TEXTURES_SOURCE_DIR} ${ENGINE_TEXTURES_DEST_DIR}
+	COMMAND ${CMAKE_COMMAND} -E copy ${IMGUI_SRC_CONFIG_FILE} ${IMGUI_DST_CONFIG_FILE}
 	DEPENDS DUSK_SHADERS_COPY
 )
 
-add_dependencies(${PROJECT_NAME} DUSK_TEXTURES_COPY)
+add_dependencies(${PROJECT_NAME} DUSK_ASSETS_COPY)

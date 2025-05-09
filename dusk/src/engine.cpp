@@ -140,8 +140,7 @@ void Engine::onUpdate(TimeStep dt)
             m_currentScene->onUpdate(dt);
 
             CameraComponent& camera = m_currentScene->getMainCamera();
-
-            camera.setPerspectiveProjection(glm::radians(50.f), m_renderer->getAspectRatio(), 0.5f, 1000.f);
+            camera.setAspectRatio(m_renderer->getAspectRatio());
 
             GlobalUbo ubo {};
             ubo.view              = camera.viewMatrix;

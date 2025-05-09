@@ -1,6 +1,7 @@
 #pragma once
 
 #include "dusk.h"
+#include "ui_states.h"
 #include "scene/scene.h"
 #include "platform/window.h"
 #include "backend/vulkan/vk_descriptors.h"
@@ -20,9 +21,10 @@ public:
     void beginRendering();
     void endRendering(VkCommandBuffer cb);
     void renderSceneWidgets(Scene& scene);
-    void createLeftDockSpace();
     void onEvent();
     void switchUIDisplay(bool state);
+
+    static UIState& state() { return s_uiState; }
 
 private:
     void        setupImGuiTheme();
@@ -32,5 +34,8 @@ private:
     bool                        m_isShowing      = true;
 
     Unique<VkGfxDescriptorPool> m_descriptorPool = nullptr;
+
+private:
+    static UIState s_uiState;
 };
 }; // namespace dusk

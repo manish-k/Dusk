@@ -23,6 +23,17 @@ struct CameraComponent
     glm::mat4 viewMatrix        = glm::mat4 { 1.0f };
     glm::mat4 inverseViewMatrix = glm::mat4 { 1.0f };
 
+    float     leftPlane         = 0.f;
+    float     rightPlane        = 0.f;
+    float     topPlane          = 0.f;
+    float     bottomPlane       = 0.f;
+    float     nearPlane         = 0.f;
+    float     farPlane          = 0.f;
+    float     aspectRatio       = 0.f;
+    float     fovY              = 0.f;
+
+    bool      isPerspective     = false;
+
     /**
      * @brief Set camera projection as orthographic
      * @param left plane of the projection volume
@@ -34,6 +45,14 @@ struct CameraComponent
      */
     void setOrthographicProjection(float left, float right, float top, float bottom, float n, float f)
     {
+        leftPlane              = left;
+        rightPlane             = right;
+        topPlane               = top;
+        bottomPlane            = bottom;
+        nearPlane              = n;
+        farPlane               = f;
+        isPerspective          = false;
+
         projectionMatrix       = glm::mat4 { 1.0f };
         projectionMatrix[0][0] = 2.f / (right - left);
         projectionMatrix[1][1] = 2.f / (bottom - top);
@@ -54,6 +73,12 @@ struct CameraComponent
     {
         DASSERT(glm::abs(aspect - std::numeric_limits<float>::epsilon()) > 0.0f);
 
+        nearPlane               = n;
+        farPlane                = f;
+        aspectRatio             = aspect;
+        fovY                    = fovy;
+        isPerspective           = true;
+
         const float tanHalfFovy = tan(fovy / 2.f);
         projectionMatrix        = glm::mat4 { 0.0f };
         projectionMatrix[0][0]  = 1.f / (aspect * tanHalfFovy);
@@ -62,6 +87,14 @@ struct CameraComponent
         projectionMatrix[2][3]  = 1.f;
         projectionMatrix[3][2]  = -(f * n) / (f - n);
     };
+
+    void setAspectRatio(float aspect)
+    {
+        if (isPerspective)
+        {
+            setPerspectiveProjection(fovY,aspect, nearPlane, farPlane);
+        }
+    }
 
     /**
      * @brief Set view direction

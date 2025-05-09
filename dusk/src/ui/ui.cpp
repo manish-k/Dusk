@@ -7,9 +7,14 @@
 #include <imgui_internal.h>
 #include <imgui_impl_vulkan.h>
 #include <imgui_impl_glfw.h>
+#include <string_view>
 
 namespace dusk
 {
+constexpr char imguiConfigFile[] = CONCAT(STRING(DUSK_BUILD_PATH), "/dusk_imgui.ini");
+
+UIState        UI::s_uiState     = {};
+
 bool UI::init(Window& window)
 {
     IMGUI_CHECKVERSION();
@@ -17,6 +22,7 @@ bool UI::init(Window& window)
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;     // We are using Docking Branch
+    io.IniFilename = imguiConfigFile;
 
     setupImGuiTheme();
 
@@ -48,25 +54,25 @@ bool UI::init(Window& window)
     renderingCreateInfo.stencilAttachmentFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
 
     // setup imgui with out backend
-    ImGui_ImplVulkan_InitInfo init_info   = {};
-    init_info.Instance                    = ctx.vulkanInstance;
-    init_info.PhysicalDevice              = ctx.physicalDevice;
-    init_info.Device                      = ctx.device;
-    init_info.QueueFamily                 = ctx.graphicsQueueFamilyIndex;
-    init_info.Queue                       = ctx.graphicsQueue;
-    init_info.PipelineCache               = VK_NULL_HANDLE;
-    init_info.DescriptorPool              = m_descriptorPool->pool;
-    init_info.RenderPass                  = VK_NULL_HANDLE;
-    init_info.UseDynamicRendering         = VK_TRUE;
-    init_info.PipelineRenderingCreateInfo = renderingCreateInfo;
-    init_info.Subpass                     = 0;
-    init_info.MinImageCount               = swapChain.getImagesCount() - 1;
-    init_info.ImageCount                  = swapChain.getImagesCount();
-    init_info.MSAASamples                 = VK_SAMPLE_COUNT_1_BIT;
-    init_info.Allocator                   = VK_NULL_HANDLE;
-    init_info.CheckVkResultFn             = checkVkResult;
+    ImGui_ImplVulkan_InitInfo initInfo   = {};
+    initInfo.Instance                    = ctx.vulkanInstance;
+    initInfo.PhysicalDevice              = ctx.physicalDevice;
+    initInfo.Device                      = ctx.device;
+    initInfo.QueueFamily                 = ctx.graphicsQueueFamilyIndex;
+    initInfo.Queue                       = ctx.graphicsQueue;
+    initInfo.PipelineCache               = VK_NULL_HANDLE;
+    initInfo.DescriptorPool              = m_descriptorPool->pool;
+    initInfo.RenderPass                  = VK_NULL_HANDLE;
+    initInfo.UseDynamicRendering         = VK_TRUE;
+    initInfo.PipelineRenderingCreateInfo = renderingCreateInfo;
+    initInfo.Subpass                     = 0;
+    initInfo.MinImageCount               = swapChain.getImagesCount() - 1;
+    initInfo.ImageCount                  = swapChain.getImagesCount();
+    initInfo.MSAASamples                 = VK_SAMPLE_COUNT_1_BIT;
+    initInfo.Allocator                   = VK_NULL_HANDLE;
+    initInfo.CheckVkResultFn             = checkVkResult;
 
-    ImGui_ImplVulkan_Init(&init_info);
+    ImGui_ImplVulkan_Init(&initInfo);
 }
 
 void UI::shutdown()
@@ -86,7 +92,7 @@ void UI::beginRendering()
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    // ImGui::ShowDemoWindow();
+    //ImGui::ShowDemoWindow();
 }
 
 void UI::endRendering(VkCommandBuffer cb)

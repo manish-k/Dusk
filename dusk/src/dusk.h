@@ -18,6 +18,7 @@
 // Macro value to string
 #define STR(str)    #str
 #define STRING(str) STR(str)
+#define CONCAT(x, y) x##y
 
 // Engine Logger Macros
 #define DUSK_DEBUG(...)    dusk::Logger::getEngineLogger()->debug(__VA_ARGS__)

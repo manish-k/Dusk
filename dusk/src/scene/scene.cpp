@@ -24,9 +24,10 @@ Scene::Scene(const std::string_view name) :
     cameraTransform.translation         = { 0.f, 0.f, 5.f };
 
     auto& cameraComponent               = camera->addComponent<CameraComponent>();
+    const auto& currentExtent           = Engine::get().getRenderer().getSwapChain().getCurrentExtent();
+    cameraComponent.setPerspectiveProjection(glm::radians(50.f), static_cast<float>(currentExtent.width) / static_cast<float>(currentExtent.height), 0.5f, 1000.f);
     cameraComponent.setView(cameraTransform.translation, cameraTransform.rotation);
 
-    const auto& currentExtent = Engine::get().getRenderer().getSwapChain().getCurrentExtent();
     m_cameraController        = createUnique<CameraController>(*camera, currentExtent.width, currentExtent.height);
 
     m_cameraId                = camera->getId();

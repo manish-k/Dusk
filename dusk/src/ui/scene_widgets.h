@@ -114,6 +114,60 @@ inline void drawSceneGraphWidget(Scene& scene)
                 camera.setPerspectiveProjection(glm::radians(fovy), aspectRatio, nearPlane, farPlane);
             }
         }
+
+        if (selectedGameObject.hasComponent<AmbientLightComponent>())
+        {
+            ImGui::SeparatorText("Ambient Light");
+
+            AmbientLightComponent light = selectedGameObject.getComponent<AmbientLightComponent>();
+
+            ImGui::ColorEdit3("Color", (float*)&light.color);
+            ImGui::DragFloat("Intensity", (float*)&light.color + 3, 0.05f, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_None);
+        }
+
+        if (selectedGameObject.hasComponent<DirectionalLightComponent>())
+        {
+            ImGui::SeparatorText("Directional Light");
+
+            DirectionalLightComponent light = selectedGameObject.getComponent<DirectionalLightComponent>();
+
+            ImGui::DragFloat3("Direction", (float*)&light.direction);
+            ImGui::ColorEdit3("Color", (float*)&light.color);
+            ImGui::DragFloat("Intensity", (float*)&light.color + 3, 0.05f, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_None);
+        }
+
+        if (selectedGameObject.hasComponent<PointLightComponent>())
+        {
+            ImGui::SeparatorText("Point Light");
+
+            PointLightComponent light = selectedGameObject.getComponent<PointLightComponent>();
+
+            ImGui::ColorEdit3("Color", (float*)&light.color);
+            ImGui::DragFloat("Intensity", (float*)&light.color + 3, 0.05f, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_None);
+
+            ImGui::Text("Attenuation Factors");
+            ImGui::DragFloat("Constant", (float*)&light.constantAttenuationFactor, 0.05f, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_None);
+            ImGui::DragFloat("Linear", (float*)&light.linearAttenuationFactor, 0.05f, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_None);
+            ImGui::DragFloat("Quadratic", (float*)&light.quadraticAttenuationFactor, 0.05f, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_None);
+        }
+
+        if (selectedGameObject.hasComponent<SpotLightComponent>())
+        {
+            SpotLightComponent light = selectedGameObject.getComponent<SpotLightComponent>();
+
+            ImGui::DragFloat3("Direction", (float*)&light.direction);
+            ImGui::ColorEdit3("Color", (float*)&light.color);
+            ImGui::DragFloat("Intensity", (float*)&light.color + 3, 0.05f, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_None);
+
+            ImGui::Text("Attenuation Factors");
+            ImGui::DragFloat("Constant", (float*)&light.constantAttenuationFactor, 0.05f, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_None);
+            ImGui::DragFloat("Linear", (float*)&light.linearAttenuationFactor, 0.05f, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_None);
+            ImGui::DragFloat("Quadratic", (float*)&light.quadraticAttenuationFactor, 0.05f, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_None);
+
+            ImGui::Text("Cone CutOff Angles");
+            ImGui::DragFloat("Inner Angle", (float*)&light.innerCutOffAngle, 0.05f, 0.0f, 90.0f, "%.3f", ImGuiSliderFlags_None);
+            ImGui::DragFloat("Outer Angle", (float*)&light.outerCutOffAngle, 0.05f, 0.0f, 90.0f, "%.3f", ImGuiSliderFlags_None);
+        }
     }
 
     ImGui::End();

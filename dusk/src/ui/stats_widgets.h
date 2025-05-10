@@ -18,7 +18,6 @@ inline void drawStatsWidget()
     ImGui::Begin("Statistics", nullptr, windowFlags);
 
     ImGui::Text("FPS: %g", 1.0f / Engine::get().getFrameDelta().count());
-    //ImGui::Text("FPS: %g", io.Framerate);
     ImGui::Text("Mouse position: (%g, %g)", io.MousePos.x, io.MousePos.y);
 
     ImGui::SeparatorText("Controls");

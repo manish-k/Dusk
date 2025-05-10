@@ -122,6 +122,8 @@ set(SCENE_FILES
 	# Header files
 	"${COMPONENTS_DIR}/transform.h"
 	"${COMPONENTS_DIR}/camera.h"
+	"${COMPONENTS_DIR}/mesh.h"
+	"${COMPONENTS_DIR}/lights.h"
 	"${SCENE_DIR}/entity.h"
 	"${SCENE_DIR}/game_object.h"
 	"${SCENE_DIR}/scene.h"

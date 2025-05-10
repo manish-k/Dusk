@@ -1,0 +1,43 @@
+#pragma once
+
+#include "dusk.h"
+
+namespace dusk
+{
+struct AmbientLightComponent
+{
+    glm::vec4 color { 1.0f }; // w component for intensity
+};
+
+struct DirectionalLightComponent
+{
+    glm::vec3 direction { 0.f };
+    glm::vec4 color { 1.0f }; // w component for intensity
+};
+
+struct PointLightComponent
+{
+    glm::vec3 position { 0.f };
+    glm::vec4 color { 1.0f }; // w component for intensity
+
+    // attenuation values from https://learnopengl.com/Lighting/Light-casters
+    float constantAttenuationFactor  = 1.0f;
+    float linearAttenuationFactor    = 0.09f;
+    float quadraticAttenuationFactor = 0.032f;
+};
+
+struct SpotLightComponent
+{
+    glm::vec3 position { 0.f };
+    glm::vec3 direction { 0.f }; // direction where light is being pointed
+    glm::vec4 color { 1.0f };    // w component for intensity
+
+    // attenuation values from https://learnopengl.com/Lighting/Light-casters
+    float constantAttenuationFactor  = 1.0f;
+    float linearAttenuationFactor    = 0.09f;
+    float quadraticAttenuationFactor = 0.032f;
+
+    float innerCutOffAngle           = 0.f; // in degrees
+    float outerCutOffAngle           = 0.f; // in degrees
+};
+} // namespace dusk

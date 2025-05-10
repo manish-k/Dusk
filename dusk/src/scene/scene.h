@@ -11,6 +11,7 @@
 #include "components/mesh.h"
 #include "components/script.h"
 #include "components/transform.h"
+#include "components/lights.h"
 
 #include "renderer/sub_mesh.h"
 #include "renderer/texture.h"

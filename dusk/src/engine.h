@@ -17,7 +17,8 @@
 
 namespace dusk
 {
-const uint32_t maxMaterialCount = 1000;
+constexpr uint32_t maxMaterialCount   = 1000;
+constexpr uint32_t maxSupportedLights = 100;
 
 class Engine final
 {
@@ -96,6 +97,15 @@ private:
 
     VulkanGfxBuffer                  m_materialsBuffer;
     Unique<VkGfxDescriptorSet>       m_materialsDescriptorSet;
+
+    Unique<VkGfxDescriptorPool>      m_lightsDescriptorPool      = nullptr;
+    Unique<VkGfxDescriptorSetLayout> m_lightsDescriptorSetLayout = nullptr;
+    Unique<VkGfxDescriptorSet>       m_lightsDescriptorSet       = nullptr;
+
+    VulkanGfxBuffer                  m_ambientLightBuffer;
+    VulkanGfxBuffer                  m_directionalLightsBuffer;
+    VulkanGfxBuffer                  m_pointLightsBuffer;
+    VulkanGfxBuffer                  m_spotLightsBuffer;
 
 private:
     static Engine* s_instance;

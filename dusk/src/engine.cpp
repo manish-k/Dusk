@@ -341,6 +341,115 @@ bool Engine::setupGlobals()
         return false;
     }
 
+    // setup lighting globasl
+    m_lightsDescriptorPool = createUnique<VkGfxDescriptorPool>(ctx);
+    result                 = m_lightsDescriptorPool
+                 ->addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, maxSupportedLights)
+                 .create(1, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
+    if (result.hasError())
+    {
+        DUSK_ERROR("Unable to create ligths descriptor pool {}", result.toString());
+        return false;
+    }
+
+    m_lightsDescriptorSetLayout = createUnique<VkGfxDescriptorSetLayout>(ctx);
+    result                      = m_lightsDescriptorSetLayout
+                 ->addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)                       // Ambient light
+                 .addBinding(1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, maxSupportedLights, true) // Directional Light
+                 .addBinding(2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, maxSupportedLights, true) // Point Light
+                 .addBinding(3, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, maxSupportedLights, true) // Sport Light
+                 .create();
+
+    if (result.hasError())
+    {
+        DUSK_ERROR("Unable to create ligths descriptor layout {}", result.toString());
+        return false;
+    }
+
+    m_lightsDescriptorSet = createUnique<VkGfxDescriptorSet>(ctx, *m_lightsDescriptorSetLayout, *m_lightsDescriptorPool);
+    result                = m_lightsDescriptorSet->create();
+    if (result.hasError())
+    {
+        DUSK_ERROR("Unable to create ligths descriptor set {}", result.toString());
+        return false;
+    }
+
+    // create ambient light buffer
+    alignmentSize           = getAlignment(sizeof(AmbientLightComponent), ctx.physicalDeviceProperties.limits.minUniformBufferOffsetAlignment);
+
+    uint32_t bufferSize     = static_cast<uint32_t>(alignmentSize);
+
+    uboParams               = {};
+    uboParams.sizeInBytes   = bufferSize;
+    uboParams.usage         = GfxBufferUsageFlags::UniformBuffer;
+    uboParams.memoryType    = GfxBufferMemoryTypeFlags::HostSequentialWrite | GfxBufferMemoryTypeFlags::PersistentlyMapped;
+    uboParams.alignmentSize = alignmentSize;
+
+    result                  = m_gfxDevice->createBuffer(uboParams, &m_ambientLightBuffer);
+    if (result.hasError())
+    {
+        DUSK_ERROR("Unbale to create uniform buffer for ambient light {}", result.toString());
+        return false;
+    }
+    m_gfxDevice->mapBuffer(&m_ambientLightBuffer);
+
+    // create directional light buffer
+    alignmentSize           = getAlignment(sizeof(DirectionalLightComponent), ctx.physicalDeviceProperties.limits.minUniformBufferOffsetAlignment);
+
+    bufferSize              = maxSupportedLights * alignmentSize;
+
+    uboParams               = {};
+    uboParams.sizeInBytes   = bufferSize;
+    uboParams.usage         = GfxBufferUsageFlags::UniformBuffer;
+    uboParams.memoryType    = GfxBufferMemoryTypeFlags::HostSequentialWrite | GfxBufferMemoryTypeFlags::PersistentlyMapped;
+    uboParams.alignmentSize = alignmentSize;
+
+    result                  = m_gfxDevice->createBuffer(uboParams, &m_directionalLightsBuffer);
+    if (result.hasError())
+    {
+        DUSK_ERROR("Unbale to create uniform buffer for directional lights {}", result.toString());
+        return false;
+    }
+    m_gfxDevice->mapBuffer(&m_directionalLightsBuffer);
+
+    // create point light buffer
+    alignmentSize           = getAlignment(sizeof(PointLightComponent), ctx.physicalDeviceProperties.limits.minUniformBufferOffsetAlignment);
+
+    bufferSize              = maxSupportedLights * alignmentSize;
+
+    uboParams               = {};
+    uboParams.sizeInBytes   = bufferSize;
+    uboParams.usage         = GfxBufferUsageFlags::UniformBuffer;
+    uboParams.memoryType    = GfxBufferMemoryTypeFlags::HostSequentialWrite | GfxBufferMemoryTypeFlags::PersistentlyMapped;
+    uboParams.alignmentSize = alignmentSize;
+
+    result                  = m_gfxDevice->createBuffer(uboParams, &m_pointLightsBuffer);
+    if (result.hasError())
+    {
+        DUSK_ERROR("Unbale to create uniform buffer for point lights {}", result.toString());
+        return false;
+    }
+    m_gfxDevice->mapBuffer(&m_pointLightsBuffer);
+
+    // create spot light buffer
+    alignmentSize           = getAlignment(sizeof(SpotLightComponent), ctx.physicalDeviceProperties.limits.minUniformBufferOffsetAlignment);
+
+    bufferSize              = maxRenderableMeshes * alignmentSize;
+
+    uboParams               = {};
+    uboParams.sizeInBytes   = bufferSize;
+    uboParams.usage         = GfxBufferUsageFlags::UniformBuffer;
+    uboParams.memoryType    = GfxBufferMemoryTypeFlags::HostSequentialWrite | GfxBufferMemoryTypeFlags::PersistentlyMapped;
+    uboParams.alignmentSize = alignmentSize;
+
+    result                  = m_gfxDevice->createBuffer(uboParams, &m_spotLightsBuffer);
+    if (result.hasError())
+    {
+        DUSK_ERROR("Unbale to create uniform buffer for spot lights {}", result.toString());
+        return false;
+    }
+    m_gfxDevice->mapBuffer(&m_spotLightsBuffer);
+
     return true;
 }
 
@@ -350,7 +459,6 @@ void Engine::cleanupGlobals()
     m_gfxDevice->freeBuffer(&m_globalUbos);
 
     m_globalDescriptorPool->resetPool();
-
     m_globalDescriptorSetLayout->destroy();
     m_globalDescriptorPool->destroy();
 
@@ -358,9 +466,21 @@ void Engine::cleanupGlobals()
     m_gfxDevice->freeBuffer(&m_materialsBuffer);
 
     m_materialDescriptorPool->resetPool();
-
     m_materialDescriptorSetLayout->destroy();
     m_materialDescriptorPool->destroy();
+
+    m_lightsDescriptorPool->resetPool();
+    m_lightsDescriptorSetLayout->destroy();
+    m_lightsDescriptorPool->destroy();
+
+    m_gfxDevice->unmapBuffer(&m_ambientLightBuffer);
+    m_gfxDevice->freeBuffer(&m_ambientLightBuffer);
+    m_gfxDevice->unmapBuffer(&m_directionalLightsBuffer);
+    m_gfxDevice->freeBuffer(&m_directionalLightsBuffer);
+    m_gfxDevice->unmapBuffer(&m_pointLightsBuffer);
+    m_gfxDevice->freeBuffer(&m_pointLightsBuffer);
+    m_gfxDevice->unmapBuffer(&m_spotLightsBuffer);
+    m_gfxDevice->freeBuffer(&m_spotLightsBuffer);
 }
 
 void Engine::registerTextures(DynamicArray<Texture2D>& textures)

@@ -172,6 +172,9 @@ void BasicRenderSystem::renderGameObjects(const FrameData& frameData)
 
     auto renderablesView = scene.GetGameObjectsWith<TransformComponent, MeshComponent>();
 
+    // possiblity of cache unfriendliness here. Only first component is
+    // cache friendly. https://gamedev.stackexchange.com/a/212879
+    // TODO: Profile below code
     for (auto [entity, transform, meshData] : renderablesView.each())
     {
         for (uint32_t meshId : meshData.meshes)
@@ -181,8 +184,8 @@ void BasicRenderSystem::renderGameObjects(const FrameData& frameData)
             VkDeviceSize offsets[] = { 0 };
 
             DrawData     push {};
-            push.cameraBufferIdx   = frameData.frameIndex;
-            push.materialIdx = meshId;
+            push.cameraBufferIdx = frameData.frameIndex;
+            push.materialIdx     = meshId;
 
             // update mesh transform data
             ModelData md { transform.mat4(), transform.normalMat4() };

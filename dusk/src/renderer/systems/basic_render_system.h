@@ -14,6 +14,9 @@ struct DrawData
 {
     uint32_t cameraBufferIdx;
     uint32_t materialIdx;
+    uint32_t directionalLightsCount;
+    uint32_t pointLightsCount;
+    uint32_t spotLightsCount;
 };
 
 struct ModelData
@@ -29,8 +32,8 @@ class BasicRenderSystem
 {
 public:
     BasicRenderSystem(
-        VkGfxDevice& device, 
-        VkGfxDescriptorSetLayout& globalSet, 
+        VkGfxDevice&              device,
+        VkGfxDescriptorSetLayout& globalSet,
         VkGfxDescriptorSetLayout& materialSet);
     ~BasicRenderSystem();
 
@@ -39,7 +42,7 @@ public:
 private:
     void createPipeLine();
     void createPipelineLayout(
-        VkGfxDescriptorSetLayout& globalSet, 
+        VkGfxDescriptorSetLayout& globalSet,
         VkGfxDescriptorSetLayout& materialSet);
     void setupDescriptors();
 

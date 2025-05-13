@@ -28,8 +28,8 @@ BasicRenderSystem::~BasicRenderSystem()
 
     m_modelDescriptorPool->resetPool();
 
-    m_modelDescriptorSetLayout->destroy();
-    m_modelDescriptorPool->destroy();
+    m_modelDescriptorSetLayout = nullptr;
+    m_modelDescriptorPool      = nullptr;
 }
 
 void BasicRenderSystem::createPipeLine()
@@ -73,28 +73,15 @@ void BasicRenderSystem::setupDescriptors()
 {
     auto& ctx             = m_device.getSharedVulkanContext();
 
-    m_modelDescriptorPool = createUnique<VkGfxDescriptorPool>(ctx);
-    VulkanResult result   = m_modelDescriptorPool
-                              ->addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1)
-                              .create(1);
-    if (result.hasError())
-    {
-        DUSK_ERROR("Unable to create descriptor pool for model descriptor {}", result.toString());
-        m_modelDescriptorPool = nullptr;
-        return; // TODO: need proper error handling
-    }
+    m_modelDescriptorPool = VkGfxDescriptorPool::Builder(ctx)
+                                .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1)
+                                .build(1);
+    CHECK_AND_RETURN(!m_modelDescriptorPool);
 
-    m_modelDescriptorSetLayout = createUnique<VkGfxDescriptorSetLayout>(ctx);
-    result                     = m_modelDescriptorSetLayout
-                 ->addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT, 1)
-                 .create();
-
-    if (result.hasError())
-    {
-        DUSK_ERROR("Unable to create descriptor pool layout for model descriptor {}", result.toString());
-        m_modelDescriptorPool = nullptr;
-        return; // TODO: need proper error handling
-    }
+    m_modelDescriptorSetLayout = VkGfxDescriptorSetLayout::Builder(ctx)
+                                     .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT, 1)
+                                     .build();
+    CHECK_AND_RETURN(!m_modelDescriptorSetLayout);
 
     // create dynamic ubo
     size_t          alignmentSize = getAlignment(sizeof(ModelData), ctx.physicalDeviceProperties.limits.minUniformBufferOffsetAlignment);
@@ -107,7 +94,7 @@ void BasicRenderSystem::setupDescriptors()
     dynamicUboParams.memoryType    = GfxBufferMemoryTypeFlags::HostSequentialWrite | GfxBufferMemoryTypeFlags::PersistentlyMapped;
     dynamicUboParams.alignmentSize = alignmentSize;
 
-    result                         = m_device.createBuffer(dynamicUboParams, &m_modelsBuffer);
+    VulkanResult result            = m_device.createBuffer(dynamicUboParams, &m_modelsBuffer);
     if (result.hasError())
     {
         DUSK_ERROR("Unbale to create uniform buffer for models data {}", result.toString());
@@ -117,7 +104,8 @@ void BasicRenderSystem::setupDescriptors()
     m_device.mapBuffer(&m_modelsBuffer);
 
     // create descriptor set
-    m_modelDescriptorSet = createUnique<VkGfxDescriptorSet>(ctx, *m_modelDescriptorSetLayout, *m_modelDescriptorPool);
+    m_modelDescriptorSet = m_modelDescriptorPool->allocateDescriptorSet(*m_modelDescriptorSetLayout);
+    CHECK_AND_RETURN(!m_modelDescriptorSet);
 
     DynamicArray<VkDescriptorBufferInfo> meshBufferInfo(maxRenderableMeshes);
     for (uint32_t meshIdx = 0u; meshIdx < maxRenderableMeshes; ++meshIdx)
@@ -130,12 +118,7 @@ void BasicRenderSystem::setupDescriptors()
 
     m_modelDescriptorSet->configureBuffer(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0, 1, meshBufferInfo.data());
 
-    result = m_modelDescriptorSet->create();
-    if (result.hasError())
-    {
-        DUSK_ERROR("Unable to create models descriptor set {}", result.toString());
-        return;
-    }
+    m_modelDescriptorSet->applyConfiguration();
 }
 
 void BasicRenderSystem::renderGameObjects(const FrameData& frameData)

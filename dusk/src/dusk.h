@@ -16,8 +16,8 @@
 #define VA_COUNT(...) ((int)(sizeof((int[]) { __VA_ARGS__ }) / sizeof(int)))
 
 // Macro value to string
-#define STR(str)    #str
-#define STRING(str) STR(str)
+#define STR(str)     #str
+#define STRING(str)  STR(str)
 #define CONCAT(x, y) x##y
 
 // Engine Logger Macros
@@ -63,3 +63,18 @@
 #define CLASS_UNCOPYABLE(type)             \
     type(const type&)            = delete; \
     type& operator=(const type&) = delete;
+
+// check and return false
+#define CHECK_AND_RETURN_FALSE(check) \
+    if (check)                        \
+        return false;
+
+// check and return true
+#define CHECK_AND_RETURN_TRUE(check) \
+    if (check)                        \
+        return true;
+
+// check and return if true
+#define CHECK_AND_RETURN(check) \
+    if (check)                  \
+        return;

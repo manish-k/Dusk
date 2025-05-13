@@ -3,7 +3,7 @@
 namespace dusk
 {
 
-VkGfxDescriptorSetLayout& VkGfxDescriptorSetLayout::addBinding(
+VkGfxDescriptorSetLayout::Builder& VkGfxDescriptorSetLayout::Builder::addBinding(
     uint32_t           bindingIndex,
     VkDescriptorType   descriptorType,
     VkShaderStageFlags stageFlags,
@@ -33,10 +33,8 @@ VkGfxDescriptorSetLayout& VkGfxDescriptorSetLayout::addBinding(
     return *this;
 }
 
-VulkanResult VkGfxDescriptorSetLayout::create()
+Unique<VkGfxDescriptorSetLayout> VkGfxDescriptorSetLayout::Builder::build()
 {
-    DASSERT(device, "invalid vulkan logical device");
-
     uint32_t                                   bindingsCount = bindingsMap.size();
     DynamicArray<VkDescriptorSetLayoutBinding> setLayoutBindings(bindingsCount);
     DynamicArray<VkDescriptorBindingFlags>     setBindingFlags(bindingsCount);
@@ -65,24 +63,30 @@ VulkanResult VkGfxDescriptorSetLayout::create()
         descriptorSetLayoutInfo.pNext = &bindingFlagsInfo;
     }
 
-    return vkCreateDescriptorSetLayout(device, &descriptorSetLayoutInfo, nullptr, &layout);
+    auto         gfxSetLayout = createUnique<VkGfxDescriptorSetLayout>(device, bindingsMap);
+    VulkanResult result       = vkCreateDescriptorSetLayout(device, &descriptorSetLayoutInfo, nullptr, &gfxSetLayout->layout);
+
+    if (result.hasError())
+    {
+        DUSK_ERROR("Unable to create descriptor set layout. {}", result.toString());
+        return nullptr;
+    }
+
+    return std::move(gfxSetLayout);
 }
 
-void VkGfxDescriptorSetLayout::destroy()
+VkGfxDescriptorSetLayout::~VkGfxDescriptorSetLayout()
 {
-    DASSERT(device, "invalid vulkan logical device");
-
     vkDestroyDescriptorSetLayout(device, layout, nullptr);
-    layout = VK_NULL_HANDLE;
 }
 
-VkGfxDescriptorPool& VkGfxDescriptorPool::addPoolSize(VkDescriptorType descriptorType, uint32_t count)
+VkGfxDescriptorPool::Builder& VkGfxDescriptorPool::Builder::addPoolSize(VkDescriptorType descriptorType, uint32_t count)
 {
     poolSizes.push_back({ descriptorType, count });
     return *this;
 }
 
-VulkanResult VkGfxDescriptorPool::create(uint32_t maxSets, VkDescriptorPoolCreateFlags poolFlags)
+Unique<VkGfxDescriptorPool> VkGfxDescriptorPool::Builder::build(uint32_t maxSets, VkDescriptorPoolCreateFlags poolFlags)
 {
     DASSERT(device, "invalid vulkan logical device");
 
@@ -92,40 +96,50 @@ VulkanResult VkGfxDescriptorPool::create(uint32_t maxSets, VkDescriptorPoolCreat
     descriptorPoolInfo.maxSets       = maxSets;
     descriptorPoolInfo.flags         = poolFlags;
 
-    return vkCreateDescriptorPool(device, &descriptorPoolInfo, nullptr, &pool);
+    auto         gfxDescriptorPool   = createUnique<VkGfxDescriptorPool>(device);
+    VulkanResult result              = vkCreateDescriptorPool(device, &descriptorPoolInfo, nullptr, &gfxDescriptorPool->pool);
+
+    if (result.hasError())
+    {
+        DUSK_ERROR("Unable to build descriptor pool. {}", result.toString());
+        return nullptr;
+    }
+
+    return std::move(gfxDescriptorPool);
 }
 
-void VkGfxDescriptorPool::destroy()
+VkGfxDescriptorPool::~VkGfxDescriptorPool()
 {
-    DASSERT(device, "invalid vulkan logical device");
-    DASSERT(pool, "invalid vulkan descriptor pool");
-
     vkDestroyDescriptorPool(device, pool, nullptr);
-    pool = VK_NULL_HANDLE;
 }
 
-VulkanResult VkGfxDescriptorPool::allocateDescriptorSet(VkDescriptorSetLayout descriptorSetLayout, VkDescriptorSet* descriptorSet) const
+Unique<VkGfxDescriptorSet> VkGfxDescriptorPool::allocateDescriptorSet(VkGfxDescriptorSetLayout& descriptorSetLayout)
 {
-    DASSERT(device, "invalid vulkan logical device");
-
     VkDescriptorSetAllocateInfo allocInfo { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
     allocInfo.descriptorPool     = pool;
     allocInfo.descriptorSetCount = 1;
-    allocInfo.pSetLayouts        = &descriptorSetLayout;
+    allocInfo.pSetLayouts        = &descriptorSetLayout.layout;
 
-    return vkAllocateDescriptorSets(device, &allocInfo, descriptorSet);
+    auto         descriptorSet   = createUnique<VkGfxDescriptorSet>(device, descriptorSetLayout);
+
+    VulkanResult result          = vkAllocateDescriptorSets(device, &allocInfo, &descriptorSet->set);
+    
+    if (result.hasError())
+    {
+        DUSK_ERROR("Unable to create descriptor set. {}", result.toString());
+        return nullptr;
+    }
+
+    return std::move(descriptorSet);
 }
 
 void VkGfxDescriptorPool::freeDescriptorSets(DynamicArray<VkDescriptorSet>& descriptorSets) const
 {
-    DASSERT(device, "invalid vulkan logical device");
-
     vkFreeDescriptorSets(device, pool, static_cast<uint32_t>(descriptorSets.size()), descriptorSets.data());
 }
 
 void VkGfxDescriptorPool::resetPool()
 {
-    DASSERT(device, "invalid vulkan logical device");
     DASSERT(pool, "invalid vulkan descriptor pool");
 
     vkResetDescriptorPool(device, pool, 0);
@@ -139,7 +153,7 @@ VkGfxDescriptorSet& VkGfxDescriptorSet::configureBuffer(
     VkDescriptorBufferInfo* bufferInfo)
 {
     DASSERT(setLayout.bindingsMap.has(binding), "Layout doesn't contain specified binding");
-    auto& bindingDescription = setLayout.bindingsMap[binding];
+    auto&                bindingDescription = setLayout.bindingsMap[binding];
 
     VkWriteDescriptorSet write { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
     write.descriptorType  = bindingDescription.descriptorType;
@@ -162,7 +176,7 @@ VkGfxDescriptorSet& VkGfxDescriptorSet::configureImage(
     VkDescriptorImageInfo* imageInfo)
 {
     DASSERT(setLayout.bindingsMap.has(binding), "Layout doesn't contain specified binding");
-    auto& bindingDescription = setLayout.bindingsMap[binding];
+    auto&                bindingDescription = setLayout.bindingsMap[binding];
 
     VkWriteDescriptorSet write { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
     write.descriptorType  = bindingDescription.descriptorType;
@@ -189,20 +203,6 @@ void VkGfxDescriptorSet::applyConfiguration()
     vkUpdateDescriptorSets(device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 
     writes.clear();
-}
-
-VulkanResult VkGfxDescriptorSet::create()
-{
-    VulkanResult result = pool.allocateDescriptorSet(setLayout.layout, &set);
-    if (!result.isOk())
-    {
-        DUSK_ERROR("Unable to create descriptor set {}", result.toString());
-        return result;
-    }
-
-    applyConfiguration();
-
-    return result;
 }
 
 } // namespace dusk

@@ -233,28 +233,17 @@ bool Engine::setupGlobals()
     VulkanContext ctx            = VkGfxDevice::getSharedVulkanContext();
 
     // create global descriptor pool
-    m_globalDescriptorPool = createUnique<VkGfxDescriptorPool>(ctx);
-    VulkanResult result    = m_globalDescriptorPool
-                              ->addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, maxFramesCount)
-                              .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 100) // TODO: make count configurable
-                              .create(1, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
+    m_globalDescriptorPool = VkGfxDescriptorPool::Builder(ctx)
+                                 .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, maxFramesCount)
+                                 .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 100) // TODO: make count configurable
+                                 .build(1, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
+    CHECK_AND_RETURN_FALSE(!m_globalDescriptorPool);
 
-    if (result.hasError())
-    {
-        DUSK_ERROR("Error in creation of global descriptor pool {}", result.toString());
-        return false;
-    }
-
-    m_globalDescriptorSetLayout = createUnique<VkGfxDescriptorSetLayout>(ctx);
-    result                      = m_globalDescriptorSetLayout
-                 ->addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS, maxFramesCount, true)
-                 .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 100, true) // TODO: make count configurable
-                 .create();
-    if (result.hasError())
-    {
-        DUSK_ERROR("Error in creation of global descriptor set layout {}", result.toString());
-        return false;
-    }
+    m_globalDescriptorSetLayout = VkGfxDescriptorSetLayout::Builder(ctx)
+                                      .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS, maxFramesCount, true)
+                                      .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 100, true) // TODO: make count configurable
+                                      .build();
+    CHECK_AND_RETURN_FALSE(!m_globalDescriptorSetLayout);
 
     // uniform buffer params for creation
     GfxBufferParams uboParams {};
@@ -262,7 +251,7 @@ bool Engine::setupGlobals()
     uboParams.usage       = GfxBufferUsageFlags::UniformBuffer;
     uboParams.memoryType  = GfxBufferMemoryTypeFlags::HostSequentialWrite | GfxBufferMemoryTypeFlags::PersistentlyMapped;
 
-    result                = m_gfxDevice->createBuffer(uboParams, &m_globalUbos);
+    VulkanResult result   = m_gfxDevice->createBuffer(uboParams, &m_globalUbos);
     if (result.hasError())
     {
         DUSK_ERROR("Unable to create uniform buffer {}", result.toString());
@@ -270,14 +259,8 @@ bool Engine::setupGlobals()
     }
     m_gfxDevice->mapBuffer(&m_globalUbos);
 
-    m_globalDescriptorSet = createUnique<VkGfxDescriptorSet>(ctx, *m_globalDescriptorSetLayout, *m_globalDescriptorPool);
-
-    result                = m_globalDescriptorSet->create();
-    if (result.hasError())
-    {
-        DUSK_ERROR("Unable to create global descriptor set {}", result.toString());
-        return false;
-    }
+    m_globalDescriptorSet = m_globalDescriptorPool->allocateDescriptorSet(*m_globalDescriptorSetLayout);
+    CHECK_AND_RETURN_FALSE(!m_globalDescriptorSet);
 
     DynamicArray<VkDescriptorBufferInfo> buffersInfo(maxFramesCount);
 
@@ -294,27 +277,15 @@ bool Engine::setupGlobals()
     m_globalDescriptorSet->applyConfiguration();
 
     // create descriptor pool and layout for materials
-    m_materialDescriptorPool = createUnique<VkGfxDescriptorPool>(ctx);
-    result                   = m_materialDescriptorPool
-                 ->addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, maxMaterialCount) // TODO: make count configurable
-                 .create(1, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
+    m_materialDescriptorPool = VkGfxDescriptorPool::Builder(ctx)
+                                   .addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, maxMaterialCount) // TODO: make count configurable
+                                   .build(1, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
+    CHECK_AND_RETURN_FALSE(!m_materialDescriptorPool);
 
-    if (result.hasError())
-    {
-        DUSK_ERROR("Error in creation of material descriptor pool {}", result.toString());
-        return false;
-    }
-
-    m_materialDescriptorSetLayout = createUnique<VkGfxDescriptorSetLayout>(ctx);
-    result                        = m_materialDescriptorSetLayout
-                 ->addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, maxMaterialCount, true) // TODO: make count configurable
-                 .create();
-
-    if (result.hasError())
-    {
-        DUSK_ERROR("Error in creation of materials descriptor set layout {}", result.toString());
-        return false;
-    }
+    m_materialDescriptorSetLayout = VkGfxDescriptorSetLayout::Builder(ctx)
+                                        .addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, maxMaterialCount, true) // TODO: make count configurable
+                                        .build();
+    CHECK_AND_RETURN_FALSE(!m_materialDescriptorSetLayout);
 
     // create storage buffer of storing materials;
     size_t          alignmentSize = getAlignment(sizeof(Material), ctx.physicalDeviceProperties.limits.minStorageBufferOffsetAlignment);
@@ -332,47 +303,25 @@ bool Engine::setupGlobals()
     }
     m_gfxDevice->mapBuffer(&m_materialsBuffer);
 
-    m_materialsDescriptorSet = createUnique<VkGfxDescriptorSet>(ctx, *m_materialDescriptorSetLayout, *m_materialDescriptorPool);
-
-    result                   = m_materialsDescriptorSet->create();
-    if (result.hasError())
-    {
-        DUSK_ERROR("Unable to create material descriptor set {}", result.toString());
-        return false;
-    }
+    m_materialsDescriptorSet = m_materialDescriptorPool->allocateDescriptorSet(*m_materialDescriptorSetLayout);
+    CHECK_AND_RETURN_FALSE(!m_materialsDescriptorSet);
 
     // setup lighting globasl
-    m_lightsDescriptorPool = createUnique<VkGfxDescriptorPool>(ctx);
-    result                 = m_lightsDescriptorPool
-                 ->addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, maxSupportedLights)
-                 .create(1, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
-    if (result.hasError())
-    {
-        DUSK_ERROR("Unable to create ligths descriptor pool {}", result.toString());
-        return false;
-    }
+    m_lightsDescriptorPool = VkGfxDescriptorPool::Builder(ctx)
+                                 .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, maxSupportedLights)
+                                 .build(1, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
+    CHECK_AND_RETURN_FALSE(!m_lightsDescriptorPool);
 
-    m_lightsDescriptorSetLayout = createUnique<VkGfxDescriptorSetLayout>(ctx);
-    result                      = m_lightsDescriptorSetLayout
-                 ->addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)                       // Ambient light
-                 .addBinding(1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, maxSupportedLights, true) // Directional Light
-                 .addBinding(2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, maxSupportedLights, true) // Point Light
-                 .addBinding(3, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, maxSupportedLights, true) // Sport Light
-                 .create();
+    m_lightsDescriptorSetLayout = VkGfxDescriptorSetLayout::Builder(ctx)
+                                      .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)                        // Ambient light
+                                      .addBinding(1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, maxSupportedLights, true) // Directional Light
+                                      .addBinding(2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, maxSupportedLights, true) // Point Light
+                                      .addBinding(3, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, maxSupportedLights, true) // Sport Light
+                                      .build();
+    CHECK_AND_RETURN_FALSE(!m_lightsDescriptorSetLayout);
 
-    if (result.hasError())
-    {
-        DUSK_ERROR("Unable to create ligths descriptor layout {}", result.toString());
-        return false;
-    }
-
-    m_lightsDescriptorSet = createUnique<VkGfxDescriptorSet>(ctx, *m_lightsDescriptorSetLayout, *m_lightsDescriptorPool);
-    result                = m_lightsDescriptorSet->create();
-    if (result.hasError())
-    {
-        DUSK_ERROR("Unable to create ligths descriptor set {}", result.toString());
-        return false;
-    }
+    m_lightsDescriptorSet = m_lightsDescriptorPool->allocateDescriptorSet(*m_lightsDescriptorSetLayout);
+    CHECK_AND_RETURN_FALSE(!m_lightsDescriptorSet);
 
     // create ambient light buffer
     alignmentSize           = getAlignment(sizeof(AmbientLightComponent), ctx.physicalDeviceProperties.limits.minUniformBufferOffsetAlignment);
@@ -455,23 +404,23 @@ bool Engine::setupGlobals()
 
 void Engine::cleanupGlobals()
 {
+    m_globalDescriptorPool->resetPool();
+    m_globalDescriptorSetLayout = nullptr;
+    m_globalDescriptorPool      = nullptr;
+
+    m_materialDescriptorPool->resetPool();
+    m_materialDescriptorSetLayout = nullptr;
+    m_materialDescriptorPool      = nullptr;
+
+    m_lightsDescriptorPool->resetPool();
+    m_lightsDescriptorSetLayout = nullptr;
+    m_lightsDescriptorPool      = nullptr;
+
     m_gfxDevice->unmapBuffer(&m_globalUbos);
     m_gfxDevice->freeBuffer(&m_globalUbos);
 
-    m_globalDescriptorPool->resetPool();
-    m_globalDescriptorSetLayout->destroy();
-    m_globalDescriptorPool->destroy();
-
     m_gfxDevice->unmapBuffer(&m_materialsBuffer);
     m_gfxDevice->freeBuffer(&m_materialsBuffer);
-
-    m_materialDescriptorPool->resetPool();
-    m_materialDescriptorSetLayout->destroy();
-    m_materialDescriptorPool->destroy();
-
-    m_lightsDescriptorPool->resetPool();
-    m_lightsDescriptorSetLayout->destroy();
-    m_lightsDescriptorPool->destroy();
 
     m_gfxDevice->unmapBuffer(&m_ambientLightBuffer);
     m_gfxDevice->freeBuffer(&m_ambientLightBuffer);

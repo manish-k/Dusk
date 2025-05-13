@@ -119,8 +119,8 @@ SkyboxRenderSystem::~SkyboxRenderSystem()
     m_pipelineLayout = nullptr;
 
     m_texDescriptorPool->resetPool();
-    m_texDescriptorSetLayout->destroy();
-    m_texDescriptorPool->destroy();
+    m_texDescriptorSetLayout = nullptr;
+    m_texDescriptorPool      = nullptr;
 
     m_skyboxTexture.free();
     m_cubeMesh.free();
@@ -217,27 +217,18 @@ void SkyboxRenderSystem::setupDescriptors()
 {
     VulkanContext& vkContext = VkGfxDevice::getSharedVulkanContext();
 
-    m_texDescriptorPool      = createUnique<VkGfxDescriptorPool>(vkContext);
-    VulkanResult result      = m_texDescriptorPool
-                              ->addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1)
-                              .create(1);
+    m_texDescriptorPool      = VkGfxDescriptorPool::Builder(vkContext)
+                              .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1)
+                              .build(1);
+    CHECK_AND_RETURN(!m_texDescriptorPool);
 
-    if (result.hasError())
-    {
-        DUSK_ERROR("Unable to create descriptor pool for skybox tex {}", result.toString());
-    }
+    m_texDescriptorSetLayout = VkGfxDescriptorSetLayout::Builder(vkContext)
+                                   .addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
+                                   .build();
+    CHECK_AND_RETURN(!m_texDescriptorSetLayout);
 
-    m_texDescriptorSetLayout = createUnique<VkGfxDescriptorSetLayout>(vkContext);
-    result                   = m_texDescriptorSetLayout
-                 ->addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
-                 .create();
-
-    if (result.hasError())
-    {
-        DUSK_ERROR("Unable to create descriptor set layout for skybox {}", result.toString());
-    }
-
-    m_texDescriptorSet = createUnique<VkGfxDescriptorSet>(vkContext, *m_texDescriptorSetLayout, *m_texDescriptorPool);
+    m_texDescriptorSet = m_texDescriptorPool->allocateDescriptorSet(*m_texDescriptorSetLayout);
+    CHECK_AND_RETURN(!m_texDescriptorSet);
 
     // write image info to descriptor
     VkDescriptorImageInfo imageInfo {};
@@ -247,11 +238,7 @@ void SkyboxRenderSystem::setupDescriptors()
 
     m_texDescriptorSet->configureImage(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 0, 1, &imageInfo);
 
-    result = m_texDescriptorSet->create();
-    if (result.hasError())
-    {
-        DUSK_ERROR("Unable to create descriptor set for skybox {}", result.toString());
-    }
+    m_texDescriptorSet->applyConfiguration();
 }
 
 } // namespace dusk

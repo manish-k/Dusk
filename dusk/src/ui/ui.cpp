@@ -37,16 +37,10 @@ bool           UI::init(Window& window)
     auto& swapChain = Engine::get().getRenderer().getSwapChain();
 
     // create descriptor pool
-    m_descriptorPool    = createUnique<VkGfxDescriptorPool>(ctx);
-    VulkanResult result = m_descriptorPool
-                              ->addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1)
-                              .create(1, VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT);
-
-    if (result.hasError())
-    {
-        DUSK_ERROR("Unable to create descriptor pool for ImGui {}", result.toString());
-        return false;
-    }
+    m_descriptorPool = VkGfxDescriptorPool::Builder(ctx)
+                           .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1)
+                           .build(1, VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT);
+    CHECK_AND_RETURN_FALSE(!m_descriptorPool);
 
     // for dynamic rendering
     DynamicArray<VkFormat>        colorAttachmentFormats { swapChain.getImageFormat() };
@@ -84,8 +78,6 @@ void UI::shutdown()
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 
-    m_descriptorPool->resetPool();
-    m_descriptorPool->destroy();
     m_descriptorPool = nullptr;
 }
 

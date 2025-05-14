@@ -12,21 +12,21 @@ struct VulkanGPUAllocator
 
 struct VulkanGfxBuffer
 {
-    VkBuffer              buffer;
-    VmaAllocation         allocation;
-    void*                 mappedMemory;
-    size_t                sizeInBytes;
-    VkMemoryPropertyFlags memoryFlags;
-    size_t                alignmentSize;
+    VkBuffer              buffer        = VK_NULL_HANDLE;
+    VmaAllocation         allocation    = VK_NULL_HANDLE;
+    void*                 mappedMemory  = nullptr;
+    size_t                sizeInBytes   = 0u;
+    VkMemoryPropertyFlags memoryFlags   = 0;
+    size_t                alignmentSize = 0u;
 };
 
 struct VulkanGfxImage
 {
-    VkImage               image;
-    VmaAllocation         allocation;
-    void*                 mappedMemory;
-    size_t                sizeInBytes;
-    VkMemoryPropertyFlags memoryFlags;
+    VkImage               image        = VK_NULL_HANDLE;
+    VmaAllocation         allocation   = VK_NULL_HANDLE;
+    void*                 mappedMemory = nullptr;
+    size_t                sizeInBytes  = 0u;
+    VkMemoryPropertyFlags memoryFlags  = 0;
 };
 
 struct VulkanContext

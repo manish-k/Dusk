@@ -15,8 +15,8 @@
 #include <spdlog/fmt/bundled/printf.h>
 
 // VMA loggin macros
-#define VMA_DEBUG_LOG(str)                DUSK_DEBUG("{}", str);
-#define VMA_DEBUG_LOG_FORMAT(format, ...) DUSK_DEBUG(fmt::sprintf(format, __VA_ARGS__));
+//#define VMA_DEBUG_LOG(str)                DUSK_DEBUG("{}", str);
+//#define VMA_DEBUG_LOG_FORMAT(format, ...) DUSK_DEBUG(fmt::sprintf(format, __VA_ARGS__));
 
 namespace dusk
 {

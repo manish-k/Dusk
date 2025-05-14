@@ -655,6 +655,8 @@ VulkanResult VkGfxDevice::createBuffer(const GfxBufferParams& params, VulkanGfxB
         DUSK_ERROR("Error in creating buffer {}", result.toString());
     }
 
+    vulkan::setAllocationName(m_gpuAllocator, pOutBuffer->allocation, params.debugName);
+
     pOutBuffer->alignmentSize = params.alignmentSize;
     return result;
 }
@@ -690,6 +692,11 @@ void VkGfxDevice::unmapBuffer(VulkanGfxBuffer* buffer)
 void VkGfxDevice::flushBuffer(VulkanGfxBuffer* buffer)
 {
     vulkan::flushCPUMemory(m_gpuAllocator, { buffer->allocation }, { 0 }, { buffer->sizeInBytes });
+}
+
+void VkGfxDevice::flushBufferOffset(VulkanGfxBuffer* buffer, uint32_t offset, size_t size)
+{
+    vulkan::flushCPUMemory(m_gpuAllocator, { buffer->allocation }, { offset }, { size });
 }
 
 void VkGfxDevice::writeToBuffer(VulkanGfxBuffer* buffer, void* hostBlock, VkDeviceSize offset, VkDeviceSize size)

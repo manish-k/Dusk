@@ -150,8 +150,7 @@ void Engine::onUpdate(TimeStep dt)
             ubo.lightDirection    = glm::vec4(normalize(glm::vec3(1.0, -3.0, -1.0)), 0.f);
             ubo.ambientLightColor = glm::vec4(0.7f, 0.8f, 0.8f, 0.8f);
 
-            void* dst             = (char*)m_globalUbos.mappedMemory + sizeof(GlobalUbo) * currentFrameIndex;
-            memcpy(dst, &ubo, sizeof(GlobalUbo));
+            m_globalUbos.writeAndFlushAtIndex(currentFrameIndex, &ubo, sizeof(GlobalUbo));
 
             // TODO:: maybe scene onUpdate is the right place for this
             m_ui->renderSceneWidgets(*m_currentScene);
@@ -245,34 +244,25 @@ bool Engine::setupGlobals()
                                       .build();
     CHECK_AND_RETURN_FALSE(!m_globalDescriptorSetLayout);
 
-    // uniform buffer params for creation
-    GfxBufferParams uboParams {};
-    uboParams.sizeInBytes = maxFramesCount * sizeof(GlobalUbo);
-    uboParams.usage       = GfxBufferUsageFlags::UniformBuffer;
-    uboParams.memoryType  = GfxBufferMemoryTypeFlags::HostSequentialWrite | GfxBufferMemoryTypeFlags::PersistentlyMapped;
-
-    VulkanResult result   = m_gfxDevice->createBuffer(uboParams, &m_globalUbos);
-    if (result.hasError())
-    {
-        DUSK_ERROR("Unable to create uniform buffer {}", result.toString());
-        return false;
-    }
-    m_gfxDevice->mapBuffer(&m_globalUbos);
+    GfxBuffer::createHostWriteBuffer(
+        GfxBufferUsageFlags::UniformBuffer,
+        sizeof(GlobalUbo),
+        maxFramesCount,
+        "global_uniform_buffer",
+        &m_globalUbos);
+    CHECK_AND_RETURN_FALSE(!m_globalUbos.isAllocated());
 
     m_globalDescriptorSet = m_globalDescriptorPool->allocateDescriptorSet(*m_globalDescriptorSetLayout);
     CHECK_AND_RETURN_FALSE(!m_globalDescriptorSet);
 
-    DynamicArray<VkDescriptorBufferInfo> buffersInfo(maxFramesCount);
+    DynamicArray<VkDescriptorBufferInfo> buffersInfo;
+    buffersInfo.reserve(maxFramesCount);
 
     for (uint32_t frameIndex = 0u; frameIndex < maxFramesCount; ++frameIndex)
     {
-        VkDescriptorBufferInfo& bufferInfo = buffersInfo[frameIndex];
-        bufferInfo.buffer                  = m_globalUbos.buffer;
-        bufferInfo.offset                  = sizeof(GlobalUbo) * frameIndex;
-        bufferInfo.range                   = sizeof(GlobalUbo);
-
-        m_globalDescriptorSet->configureBuffer(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, frameIndex, 1, &bufferInfo);
+        buffersInfo.push_back(m_globalUbos.getDescriptorInfoAtIndex(frameIndex));
     }
+    m_globalDescriptorSet->configureBuffer(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, buffersInfo.size(), buffersInfo.data());
 
     m_globalDescriptorSet->applyConfiguration();
 
@@ -288,20 +278,13 @@ bool Engine::setupGlobals()
     CHECK_AND_RETURN_FALSE(!m_materialDescriptorSetLayout);
 
     // create storage buffer of storing materials;
-    size_t          alignmentSize = getAlignment(sizeof(Material), ctx.physicalDeviceProperties.limits.minStorageBufferOffsetAlignment);
-    GfxBufferParams matBufferParams {};
-    matBufferParams.sizeInBytes   = maxMaterialCount * alignmentSize;
-    matBufferParams.usage         = GfxBufferUsageFlags::StorageBuffer;
-    matBufferParams.memoryType    = GfxBufferMemoryTypeFlags::HostSequentialWrite | GfxBufferMemoryTypeFlags::PersistentlyMapped;
-    matBufferParams.alignmentSize = alignmentSize;
-
-    result                        = m_gfxDevice->createBuffer(matBufferParams, &m_materialsBuffer);
-    if (result.hasError())
-    {
-        DUSK_ERROR("Unable to create storage buffer for materials {}", result.toString());
-        return false;
-    }
-    m_gfxDevice->mapBuffer(&m_materialsBuffer);
+    GfxBuffer::createHostWriteBuffer(
+        GfxBufferUsageFlags::StorageBuffer,
+        sizeof(Material),
+        maxMaterialCount,
+        "material_buffer",
+        &m_materialsBuffer);
+    CHECK_AND_RETURN_FALSE(!m_materialsBuffer.isAllocated());
 
     m_materialsDescriptorSet = m_materialDescriptorPool->allocateDescriptorSet(*m_materialDescriptorSetLayout);
     CHECK_AND_RETURN_FALSE(!m_materialsDescriptorSet);
@@ -324,80 +307,40 @@ bool Engine::setupGlobals()
     CHECK_AND_RETURN_FALSE(!m_lightsDescriptorSet);
 
     // create ambient light buffer
-    alignmentSize           = getAlignment(sizeof(AmbientLightComponent), ctx.physicalDeviceProperties.limits.minUniformBufferOffsetAlignment);
-
-    uint32_t bufferSize     = static_cast<uint32_t>(alignmentSize);
-
-    uboParams               = {};
-    uboParams.sizeInBytes   = bufferSize;
-    uboParams.usage         = GfxBufferUsageFlags::UniformBuffer;
-    uboParams.memoryType    = GfxBufferMemoryTypeFlags::HostSequentialWrite | GfxBufferMemoryTypeFlags::PersistentlyMapped;
-    uboParams.alignmentSize = alignmentSize;
-
-    result                  = m_gfxDevice->createBuffer(uboParams, &m_ambientLightBuffer);
-    if (result.hasError())
-    {
-        DUSK_ERROR("Unbale to create uniform buffer for ambient light {}", result.toString());
-        return false;
-    }
-    m_gfxDevice->mapBuffer(&m_ambientLightBuffer);
+    GfxBuffer::createHostWriteBuffer(
+        GfxBufferUsageFlags::UniformBuffer,
+        sizeof(AmbientLightComponent),
+        1,
+        "ambient_light_buffer",
+        &m_ambientLightBuffer);
+    CHECK_AND_RETURN_FALSE(!m_ambientLightBuffer.isAllocated());
 
     // create directional light buffer
-    alignmentSize           = getAlignment(sizeof(DirectionalLightComponent), ctx.physicalDeviceProperties.limits.minUniformBufferOffsetAlignment);
-
-    bufferSize              = maxSupportedLights * alignmentSize;
-
-    uboParams               = {};
-    uboParams.sizeInBytes   = bufferSize;
-    uboParams.usage         = GfxBufferUsageFlags::UniformBuffer;
-    uboParams.memoryType    = GfxBufferMemoryTypeFlags::HostSequentialWrite | GfxBufferMemoryTypeFlags::PersistentlyMapped;
-    uboParams.alignmentSize = alignmentSize;
-
-    result                  = m_gfxDevice->createBuffer(uboParams, &m_directionalLightsBuffer);
-    if (result.hasError())
-    {
-        DUSK_ERROR("Unbale to create uniform buffer for directional lights {}", result.toString());
-        return false;
-    }
-    m_gfxDevice->mapBuffer(&m_directionalLightsBuffer);
+    GfxBuffer::createHostWriteBuffer(
+        GfxBufferUsageFlags::UniformBuffer,
+        sizeof(DirectionalLightComponent),
+        maxSupportedLights,
+        "directional_light_buffer",
+        &m_directionalLightsBuffer);
+    CHECK_AND_RETURN_FALSE(!m_directionalLightsBuffer.isAllocated());
 
     // create point light buffer
-    alignmentSize           = getAlignment(sizeof(PointLightComponent), ctx.physicalDeviceProperties.limits.minUniformBufferOffsetAlignment);
-
-    bufferSize              = maxSupportedLights * alignmentSize;
-
-    uboParams               = {};
-    uboParams.sizeInBytes   = bufferSize;
-    uboParams.usage         = GfxBufferUsageFlags::UniformBuffer;
-    uboParams.memoryType    = GfxBufferMemoryTypeFlags::HostSequentialWrite | GfxBufferMemoryTypeFlags::PersistentlyMapped;
-    uboParams.alignmentSize = alignmentSize;
-
-    result                  = m_gfxDevice->createBuffer(uboParams, &m_pointLightsBuffer);
-    if (result.hasError())
-    {
-        DUSK_ERROR("Unbale to create uniform buffer for point lights {}", result.toString());
-        return false;
-    }
-    m_gfxDevice->mapBuffer(&m_pointLightsBuffer);
+    GfxBuffer::createHostWriteBuffer(
+        GfxBufferUsageFlags::UniformBuffer,
+        sizeof(PointLightComponent),
+        maxSupportedLights,
+        "point_light_buffer",
+        &m_pointLightsBuffer);
+    CHECK_AND_RETURN_FALSE(!m_pointLightsBuffer.isAllocated());
 
     // create spot light buffer
-    alignmentSize           = getAlignment(sizeof(SpotLightComponent), ctx.physicalDeviceProperties.limits.minUniformBufferOffsetAlignment);
-
-    bufferSize              = maxRenderableMeshes * alignmentSize;
-
-    uboParams               = {};
-    uboParams.sizeInBytes   = bufferSize;
-    uboParams.usage         = GfxBufferUsageFlags::UniformBuffer;
-    uboParams.memoryType    = GfxBufferMemoryTypeFlags::HostSequentialWrite | GfxBufferMemoryTypeFlags::PersistentlyMapped;
-    uboParams.alignmentSize = alignmentSize;
-
-    result                  = m_gfxDevice->createBuffer(uboParams, &m_spotLightsBuffer);
-    if (result.hasError())
-    {
-        DUSK_ERROR("Unbale to create uniform buffer for spot lights {}", result.toString());
-        return false;
-    }
-    m_gfxDevice->mapBuffer(&m_spotLightsBuffer);
+    GfxBuffer::createHostWriteBuffer(
+        GfxBufferUsageFlags::UniformBuffer,
+        sizeof(SpotLightComponent),
+        maxSupportedLights,
+        "spot_light_buffer",
+        &m_spotLightsBuffer);
+    CHECK_AND_RETURN_FALSE(!m_spotLightsBuffer.isAllocated());
 
     return true;
 }
@@ -416,20 +359,12 @@ void Engine::cleanupGlobals()
     m_lightsDescriptorSetLayout = nullptr;
     m_lightsDescriptorPool      = nullptr;
 
-    m_gfxDevice->unmapBuffer(&m_globalUbos);
-    m_gfxDevice->freeBuffer(&m_globalUbos);
-
-    m_gfxDevice->unmapBuffer(&m_materialsBuffer);
-    m_gfxDevice->freeBuffer(&m_materialsBuffer);
-
-    m_gfxDevice->unmapBuffer(&m_ambientLightBuffer);
-    m_gfxDevice->freeBuffer(&m_ambientLightBuffer);
-    m_gfxDevice->unmapBuffer(&m_directionalLightsBuffer);
-    m_gfxDevice->freeBuffer(&m_directionalLightsBuffer);
-    m_gfxDevice->unmapBuffer(&m_pointLightsBuffer);
-    m_gfxDevice->freeBuffer(&m_pointLightsBuffer);
-    m_gfxDevice->unmapBuffer(&m_spotLightsBuffer);
-    m_gfxDevice->freeBuffer(&m_spotLightsBuffer);
+    m_globalUbos.free();
+    m_materialsBuffer.free();
+    m_ambientLightBuffer.free();
+    m_directionalLightsBuffer.free();
+    m_pointLightsBuffer.free();
+    m_spotLightsBuffer.free();
 }
 
 void Engine::registerTextures(DynamicArray<Texture2D>& textures)
@@ -449,13 +384,12 @@ void Engine::registerTextures(DynamicArray<Texture2D>& textures)
 
 void Engine::registerMaterials(DynamicArray<Material>& materials)
 {
-    DynamicArray<VkDescriptorBufferInfo> matInfo(materials.size());
-    for (uint32_t matIndex = 0u; matIndex < matInfo.size(); ++matIndex)
+    DynamicArray<VkDescriptorBufferInfo> matInfo;
+    matInfo.reserve(materials.size());
+
+    for (uint32_t matIndex = 0u; matIndex < materials.size(); ++matIndex)
     {
-        VkDescriptorBufferInfo& bufferInfo = matInfo[matIndex];
-        bufferInfo.buffer                  = m_materialsBuffer.buffer;
-        bufferInfo.offset                  = m_materialsBuffer.alignmentSize * matIndex;
-        bufferInfo.range                   = m_materialsBuffer.alignmentSize;
+        matInfo.push_back(m_materialsBuffer.getDescriptorInfoAtIndex(matIndex));
     }
 
     m_materialsDescriptorSet->configureBuffer(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0, materials.size(), matInfo.data());

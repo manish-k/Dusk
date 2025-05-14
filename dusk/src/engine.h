@@ -89,23 +89,23 @@ private:
     Unique<VkGfxDescriptorPool>      m_globalDescriptorPool      = nullptr;
     Unique<VkGfxDescriptorSetLayout> m_globalDescriptorSetLayout = nullptr;
 
-    VulkanGfxBuffer                  m_globalUbos;
+    GfxBuffer                        m_globalUbos;
     Unique<VkGfxDescriptorSet>       m_globalDescriptorSet;
 
     Unique<VkGfxDescriptorPool>      m_materialDescriptorPool      = nullptr;
     Unique<VkGfxDescriptorSetLayout> m_materialDescriptorSetLayout = nullptr;
 
-    VulkanGfxBuffer                  m_materialsBuffer;
+    GfxBuffer                        m_materialsBuffer;
     Unique<VkGfxDescriptorSet>       m_materialsDescriptorSet;
 
     Unique<VkGfxDescriptorPool>      m_lightsDescriptorPool      = nullptr;
     Unique<VkGfxDescriptorSetLayout> m_lightsDescriptorSetLayout = nullptr;
     Unique<VkGfxDescriptorSet>       m_lightsDescriptorSet       = nullptr;
 
-    VulkanGfxBuffer                  m_ambientLightBuffer;
-    VulkanGfxBuffer                  m_directionalLightsBuffer;
-    VulkanGfxBuffer                  m_pointLightsBuffer;
-    VulkanGfxBuffer                  m_spotLightsBuffer;
+    GfxBuffer                        m_ambientLightBuffer;
+    GfxBuffer                        m_directionalLightsBuffer;
+    GfxBuffer                        m_pointLightsBuffer;
+    GfxBuffer                        m_spotLightsBuffer;
 
 private:
     static Engine* s_instance;

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "dusk.h"
-
 #include "backend/vulkan/vk_types.h"
 
 namespace dusk

@@ -5,6 +5,7 @@
 #include "vk_types.h"
 
 #include <volk/volk.h>
+#include <string>
 
 namespace dusk
 {
@@ -62,5 +63,11 @@ VulkanResult writeToAllocation(
     VmaAllocation       dstAllocation,
     VkDeviceSize        dstOffset,
     VkDeviceSize        size);
+
+void setAllocationName(
+    VulkanGPUAllocator& gpuAllocator,
+    VmaAllocation       dstAllocation,
+    const std::string&        name);
+
 } // namespace vulkan
 } // namespace dusk

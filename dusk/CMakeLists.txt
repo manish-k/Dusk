@@ -111,6 +111,7 @@ set(RENDERER_FILES
 	# Source files
 	"${RENDERER_DIR}/sub_mesh.cpp"
 	"${RENDERER_DIR}/texture.cpp"
+	"${RENDERER_DIR}/gfx_buffer.cpp"
 	"${RENDERER_SYSTEMS_DIR}/basic_render_system.cpp"
 	"${RENDERER_SYSTEMS_DIR}/grid_render_system.cpp"
 	"${RENDERER_SYSTEMS_DIR}/skybox_render_system.cpp"

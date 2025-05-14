@@ -44,7 +44,15 @@ public:
     void            mapBuffer(VulkanGfxBuffer* buffer);
     void            unmapBuffer(VulkanGfxBuffer* buffer);
     void            flushBuffer(VulkanGfxBuffer* buffer);
-    void            writeToBuffer(VulkanGfxBuffer* buffer, void* hostBlock, VkDeviceSize offset, VkDeviceSize size);
+    void            flushBufferOffset(
+                   VulkanGfxBuffer* buffer,
+                   uint32_t,
+                   size_t size);
+    void writeToBuffer(
+        VulkanGfxBuffer* buffer,
+        void*            hostBlock,
+        VkDeviceSize     offset,
+        VkDeviceSize     size);
 
     //
     void copyBufferToImage(
@@ -54,8 +62,8 @@ public:
         uint32_t         height);
 
     void copyBufferToImageRegions(
-        VulkanGfxBuffer*                buffer,
-        VulkanGfxImage*                 img,
+        VulkanGfxBuffer*                 buffer,
+        VulkanGfxImage*                  img,
         DynamicArray<VkBufferImageCopy>& regions);
 
     Error transitionImageWithLayout(

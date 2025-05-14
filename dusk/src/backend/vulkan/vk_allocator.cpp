@@ -215,4 +215,12 @@ VulkanResult vulkan::writeToAllocation(
         size);
 }
 
+void vulkan::setAllocationName(VulkanGPUAllocator& gpuAllocator, VmaAllocation dstAllocation, const std::string& name)
+{
+    vmaSetAllocationName(
+        gpuAllocator.vmaAllocator,
+        dstAllocation,
+        name.c_str());
+}
+
 } // namespace dusk

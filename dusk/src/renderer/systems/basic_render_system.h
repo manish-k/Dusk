@@ -56,6 +56,6 @@ private:
     Unique<VkGfxDescriptorSetLayout> m_modelDescriptorSetLayout = nullptr;
     Unique<VkGfxDescriptorSet>       m_modelDescriptorSet       = nullptr;
 
-    VulkanGfxBuffer                  m_modelsBuffer;
+    GfxBuffer                  m_modelsBuffer;
 };
 } // namespace dusk

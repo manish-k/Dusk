@@ -23,13 +23,11 @@ BasicRenderSystem::~BasicRenderSystem()
     m_renderPipeline = nullptr;
     m_pipelineLayout = nullptr;
 
-    m_device.unmapBuffer(&m_modelsBuffer);
-    m_device.freeBuffer(&m_modelsBuffer);
-
     m_modelDescriptorPool->resetPool();
-
     m_modelDescriptorSetLayout = nullptr;
     m_modelDescriptorPool      = nullptr;
+
+    m_modelsBuffer.free();
 }
 
 void BasicRenderSystem::createPipeLine()
@@ -84,36 +82,23 @@ void BasicRenderSystem::setupDescriptors()
     CHECK_AND_RETURN(!m_modelDescriptorSetLayout);
 
     // create dynamic ubo
-    size_t          alignmentSize = getAlignment(sizeof(ModelData), ctx.physicalDeviceProperties.limits.minUniformBufferOffsetAlignment);
-
-    uint32_t        bufferSize    = maxRenderableMeshes * alignmentSize;
-
-    GfxBufferParams dynamicUboParams {};
-    dynamicUboParams.sizeInBytes   = bufferSize;
-    dynamicUboParams.usage         = GfxBufferUsageFlags::UniformBuffer;
-    dynamicUboParams.memoryType    = GfxBufferMemoryTypeFlags::HostSequentialWrite | GfxBufferMemoryTypeFlags::PersistentlyMapped;
-    dynamicUboParams.alignmentSize = alignmentSize;
-
-    VulkanResult result            = m_device.createBuffer(dynamicUboParams, &m_modelsBuffer);
-    if (result.hasError())
-    {
-        DUSK_ERROR("Unbale to create uniform buffer for models data {}", result.toString());
-        return;
-    }
-
-    m_device.mapBuffer(&m_modelsBuffer);
+    GfxBuffer::createHostWriteBuffer(
+        GfxBufferUsageFlags::UniformBuffer,
+        sizeof(ModelData),
+        maxRenderableMeshes,
+        "model_buffer",
+        &m_modelsBuffer);
+    CHECK_AND_RETURN(!m_modelsBuffer.isAllocated());
 
     // create descriptor set
     m_modelDescriptorSet = m_modelDescriptorPool->allocateDescriptorSet(*m_modelDescriptorSetLayout);
     CHECK_AND_RETURN(!m_modelDescriptorSet);
 
-    DynamicArray<VkDescriptorBufferInfo> meshBufferInfo(maxRenderableMeshes);
+    DynamicArray<VkDescriptorBufferInfo> meshBufferInfo;
+    meshBufferInfo.reserve(maxRenderableMeshes);
     for (uint32_t meshIdx = 0u; meshIdx < maxRenderableMeshes; ++meshIdx)
     {
-        VkDescriptorBufferInfo& bufferInfo = meshBufferInfo[meshIdx];
-        bufferInfo.buffer                  = m_modelsBuffer.buffer;
-        bufferInfo.offset                  = alignmentSize * meshIdx;
-        bufferInfo.range                   = alignmentSize;
+        meshBufferInfo.push_back(m_modelsBuffer.getDescriptorInfoAtIndex(meshIdx));
     }
 
     m_modelDescriptorSet->configureBuffer(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0, 1, meshBufferInfo.data());
@@ -172,10 +157,9 @@ void BasicRenderSystem::renderGameObjects(const FrameData& frameData)
 
             // update mesh transform data
             ModelData md { transform.mat4(), transform.normalMat4() };
-            void*     dst = (char*)m_modelsBuffer.mappedMemory + sizeof(ModelData) * meshId;
-            memcpy(dst, &md, sizeof(ModelData));
+            m_modelsBuffer.writeAndFlushAtIndex(meshId, &md, sizeof(ModelData));
 
-            uint32_t dynamicOffset = meshId * static_cast<uint32_t>(m_modelsBuffer.alignmentSize);
+            uint32_t dynamicOffset = meshId * static_cast<uint32_t>(m_modelsBuffer.instanceAlignmentSize);
             vkCmdBindDescriptorSets(
                 commandBuffer,
                 VK_PIPELINE_BIND_POINT_GRAPHICS,

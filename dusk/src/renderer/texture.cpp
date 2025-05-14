@@ -17,23 +17,19 @@ Error Texture2D::init(Image& texImage)
     height          = texImage.height;
     numChannels     = texImage.channels;
 
-    // staging buffer params for creation
-    GfxBufferParams stagingBufferParams {};
-    stagingBufferParams.sizeInBytes = texImage.size;
-    stagingBufferParams.usage       = GfxBufferUsageFlags::TransferSource;
-    stagingBufferParams.memoryType  = GfxBufferMemoryTypeFlags::HostSequentialWrite | GfxBufferMemoryTypeFlags::PersistentlyMapped;
+    // staging buffer for transfer
+    GfxBuffer stagingBuffer;
+    GfxBuffer::createHostWriteBuffer(
+        GfxBufferUsageFlags::TransferSource,
+        texImage.size,
+        1,
+        "staging_texture_2d_buffer",
+        &stagingBuffer);
 
-    // create staging
-    VulkanGfxBuffer stagingBuffer {};
+    if (!stagingBuffer.isAllocated())
+        return Error::InitializationFailed;
 
-    VulkanResult    result = device.createBuffer(stagingBufferParams, &stagingBuffer);
-    if (result.hasError())
-    {
-        DUSK_ERROR("Unable to create staging buffer for uploading image  data {}", result.toString());
-        return Error::OutOfMemory;
-    }
-
-    memcpy(stagingBuffer.mappedMemory, texImage.data, texImage.size);
+    stagingBuffer.writeAndFlush(0, texImage.data, texImage.size);
 
     // create dest image
     VkImageCreateInfo imageInfo { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
@@ -52,7 +48,7 @@ Error Texture2D::init(Image& texImage)
     imageInfo.flags         = 0;
 
     // create image
-    result = vulkan::allocateGPUImage(
+    VulkanResult result = vulkan::allocateGPUImage(
         vkContext.gpuAllocator,
         imageInfo,
         VMA_MEMORY_USAGE_AUTO,
@@ -74,7 +70,7 @@ Error Texture2D::init(Image& texImage)
         1);
 
     device.copyBufferToImage(
-        &stagingBuffer,
+        &stagingBuffer.vkBuffer,
         &vkTexture.image,
         texImage.width,
         texImage.height);
@@ -87,7 +83,7 @@ Error Texture2D::init(Image& texImage)
         1,
         1);
 
-    device.freeBuffer(&stagingBuffer);
+    stagingBuffer.free();
 
     result = device.createImageView(
         &vkTexture.image,
@@ -138,21 +134,17 @@ Error Texture3D::init(DynamicArray<Image>& texImages)
     size_t   layerSize  = width * height * numChannels;
     size_t   bufferSize = layerSize * numImages;
 
-    // staging buffer params for creation
-    GfxBufferParams stagingBufferParams {};
-    stagingBufferParams.sizeInBytes = bufferSize;
-    stagingBufferParams.usage       = GfxBufferUsageFlags::TransferSource;
-    stagingBufferParams.memoryType  = GfxBufferMemoryTypeFlags::HostSequentialWrite | GfxBufferMemoryTypeFlags::PersistentlyMapped;
+    // staging buffer params for transfer
+    GfxBuffer stagingBuffer;
+    GfxBuffer::createHostWriteBuffer(
+        GfxBufferUsageFlags::TransferSource,
+        layerSize,
+        numImages,
+        "staging_texture_3d_buffer",
+        &stagingBuffer);
 
-    // create staging
-    VulkanGfxBuffer stagingBuffer {};
-
-    VulkanResult    result = device.createBuffer(stagingBufferParams, &stagingBuffer);
-    if (result.hasError())
-    {
-        DUSK_ERROR("Unable to create staging buffer for uploading image  data {}", result.toString());
-        return Error::OutOfMemory;
-    }
+    if (!stagingBuffer.isAllocated())
+        return Error::InitializationFailed;
 
     DynamicArray<VkBufferImageCopy> bufferCopyRegions(numImages);
 
@@ -165,10 +157,7 @@ Error Texture3D::init(DynamicArray<Image>& texImages)
         Image& img = texImages[imageIndex];
 
         // copy image data
-        void*    dst      = (char*)stagingBuffer.mappedMemory + layerSize * imageIndex;
-        uint32_t copySize = layerSize > img.size ? img.size : layerSize;
-
-        memcpy(dst, img.data, copySize);
+        stagingBuffer.writeAndFlushAtIndex(imageIndex, img.data, layerSize);
 
         VkBufferImageCopy& copyRegion              = bufferCopyRegions[imageIndex];
         copyRegion.imageSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -200,7 +189,7 @@ Error Texture3D::init(DynamicArray<Image>& texImages)
     imageInfo.flags         = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 
     // create image
-    result = vulkan::allocateGPUImage(
+    VulkanResult result = vulkan::allocateGPUImage(
         vkContext.gpuAllocator,
         imageInfo,
         VMA_MEMORY_USAGE_AUTO,
@@ -222,7 +211,7 @@ Error Texture3D::init(DynamicArray<Image>& texImages)
         numImages);
 
     device.copyBufferToImageRegions(
-        &stagingBuffer,
+        &stagingBuffer.vkBuffer,
         &vkTexture.image,
         bufferCopyRegions);
 
@@ -234,7 +223,7 @@ Error Texture3D::init(DynamicArray<Image>& texImages)
         1,
         numImages);
 
-    device.freeBuffer(&stagingBuffer);
+    stagingBuffer.free();
 
     result = device.createImageView(
         &vkTexture.image,

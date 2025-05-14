@@ -139,7 +139,7 @@ void GfxBuffer::flushAtIndex(uint32_t index)
 void GfxBuffer::copyFrom(const GfxBuffer& srcBuffer, size_t size)
 {
     DASSERT(vkBuffer.sizeInBytes >= size);
-    Engine::get().getGfxDevice().copyBuffer(srcBuffer.vkBuffer.buffer, vkBuffer.buffer, size);
+    Engine::get().getGfxDevice().copyBuffer(srcBuffer.vkBuffer, vkBuffer, size);
 }
 
 VkDescriptorBufferInfo GfxBuffer::getDescriptorInfoAtIndex(uint32_t index) const

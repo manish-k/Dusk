@@ -666,7 +666,7 @@ void VkGfxDevice::freeBuffer(VulkanGfxBuffer* buffer)
     vulkan::freeGPUBuffer(m_gpuAllocator, buffer);
 }
 
-void VkGfxDevice::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
+void VkGfxDevice::copyBuffer(const VulkanGfxBuffer& srcBuffer, VulkanGfxBuffer& dstBuffer, VkDeviceSize size)
 {
     VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 
@@ -674,7 +674,7 @@ void VkGfxDevice::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSiz
     copyRegion.srcOffset = 0;
     copyRegion.dstOffset = 0;
     copyRegion.size      = size;
-    vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+    vkCmdCopyBuffer(commandBuffer, srcBuffer.buffer, dstBuffer.buffer, 1, &copyRegion);
 
     endSingleTimeCommands(commandBuffer);
 }

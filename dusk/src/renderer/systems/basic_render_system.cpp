@@ -163,7 +163,7 @@ void BasicRenderSystem::renderGameObjects(const FrameData& frameData)
         for (uint32_t meshId : meshData.meshes)
         {
             SubMesh&     mesh      = scene.getSubMesh(meshId);
-            VkBuffer     buffers[] = { mesh.getVertexBuffer().buffer };
+            VkBuffer     buffers[] = { mesh.getVertexBuffer().vkBuffer.buffer };
             VkDeviceSize offsets[] = { 0 };
 
             DrawData     push {};
@@ -196,7 +196,7 @@ void BasicRenderSystem::renderGameObjects(const FrameData& frameData)
 
             vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
 
-            vkCmdBindIndexBuffer(commandBuffer, mesh.getIndexBuffer().buffer, 0, VK_INDEX_TYPE_UINT32);
+            vkCmdBindIndexBuffer(commandBuffer, mesh.getIndexBuffer().vkBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
 
             vkCmdDrawIndexed(commandBuffer, mesh.getIndexCount(), 1, 0, 0, 0);
         }

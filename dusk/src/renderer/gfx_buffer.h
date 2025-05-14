@@ -63,6 +63,8 @@ struct GfxBuffer
     void                   flush();
     void                   flushAtIndex(uint32_t index);
 
+    void                   copyFrom(const GfxBuffer& srcBuffer, size_t size);
+
     VkDescriptorBufferInfo getDescriptorInfoAtIndex(uint32_t index) const;
 
     static void            createHostWriteBuffer(

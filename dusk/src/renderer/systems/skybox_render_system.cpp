@@ -170,12 +170,12 @@ void SkyboxRenderSystem::renderSkybox(const FrameData& frameData)
         sizeof(SkyboxData),
         &push);
 
-    VkBuffer     buffers[] = { m_cubeMesh.getVertexBuffer().buffer };
-    VkDeviceSize offsets[] = { 0 };
+    VkBuffer     buffers[1] = { m_cubeMesh.getVertexBuffer().vkBuffer.buffer };
+    VkDeviceSize offsets[1] = { 0 };
 
     vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
 
-    vkCmdBindIndexBuffer(commandBuffer, m_cubeMesh.getIndexBuffer().buffer, 0, VK_INDEX_TYPE_UINT32);
+    vkCmdBindIndexBuffer(commandBuffer, m_cubeMesh.getIndexBuffer().vkBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
 
     vkCmdDrawIndexed(commandBuffer, m_cubeMesh.getIndexCount(), 1, 0, 0, 0);
 }

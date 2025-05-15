@@ -11,12 +11,14 @@ struct AmbientLightComponent
 
 struct DirectionalLightComponent
 {
+    int32_t   id = -1;
     glm::vec3 direction { 0.f };
     glm::vec4 color { 1.0f }; // w component for intensity
 };
 
 struct PointLightComponent
 {
+    int32_t   id = -1;
     glm::vec3 position { 0.f };
     glm::vec4 color { 1.0f }; // w component for intensity
 
@@ -28,6 +30,7 @@ struct PointLightComponent
 
 struct SpotLightComponent
 {
+    int32_t   id = -1;
     glm::vec3 position { 0.f };
     glm::vec3 direction { 0.f }; // direction where light is being pointed
     glm::vec4 color { 1.0f };    // w component for intensity

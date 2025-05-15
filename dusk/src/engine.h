@@ -17,8 +17,9 @@
 
 namespace dusk
 {
-constexpr uint32_t maxMaterialCount   = 1000;
-constexpr uint32_t maxSupportedLights = 100;
+class LightsSystem;
+
+constexpr uint32_t maxMaterialCount = 1000;
 
 class Engine final
 {
@@ -75,6 +76,7 @@ private:
     Unique<BasicRenderSystem>        m_basicRenderSystem  = nullptr;
     Unique<GridRenderSystem>         m_gridRenderSystem   = nullptr;
     Unique<SkyboxRenderSystem>       m_skyboxRenderSystem = nullptr;
+    Unique<LightsSystem>             m_lightsSystem       = nullptr;
 
     Unique<UI>                       m_ui                 = nullptr;
 
@@ -83,8 +85,8 @@ private:
 
     Scene*                           m_currentScene       = nullptr;
 
-    TimePoint                        m_lastFrameTime;
-    TimeStep                         m_deltaTime;
+    TimePoint                        m_lastFrameTime {};
+    TimeStep                         m_deltaTime {};
 
     Unique<VkGfxDescriptorPool>      m_globalDescriptorPool      = nullptr;
     Unique<VkGfxDescriptorSetLayout> m_globalDescriptorSetLayout = nullptr;
@@ -97,15 +99,6 @@ private:
 
     GfxBuffer                        m_materialsBuffer;
     Unique<VkGfxDescriptorSet>       m_materialsDescriptorSet;
-
-    Unique<VkGfxDescriptorPool>      m_lightsDescriptorPool      = nullptr;
-    Unique<VkGfxDescriptorSetLayout> m_lightsDescriptorSetLayout = nullptr;
-    Unique<VkGfxDescriptorSet>       m_lightsDescriptorSet       = nullptr;
-
-    GfxBuffer                        m_ambientLightBuffer;
-    GfxBuffer                        m_directionalLightsBuffer;
-    GfxBuffer                        m_pointLightsBuffer;
-    GfxBuffer                        m_spotLightsBuffer;
 
 private:
     static Engine* s_instance;

@@ -1,8 +1,10 @@
 #include "engine.h"
+
 #include "events/app_event.h"
 #include "backend/vulkan/vk_renderer.h"
 #include "renderer/frame_data.h"
 #include "utils/utils.h"
+#include "renderer/systems/lights_system.h"
 
 namespace dusk
 {
@@ -57,6 +59,8 @@ bool Engine::start(Shared<Application> app)
     bool globalsStatus = setupGlobals();
     if (!globalsStatus) return false;
 
+    m_lightsSystem      = createUnique<LightsSystem>();
+
     m_basicRenderSystem = createUnique<BasicRenderSystem>(
         *m_gfxDevice,
         *m_globalDescriptorSetLayout,
@@ -107,6 +111,8 @@ void Engine::shutdown()
     m_gridRenderSystem   = nullptr;
     m_skyboxRenderSystem = nullptr;
 
+    m_lightsSystem       = nullptr;
+
     m_ui->shutdown();
     m_ui = nullptr;
 
@@ -147,8 +153,7 @@ void Engine::onUpdate(TimeStep dt)
             ubo.prjoection        = camera.projectionMatrix;
             ubo.inverseView       = camera.inverseViewMatrix;
 
-            ubo.lightDirection    = glm::vec4(normalize(glm::vec3(1.0, -3.0, -1.0)), 0.f);
-            ubo.ambientLightColor = glm::vec4(0.7f, 0.8f, 0.8f, 0.8f);
+            m_lightsSystem->updateLights(*m_currentScene, ubo);
 
             m_globalUbos.writeAndFlushAtIndex(currentFrameIndex, &ubo, sizeof(GlobalUbo));
 
@@ -224,6 +229,8 @@ void Engine::loadScene(Scene* scene)
     m_currentScene = scene;
     registerTextures(scene->getTextures());
     registerMaterials(scene->getMaterials());
+
+    m_lightsSystem->registerAllLights(*scene);
 }
 
 bool Engine::setupGlobals()
@@ -289,59 +296,6 @@ bool Engine::setupGlobals()
     m_materialsDescriptorSet = m_materialDescriptorPool->allocateDescriptorSet(*m_materialDescriptorSetLayout);
     CHECK_AND_RETURN_FALSE(!m_materialsDescriptorSet);
 
-    // setup lighting globasl
-    m_lightsDescriptorPool = VkGfxDescriptorPool::Builder(ctx)
-                                 .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, maxSupportedLights)
-                                 .build(1, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
-    CHECK_AND_RETURN_FALSE(!m_lightsDescriptorPool);
-
-    m_lightsDescriptorSetLayout = VkGfxDescriptorSetLayout::Builder(ctx)
-                                      .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)                        // Ambient light
-                                      .addBinding(1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, maxSupportedLights, true) // Directional Light
-                                      .addBinding(2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, maxSupportedLights, true) // Point Light
-                                      .addBinding(3, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, maxSupportedLights, true) // Sport Light
-                                      .build();
-    CHECK_AND_RETURN_FALSE(!m_lightsDescriptorSetLayout);
-
-    m_lightsDescriptorSet = m_lightsDescriptorPool->allocateDescriptorSet(*m_lightsDescriptorSetLayout);
-    CHECK_AND_RETURN_FALSE(!m_lightsDescriptorSet);
-
-    // create ambient light buffer
-    GfxBuffer::createHostWriteBuffer(
-        GfxBufferUsageFlags::UniformBuffer,
-        sizeof(AmbientLightComponent),
-        1,
-        "ambient_light_buffer",
-        &m_ambientLightBuffer);
-    CHECK_AND_RETURN_FALSE(!m_ambientLightBuffer.isAllocated());
-
-    // create directional light buffer
-    GfxBuffer::createHostWriteBuffer(
-        GfxBufferUsageFlags::UniformBuffer,
-        sizeof(DirectionalLightComponent),
-        maxSupportedLights,
-        "directional_light_buffer",
-        &m_directionalLightsBuffer);
-    CHECK_AND_RETURN_FALSE(!m_directionalLightsBuffer.isAllocated());
-
-    // create point light buffer
-    GfxBuffer::createHostWriteBuffer(
-        GfxBufferUsageFlags::UniformBuffer,
-        sizeof(PointLightComponent),
-        maxSupportedLights,
-        "point_light_buffer",
-        &m_pointLightsBuffer);
-    CHECK_AND_RETURN_FALSE(!m_pointLightsBuffer.isAllocated());
-
-    // create spot light buffer
-    GfxBuffer::createHostWriteBuffer(
-        GfxBufferUsageFlags::UniformBuffer,
-        sizeof(SpotLightComponent),
-        maxSupportedLights,
-        "spot_light_buffer",
-        &m_spotLightsBuffer);
-    CHECK_AND_RETURN_FALSE(!m_spotLightsBuffer.isAllocated());
-
     return true;
 }
 
@@ -355,16 +309,8 @@ void Engine::cleanupGlobals()
     m_materialDescriptorSetLayout = nullptr;
     m_materialDescriptorPool      = nullptr;
 
-    m_lightsDescriptorPool->resetPool();
-    m_lightsDescriptorSetLayout = nullptr;
-    m_lightsDescriptorPool      = nullptr;
-
     m_globalUbos.free();
     m_materialsBuffer.free();
-    m_ambientLightBuffer.free();
-    m_directionalLightsBuffer.free();
-    m_pointLightsBuffer.free();
-    m_spotLightsBuffer.free();
 }
 
 void Engine::registerTextures(DynamicArray<Texture2D>& textures)

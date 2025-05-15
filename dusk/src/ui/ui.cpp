@@ -70,6 +70,8 @@ bool           UI::init(Window& window)
     initInfo.CheckVkResultFn             = checkVkResult;
 
     ImGui_ImplVulkan_Init(&initInfo);
+
+    return true;
 }
 
 void UI::shutdown()

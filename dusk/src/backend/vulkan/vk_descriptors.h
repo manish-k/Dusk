@@ -78,6 +78,7 @@ struct VkGfxDescriptorSet
     /**
      * @brief Configure buffer which is part of descriptor
      * @param binding number in the set
+     * @param type of the buffer
      * @param dstIndex index of the element which has to be configured
      * @param count number of descriptors to update
      * @param bufferInfo contains buffer details for linking to the descriptor

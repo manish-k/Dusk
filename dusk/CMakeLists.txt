@@ -108,6 +108,7 @@ set(RENDERER_FILES
 	"${RENDERER_SYSTEMS_DIR}/basic_render_system.h"
 	"${RENDERER_SYSTEMS_DIR}/grid_render_system.h"
 	"${RENDERER_SYSTEMS_DIR}/skybox_render_system.h"
+	"${RENDERER_SYSTEMS_DIR}/lights_system.h"
 	# Source files
 	"${RENDERER_DIR}/sub_mesh.cpp"
 	"${RENDERER_DIR}/texture.cpp"
@@ -115,6 +116,7 @@ set(RENDERER_FILES
 	"${RENDERER_SYSTEMS_DIR}/basic_render_system.cpp"
 	"${RENDERER_SYSTEMS_DIR}/grid_render_system.cpp"
 	"${RENDERER_SYSTEMS_DIR}/skybox_render_system.cpp"
+	"${RENDERER_SYSTEMS_DIR}/lights_system.cpp"
 )
 
 set(SCENE_DIR "${PROJECT_SOURCE_DIR}/src/scene")

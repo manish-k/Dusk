@@ -2,7 +2,6 @@
 
 #include "dusk.h"
 #include "backend/vulkan/vk_types.h"
-#include "utils/utils.h"
 
 #include <string>
 

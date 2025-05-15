@@ -5,6 +5,7 @@
 #include "renderer_widgets.h"
 #include "stats_widgets.h"
 #include "events/key_event.h"
+#include "backend/vulkan/vk_renderer.h"
 
 #include <imgui.h>
 #include <imgui_internal.h>

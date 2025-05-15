@@ -4,7 +4,6 @@
 #include "vk_base.h"
 #include "vk_debug.h"
 #include "platform/platform.h"
-#include "core/error.h"
 #include "renderer/vertex.h"
 
 #include <volk.h>

@@ -4,7 +4,10 @@
 #include "core/log.h"
 #include "core/error.h"
 #include "core/buffer.h"
+#include "core/dtime.h"
+
 #include "utils/hash.h"
+#include "utils/utils.h"
 
 #ifdef DDEBUG // Dusk Debug
 #    define ENABLE_ASSERT
@@ -71,7 +74,7 @@
 
 // check and return true
 #define CHECK_AND_RETURN_TRUE(check) \
-    if (check)                        \
+    if (check)                       \
         return true;
 
 // check and return if true

@@ -4,6 +4,7 @@
 #include "image.h"
 #include "backend/vulkan/vk_allocator.h"
 #include "backend/vulkan/vk_types.h"
+#include "backend/vulkan/vk_descriptors.h"
 
 namespace dusk
 {

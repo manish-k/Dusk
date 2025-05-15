@@ -1,6 +1,7 @@
 #include "gfx_buffer.h"
 
 #include "engine.h"
+#include "backend/vulkan/vk_descriptors.h"
 
 namespace dusk
 {

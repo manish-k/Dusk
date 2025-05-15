@@ -1,9 +1,23 @@
 #include "engine.h"
 
-#include "events/app_event.h"
-#include "backend/vulkan/vk_renderer.h"
-#include "renderer/frame_data.h"
+#include "core/application.h"
+#include "platform/window.h"
 #include "utils/utils.h"
+#include "ui/ui.h"
+#include "scene/scene.h"
+
+#include "events/event.h"
+#include "events/app_event.h"
+
+#include "backend/vulkan/vk_device.h"
+#include "backend/vulkan/vk_renderer.h"
+
+#include "renderer/frame_data.h"
+#include "renderer/material.h"
+#include "renderer/texture.h"
+#include "renderer/systems/basic_render_system.h"
+#include "renderer/systems/grid_render_system.h"
+#include "renderer/systems/skybox_render_system.h"
 #include "renderer/systems/lights_system.h"
 
 namespace dusk
@@ -149,9 +163,9 @@ void Engine::onUpdate(TimeStep dt)
             camera.setAspectRatio(m_renderer->getAspectRatio());
 
             GlobalUbo ubo {};
-            ubo.view              = camera.viewMatrix;
-            ubo.prjoection        = camera.projectionMatrix;
-            ubo.inverseView       = camera.inverseViewMatrix;
+            ubo.view        = camera.viewMatrix;
+            ubo.prjoection  = camera.projectionMatrix;
+            ubo.inverseView = camera.inverseViewMatrix;
 
             m_lightsSystem->updateLights(*m_currentScene, ubo);
 

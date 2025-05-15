@@ -4,6 +4,8 @@
 #include "loaders/assimp_loader.h"
 #include "loaders/stb_image_loader.h"
 
+#include "backend/vulkan/vk_renderer.h"
+
 namespace dusk
 {
 Scene::Scene(const std::string_view name) :

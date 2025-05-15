@@ -3,6 +3,7 @@
 #include "engine.h"
 #include "platform/file_system.h"
 #include "backend/vulkan/vk_allocator.h"
+#include "backend/vulkan/vk_renderer.h"
 #include "utils/utils.h"
 
 namespace dusk

@@ -1,23 +1,29 @@
 #pragma once
 
 #include "dusk.h"
-#include "core/dtime.h"
-#include "core/application.h"
-#include "events/event.h"
-#include "platform/window.h"
-#include "scene/scene.h"
-#include "backend/vulkan/vk_device.h"
-#include "backend/vulkan/vk_renderer.h"
-#include "backend/vulkan/vk_descriptors.h"
+
 #include "renderer/render_api.h"
-#include "renderer/systems/basic_render_system.h"
-#include "renderer/systems/grid_render_system.h"
-#include "renderer/systems/skybox_render_system.h"
-#include "ui/ui.h"
+#include "renderer/gfx_buffer.h"
+
+#include "backend/vulkan/vk_descriptors.h"
 
 namespace dusk
 {
+
+// fwd declarations
+class Application;
+class Window;
+class Event;
+class UI;
+class Scene;
+class Material;
+class Texture2D;
+class BasicRenderSystem;
+class GridRenderSystem;
+class SkyboxRenderSystem;
 class LightsSystem;
+class VulkanRenderer;
+class VkGfxDevice;
 
 constexpr uint32_t maxMaterialCount = 1000;
 

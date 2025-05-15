@@ -2,6 +2,7 @@
 
 #include "engine.h"
 #include "platform/file_system.h"
+#include "backend/vulkan/vk_renderer.h"
 
 namespace dusk
 {

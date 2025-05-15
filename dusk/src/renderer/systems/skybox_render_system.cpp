@@ -4,6 +4,7 @@
 #include "platform/file_system.h"
 #include "loaders/stb_image_loader.h"
 #include "ui/ui.h"
+#include "backend/vulkan/vk_renderer.h"
 
 #include <string>
 

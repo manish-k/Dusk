@@ -5,6 +5,7 @@
 #include "backend/vulkan/vk_allocator.h"
 #include "backend/vulkan/vk_types.h"
 #include "backend/vulkan/vk_descriptors.h"
+#include "backend/vulkan/vk_device.h"
 
 namespace dusk
 {

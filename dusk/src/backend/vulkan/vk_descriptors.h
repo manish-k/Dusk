@@ -3,7 +3,6 @@
 #include "dusk.h"
 #include "vk.h"
 #include "vk_types.h"
-#include "vk_device.h"
 
 namespace dusk
 {

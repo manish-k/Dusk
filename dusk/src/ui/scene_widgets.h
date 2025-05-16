@@ -96,7 +96,7 @@ inline void drawSceneGraphWidget(Scene& scene)
                 ImGui::ColorEdit4("Albedo Color", (float*)&mat.albedoColor);
 
                 ImGui::Text("Albedo Texture: %g", mat.albedoTexId);
-                ImGui::Text("Normal Texture: %g", mat.albedoTexId);
+                ImGui::Text("Normal Texture: %g", mat.normalTexId);
             }
         }
 

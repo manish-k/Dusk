@@ -5,3 +5,4 @@ set(CMAKE_CXX_STANDARD 20)
 
 add_subdirectory(test_triangle)
 add_subdirectory(test_scene)
+add_subdirectory(test_lights)

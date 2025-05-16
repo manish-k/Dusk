@@ -15,6 +15,7 @@ namespace dusk
 
 class CameraComponent;
 class CameraController;
+class TransformComponent;
 class Event;
 
 struct Vertex;
@@ -100,6 +101,8 @@ public:
 
     CameraComponent& getMainCamera();
 
+    TransformComponent& getMainCameraTransform();
+
     void             initTexturesCache(uint32_t textureCount)
     {
         m_textures.reserve(textureCount);
@@ -123,6 +126,7 @@ public:
     DynamicArray<Texture2D>& getTextures() { return m_textures; }
     DynamicArray<Material>&  getMaterials() { return m_materials; }
     DynamicArray<EntityId>&  getChildren() { return m_children; }
+    uint32_t                 getDefaultTextureId() const { return m_defaultTextureId; }
 
     /**
      * @brief Create a scene from a gltf file
@@ -147,5 +151,7 @@ private:
     DynamicArray<Texture2D>        m_textures;
 
     DynamicArray<Material>         m_materials;
+
+    uint32_t                      m_defaultTextureId { 998 };
 };
 } // namespace dusk

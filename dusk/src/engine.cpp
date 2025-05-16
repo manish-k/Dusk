@@ -174,6 +174,8 @@ void Engine::onUpdate(TimeStep dt)
 
             m_globalUbos.writeAndFlushAtIndex(currentFrameIndex, &ubo, sizeof(GlobalUbo));
 
+            updateMaterialsBuffer(m_currentScene->getMaterials());
+
             // TODO:: maybe scene onUpdate is the right place for this
             m_ui->renderSceneWidgets(*m_currentScene);
         }
@@ -358,6 +360,15 @@ void Engine::registerMaterials(DynamicArray<Material>& materials)
     m_materialsDescriptorSet->configureBuffer(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0, materials.size(), matInfo.data());
 
     m_materialsDescriptorSet->applyConfiguration();
+}
+
+void Engine::updateMaterialsBuffer(DynamicArray<Material>& materials)
+{
+    for (uint32_t index = 0u; index < materials.size(); ++index)
+    {
+        DASSERT(materials[index].id != -1);
+        m_materialsBuffer.writeAndFlushAtIndex(materials[index].id, &materials[index], sizeof(Material));
+    }
 }
 
 } // namespace dusk

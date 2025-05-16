@@ -34,15 +34,31 @@ Scene::Scene(const std::string_view name) :
     TransformComponent& cameraTransform = camera->getComponent<TransformComponent>();
     cameraTransform.translation         = { 0.f, 0.f, 5.f };
 
-    auto& cameraComponent               = camera->addComponent<CameraComponent>();
+    auto&       cameraComponent         = camera->addComponent<CameraComponent>();
     const auto& currentExtent           = Engine::get().getRenderer().getSwapChain().getCurrentExtent();
     cameraComponent.setPerspectiveProjection(glm::radians(50.f), static_cast<float>(currentExtent.width) / static_cast<float>(currentExtent.height), 0.5f, 1000.f);
     cameraComponent.setView(cameraTransform.translation, cameraTransform.rotation);
 
-    m_cameraController        = createUnique<CameraController>(*camera, currentExtent.width, currentExtent.height);
+    m_cameraController = createUnique<CameraController>(*camera, currentExtent.width, currentExtent.height);
 
-    m_cameraId                = camera->getId();
+    m_cameraId         = camera->getId();
     addGameObject(std::move(camera), rootId);
+
+    // TODO:: temporary default texture
+    glm::u8vec4 whiteColor { 200 };
+
+    Image     defaultTextureImg {
+        1,
+        1,
+        4,
+        4,
+        (unsigned char*)&whiteColor
+    };
+
+    Texture2D defaultTex { m_defaultTextureId };
+    defaultTex.init(defaultTextureImg);
+
+    m_textures.push_back(defaultTex);
 }
 
 Scene::~Scene()
@@ -119,6 +135,11 @@ void Scene::freeSubMeshes()
 CameraComponent& Scene::getMainCamera()
 {
     return Registry::getRegistry().get<CameraComponent>(m_cameraId);
+}
+
+TransformComponent& Scene::getMainCameraTransform()
+{
+    return Registry::getRegistry().get<TransformComponent>(m_cameraId);
 }
 
 Unique<Scene> Scene::createSceneFromGLTF(const std::string& fileName)

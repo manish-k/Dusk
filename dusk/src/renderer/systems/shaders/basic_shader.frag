@@ -24,7 +24,8 @@ layout(push_constant) uniform DrawData
 
 void main() {
 	uint textureIdx = materials[nonuniformEXT(push.materialIdx)].albedoTexId;
-	outColor =  texture(textures[nonuniformEXT(textureIdx)], fragUV);
+	vec4 baseColor = materials[nonuniformEXT(push.materialIdx)].albedoColor;
+	outColor = baseColor * texture(textures[nonuniformEXT(textureIdx)], fragUV);
 
 	//outColor = vec4(0.7, 0.1, 0.1, 1.0);
 }

@@ -5,8 +5,6 @@
 #include "renderer/render_api.h"
 #include "renderer/gfx_buffer.h"
 
-#include "backend/vulkan/vk_descriptors.h"
-
 namespace dusk
 {
 
@@ -16,14 +14,18 @@ class Window;
 class Event;
 class UI;
 class Scene;
-class Material;
-class Texture2D;
 class BasicRenderSystem;
 class GridRenderSystem;
 class SkyboxRenderSystem;
 class LightsSystem;
 class VulkanRenderer;
 class VkGfxDevice;
+
+struct Material;
+struct Texture2D;
+struct VkGfxDescriptorPool;
+struct VkGfxDescriptorSetLayout;
+struct VkGfxDescriptorSet;
 
 constexpr uint32_t maxMaterialCount = 1000;
 

@@ -11,6 +11,7 @@
 
 #include "backend/vulkan/vk_device.h"
 #include "backend/vulkan/vk_renderer.h"
+#include "backend/vulkan/vk_descriptors.h"
 
 #include "renderer/frame_data.h"
 #include "renderer/material.h"

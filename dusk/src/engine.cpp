@@ -4,7 +4,9 @@
 #include "platform/window.h"
 #include "utils/utils.h"
 #include "ui/ui.h"
+
 #include "scene/scene.h"
+#include "scene/components/camera.h"
 
 #include "events/event.h"
 #include "events/app_event.h"

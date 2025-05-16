@@ -1,6 +1,11 @@
 #include "assimp_loader.h"
 
+#include "scene/scene.h"
+#include "scene/components/transform.h"
+#include "scene/components/mesh.h"
+
 #include "renderer/texture.h"
+#include "renderer/material.h"
 
 #include <glm/gtx/matrix_decompose.hpp>
 #include <assimp/pbrmaterial.h>

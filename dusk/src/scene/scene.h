@@ -1,17 +1,8 @@
 #pragma once
 
+#include "dusk.h"
 #include "game_object.h"
 #include "registry.h"
-#include "camera_controller.h"
-#include "events/event.h"
-#include "core/dtime.h"
-
-// include all components for other files
-#include "components/camera.h"
-#include "components/mesh.h"
-#include "components/script.h"
-#include "components/transform.h"
-#include "components/lights.h"
 
 #include "renderer/sub_mesh.h"
 #include "renderer/texture.h"
@@ -21,6 +12,13 @@
 
 namespace dusk
 {
+
+class CameraComponent;
+class CameraController;
+class Event;
+
+struct Vertex;
+
 class Scene
 {
 public:

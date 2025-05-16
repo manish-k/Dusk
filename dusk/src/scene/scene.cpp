@@ -1,8 +1,17 @@
 #include "scene.h"
 
 #include "engine.h"
+#include "camera_controller.h"
+#include "events/event.h"
+
 #include "loaders/assimp_loader.h"
 #include "loaders/stb_image_loader.h"
+
+#include "renderer/vertex.h"
+
+#include "components/camera.h"
+#include "components/mesh.h"
+#include "components/transform.h"
 
 #include "backend/vulkan/vk_renderer.h"
 

@@ -4,8 +4,18 @@
 #include "platform/file_system.h"
 #include "loaders/stb_image_loader.h"
 #include "ui/ui.h"
-#include "backend/vulkan/vk_renderer.h"
+#include "renderer/frame_data.h"
 
+#include "scene/scene.h"
+#include "scene/components/camera.h"
+
+#include "backend/vulkan/vk_renderer.h"
+#include "backend/vulkan/vk_device.h"
+#include "backend/vulkan/vk_pipeline.h"
+#include "backend/vulkan/vk_pipeline_layout.h"
+#include "backend/vulkan/vk_descriptors.h"
+
+#include <volk.h>
 #include <string>
 
 namespace dusk

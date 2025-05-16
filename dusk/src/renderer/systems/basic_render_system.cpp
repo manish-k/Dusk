@@ -2,9 +2,23 @@
 
 #include "engine.h"
 #include "platform/file_system.h"
+#include "utils/utils.h"
+
+#include "scene/scene.h"
+#include "scene/components/transform.h"
+#include "scene/components/mesh.h"
+#include "scene/components/camera.h"
+
+#include "renderer/sub_mesh.h"
+#include "renderer/frame_data.h"
+
 #include "backend/vulkan/vk_allocator.h"
 #include "backend/vulkan/vk_renderer.h"
-#include "utils/utils.h"
+#include "backend/vulkan/vk_descriptors.h"
+#include "backend/vulkan/vk_device.h"
+#include "backend/vulkan/vk_pipeline.h"
+#include "backend/vulkan/vk_pipeline_layout.h"
+
 
 namespace dusk
 {

@@ -1,14 +1,22 @@
 #pragma once
 
-#include "scene/scene.h"
-#include "backend/vulkan/vk_device.h"
-#include "backend/vulkan/vk_pipeline.h"
-#include "backend/vulkan/vk_pipeline_layout.h"
-#include "backend/vulkan/vk_descriptors.h"
-#include "renderer/frame_data.h"
+#include "dusk.h"
+
+#include "renderer/sub_mesh.h"
+#include "renderer/texture.h"
 
 namespace dusk
 {
+class Scene;
+class VkGfxDevice;
+class VkGfxRenderPipeline;
+class VkGfxPipelineLayout;
+
+struct VkGfxDescriptorPool;
+struct VkGfxDescriptorSetLayout;
+struct VkGfxDescriptorSet;
+struct FrameData;
+
 struct SkyboxData
 {
     uint32_t cameraBufferIdx;

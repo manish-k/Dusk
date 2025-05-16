@@ -1,14 +1,21 @@
 #pragma once
 
-#include "scene/scene.h"
-#include "backend/vulkan/vk_device.h"
-#include "backend/vulkan/vk_pipeline.h"
-#include "backend/vulkan/vk_pipeline_layout.h"
-#include "backend/vulkan/vk_descriptors.h"
-#include "renderer/frame_data.h"
+#include "dusk.h"
+
+#include "renderer/gfx_buffer.h"
 
 namespace dusk
 {
+// fwd declarations
+class Scene;
+class VkGfxDevice;
+class VkGfxRenderPipeline;
+class VkGfxPipelineLayout;
+
+struct VkGfxDescriptorPool;
+struct VkGfxDescriptorSetLayout;
+struct VkGfxDescriptorSet;
+struct FrameData;
 
 struct DrawData
 {
@@ -56,6 +63,6 @@ private:
     Unique<VkGfxDescriptorSetLayout> m_modelDescriptorSetLayout = nullptr;
     Unique<VkGfxDescriptorSet>       m_modelDescriptorSet       = nullptr;
 
-    GfxBuffer                  m_modelsBuffer;
+    GfxBuffer                        m_modelsBuffer;
 };
 } // namespace dusk

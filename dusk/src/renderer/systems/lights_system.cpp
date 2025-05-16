@@ -2,6 +2,8 @@
 
 #include "scene/scene.h"
 #include "renderer/frame_data.h"
+#include "components/lights.h"
+
 #include "backend/vulkan/vk_device.h"
 #include "backend/vulkan/vk_descriptors.h"
 

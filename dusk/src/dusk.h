@@ -9,6 +9,8 @@
 #include "utils/hash.h"
 #include "utils/utils.h"
 
+#include <glm/glm.hpp>
+
 #ifdef DDEBUG // Dusk Debug
 #    define ENABLE_ASSERT
 #endif        // DEBUG

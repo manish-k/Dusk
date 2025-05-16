@@ -3,6 +3,13 @@
 #include "dusk.h"
 #include "scene/scene.h"
 
+#include "components/camera.h"
+#include "components/mesh.h"
+#include "components/lights.h"
+#include "components/transform.h"
+
+#include "renderer/material.h"
+
 #include <imgui.h>
 #include <glm/gtx/euler_angles.hpp>
 

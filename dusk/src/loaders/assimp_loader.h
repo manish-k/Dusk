@@ -1,7 +1,7 @@
 #pragma once
 
 #include "dusk.h"
-#include "scene/scene.h"
+#include "scene/entity.h"
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -9,6 +9,9 @@
 
 namespace dusk
 {
+class Scene;
+class GameObject;
+
 class AssimpLoader
 {
 public:

@@ -2,10 +2,11 @@
 
 #include "dusk.h"
 #include "renderer/gfx_buffer.h"
-#include "backend/vulkan/vk_descriptors.h"
 
 namespace dusk
 {
+
+// fwd declarations
 class GlobalUbo;
 class Scene;
 class AmbientLightComponent;
@@ -13,7 +14,13 @@ class DirectionalLightComponent;
 class PointLightComponent;
 class SpotLightComponent;
 
-inline constexpr uint32_t MAX_LIGHTS_PER_TYPE    = 128; // need multiple of 4 for easy packing for global ubo
+struct VkGfxDescriptorPool;
+struct VkGfxDescriptorSetLayout;
+struct VkGfxDescriptorSet;
+
+// need multiple of 4 for easy packing inside global ubo (uvec4[]) 
+// but not a strict rule
+inline constexpr uint32_t MAX_LIGHTS_PER_TYPE    = 128;
 inline constexpr uint32_t AMBIENT_BIND_INDEX     = 0;
 inline constexpr uint32_t DIRECTIONAL_BIND_INDEX = 1;
 inline constexpr uint32_t POINT_BIND_INDEX       = 2;
@@ -25,20 +32,65 @@ public:
     LightsSystem();
     ~LightsSystem();
 
-    static LightsSystem&      get() { return *s_instance; }
+    /**
+     * @brief get the reference to static instance of the system
+     * @return reference to the system
+     */
+    static LightsSystem& get() { return *s_instance; }
 
-    void                      registerAllLights(Scene& scene);
-    void                      registerAmbientLight(AmbientLightComponent& light);
-    void                      registerDirectionalLight(DirectionalLightComponent& light);
-    void                      registerPointLight(PointLightComponent& light);
-    void                      registerSpotLight(SpotLightComponent& light);
-    
-    void                      updateLights(Scene& scene, GlobalUbo& ubo);
+    /**
+     * @brief register all the lights in the scene
+     * @param scene reference
+     */
+    void registerAllLights(Scene& scene);
 
+    /**
+     * @brief Register ambient light in the scene
+     * @param ambient light component
+     */
+    void registerAmbientLight(AmbientLightComponent& light);
+
+    /**
+     * @brief Register a single directional light in the scene
+     * @param directional light component
+     */
+    void registerDirectionalLight(DirectionalLightComponent& light);
+
+    /**
+     * @brief Register a single point light in the scene
+     * @param point light component
+     */
+    void registerPointLight(PointLightComponent& light);
+
+    /**
+     * @brief Register a single spot light in the scene
+     * @param spot light component
+     */
+    void registerSpotLight(SpotLightComponent& light);
+
+    /**
+     * @brief update all the lights data into the graphics buffer and update global ubo with count and indices
+     * @param scene
+     * @param ubo to update
+     */
+    void updateLights(Scene& scene, GlobalUbo& ubo);
+
+    /**
+     * @brief Get lights descriptor set layout
+     * @return descriptor set layout
+     */
     VkGfxDescriptorSetLayout& getLightsDescriptorSetLayout() const { return *m_lightsDescriptorSetLayout; };
-    VkGfxDescriptorSet&       getLightsDescriptorSet() const { return *m_lightsDescriptorSet; };
+
+    /**
+     * @brief Get lights descriptor set
+     * @return descriptor set
+     */
+    VkGfxDescriptorSet& getLightsDescriptorSet() const { return *m_lightsDescriptorSet; };
 
 private:
+    /**
+     * @brief Setup all the descriptors and buffer related resources
+     */
     void setupDescriptors();
 
 private:

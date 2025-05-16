@@ -3,6 +3,7 @@
 #include "scene/scene.h"
 #include "renderer/frame_data.h"
 #include "backend/vulkan/vk_device.h"
+#include "backend/vulkan/vk_descriptors.h"
 
 namespace dusk
 {
@@ -208,8 +209,8 @@ void LightsSystem::updateLights(Scene& scene, GlobalUbo& ubo)
     }
     ubo.directionalLightsCount = m_directionalLightsCount;
 
-    auto pointLightList = scene.GetGameObjectsWith<PointLightComponent>();
-    counter             = 0u;
+    auto pointLightList        = scene.GetGameObjectsWith<PointLightComponent>();
+    counter                    = 0u;
     for (auto& entity : pointLightList)
     {
         auto& light = pointLightList.get<PointLightComponent>(entity);
@@ -223,7 +224,7 @@ void LightsSystem::updateLights(Scene& scene, GlobalUbo& ubo)
     }
     ubo.directionalLightsCount = m_directionalLightsCount;
 
-    auto spotLightList = scene.GetGameObjectsWith<SpotLightComponent>();
+    auto spotLightList         = scene.GetGameObjectsWith<SpotLightComponent>();
     counter                    = 0u;
     for (auto& entity : spotLightList)
     {

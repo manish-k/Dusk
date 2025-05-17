@@ -45,7 +45,7 @@ Scene::Scene(const std::string_view name) :
     addGameObject(std::move(camera), rootId);
 
     // TODO:: temporary default texture
-    glm::u8vec4 whiteColor { 200 };
+    glm::u8vec4 whiteColor { 255 };
 
     Image     defaultTextureImg {
         1,

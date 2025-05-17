@@ -33,8 +33,10 @@ layout(push_constant) uniform DrawData
 void main() {	
 	vec4 worldPos = modelubo.modelMatrix * vec4(position, 1.0);
 
-	mat4 view = globalubo[nonuniformEXT(push.cameraIdx)].view;
-	mat4 proj = globalubo[nonuniformEXT(push.cameraIdx)].projection;
+	uint globalIdx = nonuniformEXT(push.cameraIdx);
+
+	mat4 view = globalubo[globalIdx].view;
+	mat4 proj = globalubo[globalIdx].projection;
 
 	fragUV = uv;
 	gl_Position = proj * (view * worldPos);

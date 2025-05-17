@@ -85,18 +85,16 @@ inline void drawSceneGraphWidget(Scene& scene)
 
         if (selectedGameObject.hasComponent<MeshComponent>())
         {
-            ImGui::SeparatorText("Material");
-
             MeshComponent& mesh = selectedGameObject.getComponent<MeshComponent>();
+
+            ImGui::SeparatorText("Material");
 
             for (uint32_t index = 0u; index < mesh.materials.size(); ++index)
             {
                 Material& mat = scene.getMaterial(mesh.materials[index]);
-
                 ImGui::ColorEdit4("Albedo Color", (float*)&mat.albedoColor);
-
-                ImGui::Text("Albedo Texture: %g", mat.albedoTexId);
-                ImGui::Text("Normal Texture: %g", mat.normalTexId);
+                ImGui::Text("Albedo Texture id: %d", mat.albedoTexId);
+                ImGui::Text("Normal Texture id: %d", mat.normalTexId);
             }
         }
 

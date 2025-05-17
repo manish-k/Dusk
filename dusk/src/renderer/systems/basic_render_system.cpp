@@ -161,6 +161,7 @@ void BasicRenderSystem::renderGameObjects(const FrameData& frameData)
     {
         for (uint32_t index = 0u; index < meshData.meshes.size(); ++index)
         {
+            entt::id_type objectId         = static_cast<entt::id_type>(entity);
             int32_t      meshId     = meshData.meshes[index];
             int32_t      materialId = meshData.materials[index];
             
@@ -174,9 +175,9 @@ void BasicRenderSystem::renderGameObjects(const FrameData& frameData)
 
             // update mesh transform data
             ModelData md { transform.mat4(), transform.normalMat4() };
-            m_modelsBuffer.writeAndFlushAtIndex(meshId, &md, sizeof(ModelData));
+            m_modelsBuffer.writeAndFlushAtIndex(objectId, &md, sizeof(ModelData));
 
-            uint32_t dynamicOffset = meshId * static_cast<uint32_t>(m_modelsBuffer.instanceAlignmentSize);
+            uint32_t dynamicOffset = objectId * static_cast<uint32_t>(m_modelsBuffer.instanceAlignmentSize);
             vkCmdBindDescriptorSets(
                 commandBuffer,
                 VK_PIPELINE_BIND_POINT_GRAPHICS,

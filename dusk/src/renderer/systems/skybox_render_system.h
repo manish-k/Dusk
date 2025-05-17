@@ -32,6 +32,8 @@ public:
 
     void renderSkybox(const FrameData& frameData);
 
+    void setVisble(bool visibility);
+
 private:
     void createPipeLine();
     void createPipelineLayout(VkGfxDescriptorSetLayout& globalSetLayout);
@@ -39,6 +41,7 @@ private:
 
 private:
     VkGfxDevice&                     m_device;
+    bool                             m_isEnable               = true;
 
     Unique<VkGfxRenderPipeline>      m_renderPipeline         = nullptr;
     Unique<VkGfxPipelineLayout>      m_pipelineLayout         = nullptr;

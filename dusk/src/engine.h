@@ -74,6 +74,9 @@ public:
 
     TimeStep              getFrameDelta() const { return m_deltaTime; };
 
+    // TODO:: should be part of config
+    void                  setSkyboxVisibility(bool state);
+
 private:
     Config                           m_config;
 

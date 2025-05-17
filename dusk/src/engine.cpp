@@ -373,4 +373,9 @@ void Engine::updateMaterialsBuffer(DynamicArray<Material>& materials)
     }
 }
 
+void Engine::setSkyboxVisibility(bool state)
+{
+    if (m_skyboxRenderSystem) m_skyboxRenderSystem->setVisble(state);
+}
+
 } // namespace dusk

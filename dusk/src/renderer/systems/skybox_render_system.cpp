@@ -140,7 +140,8 @@ SkyboxRenderSystem::~SkyboxRenderSystem()
 void SkyboxRenderSystem::renderSkybox(const FrameData& frameData)
 {
     // enable/disable from UI
-    if (!UI::state().rendererState.useSkybox) return;
+    m_isEnable = UI::state().rendererState.useSkybox;
+    if (!m_isEnable) return;
 
     if (!frameData.scene) return;
 
@@ -251,5 +252,11 @@ void SkyboxRenderSystem::setupDescriptors()
 
     m_texDescriptorSet->applyConfiguration();
 }
+
+void SkyboxRenderSystem::setVisble(bool visibility)
+{
+    UI::state().rendererState.useSkybox = visibility;
+    m_isEnable = visibility;
+};
 
 } // namespace dusk

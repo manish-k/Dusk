@@ -10,10 +10,12 @@ layout (set = 0, binding = 1) uniform sampler2D textures[];
 
 layout (set = 1, binding = 0) buffer Material 
 {
-	uint id;
+	int id;
+	int albedoTexId;
+	int normalTexId;
+	int padding;
 	vec4 albedoColor;
-	uint albedoTexId;
-	uint normalTexId;
+
 } materials[];
 
 layout(push_constant) uniform DrawData 
@@ -23,7 +25,8 @@ layout(push_constant) uniform DrawData
 } push;
 
 void main() {
-	uint textureIdx = materials[nonuniformEXT(push.materialIdx)].albedoTexId;
+	uint materialIdx = push.materialIdx;
+	int textureIdx = materials[nonuniformEXT(push.materialIdx)].albedoTexId;
 	vec4 baseColor = materials[nonuniformEXT(push.materialIdx)].albedoColor;
 	outColor = baseColor * texture(textures[nonuniformEXT(textureIdx)], fragUV);
 

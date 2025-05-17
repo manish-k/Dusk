@@ -19,7 +19,6 @@
 #include "backend/vulkan/vk_pipeline.h"
 #include "backend/vulkan/vk_pipeline_layout.h"
 
-
 namespace dusk
 {
 BasicRenderSystem::BasicRenderSystem(
@@ -160,15 +159,18 @@ void BasicRenderSystem::renderGameObjects(const FrameData& frameData)
     // TODO: Profile below code
     for (auto [entity, transform, meshData] : renderablesView.each())
     {
-        for (uint32_t meshId : meshData.meshes)
+        for (uint32_t index = 0u; index < meshData.meshes.size(); ++index)
         {
-            SubMesh&     mesh      = scene.getSubMesh(meshId);
-            VkBuffer     buffers[] = { mesh.getVertexBuffer().vkBuffer.buffer };
-            VkDeviceSize offsets[] = { 0 };
+            int32_t      meshId     = meshData.meshes[index];
+            int32_t      materialId = meshData.materials[index];
+            
+            SubMesh&     mesh       = scene.getSubMesh(meshId);
+            VkBuffer     buffers[]  = { mesh.getVertexBuffer().vkBuffer.buffer };
+            VkDeviceSize offsets[]  = { 0 };
 
             DrawData     push {};
             push.cameraBufferIdx = frameData.frameIndex;
-            push.materialIdx     = meshId;
+            push.materialIdx     = materialId;
 
             // update mesh transform data
             ModelData md { transform.mat4(), transform.normalMat4() };

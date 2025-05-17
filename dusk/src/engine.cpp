@@ -266,7 +266,7 @@ bool Engine::setupGlobals()
 
     m_globalDescriptorSetLayout = VkGfxDescriptorSetLayout::Builder(ctx)
                                       .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS, maxFramesCount, true)
-                                      .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 100, true) // TODO: make count configurable
+                                      .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1000, true) // TODO: make count configurable
                                       .build();
     CHECK_AND_RETURN_FALSE(!m_globalDescriptorSetLayout);
 
@@ -334,15 +334,17 @@ void Engine::cleanupGlobals()
 
 void Engine::registerTextures(DynamicArray<Texture2D>& textures)
 {
-    DynamicArray<VkDescriptorImageInfo> imagesInfo(textures.size());
     for (uint32_t texIndex = 0u; texIndex < textures.size(); ++texIndex)
     {
-        imagesInfo[texIndex].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        imagesInfo[texIndex].imageView   = textures[texIndex].vkTexture.imageView;
-        imagesInfo[texIndex].sampler     = textures[texIndex].vkSampler.sampler;
-    }
+        Texture2D&            tex = textures[texIndex];
 
-    m_globalDescriptorSet->configureImage(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 0, textures.size(), imagesInfo.data());
+        VkDescriptorImageInfo imageInfo {};
+        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageInfo.imageView   = tex.vkTexture.imageView;
+        imageInfo.sampler     = tex.vkSampler.sampler;
+
+        m_globalDescriptorSet->configureImage(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, tex.id, 1, &imageInfo);
+    }
 
     m_globalDescriptorSet->applyConfiguration();
 }

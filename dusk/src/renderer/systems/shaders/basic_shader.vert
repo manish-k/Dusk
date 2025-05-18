@@ -14,11 +14,18 @@ layout (set = 0, binding = 0) uniform GlobalUBO
 	mat4 projection;
 	mat4 view;
 	mat4 inverseView;
-	vec4 lightDirection;
-	vec4 ambientLightColor;
+
+	uint directionalLightsCount;
+	uint pointLightsCount;     
+	uint spotLightsCount;      
+	uint padding;
+	
+	vec4 directionalLightIndices[32];
+	vec4 pointLightIndices[32];
+	vec4 spotLightIndices[32];
 } globalubo[];
 
-layout (set = 2, binding = 0) uniform ModelUBO 
+layout (set = 3, binding = 0) uniform ModelUBO 
 {
 	mat4 modelMatrix;
 	mat4 normalMatrix;

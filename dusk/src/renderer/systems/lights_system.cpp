@@ -52,8 +52,8 @@ void LightsSystem::registerAllLights(Scene& scene)
 
         DASSERT(m_directionalLightsCount < MAX_LIGHTS_PER_TYPE);
 
+        light.id = m_directionalLightsCount;
         ++m_directionalLightsCount;
-        light.id         = m_directionalLightsCount;
 
         auto dirDescInfo = m_directionalLightsBuffer.getDescriptorInfoAtIndex(light.id);
 
@@ -74,8 +74,8 @@ void LightsSystem::registerAllLights(Scene& scene)
 
         DASSERT(m_pointLightsCount < MAX_LIGHTS_PER_TYPE);
 
+        light.id = m_pointLightsCount;
         ++m_pointLightsCount;
-        light.id           = m_pointLightsCount;
 
         auto pointDescInfo = m_pointLightsBuffer.getDescriptorInfoAtIndex(light.id);
 
@@ -96,8 +96,8 @@ void LightsSystem::registerAllLights(Scene& scene)
 
         DASSERT(m_spotLightsCount < MAX_LIGHTS_PER_TYPE);
 
+        light.id = m_spotLightsCount;
         ++m_spotLightsCount;
-        light.id          = m_spotLightsCount;
 
         auto spotDescInfo = m_spotLightsBuffer.getDescriptorInfoAtIndex(light.id);
 
@@ -131,8 +131,8 @@ void LightsSystem::registerDirectionalLight(DirectionalLightComponent& light)
     DASSERT(light.id == -1, "Id already registerd");
     DASSERT(m_directionalLightsCount < MAX_LIGHTS_PER_TYPE);
 
+    light.id = m_directionalLightsCount;
     ++m_directionalLightsCount;
-    light.id      = m_directionalLightsCount;
 
     auto descInfo = m_directionalLightsBuffer.getDescriptorInfoAtIndex(light.id);
 
@@ -151,8 +151,8 @@ void LightsSystem::registerPointLight(PointLightComponent& light)
     DASSERT(light.id == -1, "Id already registerd");
     DASSERT(m_pointLightsCount < MAX_LIGHTS_PER_TYPE);
 
+    light.id = m_pointLightsCount;
     ++m_pointLightsCount;
-    light.id      = m_pointLightsCount;
 
     auto descInfo = m_pointLightsBuffer.getDescriptorInfoAtIndex(light.id);
 
@@ -171,8 +171,8 @@ void LightsSystem::registerSpotLight(SpotLightComponent& light)
     DASSERT(light.id == -1, "Id already registerd");
     DASSERT(m_spotLightsCount < MAX_LIGHTS_PER_TYPE);
 
+    light.id = m_spotLightsCount;
     ++m_spotLightsCount;
-    light.id      = m_spotLightsCount;
 
     auto descInfo = m_spotLightsBuffer.getDescriptorInfoAtIndex(light.id);
 
@@ -206,8 +206,8 @@ void LightsSystem::updateLights(Scene& scene, GlobalUbo& ubo)
 
         m_directionalLightsBuffer.writeAndFlushAtIndex(light.id, &light, sizeof(DirectionalLightComponent));
 
-        ++counter;
         ubo.directionalLightIndices[counter / 4][counter % 4] = light.id;
+        ++counter;
     }
     ubo.directionalLightsCount = m_directionalLightsCount;
 
@@ -221,8 +221,8 @@ void LightsSystem::updateLights(Scene& scene, GlobalUbo& ubo)
 
         m_pointLightsBuffer.writeAndFlushAtIndex(light.id, &light, sizeof(PointLightComponent));
 
-        ++counter;
         ubo.pointLightIndices[counter / 4][counter % 4] = light.id;
+        ++counter;
     }
     ubo.directionalLightsCount = m_directionalLightsCount;
 
@@ -236,8 +236,8 @@ void LightsSystem::updateLights(Scene& scene, GlobalUbo& ubo)
 
         m_spotLightsBuffer.writeAndFlushAtIndex(light.id, &light, sizeof(SpotLightComponent));
 
-        ++counter;
         ubo.spotLightIndices[counter / 4][counter % 4] = light.id;
+        ++counter;
     }
     ubo.spotLightsCount = m_spotLightsCount;
 }

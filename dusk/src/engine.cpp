@@ -81,7 +81,8 @@ bool Engine::start(Shared<Application> app)
     m_basicRenderSystem = createUnique<BasicRenderSystem>(
         *m_gfxDevice,
         *m_globalDescriptorSetLayout,
-        *m_materialDescriptorSetLayout);
+        *m_materialDescriptorSetLayout,
+        m_lightsSystem->getLightsDescriptorSetLayout());
 
     m_gridRenderSystem = createUnique<GridRenderSystem>(
         *m_gfxDevice,
@@ -151,6 +152,7 @@ void Engine::onUpdate(TimeStep dt)
             commandBuffer,
             m_currentScene,
             m_globalDescriptorSet->set,
+            m_lightsSystem->getLightsDescriptorSet().set,
             m_materialsDescriptorSet->set
         };
 

@@ -6,6 +6,22 @@ layout(location = 1) in vec2 fragUV;
 
 layout (location = 0) out vec4 outColor;
 
+layout (set = 0, binding = 0) uniform GlobalUBO 
+{
+	mat4 projection;
+	mat4 view;
+	mat4 inverseView;
+		
+	uint directionalLightsCount;
+	uint pointLightsCount;     
+	uint spotLightsCount;      
+	uint padding;
+	
+	vec4 directionalLightIndices[32];
+	vec4 pointLightIndices[32];
+	vec4 spotLightIndices[32];
+} globalubo[];
+
 layout (set = 0, binding = 1) uniform sampler2D textures[];
 
 layout (set = 1, binding = 0) buffer Material 
@@ -18,6 +34,13 @@ layout (set = 1, binding = 0) buffer Material
 
 } materials[];
 
+layout(set = 2, binding = 1) uniform DirectionalLight
+{
+	int id;
+	vec4 color;
+	vec3 direction;
+} dirLights[];
+
 layout(push_constant) uniform DrawData 
 {
 	uint cameraIdx;
@@ -25,10 +48,14 @@ layout(push_constant) uniform DrawData
 } push;
 
 void main() {
-	uint materialIdx = push.materialIdx;
-	int textureIdx = materials[nonuniformEXT(push.materialIdx)].albedoTexId;
-	vec4 baseColor = materials[nonuniformEXT(push.materialIdx)].albedoColor;
-	outColor = baseColor * texture(textures[nonuniformEXT(textureIdx)], fragUV);
+	uint materialIdx = nonuniformEXT(push.materialIdx);
+	int textureIdx = materials[materialIdx].albedoTexId;
+	vec4 baseColor = materials[materialIdx].albedoColor;
+	
+	uint guboIdx = nonuniformEXT(push.cameraIdx);
 
-	//outColor = vec4(0.7, 0.1, 0.1, 1.0);
+	uint dirLightsCount = globalubo[guboIdx].directionalLightsCount;
+	vec3 dirLightDir = dirLights[0].direction;
+	
+	outColor = baseColor * texture(textures[nonuniformEXT(textureIdx)], fragUV);
 }

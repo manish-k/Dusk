@@ -24,11 +24,12 @@ namespace dusk
 BasicRenderSystem::BasicRenderSystem(
     VkGfxDevice&              device,
     VkGfxDescriptorSetLayout& globalSet,
-    VkGfxDescriptorSetLayout& materialSet) :
+    VkGfxDescriptorSetLayout& materialSet,
+    VkGfxDescriptorSetLayout& ligtsSet) :
     m_device(device)
 {
     setupDescriptors();
-    createPipelineLayout(globalSet, materialSet);
+    createPipelineLayout(globalSet, materialSet, ligtsSet);
     createPipeLine();
 }
 
@@ -70,13 +71,15 @@ void BasicRenderSystem::createPipeLine()
 
 void BasicRenderSystem::createPipelineLayout(
     VkGfxDescriptorSetLayout& globalSet,
-    VkGfxDescriptorSetLayout& materialSet)
+    VkGfxDescriptorSetLayout& materialSet,
+    VkGfxDescriptorSetLayout& ligtsSet)
 {
     VulkanContext& vkContext = VkGfxDevice::getSharedVulkanContext();
     m_pipelineLayout         = VkGfxPipelineLayout::Builder(vkContext)
                            .addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(DrawData))
                            .addDescriptorSetLayout(globalSet.layout)
                            .addDescriptorSetLayout(materialSet.layout)
+                           .addDescriptorSetLayout(ligtsSet.layout)
                            .addDescriptorSetLayout(m_modelDescriptorSetLayout->layout)
                            .build();
 }
@@ -136,7 +139,7 @@ void BasicRenderSystem::renderGameObjects(const FrameData& frameData)
         frameData.commandBuffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
         m_pipelineLayout->get(),
-        0,
+        GLOBAL_SET_INDEX,
         1,
         &frameData.globalDescriptorSet,
         0,
@@ -146,9 +149,19 @@ void BasicRenderSystem::renderGameObjects(const FrameData& frameData)
         frameData.commandBuffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
         m_pipelineLayout->get(),
-        1,
+        MATERIAL_SET_INDEX,
         1,
         &frameData.materialDescriptorSet,
+        0,
+        nullptr);
+
+    vkCmdBindDescriptorSets(
+        frameData.commandBuffer,
+        VK_PIPELINE_BIND_POINT_GRAPHICS,
+        m_pipelineLayout->get(),
+        LIGHTS_SET_INDEX,
+        1,
+        &frameData.lightsDescriptorSet,
         0,
         nullptr);
 
@@ -161,15 +174,15 @@ void BasicRenderSystem::renderGameObjects(const FrameData& frameData)
     {
         for (uint32_t index = 0u; index < meshData.meshes.size(); ++index)
         {
-            entt::id_type objectId         = static_cast<entt::id_type>(entity);
-            int32_t      meshId     = meshData.meshes[index];
-            int32_t      materialId = meshData.materials[index];
-            
-            SubMesh&     mesh       = scene.getSubMesh(meshId);
-            VkBuffer     buffers[]  = { mesh.getVertexBuffer().vkBuffer.buffer };
-            VkDeviceSize offsets[]  = { 0 };
+            entt::id_type objectId   = static_cast<entt::id_type>(entity);
+            int32_t       meshId     = meshData.meshes[index];
+            int32_t       materialId = meshData.materials[index];
 
-            DrawData     push {};
+            SubMesh&      mesh       = scene.getSubMesh(meshId);
+            VkBuffer      buffers[]  = { mesh.getVertexBuffer().vkBuffer.buffer };
+            VkDeviceSize  offsets[]  = { 0 };
+
+            DrawData      push {};
             push.cameraBufferIdx = frameData.frameIndex;
             push.materialIdx     = materialId;
 
@@ -182,7 +195,7 @@ void BasicRenderSystem::renderGameObjects(const FrameData& frameData)
                 commandBuffer,
                 VK_PIPELINE_BIND_POINT_GRAPHICS,
                 m_pipelineLayout->get(),
-                2,
+                MODEL_SET_INDEX,
                 1,
                 &m_modelDescriptorSet->set,
                 1,

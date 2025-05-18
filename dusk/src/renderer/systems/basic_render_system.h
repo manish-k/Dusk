@@ -35,13 +35,23 @@ struct ModelData
 // TODO: figure out the best way to configure this
 constexpr uint32_t maxRenderableMeshes = 10000;
 
+
 class BasicRenderSystem
 {
+public:
+    // TODO: not coupled with addDescriptorSetLayout indexing logic
+    // can create bugs if changed
+    const uint32_t GLOBAL_SET_INDEX   = 0;
+    const uint32_t MATERIAL_SET_INDEX = 1;
+    const uint32_t LIGHTS_SET_INDEX   = 2;
+    const uint32_t MODEL_SET_INDEX    = 3;
+
 public:
     BasicRenderSystem(
         VkGfxDevice&              device,
         VkGfxDescriptorSetLayout& globalSet,
-        VkGfxDescriptorSetLayout& materialSet);
+        VkGfxDescriptorSetLayout& materialSet,
+        VkGfxDescriptorSetLayout& lightsSet);
     ~BasicRenderSystem();
 
     void renderGameObjects(const FrameData& frameData);
@@ -50,7 +60,8 @@ private:
     void createPipeLine();
     void createPipelineLayout(
         VkGfxDescriptorSetLayout& globalSet,
-        VkGfxDescriptorSetLayout& materialSet);
+        VkGfxDescriptorSetLayout& materialSet,
+        VkGfxDescriptorSetLayout& lightsSet);
     void setupDescriptors();
 
 private:

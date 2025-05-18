@@ -9,11 +9,11 @@ struct AmbientLightComponent
     glm::vec4 color { 1.0f }; // w component for intensity
 };
 
-struct DirectionalLightComponent
+struct alignas(16) DirectionalLightComponent
 {
     int32_t   id = -1;
-    glm::vec3 direction { 0.f };
     glm::vec4 color { 1.0f }; // w component for intensity
+    glm::vec3 direction { 0.f };
 };
 
 struct PointLightComponent

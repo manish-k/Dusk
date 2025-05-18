@@ -3,6 +3,7 @@
 #include "core/entrypoint.h"
 #include "scene/components/transform.h"
 #include "scene/components/camera.h"
+#include "scene/components/lights.h"
 
 TestLights::TestLights()
 {
@@ -24,6 +25,14 @@ bool TestLights::start()
     std::string scenePath = "assets/scenes/test_lights.gltf";
 
     m_testScene           = Scene::createSceneFromGLTF(scenePath);
+
+    // adding ambient light
+    // adding directional light
+    auto directionalLight = dusk::createUnique<GameObject>();
+    directionalLight->setName("directional_light");
+    auto& light = directionalLight->addComponent<DirectionalLightComponent>();
+    light.direction = glm::vec3(1.f, 1.f, -1.f);
+    m_testScene->addGameObject(std::move(directionalLight), m_testScene->getRootId());
 
     Engine::get().loadScene(m_testScene.get());
     Engine::get().setSkyboxVisibility(false);

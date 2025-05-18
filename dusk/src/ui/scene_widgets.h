@@ -124,7 +124,7 @@ inline void drawSceneGraphWidget(Scene& scene)
         {
             ImGui::SeparatorText("Ambient Light");
 
-            AmbientLightComponent light = selectedGameObject.getComponent<AmbientLightComponent>();
+            AmbientLightComponent& light = selectedGameObject.getComponent<AmbientLightComponent>();
 
             ImGui::ColorEdit3("Color", (float*)&light.color);
             ImGui::DragFloat("Intensity", (float*)&light.color + 3, 0.05f, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_None);
@@ -134,21 +134,21 @@ inline void drawSceneGraphWidget(Scene& scene)
         {
             ImGui::SeparatorText("Directional Light");
 
-            DirectionalLightComponent light = selectedGameObject.getComponent<DirectionalLightComponent>();
+            DirectionalLightComponent& light = selectedGameObject.getComponent<DirectionalLightComponent>();
 
             ImGui::DragFloat3("Direction", (float*)&light.direction);
             ImGui::ColorEdit3("Color", (float*)&light.color);
-            ImGui::DragFloat("Intensity", (float*)&light.color + 3, 0.05f, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_None);
+            ImGui::DragFloat("Intensity", (float*)&light.color + 3, 0.005f, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_None);
         }
 
         if (selectedGameObject.hasComponent<PointLightComponent>())
         {
             ImGui::SeparatorText("Point Light");
 
-            PointLightComponent light = selectedGameObject.getComponent<PointLightComponent>();
+            PointLightComponent& light = selectedGameObject.getComponent<PointLightComponent>();
 
             ImGui::ColorEdit3("Color", (float*)&light.color);
-            ImGui::DragFloat("Intensity", (float*)&light.color + 3, 0.05f, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_None);
+            ImGui::DragFloat("Intensity", (float*)&light.color + 3, 0.005f, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_None);
 
             ImGui::Text("Attenuation Factors");
             ImGui::DragFloat("Constant", (float*)&light.constantAttenuationFactor, 0.05f, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_None);
@@ -158,11 +158,11 @@ inline void drawSceneGraphWidget(Scene& scene)
 
         if (selectedGameObject.hasComponent<SpotLightComponent>())
         {
-            SpotLightComponent light = selectedGameObject.getComponent<SpotLightComponent>();
+            SpotLightComponent& light = selectedGameObject.getComponent<SpotLightComponent>();
 
             ImGui::DragFloat3("Direction", (float*)&light.direction);
             ImGui::ColorEdit3("Color", (float*)&light.color);
-            ImGui::DragFloat("Intensity", (float*)&light.color + 3, 0.05f, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_None);
+            ImGui::DragFloat("Intensity", (float*)&light.color + 3, 0.005f, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_None);
 
             ImGui::Text("Attenuation Factors");
             ImGui::DragFloat("Constant", (float*)&light.constantAttenuationFactor, 0.05f, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_None);

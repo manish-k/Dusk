@@ -40,6 +40,7 @@ bool           UI::init(Window& window)
     // create descriptor pool
     m_descriptorPool = VkGfxDescriptorPool::Builder(ctx)
                            .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1)
+                           .setDebugName("ui_desc_pool")
                            .build(1, VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT);
     CHECK_AND_RETURN_FALSE(!m_descriptorPool);
 

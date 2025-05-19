@@ -242,6 +242,7 @@ void LightsSystem::setupDescriptors()
                                  .addPoolSize(
                                      VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                                      MAX_LIGHTS_PER_TYPE)
+                                 .setDebugName("lights_desc_pool")
                                  .build(
                                      1,
                                      VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
@@ -270,9 +271,10 @@ void LightsSystem::setupDescriptors()
                                           VK_SHADER_STAGE_FRAGMENT_BIT,
                                           MAX_LIGHTS_PER_TYPE,
                                           true) // Spot Light
+                                      .setDebugName("lights_desc_set_layout")
                                       .build();
 
-    m_lightsDescriptorSet = m_lightsDescriptorPool->allocateDescriptorSet(*m_lightsDescriptorSetLayout);
+    m_lightsDescriptorSet = m_lightsDescriptorPool->allocateDescriptorSet(*m_lightsDescriptorSetLayout, "lights_desc_set");
 
     // create ambient light buffer
     GfxBuffer::createHostWriteBuffer(

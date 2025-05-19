@@ -231,15 +231,17 @@ void SkyboxRenderSystem::setupDescriptors()
 
     m_texDescriptorPool      = VkGfxDescriptorPool::Builder(vkContext)
                               .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1)
+                              .setDebugName("skybox_tex_desc_pool")
                               .build(1);
     CHECK_AND_RETURN(!m_texDescriptorPool);
 
     m_texDescriptorSetLayout = VkGfxDescriptorSetLayout::Builder(vkContext)
                                    .addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
+                                   .setDebugName("skybox_tex_desc_set_layout")
                                    .build();
     CHECK_AND_RETURN(!m_texDescriptorSetLayout);
 
-    m_texDescriptorSet = m_texDescriptorPool->allocateDescriptorSet(*m_texDescriptorSetLayout);
+    m_texDescriptorSet = m_texDescriptorPool->allocateDescriptorSet(*m_texDescriptorSetLayout, "skybox_tex_desc_set");
     CHECK_AND_RETURN(!m_texDescriptorSet);
 
     // write image info to descriptor

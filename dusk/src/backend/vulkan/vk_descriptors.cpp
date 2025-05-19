@@ -33,6 +33,12 @@ VkGfxDescriptorSetLayout::Builder& VkGfxDescriptorSetLayout::Builder::addBinding
     return *this;
 }
 
+VkGfxDescriptorSetLayout::Builder& VkGfxDescriptorSetLayout::Builder::setDebugName(const std::string& name)
+{
+    debugName = name;
+    return *this;
+}
+
 Unique<VkGfxDescriptorSetLayout> VkGfxDescriptorSetLayout::Builder::build()
 {
     uint32_t                                   bindingsCount = bindingsMap.size();
@@ -72,6 +78,14 @@ Unique<VkGfxDescriptorSetLayout> VkGfxDescriptorSetLayout::Builder::build()
         return nullptr;
     }
 
+#ifdef VK_RENDERER_DEBUG
+    vkdebug::setObjectName(
+        device,
+        VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT,
+        (uint64_t)gfxSetLayout->layout,
+        debugName.c_str());
+#endif // VK_RENDERER_DEBUG
+
     return std::move(gfxSetLayout);
 }
 
@@ -83,6 +97,12 @@ VkGfxDescriptorSetLayout::~VkGfxDescriptorSetLayout()
 VkGfxDescriptorPool::Builder& VkGfxDescriptorPool::Builder::addPoolSize(VkDescriptorType descriptorType, uint32_t count)
 {
     poolSizes.push_back({ descriptorType, count });
+    return *this;
+}
+
+VkGfxDescriptorPool::Builder& VkGfxDescriptorPool::Builder::setDebugName(const std::string& name)
+{
+    debugName = name;
     return *this;
 }
 
@@ -105,6 +125,14 @@ Unique<VkGfxDescriptorPool> VkGfxDescriptorPool::Builder::build(uint32_t maxSets
         return nullptr;
     }
 
+#ifdef VK_RENDERER_DEBUG
+    vkdebug::setObjectName(
+        device,
+        VK_OBJECT_TYPE_DESCRIPTOR_POOL,
+        (uint64_t)gfxDescriptorPool->pool,
+        debugName.c_str());
+#endif // VK_RENDERER_DEBUG
+
     return std::move(gfxDescriptorPool);
 }
 
@@ -113,7 +141,9 @@ VkGfxDescriptorPool::~VkGfxDescriptorPool()
     vkDestroyDescriptorPool(device, pool, nullptr);
 }
 
-Unique<VkGfxDescriptorSet> VkGfxDescriptorPool::allocateDescriptorSet(VkGfxDescriptorSetLayout& descriptorSetLayout)
+Unique<VkGfxDescriptorSet> VkGfxDescriptorPool::allocateDescriptorSet(
+    VkGfxDescriptorSetLayout& descriptorSetLayout,
+    const char*               pDebugName)
 {
     VkDescriptorSetAllocateInfo allocInfo { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
     allocInfo.descriptorPool     = pool;
@@ -123,12 +153,24 @@ Unique<VkGfxDescriptorSet> VkGfxDescriptorPool::allocateDescriptorSet(VkGfxDescr
     auto         descriptorSet   = createUnique<VkGfxDescriptorSet>(device, descriptorSetLayout);
 
     VulkanResult result          = vkAllocateDescriptorSets(device, &allocInfo, &descriptorSet->set);
-    
+
     if (result.hasError())
     {
         DUSK_ERROR("Unable to create descriptor set. {}", result.toString());
         return nullptr;
     }
+
+#ifdef VK_RENDERER_DEBUG
+    if (pDebugName)
+    {
+        vkdebug::setObjectName(
+            device,
+            VK_OBJECT_TYPE_DESCRIPTOR_SET,
+            (uint64_t)descriptorSet->set,
+            pDebugName);
+    }
+
+#endif // VK_RENDERER_DEBUG
 
     return std::move(descriptorSet);
 }

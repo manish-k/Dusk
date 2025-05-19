@@ -21,7 +21,7 @@ struct Texture2D
         id(id) {};
     ~Texture2D() = default;
 
-    Error init(Image& texImage);
+    Error init(Image& texImage, const char* debugName = nullptr);
     void  free();
 };
 

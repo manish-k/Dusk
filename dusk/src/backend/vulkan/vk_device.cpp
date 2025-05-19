@@ -656,7 +656,11 @@ VulkanResult VkGfxDevice::createBuffer(const GfxBufferParams& params, VulkanGfxB
     }
 
 #ifdef VK_RENDERER_DEBUG
-    vkdebug::setObjectName(m_device, VK_OBJECT_TYPE_BUFFER, (uint64_t)pOutBuffer->buffer, params.debugName.c_str());
+    vkdebug::setObjectName(
+        m_device, 
+        VK_OBJECT_TYPE_BUFFER, 
+        (uint64_t)pOutBuffer->buffer, 
+        params.debugName.c_str());
 #endif
 
     pOutBuffer->alignmentSize = params.alignmentSize;

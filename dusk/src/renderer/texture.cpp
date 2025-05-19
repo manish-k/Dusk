@@ -10,7 +10,7 @@
 namespace dusk
 {
 
-Error Texture2D::init(Image& texImage)
+Error Texture2D::init(Image& texImage, const char* debugName)
 {
     auto& device    = Engine::get().getGfxDevice();
     auto& vkContext = device.getSharedVulkanContext();
@@ -62,6 +62,17 @@ Error Texture2D::init(Image& texImage)
         DUSK_ERROR("Unable to create image for texture {}", result.toString());
         return Error::InitializationFailed;
     }
+
+#ifdef VK_RENDERER_DEBUG
+    if (debugName)
+    {
+        vkdebug::setObjectName(
+            vkContext.device,
+            VK_OBJECT_TYPE_IMAGE,
+            (uint64_t)vkTexture.image.image,
+            debugName);
+    }
+#endif // VK_RENDERER_DEBUG
 
     device.transitionImageWithLayout(
         &vkTexture.image,

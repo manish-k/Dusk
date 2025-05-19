@@ -90,11 +90,13 @@ void BasicRenderSystem::setupDescriptors()
 
     m_modelDescriptorPool = VkGfxDescriptorPool::Builder(ctx)
                                 .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1)
+                                .setDebugName("model_desc_pool")
                                 .build(1);
     CHECK_AND_RETURN(!m_modelDescriptorPool);
 
     m_modelDescriptorSetLayout = VkGfxDescriptorSetLayout::Builder(ctx)
                                      .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT, 1)
+                                     .setDebugName("model_desc_set_layout")
                                      .build();
     CHECK_AND_RETURN(!m_modelDescriptorSetLayout);
 
@@ -108,7 +110,7 @@ void BasicRenderSystem::setupDescriptors()
     CHECK_AND_RETURN(!m_modelsBuffer.isAllocated());
 
     // create descriptor set
-    m_modelDescriptorSet = m_modelDescriptorPool->allocateDescriptorSet(*m_modelDescriptorSetLayout);
+    m_modelDescriptorSet = m_modelDescriptorPool->allocateDescriptorSet(*m_modelDescriptorSetLayout, "model_desc_set");
     CHECK_AND_RETURN(!m_modelDescriptorSet);
 
     DynamicArray<VkDescriptorBufferInfo> meshBufferInfo;

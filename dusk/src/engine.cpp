@@ -263,13 +263,15 @@ bool Engine::setupGlobals()
     m_globalDescriptorPool = VkGfxDescriptorPool::Builder(ctx)
                                  .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, maxFramesCount)
                                  .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 100) // TODO: make count configurable
-                                 .build(1, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
+                                 .setDebugName("global_desc_pool")                         
+        .build(1, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
     CHECK_AND_RETURN_FALSE(!m_globalDescriptorPool);
 
     m_globalDescriptorSetLayout = VkGfxDescriptorSetLayout::Builder(ctx)
                                       .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS, maxFramesCount, true)
                                       .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1000, true) // TODO: make count configurable
-                                      .build();
+                                      .setDebugName("global_desc_set_layout")                              
+        .build();
     CHECK_AND_RETURN_FALSE(!m_globalDescriptorSetLayout);
 
     GfxBuffer::createHostWriteBuffer(
@@ -280,7 +282,7 @@ bool Engine::setupGlobals()
         &m_globalUbos);
     CHECK_AND_RETURN_FALSE(!m_globalUbos.isAllocated());
 
-    m_globalDescriptorSet = m_globalDescriptorPool->allocateDescriptorSet(*m_globalDescriptorSetLayout);
+    m_globalDescriptorSet = m_globalDescriptorPool->allocateDescriptorSet(*m_globalDescriptorSetLayout, "global_desc_set");
     CHECK_AND_RETURN_FALSE(!m_globalDescriptorSet);
 
     DynamicArray<VkDescriptorBufferInfo> buffersInfo;
@@ -301,11 +303,13 @@ bool Engine::setupGlobals()
     // create descriptor pool and layout for materials
     m_materialDescriptorPool = VkGfxDescriptorPool::Builder(ctx)
                                    .addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, maxMaterialCount) // TODO: make count configurable
+                                   .setDebugName("material_desc_pool")
                                    .build(1, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
     CHECK_AND_RETURN_FALSE(!m_materialDescriptorPool);
 
     m_materialDescriptorSetLayout = VkGfxDescriptorSetLayout::Builder(ctx)
                                         .addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, maxMaterialCount, true) // TODO: make count configurable
+                                        .setDebugName("material_desc_set_layout")
                                         .build();
     CHECK_AND_RETURN_FALSE(!m_materialDescriptorSetLayout);
 
@@ -318,7 +322,7 @@ bool Engine::setupGlobals()
         &m_materialsBuffer);
     CHECK_AND_RETURN_FALSE(!m_materialsBuffer.isAllocated());
 
-    m_materialsDescriptorSet = m_materialDescriptorPool->allocateDescriptorSet(*m_materialDescriptorSetLayout);
+    m_materialsDescriptorSet = m_materialDescriptorPool->allocateDescriptorSet(*m_materialDescriptorSetLayout, "material_desc_set");
     CHECK_AND_RETURN_FALSE(!m_materialsDescriptorSet);
 
     return true;

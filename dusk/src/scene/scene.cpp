@@ -56,7 +56,7 @@ Scene::Scene(const std::string_view name) :
     };
 
     Texture2D defaultTex { m_defaultTextureId };
-    defaultTex.init(defaultTextureImg);
+    defaultTex.init(defaultTextureImg, "default_tex");
 
     m_textures.push_back(defaultTex);
 }
@@ -165,7 +165,7 @@ int Scene::loadTexture(std::string& path)
             uint32_t  newId = m_textures.size();
             Texture2D newTex(newId);
 
-            Error     err = newTex.init(*img);
+            Error     err = newTex.init(*img, path.c_str());
             if (err != Error::Ok)
             {
                 return -1;

@@ -13,6 +13,7 @@ struct VkGfxDescriptorSetLayout
         VkDevice                                        device       = VK_NULL_HANDLE;
         HashMap<uint32_t, VkDescriptorSetLayoutBinding> bindingsMap  = {};
         HashMap<uint32_t, VkDescriptorBindingFlags>     bindingFlags = {};
+        std::string                                     debugName    = {};
 
         Builder(const VulkanContext& ctx) :
             device(ctx.device)
@@ -26,7 +27,7 @@ struct VkGfxDescriptorSetLayout
          * @param stageFlags
          * @param count if passing buffer/image arrays
          * @param isBindless whether this binding is bindless or not
-         * @return
+         * @return Builder
          */
         Builder& addBinding(
             uint32_t           bindingIndex,
@@ -34,6 +35,13 @@ struct VkGfxDescriptorSetLayout
             VkShaderStageFlags stageFlags,
             uint32_t           count,
             bool               isBindless = false);
+
+        /**
+         * @brief Give a debug name for the resource
+         * @param name of the descriptor set layout
+         * @return Builder
+         */
+        Builder& setDebugName(const std::string& name);
 
         /**
          * @brief create the descriptor set layout
@@ -113,8 +121,9 @@ struct VkGfxDescriptorPool
 {
     struct Builder
     {
-        VkDevice                           device = VK_NULL_HANDLE;
-        DynamicArray<VkDescriptorPoolSize> poolSizes {};
+        VkDevice                           device    = VK_NULL_HANDLE;
+        DynamicArray<VkDescriptorPoolSize> poolSizes = {};
+        std::string                        debugName = {};
 
         Builder(const VulkanContext& ctx) :
             device(ctx.device)
@@ -129,6 +138,13 @@ struct VkGfxDescriptorPool
          * @return
          */
         Builder& addPoolSize(VkDescriptorType descriptorType, uint32_t count);
+
+        /**
+         * @brief Give a debug name for the resource
+         * @param name of the descriptor pool
+         * @return Builder
+         */
+        Builder& setDebugName(const std::string& name);
 
         /**
          * @brief Build the pool for descriptor sets
@@ -156,9 +172,12 @@ struct VkGfxDescriptorPool
     /**
      * @brief Allocate one descriptor set from the pool
      * @param descriptorSetLayout will be used for the set allocation
+     * @param debug name for the descriptor set
      * @return unique pointer to the allocated descriptor set
      */
-    Unique<VkGfxDescriptorSet> allocateDescriptorSet(VkGfxDescriptorSetLayout& descriptorSetLayout);
+    Unique<VkGfxDescriptorSet> allocateDescriptorSet(
+        VkGfxDescriptorSetLayout& descriptorSetLayout,
+        const char*               pDebugName = nullptr);
 
     /**
      * @brief Free on or more descriptor sets

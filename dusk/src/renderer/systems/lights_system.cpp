@@ -1,8 +1,10 @@
 #include "lights_system.h"
 
 #include "scene/scene.h"
+#include "scene/components/lights.h"
+#include "scene/components/transform.h"
+
 #include "renderer/frame_data.h"
-#include "components/lights.h"
 
 #include "backend/vulkan/vk_device.h"
 #include "backend/vulkan/vk_descriptors.h"
@@ -203,11 +205,15 @@ void LightsSystem::updateLights(Scene& scene, GlobalUbo& ubo)
     }
     ubo.directionalLightsCount = m_directionalLightsCount;
 
-    auto pointLightList        = scene.GetGameObjectsWith<PointLightComponent>();
-    counter                    = 0u;
+    // TODO: maybe not the efficient data oriented desgin
+    auto pointLightList = scene.GetGameObjectsWith<PointLightComponent, TransformComponent>();
+    counter             = 0u;
     for (auto& entity : pointLightList)
     {
-        auto& light = pointLightList.get<PointLightComponent>(entity);
+        auto& light     = pointLightList.get<PointLightComponent>(entity);
+        auto& transform = pointLightList.get<TransformComponent>(entity);
+
+        light.position  = transform.translation;
 
         if (light.id == -1) continue;
 
@@ -216,10 +222,10 @@ void LightsSystem::updateLights(Scene& scene, GlobalUbo& ubo)
         ubo.pointLightIndices[counter / 4][counter % 4] = light.id;
         ++counter;
     }
-    ubo.directionalLightsCount = m_directionalLightsCount;
+    ubo.pointLightsCount = m_pointLightsCount;
 
-    auto spotLightList         = scene.GetGameObjectsWith<SpotLightComponent>();
-    counter                    = 0u;
+    auto spotLightList   = scene.GetGameObjectsWith<SpotLightComponent>();
+    counter              = 0u;
     for (auto& entity : spotLightList)
     {
         auto& light = spotLightList.get<SpotLightComponent>(entity);

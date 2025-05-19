@@ -35,6 +35,11 @@ layout (set = 1, binding = 0) buffer Material
 
 } materials[];
 
+layout(set = 2, binding = 0) buffer AmbientLight
+{
+	vec4 color;
+} ambientLight;
+
 layout(set = 2, binding = 1) buffer DirectionalLight
 {
 	int id;
@@ -45,6 +50,26 @@ layout(set = 2, binding = 1) buffer DirectionalLight
 	vec3 direction;
 } dirLights[];
 
+layout(set = 2, binding = 2) buffer PointLight
+{
+	int id;
+	float constantAttenuationFactor;
+	float linearAttenuationFactor;
+	float quadraticAttenuationFactor;
+	vec4 color;
+	vec3 position;
+} pointLights[];
+
+layout(set = 2, binding = 3) buffer SpotLight
+{
+	int id;
+	int pad0;
+	int pad1;
+	int pad2;
+	vec4 color;
+	vec3 direction;
+} spotLights[];
+
 layout(push_constant) uniform DrawData 
 {
 	uint cameraIdx;
@@ -53,20 +78,50 @@ layout(push_constant) uniform DrawData
 
 vec3 computeDirectionalLight(uint lightIdx, vec3 viewDirection, vec3 normal)
 {
-    vec3 lightDir = normalize(-dirLights[lightIdx].direction);
+    vec3 lightDirection = normalize(-dirLights[lightIdx].direction);
 	vec3 lightColor = dirLights[lightIdx].color.xyz;
 	float lightIntensity = dirLights[lightIdx].color.w;
     
 	// diffuse shading
-    float diff = max(dot(normal, lightDir), 0.0);
+    float diff = max(dot(normal, lightDirection), 0.0);
     
 	// specular shading
-    vec3 reflectDir = reflect(-lightDir, normal);
-    float spec = pow(max(dot(viewDirection, reflectDir), 0.0), 300);
+    vec3 reflectDirection = reflect(-lightDirection, normal);
+    float spec = pow(max(dot(viewDirection, reflectDirection), 0.0), 300);
     
 	// combine results
     vec3 diffuse  = lightColor * diff * lightIntensity;
     vec3 specular = lightColor * spec * lightIntensity;
+    return (diffuse + specular);
+}
+
+vec3 computePointLight(uint lightIdx, vec3 fragPosition, vec3 viewDirection, vec3 normal)
+{
+	vec3 lightPosition = pointLights[lightIdx].position;
+	vec3 lightDirection = normalize(lightPosition - fragPosition);
+	vec3 lightColor = pointLights[lightIdx].color.xyz;
+	float lightIntensity = pointLights[lightIdx].color.w;
+    
+	// diffuse shading
+    float diff = max(dot(normal, lightDirection), 0.0);
+    
+	// specular shading
+    vec3 reflectDirection = reflect(-lightDirection, normal);
+    float spec = pow(max(dot(viewDirection, reflectDirection), 0.0), 300);
+    
+	// attenuation
+	float constant = pointLights[lightIdx].constantAttenuationFactor;
+	float linear = pointLights[lightIdx].linearAttenuationFactor;
+	float quad = pointLights[lightIdx].quadraticAttenuationFactor;
+    float distance    = length(lightPosition - fragPosition);
+    float attenuation = 1.0 / (constant + linear * distance + 
+  			     quad * (distance * distance));    
+    
+	// combine results
+    vec3 diffuse  = lightColor * diff * lightIntensity;
+    vec3 specular = lightColor * spec * lightIntensity;
+    diffuse  *= attenuation;
+    specular *= attenuation;
     return (diffuse + specular);
 }
 
@@ -81,20 +136,36 @@ void main() {
 	int textureIdx = materials[materialIdx].albedoTexId;
 	vec4 baseColor = materials[materialIdx].albedoColor;
 	
-	vec3 dirColor = baseColor.xyz * texture(textures[nonuniformEXT(textureIdx)], fragUV).xyz;;
+	vec3 ambientColor = ambientLight.color.xyz * ambientLight.color.w;
+
+	vec3 lightColor = baseColor.xyz * texture(textures[nonuniformEXT(textureIdx)], fragUV).xyz;;
+	
+	// compute contribution of all directional light
 	uint dirCount  = globalubo[guboIdx].directionalLightsCount;
     uint vec4Count = (dirCount + 3u) >> 2;   // divide by 4, round up
-
     for (uint v = 0u; v < vec4Count; ++v)
     {
         uvec4 idx4 = globalubo[guboIdx].directionalLightIndices[v];
 
-        if (4u*v + 0u < dirCount) dirColor = dirColor * computeDirectionalLight(idx4.x, viewDirection, surfaceNormal);
-        if (4u*v + 1u < dirCount) dirColor = dirColor * computeDirectionalLight(idx4.y, viewDirection, surfaceNormal);
-        if (4u*v + 2u < dirCount) dirColor = dirColor * computeDirectionalLight(idx4.z, viewDirection, surfaceNormal);
-        if (4u*v + 3u < dirCount) dirColor = dirColor * computeDirectionalLight(idx4.w, viewDirection, surfaceNormal);
+        if (4u*v + 0u < dirCount) lightColor = lightColor * computeDirectionalLight(idx4.x, viewDirection, surfaceNormal);
+        if (4u*v + 1u < dirCount) lightColor = lightColor * computeDirectionalLight(idx4.y, viewDirection, surfaceNormal);
+        if (4u*v + 2u < dirCount) lightColor = lightColor * computeDirectionalLight(idx4.z, viewDirection, surfaceNormal);
+        if (4u*v + 3u < dirCount) lightColor = lightColor * computeDirectionalLight(idx4.w, viewDirection, surfaceNormal);
+    }
+
+	// compute contribution of all point lights
+	uint pointCount  = globalubo[guboIdx].pointLightsCount;
+    vec4Count = (pointCount + 3u) >> 2;   // divide by 4, round up
+    for (uint v = 0u; v < vec4Count; ++v)
+    {
+        uvec4 idx4 = globalubo[guboIdx].pointLightIndices[v];
+
+        if (4u*v + 0u < pointCount) lightColor = lightColor * computePointLight(idx4.x, fragWorldPos, viewDirection, surfaceNormal);
+        if (4u*v + 1u < pointCount) lightColor = lightColor * computePointLight(idx4.y, fragWorldPos, viewDirection, surfaceNormal);
+        if (4u*v + 2u < pointCount) lightColor = lightColor * computePointLight(idx4.z, fragWorldPos, viewDirection, surfaceNormal);
+        if (4u*v + 3u < pointCount) lightColor = lightColor * computePointLight(idx4.w, fragWorldPos, viewDirection, surfaceNormal);
     }
 	
-	outColor = vec4(dirColor.xyz, 1.0f);
-	//outColor = baseColor * texture(textures[nonuniformEXT(textureIdx)], fragUV);
+	lightColor = lightColor + ambientColor;
+	outColor = vec4(lightColor.xyz, 1.0f);
 }

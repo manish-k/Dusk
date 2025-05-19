@@ -74,7 +74,7 @@ inline void drawSceneGraphWidget(Scene& scene)
 
         auto& transform = selectedGameObject.getComponent<TransformComponent>();
 
-        ImGui::DragFloat3("Position", (float*)&transform.translation);
+        ImGui::DragFloat3("Position", (float*)&transform.translation, 0.005f, -FLT_MAX, FLT_MAX);
         ImGui::DragFloat3("Scale", (float*)&transform.scale);
 
         glm::vec3 eulerRotation = glm::degrees(glm::eulerAngles(transform.rotation));
@@ -127,7 +127,7 @@ inline void drawSceneGraphWidget(Scene& scene)
             AmbientLightComponent& light = selectedGameObject.getComponent<AmbientLightComponent>();
 
             ImGui::ColorEdit3("Color", (float*)&light.color);
-            ImGui::DragFloat("Intensity", (float*)&light.color + 3, 0.05f, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_None);
+            ImGui::DragFloat("Intensity", (float*)&light.color + 3, 0.005f, 0.0f, FLT_MAX, "%.3f", ImGuiSliderFlags_None);
         }
 
         if (selectedGameObject.hasComponent<DirectionalLightComponent>())
@@ -138,7 +138,7 @@ inline void drawSceneGraphWidget(Scene& scene)
 
             ImGui::DragFloat3("Direction", (float*)&light.direction);
             ImGui::ColorEdit3("Color", (float*)&light.color);
-            ImGui::DragFloat("Intensity", (float*)&light.color + 3, 0.005f, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_None);
+            ImGui::DragFloat("Intensity", (float*)&light.color + 3, 0.005f, 0.0f, FLT_MAX, "%.3f", ImGuiSliderFlags_None);
         }
 
         if (selectedGameObject.hasComponent<PointLightComponent>())
@@ -148,7 +148,7 @@ inline void drawSceneGraphWidget(Scene& scene)
             PointLightComponent& light = selectedGameObject.getComponent<PointLightComponent>();
 
             ImGui::ColorEdit3("Color", (float*)&light.color);
-            ImGui::DragFloat("Intensity", (float*)&light.color + 3, 0.005f, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_None);
+            ImGui::DragFloat("Intensity", (float*)&light.color + 3, 0.005f, 0.0f, FLT_MAX, "%.3f", ImGuiSliderFlags_None);
 
             ImGui::Text("Attenuation Factors");
             ImGui::DragFloat("Constant", (float*)&light.constantAttenuationFactor, 0.05f, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_None);
@@ -162,7 +162,7 @@ inline void drawSceneGraphWidget(Scene& scene)
 
             ImGui::DragFloat3("Direction", (float*)&light.direction);
             ImGui::ColorEdit3("Color", (float*)&light.color);
-            ImGui::DragFloat("Intensity", (float*)&light.color + 3, 0.005f, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_None);
+            ImGui::DragFloat("Intensity", (float*)&light.color + 3, 0.005f, 0.0f, FLT_MAX, "%.3f", ImGuiSliderFlags_None);
 
             ImGui::Text("Attenuation Factors");
             ImGui::DragFloat("Constant", (float*)&light.constantAttenuationFactor, 0.05f, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_None);

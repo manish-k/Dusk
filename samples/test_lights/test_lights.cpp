@@ -27,12 +27,18 @@ bool TestLights::start()
     m_testScene           = Scene::createSceneFromGLTF(scenePath);
 
     // adding ambient light
+    auto ambientLight = dusk::createUnique<GameObject>();
+    ambientLight->setName("ambient_light");
+    auto& aLight = ambientLight->addComponent<AmbientLightComponent>();
+    aLight.color = glm::vec4(1.f, 1.f, 1.f, 0.1);
+    m_testScene->addGameObject(std::move(ambientLight), m_testScene->getRootId());
+     
     // adding directional light
-    auto directionalLight = dusk::createUnique<GameObject>();
-    directionalLight->setName("directional_light_1");
-    auto& light = directionalLight->addComponent<DirectionalLightComponent>();
-    light.direction = glm::vec3(4.f, -2.f, -6.f);
-    m_testScene->addGameObject(std::move(directionalLight), m_testScene->getRootId());
+    //auto directionalLight = dusk::createUnique<GameObject>();
+    //directionalLight->setName("directional_light_0");
+    //auto& light = directionalLight->addComponent<DirectionalLightComponent>();
+    //light.direction = glm::vec3(4.f, -2.f, -6.f);
+    //m_testScene->addGameObject(std::move(directionalLight), m_testScene->getRootId());
 
     //auto directionalLight2 = dusk::createUnique<GameObject>();
     //directionalLight2->setName("directional_light_2");
@@ -41,13 +47,23 @@ bool TestLights::start()
     //light2.color     = glm::vec4(255, 0, 0, 200);
     //m_testScene->addGameObject(std::move(directionalLight2), m_testScene->getRootId());
 
+    // adding point light
+    auto pointLight = dusk::createUnique<GameObject>();
+    pointLight->setName("point_light_0");
+    auto& pointTransform = pointLight->getComponent<TransformComponent>();
+    pointTransform.translation = glm::vec3(0.f, 3.f, 0.f);
+    auto& light     = pointLight->addComponent<PointLightComponent>();
+    light.color = glm::vec4(1.f, 1.f, 1.f, 0.8);
+    
+    m_testScene->addGameObject(std::move(pointLight), m_testScene->getRootId());
+
     Engine::get().loadScene(m_testScene.get());
     Engine::get().setSkyboxVisibility(false);
 
     auto& cameraTransform       = m_testScene->getMainCameraTransform();
     auto& camera                = m_testScene->getMainCamera();
 
-    cameraTransform.translation = { 0.f, 1.5f, 20.f };
+    cameraTransform.translation = { 3.f, 2.3f, 10.f };
     camera.setViewTarget(cameraTransform.translation, glm::vec3 { 0.f }, {0.f, 1.f, 0.f});
 
     return true;

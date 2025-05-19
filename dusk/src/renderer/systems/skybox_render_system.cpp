@@ -248,7 +248,11 @@ void SkyboxRenderSystem::setupDescriptors()
     imageInfo.imageView   = m_skyboxTexture.vkTexture.imageView;
     imageInfo.sampler     = m_skyboxTexture.vkSampler.sampler;
 
-    m_texDescriptorSet->configureImage(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 0, 1, &imageInfo);
+    m_texDescriptorSet->configureImage(
+        0,
+        0,
+        1,
+        &imageInfo);
 
     m_texDescriptorSet->applyConfiguration();
 }
@@ -256,7 +260,7 @@ void SkyboxRenderSystem::setupDescriptors()
 void SkyboxRenderSystem::setVisble(bool visibility)
 {
     UI::state().rendererState.useSkybox = visibility;
-    m_isEnable = visibility;
+    m_isEnable                          = visibility;
 };
 
 } // namespace dusk

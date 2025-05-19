@@ -38,7 +38,6 @@ void LightsSystem::registerAllLights(Scene& scene)
 
     m_lightsDescriptorSet->configureBuffer(
         AMBIENT_BIND_INDEX,
-        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
         0,
         1,
         &ambDescInfo);
@@ -59,7 +58,6 @@ void LightsSystem::registerAllLights(Scene& scene)
 
         m_lightsDescriptorSet->configureBuffer(
             DIRECTIONAL_BIND_INDEX,
-            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
             light.id,
             1,
             &dirDescInfo);
@@ -81,7 +79,6 @@ void LightsSystem::registerAllLights(Scene& scene)
 
         m_lightsDescriptorSet->configureBuffer(
             POINT_BIND_INDEX,
-            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
             light.id,
             1,
             &pointDescInfo);
@@ -103,7 +100,6 @@ void LightsSystem::registerAllLights(Scene& scene)
 
         m_lightsDescriptorSet->configureBuffer(
             SPOT_BIND_INDEX,
-            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
             light.id,
             1,
             &spotDescInfo);
@@ -118,7 +114,6 @@ void LightsSystem::registerAmbientLight(AmbientLightComponent& light)
 
     m_lightsDescriptorSet->configureBuffer(
         AMBIENT_BIND_INDEX,
-        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
         0,
         1,
         &descInfo);
@@ -138,7 +133,6 @@ void LightsSystem::registerDirectionalLight(DirectionalLightComponent& light)
 
     m_lightsDescriptorSet->configureBuffer(
         DIRECTIONAL_BIND_INDEX,
-        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
         light.id,
         1,
         &descInfo);
@@ -158,7 +152,6 @@ void LightsSystem::registerPointLight(PointLightComponent& light)
 
     m_lightsDescriptorSet->configureBuffer(
         POINT_BIND_INDEX,
-        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
         light.id,
         1,
         &descInfo);
@@ -178,7 +171,6 @@ void LightsSystem::registerSpotLight(SpotLightComponent& light)
 
     m_lightsDescriptorSet->configureBuffer(
         SPOT_BIND_INDEX,
-        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
         light.id,
         1,
         &descInfo);

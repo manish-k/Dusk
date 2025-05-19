@@ -290,7 +290,11 @@ bool Engine::setupGlobals()
     {
         buffersInfo.push_back(m_globalUbos.getDescriptorInfoAtIndex(frameIndex));
     }
-    m_globalDescriptorSet->configureBuffer(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, buffersInfo.size(), buffersInfo.data());
+    m_globalDescriptorSet->configureBuffer(
+        0,
+        0,
+        buffersInfo.size(),
+        buffersInfo.data());
 
     m_globalDescriptorSet->applyConfiguration();
 
@@ -345,7 +349,11 @@ void Engine::registerTextures(DynamicArray<Texture2D>& textures)
         imageInfo.imageView   = tex.vkTexture.imageView;
         imageInfo.sampler     = tex.vkSampler.sampler;
 
-        m_globalDescriptorSet->configureImage(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, tex.id, 1, &imageInfo);
+        m_globalDescriptorSet->configureImage(
+            1, 
+            tex.id, 
+            1, 
+            &imageInfo);
     }
 
     m_globalDescriptorSet->applyConfiguration();
@@ -361,7 +369,11 @@ void Engine::registerMaterials(DynamicArray<Material>& materials)
         matInfo.push_back(m_materialsBuffer.getDescriptorInfoAtIndex(matIndex));
     }
 
-    m_materialsDescriptorSet->configureBuffer(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0, materials.size(), matInfo.data());
+    m_materialsDescriptorSet->configureBuffer(
+        0, 
+        0, 
+        materials.size(), 
+        matInfo.data());
 
     m_materialsDescriptorSet->applyConfiguration();
 }

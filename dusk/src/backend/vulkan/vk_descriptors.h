@@ -77,7 +77,6 @@ struct VkGfxDescriptorSet
     /**
      * @brief Configure buffer which is part of descriptor
      * @param binding number in the set
-     * @param type of the buffer
      * @param dstIndex index of the element which has to be configured
      * @param count number of descriptors to update
      * @param bufferInfo contains buffer details for linking to the descriptor
@@ -85,7 +84,6 @@ struct VkGfxDescriptorSet
      */
     VkGfxDescriptorSet& configureBuffer(
         uint32_t                binding,
-        VkDescriptorType        type,
         uint32_t                dstIndex,
         uint32_t                count,
         VkDescriptorBufferInfo* bufferInfo);
@@ -93,7 +91,6 @@ struct VkGfxDescriptorSet
     /**
      * @brief Configure image which is part of descriptor
      * @param binding number in the set
-     * @param type
      * @param dstIndex index of the element which has to be configured
      * @param count number of descriptors to update
      * @param imageInfo contains image deatils for linking to the descriptor
@@ -101,7 +98,6 @@ struct VkGfxDescriptorSet
      */
     VkGfxDescriptorSet& configureImage(
         uint32_t               binding,
-        VkDescriptorType       type,
         uint32_t               dstIndex,
         uint32_t               count,
         VkDescriptorImageInfo* imageInfo);

@@ -147,7 +147,6 @@ void VkGfxDescriptorPool::resetPool()
 
 VkGfxDescriptorSet& VkGfxDescriptorSet::configureBuffer(
     uint32_t                binding,
-    VkDescriptorType        type,
     uint32_t                dstIndex,
     uint32_t                count,
     VkDescriptorBufferInfo* bufferInfo)
@@ -160,7 +159,7 @@ VkGfxDescriptorSet& VkGfxDescriptorSet::configureBuffer(
     write.dstBinding      = binding;
     write.pBufferInfo     = bufferInfo;
     write.descriptorCount = count;
-    write.descriptorType  = type;
+    write.descriptorType  = bindingDescription.descriptorType;
     write.dstArrayElement = dstIndex;
 
     writes.push_back(write);
@@ -170,7 +169,6 @@ VkGfxDescriptorSet& VkGfxDescriptorSet::configureBuffer(
 
 VkGfxDescriptorSet& VkGfxDescriptorSet::configureImage(
     uint32_t               binding,
-    VkDescriptorType       type,
     uint32_t               dstIndex,
     uint32_t               count,
     VkDescriptorImageInfo* imageInfo)
@@ -183,7 +181,7 @@ VkGfxDescriptorSet& VkGfxDescriptorSet::configureImage(
     write.dstBinding      = binding;
     write.pImageInfo      = imageInfo;
     write.descriptorCount = count;
-    write.descriptorType  = type;
+    write.descriptorType  = bindingDescription.descriptorType;
     write.dstArrayElement = dstIndex;
 
     writes.push_back(write);

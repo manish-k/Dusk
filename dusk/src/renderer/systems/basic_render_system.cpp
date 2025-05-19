@@ -118,7 +118,11 @@ void BasicRenderSystem::setupDescriptors()
         meshBufferInfo.push_back(m_modelsBuffer.getDescriptorInfoAtIndex(meshIdx));
     }
 
-    m_modelDescriptorSet->configureBuffer(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 0, 1, meshBufferInfo.data());
+    m_modelDescriptorSet->configureBuffer(
+        0,
+        0,
+        1,
+        meshBufferInfo.data());
 
     m_modelDescriptorSet->applyConfiguration();
 }

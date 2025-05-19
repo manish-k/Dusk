@@ -1,8 +1,9 @@
 #version 450
 #extension GL_EXT_nonuniform_qualifier : enable
 
-layout(location = 0) in vec3 fragColor;
+layout(location = 0) in vec3 fragWorldPos;
 layout(location = 1) in vec2 fragUV;
+layout(location = 2) in vec3 fragNormal;
 
 layout (location = 0) out vec4 outColor;
 
@@ -50,14 +51,37 @@ layout(push_constant) uniform DrawData
 	uint materialIdx;
 } push;
 
+vec3 computeDirectionalLight(uint lightIdx, vec3 viewDirection, vec3 normal)
+{
+    vec3 lightDir = normalize(-dirLights[lightIdx].direction);
+	vec3 lightColor = dirLights[lightIdx].color.xyz;
+	float lightIntensity = dirLights[lightIdx].color.w;
+    
+	// diffuse shading
+    float diff = max(dot(normal, lightDir), 0.0);
+    
+	// specular shading
+    vec3 reflectDir = reflect(-lightDir, normal);
+    float spec = pow(max(dot(viewDirection, reflectDir), 0.0), 300);
+    
+	// combine results
+    vec3 diffuse  = lightColor * diff * lightIntensity;
+    vec3 specular = lightColor * spec * lightIntensity;
+    return (diffuse + specular);
+}
+
 void main() {
+	uint guboIdx = nonuniformEXT(push.cameraIdx);
+
+	vec3 surfaceNormal = normalize(fragNormal);
+	vec3 cameraPos = globalubo[guboIdx].inverseView[3].xyz;
+	vec3 viewDirection = normalize(cameraPos - fragWorldPos);
+
 	uint materialIdx = nonuniformEXT(push.materialIdx);
 	int textureIdx = materials[materialIdx].albedoTexId;
 	vec4 baseColor = materials[materialIdx].albedoColor;
 	
-	uint guboIdx = nonuniformEXT(push.cameraIdx);
-
-	vec4 dirColor = vec4(1.f, 1.f, 1.f, 1.f);
+	vec3 dirColor = baseColor.xyz * texture(textures[nonuniformEXT(textureIdx)], fragUV).xyz;;
 	uint dirCount  = globalubo[guboIdx].directionalLightsCount;
     uint vec4Count = (dirCount + 3u) >> 2;   // divide by 4, round up
 
@@ -65,12 +89,12 @@ void main() {
     {
         uvec4 idx4 = globalubo[guboIdx].directionalLightIndices[v];
 
-        if (4u*v + 0u < dirCount) dirColor = dirColor * dirLights[nonuniformEXT(idx4.x)].color;
-        if (4u*v + 1u < dirCount) dirColor = dirColor * dirLights[nonuniformEXT(idx4.y)].color;
-        if (4u*v + 2u < dirCount) dirColor = dirColor * dirLights[nonuniformEXT(idx4.z)].color;
-        if (4u*v + 3u < dirCount) dirColor = dirColor * dirLights[nonuniformEXT(idx4.w)].color;
+        if (4u*v + 0u < dirCount) dirColor = dirColor * computeDirectionalLight(idx4.x, viewDirection, surfaceNormal);
+        if (4u*v + 1u < dirCount) dirColor = dirColor * computeDirectionalLight(idx4.y, viewDirection, surfaceNormal);
+        if (4u*v + 2u < dirCount) dirColor = dirColor * computeDirectionalLight(idx4.z, viewDirection, surfaceNormal);
+        if (4u*v + 3u < dirCount) dirColor = dirColor * computeDirectionalLight(idx4.w, viewDirection, surfaceNormal);
     }
 	
-	outColor = dirColor;
+	outColor = vec4(dirColor.xyz, 1.0f);
 	//outColor = baseColor * texture(textures[nonuniformEXT(textureIdx)], fragUV);
 }

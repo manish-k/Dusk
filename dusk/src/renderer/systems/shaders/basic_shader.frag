@@ -63,11 +63,14 @@ layout(set = 2, binding = 2) buffer PointLight
 layout(set = 2, binding = 3) buffer SpotLight
 {
 	int id;
-	int pad0;
-	int pad1;
-	int pad2;
+	float constantAttenuationFactor;
+	float linearAttenuationFactor;
+	float quadraticAttenuationFactor;
 	vec4 color;
+	vec3 position;
+	float innerCutOff;
 	vec3 direction;
+	float outerCutOff;
 } spotLights[];
 
 layout(push_constant) uniform DrawData 
@@ -125,6 +128,54 @@ vec3 computePointLight(uint lightIdx, vec3 fragPosition, vec3 viewDirection, vec
     return (diffuse + specular);
 }
 
+vec3 computeSpotLight(uint lightIdx, vec3 fragPosition, vec3 viewDirection, vec3 normal)
+{
+	vec3 lightPosition = spotLights[lightIdx].position;
+	vec3 lightSrcDirection = normalize(lightPosition - fragPosition);
+	vec3 lightDirection = normalize(-spotLights[lightIdx].direction);
+	vec3 lightColor = spotLights[lightIdx].color.xyz;
+	float lightIntensity = spotLights[lightIdx].color.w;
+
+	// cutoff calculations
+	float theta     = dot(lightSrcDirection, lightDirection);
+	float innerCutOff = spotLights[lightIdx].innerCutOff;
+	float outerCutOff = spotLights[lightIdx].outerCutOff;
+	float epsilon   = innerCutOff - outerCutOff;
+	
+	if (theta > outerCutOff)
+	{
+		float intensityFalloffMult = 1.f;
+		if (theta < innerCutOff)
+			intensityFalloffMult = clamp((theta - outerCutOff) / epsilon, 0.0, 1.0);
+
+			// diffuse shading
+		float diff = max(dot(normal, lightSrcDirection), 0.0);
+    
+		// specular shading
+		vec3 reflectDirection = reflect(-lightSrcDirection, normal);
+		float spec = pow(max(dot(viewDirection, reflectDirection), 0.0), 300);
+    
+		// attenuation
+		float constant = spotLights[lightIdx].constantAttenuationFactor;
+		float linear = spotLights[lightIdx].linearAttenuationFactor;
+		float quad = spotLights[lightIdx].quadraticAttenuationFactor;
+		float distance    = length(lightPosition - fragPosition);
+		float attenuation = 1.0 / (constant + linear * distance + 
+  					 quad * (distance * distance));    
+    
+		// combine results
+		vec3 diffuse  = lightColor * diff * lightIntensity * intensityFalloffMult;
+		vec3 specular = lightColor * spec * lightIntensity * intensityFalloffMult;
+		diffuse  *= attenuation;
+		specular *= attenuation;
+		return (diffuse + specular);
+	}
+	else
+	{
+		return vec3(0.f); // no color
+	}
+}
+
 void main() {
 	uint guboIdx = nonuniformEXT(push.cameraIdx);
 
@@ -147,10 +198,10 @@ void main() {
     {
         uvec4 idx4 = globalubo[guboIdx].directionalLightIndices[v];
 
-        if (4u*v + 0u < dirCount) lightColor = lightColor * computeDirectionalLight(idx4.x, viewDirection, surfaceNormal);
-        if (4u*v + 1u < dirCount) lightColor = lightColor * computeDirectionalLight(idx4.y, viewDirection, surfaceNormal);
-        if (4u*v + 2u < dirCount) lightColor = lightColor * computeDirectionalLight(idx4.z, viewDirection, surfaceNormal);
-        if (4u*v + 3u < dirCount) lightColor = lightColor * computeDirectionalLight(idx4.w, viewDirection, surfaceNormal);
+        if (4u*v + 0u < dirCount) lightColor = lightColor + computeDirectionalLight(idx4.x, viewDirection, surfaceNormal);
+        if (4u*v + 1u < dirCount) lightColor = lightColor + computeDirectionalLight(idx4.y, viewDirection, surfaceNormal);
+        if (4u*v + 2u < dirCount) lightColor = lightColor + computeDirectionalLight(idx4.z, viewDirection, surfaceNormal);
+        if (4u*v + 3u < dirCount) lightColor = lightColor + computeDirectionalLight(idx4.w, viewDirection, surfaceNormal);
     }
 
 	// compute contribution of all point lights
@@ -160,10 +211,23 @@ void main() {
     {
         uvec4 idx4 = globalubo[guboIdx].pointLightIndices[v];
 
-        if (4u*v + 0u < pointCount) lightColor = lightColor * computePointLight(idx4.x, fragWorldPos, viewDirection, surfaceNormal);
-        if (4u*v + 1u < pointCount) lightColor = lightColor * computePointLight(idx4.y, fragWorldPos, viewDirection, surfaceNormal);
-        if (4u*v + 2u < pointCount) lightColor = lightColor * computePointLight(idx4.z, fragWorldPos, viewDirection, surfaceNormal);
-        if (4u*v + 3u < pointCount) lightColor = lightColor * computePointLight(idx4.w, fragWorldPos, viewDirection, surfaceNormal);
+        if (4u*v + 0u < pointCount) lightColor = lightColor + computePointLight(idx4.x, fragWorldPos, viewDirection, surfaceNormal);
+        if (4u*v + 1u < pointCount) lightColor = lightColor + computePointLight(idx4.y, fragWorldPos, viewDirection, surfaceNormal);
+        if (4u*v + 2u < pointCount) lightColor = lightColor + computePointLight(idx4.z, fragWorldPos, viewDirection, surfaceNormal);
+        if (4u*v + 3u < pointCount) lightColor = lightColor + computePointLight(idx4.w, fragWorldPos, viewDirection, surfaceNormal);
+    }
+
+	// compute contribution of all spot lights
+	uint spotCount  = globalubo[guboIdx].spotLightsCount;
+    vec4Count = (spotCount + 3u) >> 2;   // divide by 4, round up
+    for (uint v = 0u; v < vec4Count; ++v)
+    {
+        uvec4 idx4 = globalubo[guboIdx].spotLightIndices[v];
+
+        if (4u*v + 0u < spotCount) lightColor = lightColor + computeSpotLight(idx4.x, fragWorldPos, viewDirection, surfaceNormal);
+        if (4u*v + 1u < spotCount) lightColor = lightColor + computeSpotLight(idx4.y, fragWorldPos, viewDirection, surfaceNormal);
+        if (4u*v + 2u < spotCount) lightColor = lightColor + computeSpotLight(idx4.z, fragWorldPos, viewDirection, surfaceNormal);
+        if (4u*v + 3u < spotCount) lightColor = lightColor + computeSpotLight(idx4.w, fragWorldPos, viewDirection, surfaceNormal);
     }
 	
 	lightColor = lightColor + ambientColor;

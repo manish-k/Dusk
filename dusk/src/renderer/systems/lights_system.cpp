@@ -224,11 +224,14 @@ void LightsSystem::updateLights(Scene& scene, GlobalUbo& ubo)
     }
     ubo.pointLightsCount = m_pointLightsCount;
 
-    auto spotLightList   = scene.GetGameObjectsWith<SpotLightComponent>();
+    auto spotLightList   = scene.GetGameObjectsWith<SpotLightComponent, TransformComponent>();
     counter              = 0u;
     for (auto& entity : spotLightList)
     {
-        auto& light = spotLightList.get<SpotLightComponent>(entity);
+        auto& light     = spotLightList.get<SpotLightComponent>(entity);
+        auto& transform = pointLightList.get<TransformComponent>(entity);
+
+        light.position  = transform.translation;
 
         if (light.id == -1) continue;
 

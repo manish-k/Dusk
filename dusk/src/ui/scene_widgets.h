@@ -158,7 +158,12 @@ inline void drawSceneGraphWidget(Scene& scene)
 
         if (selectedGameObject.hasComponent<SpotLightComponent>())
         {
+            ImGui::SeparatorText("Spot Light");
+
             SpotLightComponent& light = selectedGameObject.getComponent<SpotLightComponent>();
+
+            float               innerAngle = glm::degrees(glm::acos(light.innerCutOff));
+            float               outerAngle = glm::degrees(glm::acos(light.outerCutOff));
 
             ImGui::DragFloat3("Direction", (float*)&light.direction);
             ImGui::ColorEdit3("Color", (float*)&light.color);
@@ -170,8 +175,15 @@ inline void drawSceneGraphWidget(Scene& scene)
             ImGui::DragFloat("Quadratic", (float*)&light.quadraticAttenuationFactor, 0.05f, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_None);
 
             ImGui::Text("Cone CutOff Angles");
-            ImGui::DragFloat("Inner Angle", (float*)&light.innerCutOffAngle, 0.05f, 0.0f, 90.0f, "%.3f", ImGuiSliderFlags_None);
-            ImGui::DragFloat("Outer Angle", (float*)&light.outerCutOffAngle, 0.05f, 0.0f, 90.0f, "%.3f", ImGuiSliderFlags_None);
+            if (ImGui::DragFloat("Inner Angle", (float*)&innerAngle, 0.05f, 0.0f, 90.0f, "%.3f", ImGuiSliderFlags_None))
+            {
+                light.innerCutOff = glm::cos(glm::radians(innerAngle));
+            }
+
+            if (ImGui::DragFloat("Outer Angle", (float*)&outerAngle, 0.05f, innerAngle, 90.0f, "%.3f", ImGuiSliderFlags_None))
+            {
+                light.outerCutOff = glm::cos(glm::radians(outerAngle));
+            }
         }
     }
 

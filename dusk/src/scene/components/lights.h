@@ -41,10 +41,10 @@ struct alignas(16) SpotLightComponent
     float     linearAttenuationFactor    = 0.09f;
     float     quadraticAttenuationFactor = 0.032f;
 
-    glm::vec4 color { 1.0f };         // w component for intensity
+    glm::vec4 color { 1.0f };    // w component for intensity
     glm::vec3 position { 0.f };
-    float     innerCutOffAngle = 0.f; // in degrees
-    glm::vec3 direction { 0.f };      // direction where light is being pointed
-    float     outerCutOffAngle = 0.f; // in degrees
+    float     innerCutOff = 0.f; // cosine of angle
+    glm::vec3 direction { 0.f }; // direction where light is being pointed
+    float     outerCutOff = 0.f; // cosine of angle
 };
 } // namespace dusk

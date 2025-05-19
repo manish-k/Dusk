@@ -29,10 +29,17 @@ bool TestLights::start()
     // adding ambient light
     // adding directional light
     auto directionalLight = dusk::createUnique<GameObject>();
-    directionalLight->setName("directional_light");
+    directionalLight->setName("directional_light_1");
     auto& light = directionalLight->addComponent<DirectionalLightComponent>();
     light.direction = glm::vec3(1.f, 1.f, -1.f);
     m_testScene->addGameObject(std::move(directionalLight), m_testScene->getRootId());
+
+    auto directionalLight2 = dusk::createUnique<GameObject>();
+    directionalLight2->setName("directional_light_2");
+    auto& light2     = directionalLight2->addComponent<DirectionalLightComponent>();
+    light2.direction = glm::vec3(3.f, 3.f, -3.f);
+    light2.color     = glm::vec4(255, 0, 0, 200);
+    m_testScene->addGameObject(std::move(directionalLight2), m_testScene->getRootId());
 
     Engine::get().loadScene(m_testScene.get());
     Engine::get().setSkyboxVisibility(false);

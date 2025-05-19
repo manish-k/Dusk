@@ -295,7 +295,7 @@ void LightsSystem::setupDescriptors()
         GfxBufferUsageFlags::UniformBuffer,
         sizeof(DirectionalLightComponent),
         MAX_LIGHTS_PER_TYPE,
-        "directional_light_buffer",
+        "directional_lights_buffer",
         &m_directionalLightsBuffer);
 
     // create point light buffer
@@ -303,7 +303,7 @@ void LightsSystem::setupDescriptors()
         GfxBufferUsageFlags::UniformBuffer,
         sizeof(PointLightComponent),
         MAX_LIGHTS_PER_TYPE,
-        "point_light_buffer",
+        "point_lights_buffer",
         &m_pointLightsBuffer);
 
     // create spot light buffer
@@ -311,7 +311,7 @@ void LightsSystem::setupDescriptors()
         GfxBufferUsageFlags::UniformBuffer,
         sizeof(SpotLightComponent),
         MAX_LIGHTS_PER_TYPE,
-        "spot_light_buffer",
+        "spot_lights_buffer",
         &m_spotLightsBuffer);
 }
 

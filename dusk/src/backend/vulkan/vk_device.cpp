@@ -655,7 +655,9 @@ VulkanResult VkGfxDevice::createBuffer(const GfxBufferParams& params, VulkanGfxB
         DUSK_ERROR("Error in creating buffer {}", result.toString());
     }
 
-    vulkan::setAllocationName(m_gpuAllocator, pOutBuffer->allocation, params.debugName);
+#ifdef VK_RENDERER_DEBUG
+    vkdebug::setObjectName(m_device, VK_OBJECT_TYPE_BUFFER, (uint64_t)pOutBuffer->buffer, params.debugName.c_str());
+#endif
 
     pOutBuffer->alignmentSize = params.alignmentSize;
     return result;
@@ -741,8 +743,8 @@ void VkGfxDevice::copyBufferToImage(
 }
 
 void VkGfxDevice::copyBufferToImageRegions(
-    VulkanGfxBuffer*                buffer,
-    VulkanGfxImage*                 img,
+    VulkanGfxBuffer*                 buffer,
+    VulkanGfxImage*                  img,
     DynamicArray<VkBufferImageCopy>& regions)
 {
     VkCommandBuffer commandBuffer = beginSingleTimeCommands();

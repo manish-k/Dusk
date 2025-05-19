@@ -21,9 +21,9 @@ struct alignas(16) GlobalUbo
     uint32_t  spotLightsCount        = 0u;
     uint32_t  padding                = 0u;
 
-    alignas(16) Array<glm::vec4, MAX_LIGHTS_PER_TYPE / 4> directionalLightIndices;
-    alignas(16) Array<glm::vec4, MAX_LIGHTS_PER_TYPE / 4> pointLightIndices;
-    alignas(16) Array<glm::vec4, MAX_LIGHTS_PER_TYPE / 4> spotLightIndices;
+    alignas(16) Array<glm::uvec4, MAX_LIGHTS_PER_TYPE / 4> directionalLightIndices;
+    alignas(16) Array<glm::uvec4, MAX_LIGHTS_PER_TYPE / 4> pointLightIndices;
+    alignas(16) Array<glm::uvec4, MAX_LIGHTS_PER_TYPE / 4> spotLightIndices;
 };
 
 struct FrameData

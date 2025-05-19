@@ -29,12 +29,12 @@ layout (set = 1, binding = 0) buffer Material
 	int id;
 	int albedoTexId;
 	int normalTexId;
-	int padding;
+	int pad0;
 	vec4 albedoColor;
 
 } materials[];
 
-layout(set = 2, binding = 1) uniform DirectionalLight
+layout(set = 2, binding = 1) buffer DirectionalLight
 {
 	int id;
 	int pad0;

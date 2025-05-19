@@ -38,7 +38,7 @@ void LightsSystem::registerAllLights(Scene& scene)
 
     m_lightsDescriptorSet->configureBuffer(
         AMBIENT_BIND_INDEX,
-        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
         0,
         1,
         &ambDescInfo);
@@ -59,7 +59,7 @@ void LightsSystem::registerAllLights(Scene& scene)
 
         m_lightsDescriptorSet->configureBuffer(
             DIRECTIONAL_BIND_INDEX,
-            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
             light.id,
             1,
             &dirDescInfo);
@@ -81,7 +81,7 @@ void LightsSystem::registerAllLights(Scene& scene)
 
         m_lightsDescriptorSet->configureBuffer(
             POINT_BIND_INDEX,
-            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
             light.id,
             1,
             &pointDescInfo);
@@ -103,7 +103,7 @@ void LightsSystem::registerAllLights(Scene& scene)
 
         m_lightsDescriptorSet->configureBuffer(
             SPOT_BIND_INDEX,
-            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
             light.id,
             1,
             &spotDescInfo);
@@ -118,7 +118,7 @@ void LightsSystem::registerAmbientLight(AmbientLightComponent& light)
 
     m_lightsDescriptorSet->configureBuffer(
         AMBIENT_BIND_INDEX,
-        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
         0,
         1,
         &descInfo);
@@ -138,7 +138,7 @@ void LightsSystem::registerDirectionalLight(DirectionalLightComponent& light)
 
     m_lightsDescriptorSet->configureBuffer(
         DIRECTIONAL_BIND_INDEX,
-        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
         light.id,
         1,
         &descInfo);
@@ -158,7 +158,7 @@ void LightsSystem::registerPointLight(PointLightComponent& light)
 
     m_lightsDescriptorSet->configureBuffer(
         POINT_BIND_INDEX,
-        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
         light.id,
         1,
         &descInfo);
@@ -178,7 +178,7 @@ void LightsSystem::registerSpotLight(SpotLightComponent& light)
 
     m_lightsDescriptorSet->configureBuffer(
         SPOT_BIND_INDEX,
-        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
         light.id,
         1,
         &descInfo);
@@ -248,7 +248,7 @@ void LightsSystem::setupDescriptors()
 
     m_lightsDescriptorPool = VkGfxDescriptorPool::Builder(ctx)
                                  .addPoolSize(
-                                     VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                     VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                                      MAX_LIGHTS_PER_TYPE)
                                  .build(
                                      1,
@@ -257,24 +257,24 @@ void LightsSystem::setupDescriptors()
     m_lightsDescriptorSetLayout = VkGfxDescriptorSetLayout::Builder(ctx)
                                       .addBinding(
                                           AMBIENT_BIND_INDEX,
-                                          VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                          VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                                           VK_SHADER_STAGE_FRAGMENT_BIT,
                                           1) // Ambient light
                                       .addBinding(
                                           DIRECTIONAL_BIND_INDEX,
-                                          VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                          VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                                           VK_SHADER_STAGE_FRAGMENT_BIT,
                                           MAX_LIGHTS_PER_TYPE,
                                           true) // Directional Light
                                       .addBinding(
                                           POINT_BIND_INDEX,
-                                          VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                          VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                                           VK_SHADER_STAGE_FRAGMENT_BIT,
                                           MAX_LIGHTS_PER_TYPE,
                                           true) // Point Light
                                       .addBinding(
                                           SPOT_BIND_INDEX,
-                                          VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                          VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                                           VK_SHADER_STAGE_FRAGMENT_BIT,
                                           MAX_LIGHTS_PER_TYPE,
                                           true) // Spot Light
@@ -284,7 +284,7 @@ void LightsSystem::setupDescriptors()
 
     // create ambient light buffer
     GfxBuffer::createHostWriteBuffer(
-        GfxBufferUsageFlags::UniformBuffer,
+        GfxBufferUsageFlags::StorageBuffer,
         sizeof(AmbientLightComponent),
         1,
         "ambient_light_buffer",
@@ -292,7 +292,7 @@ void LightsSystem::setupDescriptors()
 
     // create directional light buffer
     GfxBuffer::createHostWriteBuffer(
-        GfxBufferUsageFlags::UniformBuffer,
+        GfxBufferUsageFlags::StorageBuffer,
         sizeof(DirectionalLightComponent),
         MAX_LIGHTS_PER_TYPE,
         "directional_lights_buffer",
@@ -300,7 +300,7 @@ void LightsSystem::setupDescriptors()
 
     // create point light buffer
     GfxBuffer::createHostWriteBuffer(
-        GfxBufferUsageFlags::UniformBuffer,
+        GfxBufferUsageFlags::StorageBuffer,
         sizeof(PointLightComponent),
         MAX_LIGHTS_PER_TYPE,
         "point_lights_buffer",
@@ -308,7 +308,7 @@ void LightsSystem::setupDescriptors()
 
     // create spot light buffer
     GfxBuffer::createHostWriteBuffer(
-        GfxBufferUsageFlags::UniformBuffer,
+        GfxBufferUsageFlags::StorageBuffer,
         sizeof(SpotLightComponent),
         MAX_LIGHTS_PER_TYPE,
         "spot_lights_buffer",

@@ -30,6 +30,7 @@ set(VULKAN_BACKEND_FILES
 	"${VULKAN_BACKEND_DIR}/vk_debug.h"
 	"${VULKAN_BACKEND_DIR}/vk_allocator.h"
 	"${VULKAN_BACKEND_DIR}/vk_descriptors.h"
+	"${VULKAN_BACKEND_DIR}/vk_pass.h"
 	# Source files
 	"${VULKAN_BACKEND_DIR}/vk.cpp"
 	"${VULKAN_BACKEND_DIR}/vk_renderer.cpp"
@@ -105,6 +106,7 @@ set(RENDERER_FILES
 	"${RENDERER_DIR}/image.h"
 	"${RENDERER_DIR}/texture.h"
 	"${RENDERER_DIR}/material.h"
+	"${RENDERER_DIR}/render_graph.h"
 	"${RENDERER_SYSTEMS_DIR}/basic_render_system.h"
 	"${RENDERER_SYSTEMS_DIR}/grid_render_system.h"
 	"${RENDERER_SYSTEMS_DIR}/skybox_render_system.h"

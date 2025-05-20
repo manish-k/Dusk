@@ -65,4 +65,11 @@ struct VulkanSampler
     VkSampler sampler;
 };
 
+struct VulkanRenderTarget
+{
+    VkImageView  imageView;
+    VkFormat     format;
+    VkClearValue clearValue;
+};
+
 } // namespace dusk

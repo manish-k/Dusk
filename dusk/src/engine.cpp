@@ -146,11 +146,15 @@ void Engine::onUpdate(TimeStep dt)
 
     if (VkCommandBuffer commandBuffer = m_renderer->beginFrame())
     {
+        auto      extent = m_renderer->getSwapChain().getCurrentExtent();
+
         FrameData frameData {
             currentFrameIndex,
             dt,
             commandBuffer,
             m_currentScene,
+            extent.width,
+            extent.height,
             m_globalDescriptorSet->set,
             m_lightsSystem->getLightsDescriptorSet().set,
             m_materialsDescriptorSet->set
@@ -263,15 +267,15 @@ bool Engine::setupGlobals()
     m_globalDescriptorPool = VkGfxDescriptorPool::Builder(ctx)
                                  .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, maxFramesCount)
                                  .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 100) // TODO: make count configurable
-                                 .setDebugName("global_desc_pool")                         
-        .build(1, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
+                                 .setDebugName("global_desc_pool")
+                                 .build(1, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
     CHECK_AND_RETURN_FALSE(!m_globalDescriptorPool);
 
     m_globalDescriptorSetLayout = VkGfxDescriptorSetLayout::Builder(ctx)
                                       .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS, maxFramesCount, true)
                                       .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1000, true) // TODO: make count configurable
-                                      .setDebugName("global_desc_set_layout")                              
-        .build();
+                                      .setDebugName("global_desc_set_layout")
+                                      .build();
     CHECK_AND_RETURN_FALSE(!m_globalDescriptorSetLayout);
 
     GfxBuffer::createHostWriteBuffer(
@@ -354,9 +358,9 @@ void Engine::registerTextures(DynamicArray<Texture2D>& textures)
         imageInfo.sampler     = tex.vkSampler.sampler;
 
         m_globalDescriptorSet->configureImage(
-            1, 
-            tex.id, 
-            1, 
+            1,
+            tex.id,
+            1,
             &imageInfo);
     }
 
@@ -374,9 +378,9 @@ void Engine::registerMaterials(DynamicArray<Material>& materials)
     }
 
     m_materialsDescriptorSet->configureBuffer(
-        0, 
-        0, 
-        materials.size(), 
+        0,
+        0,
+        materials.size(),
         matInfo.data());
 
     m_materialsDescriptorSet->applyConfiguration();

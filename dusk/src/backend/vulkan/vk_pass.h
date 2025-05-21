@@ -13,7 +13,7 @@ namespace dusk
  */
 struct VkGfxRenderPassContext
 {
-    VkCommandBuffer                         cmd;
+    VkCommandBuffer                         cmdBuffer;
     VkExtent2D                              extent;
     DynamicArray<VulkanRenderTarget>        colorTargets;
     VulkanRenderTarget                      depthTarget;
@@ -23,11 +23,43 @@ struct VkGfxRenderPassContext
     VkRenderingAttachmentInfo               depthAttachmentInfo {};
     VkRenderingInfo                         renderingInfo {};
 
+    DynamicArray<VkImageMemoryBarrier>      preBarriers;
+
+    /**
+     * @brief
+     * @param format
+     * @param oldLayout
+     * @param newLayout
+     * @param mipLevelCount
+     * @param layersCount
+     */
+    void insertTransitionBarrier(
+        VkFormat      format,
+        VkImageLayout oldLayout,
+        VkImageLayout newLayout,
+        uint32_t      mipLevelCount,
+        uint32_t      layersCount);
+
     /**
      * @brief begin rendering of the pass
      */
     void begin()
     {
+        if (!preBarriers.empty())
+        {
+            vkCmdPipelineBarrier(
+                cmdBuffer,
+                VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                0,
+                0,
+                nullptr,
+                0,
+                nullptr,
+                static_cast<uint32_t>(preBarriers.size()),
+                preBarriers.data());
+        }
+
         colorAttachmentInfos.clear();
         for (const auto& target : colorTargets)
         {
@@ -57,7 +89,7 @@ struct VkGfxRenderPassContext
         renderingInfo.pColorAttachments    = colorAttachmentInfos.data();
         renderingInfo.pDepthAttachment     = useDepth ? &depthAttachmentInfo : nullptr;
 
-        vkCmdBeginRendering(cmd, &renderingInfo);
+        vkCmdBeginRendering(cmdBuffer, &renderingInfo);
     }
 
     /**
@@ -65,7 +97,7 @@ struct VkGfxRenderPassContext
      */
     void end()
     {
-        vkCmdEndRendering(cmd);
+        vkCmdEndRendering(cmdBuffer);
     }
 };
 } // namespace dusk

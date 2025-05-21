@@ -32,6 +32,9 @@ struct FrameData
     TimeStep         frameTime;
     VkCommandBuffer  commandBuffer;
     Scene*           scene;
+    uint32_t         width;
+    uint32_t         height;
+    
     VkDescriptorSet& globalDescriptorSet;
     VkDescriptorSet& lightsDescriptorSet;
     VkDescriptorSet& materialDescriptorSet;

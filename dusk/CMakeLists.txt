@@ -94,6 +94,7 @@ set(PLATFORM_FILES
 set(RENDERER_DIR "${PROJECT_SOURCE_DIR}/src/renderer")
 set(RENDERER_SYSTEMS_DIR "${RENDERER_DIR}/systems")
 set(RENDERER_SHADERS_DIR "${RENDERER_SYSTEMS_DIR}/shaders")
+set(RENDERER_PASSES_DIR "${RENDERER_DIR}/passes")
 set(RENDERER_FILES
 	# Header files
 	"${RENDERER_DIR}/render_api.h"
@@ -111,14 +112,17 @@ set(RENDERER_FILES
 	"${RENDERER_SYSTEMS_DIR}/grid_render_system.h"
 	"${RENDERER_SYSTEMS_DIR}/skybox_render_system.h"
 	"${RENDERER_SYSTEMS_DIR}/lights_system.h"
+	"${RENDERER_PASSES_DIR}/render_passes.h"
 	# Source files
 	"${RENDERER_DIR}/sub_mesh.cpp"
 	"${RENDERER_DIR}/texture.cpp"
 	"${RENDERER_DIR}/gfx_buffer.cpp"
+	"${RENDERER_DIR}/render_graph.cpp"
 	"${RENDERER_SYSTEMS_DIR}/basic_render_system.cpp"
 	"${RENDERER_SYSTEMS_DIR}/grid_render_system.cpp"
 	"${RENDERER_SYSTEMS_DIR}/skybox_render_system.cpp"
 	"${RENDERER_SYSTEMS_DIR}/lights_system.cpp"
+	"${RENDERER_PASSES_DIR}/g_buffer_pass.cpp"
 )
 
 set(SCENE_DIR "${PROJECT_SOURCE_DIR}/src/scene")

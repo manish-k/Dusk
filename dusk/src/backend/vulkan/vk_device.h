@@ -42,8 +42,8 @@ public:
     void            freeBuffer(VulkanGfxBuffer* buffer);
     void            copyBuffer(
                    const VulkanGfxBuffer& srcBuffer,
-                   VulkanGfxBuffer& dstBuffer,
-                   VkDeviceSize     size);
+                   VulkanGfxBuffer&       dstBuffer,
+                   VkDeviceSize           size);
     void mapBuffer(VulkanGfxBuffer* buffer);
     void unmapBuffer(VulkanGfxBuffer* buffer);
     void flushBuffer(VulkanGfxBuffer* buffer);
@@ -84,9 +84,19 @@ public:
         uint32_t        mipLevelCount,
         uint32_t        layersCount,
         VkImageView*    pImageView) const;
-    void         freeImageView(VkImageView* pImageView) const;
-    VulkanResult createImageSampler(VulkanSampler* sampler) const;
-    void         freeImageSampler(VulkanSampler* sampler) const;
+    void               freeImageView(VkImageView* pImageView) const;
+    VulkanResult       createImageSampler(VulkanSampler* sampler) const;
+    void               freeImageSampler(VulkanSampler* sampler) const;
+
+    VulkanRenderTarget createRenderTarget(
+        const std::string& name,
+        uint32_t           width,
+        uint32_t           height,
+        VkFormat           format,
+        VkClearValue       clearValue);
+    void freeRenderTarget(VulkanRenderTarget& renderTarget);
+    VulkanTexture createDepthTexture(const std::string& name, uint32_t width, uint32_t height);
+    void          freeDepthTexture(VulkanTexture& tex);
 
 #ifdef VK_RENDERER_DEBUG
     static VKAPI_ATTR VkBool32 VKAPI_CALL vulkanDebugMessengerCallback(

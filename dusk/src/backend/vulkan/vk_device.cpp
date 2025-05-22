@@ -657,9 +657,9 @@ VulkanResult VkGfxDevice::createBuffer(const GfxBufferParams& params, VulkanGfxB
 
 #ifdef VK_RENDERER_DEBUG
     vkdebug::setObjectName(
-        m_device, 
-        VK_OBJECT_TYPE_BUFFER, 
-        (uint64_t)pOutBuffer->buffer, 
+        m_device,
+        VK_OBJECT_TYPE_BUFFER,
+        (uint64_t)pOutBuffer->buffer,
         params.debugName.c_str());
 #endif
 
@@ -891,6 +891,142 @@ VulkanResult VkGfxDevice::createImageSampler(VulkanSampler* sampler) const
 void VkGfxDevice::freeImageSampler(VulkanSampler* sampler) const
 {
     vkDestroySampler(m_device, sampler->sampler, nullptr);
+}
+
+VulkanRenderTarget VkGfxDevice::createRenderTarget(const std::string& name, uint32_t width, uint32_t height, VkFormat format, VkClearValue clearValue)
+{
+    VulkanRenderTarget target {};
+    target.format     = format;
+    target.clearValue = clearValue;
+
+    VkImageCreateInfo imageInfo { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
+    imageInfo.imageType     = VK_IMAGE_TYPE_2D;
+    imageInfo.extent.width  = width;
+    imageInfo.extent.height = height;
+    imageInfo.extent.depth  = 1;
+    imageInfo.mipLevels     = 1;
+    imageInfo.arrayLayers   = 1;
+    imageInfo.format        = format;
+    imageInfo.tiling        = VK_IMAGE_TILING_OPTIMAL;
+    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageInfo.usage         = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    imageInfo.samples       = VK_SAMPLE_COUNT_1_BIT;
+    imageInfo.sharingMode   = VK_SHARING_MODE_EXCLUSIVE;
+    imageInfo.flags         = 0;
+
+    // create image
+    VulkanResult result = vulkan::allocateGPUImage(
+        m_gpuAllocator,
+        imageInfo,
+        VMA_MEMORY_USAGE_AUTO,
+        VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
+        &target.image);
+
+    if (result.hasError())
+    {
+        DUSK_ERROR("Unable to create image for texture {}", result.toString());
+    }
+
+#ifdef VK_RENDERER_DEBUG
+    vkdebug::setObjectName(
+        m_device,
+        VK_OBJECT_TYPE_IMAGE,
+        (uint64_t)target.image.image,
+        name.c_str());
+
+#endif // VK_RENDERER_DEBUG
+
+    createImageView(
+        &target.image,
+        VK_IMAGE_VIEW_TYPE_2D,
+        format,
+        1,
+        1,
+        &target.imageView);
+
+#ifdef VK_RENDERER_DEBUG
+    vkdebug::setObjectName(
+        m_device,
+        VK_OBJECT_TYPE_IMAGE_VIEW,
+        (uint64_t)target.image.image,
+        (name + "_image_view").c_str());
+#endif // VK_RENDERER_DEBUG
+
+    return target;
+}
+
+void VkGfxDevice::freeRenderTarget(VulkanRenderTarget& renderTarget)
+{
+    freeImageView(&renderTarget.imageView);
+    vulkan::freeGPUImage(m_gpuAllocator, &renderTarget.image);
+}
+
+VulkanTexture VkGfxDevice::createDepthTexture(const std::string& name, uint32_t width, uint32_t height)
+{
+    VulkanTexture     depthTexture {};
+
+    VkFormat          depthFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
+
+    VkImageCreateInfo imageInfo { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
+    imageInfo.imageType     = VK_IMAGE_TYPE_2D;
+    imageInfo.extent.width  = width;
+    imageInfo.extent.height = height;
+    imageInfo.extent.depth  = 1;
+    imageInfo.mipLevels     = 1;
+    imageInfo.arrayLayers   = 1;
+    imageInfo.format        = depthFormat;
+    imageInfo.tiling        = VK_IMAGE_TILING_OPTIMAL;
+    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageInfo.usage         = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    imageInfo.samples       = VK_SAMPLE_COUNT_1_BIT;
+    imageInfo.sharingMode   = VK_SHARING_MODE_EXCLUSIVE;
+    imageInfo.flags         = 0;
+
+    // create image
+    VulkanResult result = vulkan::allocateGPUImage(
+        m_gpuAllocator,
+        imageInfo,
+        VMA_MEMORY_USAGE_AUTO,
+        VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
+        &depthTexture.image);
+
+#ifdef VK_RENDERER_DEBUG
+    vkdebug::setObjectName(
+        m_device,
+        VK_OBJECT_TYPE_IMAGE,
+        (uint64_t)depthTexture.image.image,
+        name.c_str());
+#endif // VK_RENDERER_DEBUG
+
+    VkImageViewCreateInfo viewInfo {};
+    viewInfo.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    viewInfo.image                           = depthTexture.image.image;
+    viewInfo.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
+    viewInfo.format                          = depthFormat;
+    viewInfo.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_DEPTH_BIT;
+    viewInfo.subresourceRange.baseMipLevel   = 0;
+    viewInfo.subresourceRange.levelCount     = 1;
+    viewInfo.subresourceRange.baseArrayLayer = 0;
+    viewInfo.subresourceRange.layerCount     = 1;
+
+    // create image view
+    result = vkCreateImageView(m_device, &viewInfo, nullptr, &depthTexture.imageView);
+
+#ifdef VK_RENDERER_DEBUG
+    vkdebug::setObjectName(
+        m_device,
+        VK_OBJECT_TYPE_IMAGE_VIEW,
+        (uint64_t)depthTexture.imageView,
+        (name + "_image_view").c_str());
+#endif // VK_RENDERER_DEBUG
+
+    return depthTexture;
+}
+
+void VkGfxDevice::freeDepthTexture(VulkanTexture& tex)
+{
+    freeImageView(&tex.imageView);
+    vulkan::freeGPUImage(m_gpuAllocator, &tex.image);
 }
 
 #ifdef VK_RENDERER_DEBUG

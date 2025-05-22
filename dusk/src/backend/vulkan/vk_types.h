@@ -67,7 +67,7 @@ struct VulkanSampler
 
 struct VulkanRenderTarget
 {
-    VkImage      image;
+    VulkanGfxImage image;
     VkImageView  imageView;
     VkFormat     format;
     VkClearValue clearValue;

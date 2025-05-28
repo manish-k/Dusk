@@ -15,20 +15,20 @@ namespace dusk
 // 4. Rasteriazation polygon and cullmode, linewidth for wireframes, maybe winding order
 struct VkGfxRenderPipelineConfig
 {
-    DynamicArray<VkDynamicState>        dynamicStates;
-    VkPipelineColorBlendAttachmentState colorBlendAttachment {};
+    DynamicArray<VkDynamicState>                      dynamicStates;
+    DynamicArray<VkPipelineColorBlendAttachmentState> colorBlendAttachment {};
 
-    DynamicArray<char>                  vertexShaderCode;   // TODO: avoid copying buffer
-    DynamicArray<char>                  fragmentShaderCode; // TODO: avoid copying buffer
+    DynamicArray<char>                                vertexShaderCode;   // TODO: avoid copying buffer
+    DynamicArray<char>                                fragmentShaderCode; // TODO: avoid copying buffer
 
-    DynamicArray<VkFormat>              colorAttachmentFormats;
+    DynamicArray<VkFormat>                            colorAttachmentFormats;
 
-    VkRenderPass                        renderPass     = VK_NULL_HANDLE;
-    uint32_t                            subpassIndex   = 0u;
+    VkRenderPass                                      renderPass     = VK_NULL_HANDLE;
+    uint32_t                                          subpassIndex   = 0u;
 
-    VkPipelineLayout                    pipelineLayout = VK_NULL_HANDLE;
+    VkPipelineLayout                                  pipelineLayout = VK_NULL_HANDLE;
 
-    VkCullModeFlagBits                  cullMode       = VK_CULL_MODE_NONE;
+    VkCullModeFlagBits                                cullMode       = VK_CULL_MODE_NONE;
 };
 
 class VkGfxRenderPipeline

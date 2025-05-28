@@ -5,15 +5,6 @@ namespace dusk
 VkGfxRenderPipeline::Builder::Builder(VulkanContext& vkContext) :
     m_context(vkContext)
 {
-    // default blend attachment state
-    m_renderConfig.colorBlendAttachment.colorWriteMask      = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-    m_renderConfig.colorBlendAttachment.blendEnable         = VK_FALSE;
-    m_renderConfig.colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
-    m_renderConfig.colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
-    m_renderConfig.colorBlendAttachment.colorBlendOp        = VK_BLEND_OP_ADD;
-    m_renderConfig.colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-    m_renderConfig.colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-    m_renderConfig.colorBlendAttachment.alphaBlendOp        = VK_BLEND_OP_ADD;
 }
 
 VkGfxRenderPipeline::Builder& VkGfxRenderPipeline::Builder::addDynamicState(VkDynamicState state)
@@ -55,6 +46,18 @@ VkGfxRenderPipeline::Builder& VkGfxRenderPipeline::Builder::setPipelineLayout(Vk
 VkGfxRenderPipeline::Builder& VkGfxRenderPipeline::Builder::addColorAttachmentFormat(VkFormat format)
 {
     m_renderConfig.colorAttachmentFormats.push_back(format);
+
+    VkPipelineColorBlendAttachmentState colorBlendAttachment {};
+    colorBlendAttachment.colorWriteMask      = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    colorBlendAttachment.blendEnable         = VK_FALSE;
+    colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
+    colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
+    colorBlendAttachment.colorBlendOp        = VK_BLEND_OP_ADD;
+    colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+    colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+    colorBlendAttachment.alphaBlendOp        = VK_BLEND_OP_ADD;
+    m_renderConfig.colorBlendAttachment.push_back(colorBlendAttachment);
+
     return *this;
 }
 
@@ -110,12 +113,12 @@ VkGfxRenderPipeline::VkGfxRenderPipeline(VulkanContext& vkContext, VkGfxRenderPi
     colorBlendInfo.sType             = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     colorBlendInfo.logicOpEnable     = VK_FALSE;
     colorBlendInfo.logicOp           = VK_LOGIC_OP_COPY;
-    colorBlendInfo.attachmentCount   = 1;
+    colorBlendInfo.attachmentCount   = renderConfig.colorBlendAttachment.size();
     colorBlendInfo.blendConstants[0] = 0.0f;
     colorBlendInfo.blendConstants[1] = 0.0f;
     colorBlendInfo.blendConstants[2] = 0.0f;
     colorBlendInfo.blendConstants[3] = 0.0f;
-    colorBlendInfo.pAttachments      = &renderConfig.colorBlendAttachment;
+    colorBlendInfo.pAttachments      = renderConfig.colorBlendAttachment.data();
 
     // input assembly state
     VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo {};

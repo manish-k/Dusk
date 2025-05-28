@@ -2,6 +2,7 @@
 
 #include "core/application.h"
 #include "platform/window.h"
+#include "platform/file_system.h"
 #include "utils/utils.h"
 #include "ui/ui.h"
 
@@ -15,13 +16,14 @@
 #include "backend/vulkan/vk_renderer.h"
 #include "backend/vulkan/vk_descriptors.h"
 
-#include "renderer/frame_data.h"
 #include "renderer/material.h"
 #include "renderer/texture.h"
 #include "renderer/systems/basic_render_system.h"
 #include "renderer/systems/grid_render_system.h"
 #include "renderer/systems/skybox_render_system.h"
 #include "renderer/systems/lights_system.h"
+#include "renderer/render_graph.h"
+#include "renderer/passes/render_passes.h"
 
 namespace dusk
 {
@@ -92,6 +94,8 @@ bool Engine::start(Shared<Application> app)
         *m_gfxDevice,
         *m_globalDescriptorSetLayout);
 
+    prepareRenderGraphResources();
+
     m_ui = createUnique<UI>();
     if (!m_ui->init(*m_window))
     {
@@ -160,9 +164,9 @@ void Engine::onUpdate(TimeStep dt)
             m_materialsDescriptorSet->set
         };
 
-        m_renderer->beginRendering(commandBuffer);
+        // m_renderer->beginRendering(commandBuffer);
 
-        m_ui->beginRendering();
+        // m_ui->beginRendering();
 
         if (m_currentScene)
         {
@@ -183,17 +187,19 @@ void Engine::onUpdate(TimeStep dt)
             updateMaterialsBuffer(m_currentScene->getMaterials());
 
             // TODO:: maybe scene onUpdate is the right place for this
-            m_ui->renderSceneWidgets(*m_currentScene);
+            // m_ui->renderSceneWidgets(*m_currentScene);
         }
 
-        m_basicRenderSystem->renderGameObjects(frameData);
+        // m_basicRenderSystem->renderGameObjects(frameData);
 
         // m_gridRenderSystem->renderGrid(frameData);
-        m_skyboxRenderSystem->renderSkybox(frameData);
+        // m_skyboxRenderSystem->renderSkybox(frameData);
 
-        m_ui->endRendering(commandBuffer);
+        // m_ui->endRendering(commandBuffer);
 
-        m_renderer->endRendering(commandBuffer);
+        renderFrame(frameData);
+
+        // m_renderer->endRendering(commandBuffer);
 
         m_renderer->endFrame();
     }
@@ -256,6 +262,43 @@ void Engine::loadScene(Scene* scene)
     registerMaterials(scene->getMaterials());
 
     m_lightsSystem->registerAllLights(*scene);
+}
+
+void Engine::renderFrame(FrameData& frameData)
+{
+    RenderGraph renderGraph;
+
+    // create g-buffer pass
+    auto gbuffCtx = VkGfxRenderPassContext {
+        .colorTargets = m_rgResources.gbuffRenderTargets, // TODO: avoidable copy
+        .depthTarget  = m_rgResources.gbuffDepthTexture,
+        .useDepth     = true
+    };
+
+    gbuffCtx.insertTransitionBarrier(
+        { gbuffCtx.colorTargets[0].image.image,
+          VK_IMAGE_LAYOUT_UNDEFINED,
+          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+          0,
+          VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+          VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+          VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT });
+    gbuffCtx.insertTransitionBarrier(
+        { gbuffCtx.colorTargets[1].image.image,
+          VK_IMAGE_LAYOUT_UNDEFINED,
+          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+          0,
+          VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+          VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+          VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT });
+
+    renderGraph.setPassContext("gbuffer", gbuffCtx);
+    renderGraph.addPass("gbuffer", recordGBufferCmds);
+
+    // create lighting pass
+
+    // execute render graph
+    renderGraph.execute(frameData);
 }
 
 bool Engine::setupGlobals()
@@ -344,6 +387,8 @@ void Engine::cleanupGlobals()
 
     m_globalUbos.free();
     m_materialsBuffer.free();
+
+    releaseRenderGraphResources();
 }
 
 void Engine::registerTextures(DynamicArray<Texture2D>& textures)
@@ -393,6 +438,119 @@ void Engine::updateMaterialsBuffer(DynamicArray<Material>& materials)
         DASSERT(materials[index].id != -1);
         m_materialsBuffer.writeAndFlushAtIndex(materials[index].id, &materials[index], sizeof(Material));
     }
+}
+
+void Engine::prepareRenderGraphResources()
+{
+    auto& ctx    = VkGfxDevice::getSharedVulkanContext();
+    auto  extent = m_renderer->getSwapChain().getCurrentExtent();
+
+    // g-buffer resources
+    // Allocate g-buffer render targets
+    m_rgResources.gbuffRenderTargets.push_back(m_gfxDevice->createRenderTarget(
+        "gbuffer_albedo",
+        extent.width,
+        extent.height,
+        VK_FORMAT_R8G8B8A8_UNORM,
+        { 0, 0, 0, 0 }));
+    m_rgResources.gbuffRenderTargets.push_back(m_gfxDevice->createRenderTarget(
+        "gbuffer_normal",
+        extent.width,
+        extent.height,
+        VK_FORMAT_R16G16B16A16_SFLOAT,
+        { 0, 0, 0, 0 }));
+
+    // Allocate g-buffer depth texture
+    m_rgResources.gbuffDepthTexture = m_gfxDevice->createDepthTarget(
+        "gbuffer_depth",
+        extent.width,
+        extent.height,
+        VK_FORMAT_D32_SFLOAT_S8_UINT,
+        { 0, 0, 0, 0 });
+
+    m_rgResources.gbuffModelDescriptorPool = VkGfxDescriptorPool::Builder(ctx)
+                                                 .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1)
+                                                 .setDebugName("model_desc_pool")
+                                                 .build(1);
+
+    m_rgResources.gbuffModelDescriptorSetLayout = VkGfxDescriptorSetLayout::Builder(ctx)
+                                                      .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT, 1)
+                                                      .setDebugName("model_desc_set_layout")
+                                                      .build();
+
+    // create dynamic ubo
+    GfxBuffer::createHostWriteBuffer(
+        GfxBufferUsageFlags::UniformBuffer,
+        sizeof(ModelData),
+        maxRenderableMeshes,
+        "model_buffer",
+        &m_rgResources.gbuffModelsBuffer);
+
+    // create descriptor set
+    m_rgResources.gbuffModelDescriptorSet = m_rgResources.gbuffModelDescriptorPool->allocateDescriptorSet(
+        *m_rgResources.gbuffModelDescriptorSetLayout, "model_desc_set");
+
+    DynamicArray<VkDescriptorBufferInfo> meshBufferInfo;
+    meshBufferInfo.reserve(maxRenderableMeshes);
+    for (uint32_t meshIdx = 0u; meshIdx < maxRenderableMeshes; ++meshIdx)
+    {
+        meshBufferInfo.push_back(m_rgResources.gbuffModelsBuffer.getDescriptorInfoAtIndex(meshIdx));
+    }
+
+    m_rgResources.gbuffModelDescriptorSet->configureBuffer(
+        0,
+        0,
+        1,
+        meshBufferInfo.data());
+
+    m_rgResources.gbuffModelDescriptorSet->applyConfiguration();
+
+    // create g-buff pipeline layout
+    m_rgResources.gbuffPipelineLayout = VkGfxPipelineLayout::Builder(ctx)
+                                            .addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(DrawData))
+                                            .addDescriptorSetLayout(m_globalDescriptorSetLayout->layout)
+                                            .addDescriptorSetLayout(m_materialDescriptorSetLayout->layout)
+                                            .addDescriptorSetLayout(m_lightsSystem->getLightsDescriptorSetLayout().layout)
+                                            .addDescriptorSetLayout(m_rgResources.gbuffModelDescriptorSetLayout->layout)
+
+                                            .build();
+
+    // create g-buffer pipeline
+    std::filesystem::path buildPath  = STRING(DUSK_BUILD_PATH);
+    std::filesystem::path shaderPath = buildPath / "shaders/";
+
+    // load shaders
+    auto vertShaderCode = FileSystem::readFileBinary(shaderPath / "g_buffer.vert.spv");
+
+    auto fragShaderCode = FileSystem::readFileBinary(shaderPath / "g_buffer.frag.spv");
+
+    // create pipeline
+    m_rgResources.gbuffPipeline = VkGfxRenderPipeline::Builder(ctx)
+                                      .setVertexShaderCode(vertShaderCode)
+                                      .setFragmentShaderCode(fragShaderCode)
+                                      .setPipelineLayout(*m_rgResources.gbuffPipelineLayout)
+                                      .addColorAttachmentFormat(VK_FORMAT_R8G8B8A8_UNORM)      // albedo
+                                      .addColorAttachmentFormat(VK_FORMAT_R16G16B16A16_SFLOAT) // normal
+                                      .build();
+}
+
+void Engine::releaseRenderGraphResources()
+{
+    // release g-buffer resources
+    for (auto& target : m_rgResources.gbuffRenderTargets)
+    {
+        m_gfxDevice->freeRenderTarget(target);
+    }
+    m_gfxDevice->freeRenderTarget(m_rgResources.gbuffDepthTexture);
+
+    m_rgResources.gbuffPipeline       = nullptr;
+    m_rgResources.gbuffPipelineLayout = nullptr;
+
+    m_rgResources.gbuffModelDescriptorPool->resetPool();
+    m_rgResources.gbuffModelDescriptorSetLayout = nullptr;
+    m_rgResources.gbuffModelDescriptorPool      = nullptr;
+
+    m_rgResources.gbuffModelsBuffer.free();
 }
 
 void Engine::setSkyboxVisibility(bool state)

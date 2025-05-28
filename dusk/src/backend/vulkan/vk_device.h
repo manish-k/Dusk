@@ -94,9 +94,13 @@ public:
         uint32_t           height,
         VkFormat           format,
         VkClearValue       clearValue);
-    void freeRenderTarget(VulkanRenderTarget& renderTarget);
-    VulkanTexture createDepthTexture(const std::string& name, uint32_t width, uint32_t height);
-    void          freeDepthTexture(VulkanTexture& tex);
+    void               freeRenderTarget(VulkanRenderTarget& renderTarget);
+    VulkanRenderTarget createDepthTarget(
+        const std::string& name,
+        uint32_t           width,
+        uint32_t           height,
+        VkFormat           format,
+        VkClearValue       clearValue);
 
 #ifdef VK_RENDERER_DEBUG
     static VKAPI_ATTR VkBool32 VKAPI_CALL vulkanDebugMessengerCallback(

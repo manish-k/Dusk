@@ -23,7 +23,7 @@ struct VkGfxRenderPassContext
     VkRenderingAttachmentInfo               depthAttachmentInfo {};
     VkRenderingInfo                         renderingInfo {};
 
-    DynamicArray<VkImageMemoryBarrier>      preBarriers;
+    DynamicArray<VulkanImageBarier>         preBarriers;
 
     /**
      * @brief
@@ -34,11 +34,10 @@ struct VkGfxRenderPassContext
      * @param layersCount
      */
     void insertTransitionBarrier(
-        VkFormat      format,
-        VkImageLayout oldLayout,
-        VkImageLayout newLayout,
-        uint32_t      mipLevelCount,
-        uint32_t      layersCount);
+        VulkanImageBarier barrier)
+    {
+        preBarriers.push_back(barrier);
+    }
 
     /**
      * @brief begin rendering of the pass
@@ -47,17 +46,32 @@ struct VkGfxRenderPassContext
     {
         if (!preBarriers.empty())
         {
-            vkCmdPipelineBarrier(
-                cmdBuffer,
-                VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                0,
-                0,
-                nullptr,
-                0,
-                nullptr,
-                static_cast<uint32_t>(preBarriers.size()),
-                preBarriers.data());
+            for (const auto& barrierInfo : preBarriers)
+            {
+                VkImageMemoryBarrier barrier            = { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
+                barrier.oldLayout                       = barrierInfo.oldLayout;
+                barrier.newLayout                       = barrierInfo.newLayout;
+                barrier.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
+                barrier.dstQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
+                barrier.image                           = barrierInfo.image;
+                barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+                barrier.subresourceRange.baseMipLevel   = 0;
+                barrier.subresourceRange.levelCount     = 1;
+                barrier.subresourceRange.baseArrayLayer = 0;
+                barrier.subresourceRange.layerCount     = 1;
+
+                vkCmdPipelineBarrier(
+                    cmdBuffer,
+                    barrierInfo.srcStage,
+                    barrierInfo.dstStage,
+                    0,
+                    0,
+                    nullptr,
+                    0,
+                    nullptr,
+                    1,
+                    &barrier);
+            }
         }
 
         colorAttachmentInfos.clear();
@@ -80,7 +94,26 @@ struct VkGfxRenderPassContext
             depthAttachmentInfo.loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR;
             depthAttachmentInfo.storeOp     = VK_ATTACHMENT_STORE_OP_STORE;
             depthAttachmentInfo.clearValue  = depthTarget.clearValue;
-        };
+
+                VkImageMemoryBarrier depthBarrier { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
+            depthBarrier.dstAccessMask    = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+            depthBarrier.oldLayout        = VK_IMAGE_LAYOUT_UNDEFINED;
+            depthBarrier.newLayout        = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+            depthBarrier.image            = depthTarget.image.image;
+            depthBarrier.subresourceRange = { VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1 };
+
+            vkCmdPipelineBarrier(
+                cmdBuffer,
+                VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, // srcStageMask
+                VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, // dstStageMask
+                0,
+                0,
+                nullptr,
+                0,
+                nullptr,
+                1,
+                &depthBarrier);
+        }
 
         renderingInfo                      = { VK_STRUCTURE_TYPE_RENDERING_INFO };
         renderingInfo.renderArea           = { { 0, 0 }, extent };
@@ -90,6 +123,20 @@ struct VkGfxRenderPassContext
         renderingInfo.pDepthAttachment     = useDepth ? &depthAttachmentInfo : nullptr;
 
         vkCmdBeginRendering(cmdBuffer, &renderingInfo);
+
+        VkViewport viewport {};
+        viewport.x        = 0.0f;
+        viewport.y        = 0.0f;
+        viewport.width    = static_cast<float>(extent.width);
+        viewport.height   = static_cast<float>(extent.height);
+        viewport.minDepth = 0.0f;
+        viewport.maxDepth = 1.0f;
+        vkCmdSetViewport(cmdBuffer, 0, 1, &viewport);
+
+        VkRect2D scissor {};
+        scissor.offset = { 0, 0 };
+        scissor.extent = extent;
+        vkCmdSetScissor(cmdBuffer, 0, 1, &scissor);
     }
 
     /**

@@ -4,6 +4,11 @@
 
 #include "renderer/render_api.h"
 #include "renderer/gfx_buffer.h"
+#include "renderer/frame_data.h"
+
+#include "backend/vulkan/vk_descriptors.h"
+#include "backend/vulkan/vk_pipeline.h"
+#include "backend/vulkan/vk_pipeline_layout.h"
 
 namespace dusk
 {
@@ -28,6 +33,24 @@ struct VkGfxDescriptorSetLayout;
 struct VkGfxDescriptorSet;
 
 constexpr uint32_t maxMaterialCount = 1000;
+
+struct RenderGraphResources
+{
+    // g-buffer resources
+    DynamicArray<VulkanRenderTarget> gbuffRenderTargets;
+    VulkanRenderTarget               gbuffDepthTexture;
+    Unique<VkGfxRenderPipeline>      gbuffPipeline                 = nullptr;
+    Unique<VkGfxPipelineLayout>      gbuffPipelineLayout           = nullptr;
+    Unique<VkGfxDescriptorPool>      gbuffModelDescriptorPool      = nullptr;
+    Unique<VkGfxDescriptorSetLayout> gbuffModelDescriptorSetLayout = nullptr;
+    Unique<VkGfxDescriptorSet>       gbuffModelDescriptorSet       = nullptr;
+    GfxBuffer                        gbuffModelsBuffer;
+};
+
+const uint32_t GLOBAL_SET_INDEX   = 0;
+const uint32_t MATERIAL_SET_INDEX = 1;
+const uint32_t LIGHTS_SET_INDEX   = 2;
+const uint32_t MODEL_SET_INDEX    = 3;
 
 class Engine final
 {
@@ -57,6 +80,7 @@ public:
     void                  onUpdate(TimeStep dt);
     void                  onEvent(Event& ev);
     void                  loadScene(Scene* scene);
+    void                  renderFrame(FrameData& frameData);
 
     static Engine&        get() { return *s_instance; }
     static RenderAPI::API getRenderAPI() { return s_instance->m_config.renderAPI; }
@@ -74,8 +98,12 @@ public:
 
     TimeStep              getFrameDelta() const { return m_deltaTime; };
 
+    void                  prepareRenderGraphResources();
+    void                  releaseRenderGraphResources();
+    RenderGraphResources& getRenderGraphResources() { return m_rgResources; };
+
     // TODO:: should be part of config
-    void                  setSkyboxVisibility(bool state);
+    void setSkyboxVisibility(bool state);
 
 private:
     Config                           m_config;
@@ -112,6 +140,8 @@ private:
 
     GfxBuffer                        m_materialsBuffer;
     Unique<VkGfxDescriptorSet>       m_materialsDescriptorSet;
+
+    RenderGraphResources             m_rgResources;
 
 private:
     static Engine* s_instance;

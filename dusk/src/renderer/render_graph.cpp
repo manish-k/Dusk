@@ -4,7 +4,7 @@ namespace dusk
 {
 void RenderGraph::addPass(
     const std::string&     passName,
-    RecordCmdBuffFunction& recordFn)
+    const RecordCmdBuffFunction& recordFn)
 {
     DASSERT(!m_addedPasses.has(passName));
 

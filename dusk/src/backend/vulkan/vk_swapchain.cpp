@@ -242,6 +242,18 @@ Error VkGfxSwapChain::createSwapChain(const VkGfxSwapChainParams& params)
         return result.getErrorId();
     }
 
+    for (uint32_t imgIndex = 0u; imgIndex < m_swapChainImages.size(); ++imgIndex)
+    {
+#ifdef VK_RENDERER_DEBUG
+        std::string imgName = "swapchain_img_" + std::to_string(imgIndex);
+        vkdebug::setObjectName(
+            m_device,
+            VK_OBJECT_TYPE_IMAGE,
+            (uint64_t)m_swapChainImages[imgIndex],
+            (imgName).c_str());
+#endif // VK_RENDERER_DEBUG
+    }
+
     Error err = createImageViews(surfaceFormat.format);
     if (err != Error::Ok)
     {

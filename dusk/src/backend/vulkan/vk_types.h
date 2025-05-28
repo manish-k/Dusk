@@ -68,9 +68,20 @@ struct VulkanSampler
 struct VulkanRenderTarget
 {
     VulkanGfxImage image;
-    VkImageView  imageView;
-    VkFormat     format;
-    VkClearValue clearValue;
+    VkImageView    imageView;
+    VkFormat       format;
+    VkClearValue   clearValue;
+};
+
+struct VulkanImageBarier
+{
+    VkImage              image;
+    VkImageLayout        oldLayout;
+    VkImageLayout        newLayout;
+    VkAccessFlags        srcAccess;
+    VkAccessFlags        dstAccess;
+    VkPipelineStageFlags srcStage;
+    VkPipelineStageFlags dstStage;
 };
 
 } // namespace dusk

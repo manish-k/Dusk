@@ -11,7 +11,9 @@
 
 namespace dusk
 {
-using RecordCmdBuffFunction = std::function<void(FrameData&, VkGfxRenderPassContext&)>;
+using RecordCmdBuffFunction = std::function<void(
+    FrameData&, 
+    VkGfxRenderPassContext&)>;
 
 struct RenderGraphNode
 {
@@ -23,8 +25,8 @@ class RenderGraph
 {
 public:
     void addPass(
-        const std::string&     passName,
-        RecordCmdBuffFunction& recordFn);
+        const std::string&           passName,
+        const RecordCmdBuffFunction& recordFn);
     void setPassContext(const std::string& passName, const VkGfxRenderPassContext& ctx);
 
     void execute(FrameData& frameData);

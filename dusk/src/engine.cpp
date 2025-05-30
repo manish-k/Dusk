@@ -281,7 +281,7 @@ void Engine::renderFrame(FrameData& frameData)
           VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
           0,
           VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-          VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+          VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
           VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT });
     gbuffCtx.insertTransitionBarrier(
         { gbuffCtx.colorTargets[1].image.image,
@@ -289,13 +289,45 @@ void Engine::renderFrame(FrameData& frameData)
           VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
           0,
           VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+          VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+          VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT });
+
+    renderGraph.setPassContext("gbuffer_pass", gbuffCtx);
+    renderGraph.addPass("gbuffer_pass", recordGBufferCmds);
+
+    // create lighting pass
+
+    // create presentation pass
+    VulkanRenderTarget swapImageTarget = {
+        .image     = { .image = m_renderer->getSwapChain().getImage(frameData.frameIndex) },
+        .imageView = m_renderer->getSwapChain().getImageView(frameData.frameIndex),
+        .format    = m_renderer->getSwapChain().getImageFormat()
+    };
+
+    auto presentCtx = VkGfxRenderPassContext {
+        .colorTargets = { swapImageTarget },
+        .useDepth     = false
+    };
+
+    presentCtx.insertTransitionBarrier(
+        { gbuffCtx.colorTargets[0].image.image,
+          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+          VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+          VK_ACCESS_SHADER_READ_BIT,
+          VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+          VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT });
+    presentCtx.insertTransitionBarrier(
+        { swapImageTarget.image.image,
+          VK_IMAGE_LAYOUT_UNDEFINED,
+          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+          0,
+          VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
           VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
           VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT });
 
-    renderGraph.setPassContext("gbuffer", gbuffCtx);
-    renderGraph.addPass("gbuffer", recordGBufferCmds);
-
-    // create lighting pass
+    renderGraph.setPassContext("present_pass", presentCtx);
+    renderGraph.addPass("present_pass", recordPresentationCmds);
 
     // execute render graph
     renderGraph.execute(frameData);
@@ -452,13 +484,13 @@ void Engine::prepareRenderGraphResources()
         extent.width,
         extent.height,
         VK_FORMAT_R8G8B8A8_UNORM,
-        { 0, 0, 0, 0 }));
+        { 0.f, 0.f, 0.f, 1.f }));
     m_rgResources.gbuffRenderTargets.push_back(m_gfxDevice->createRenderTarget(
         "gbuffer_normal",
         extent.width,
         extent.height,
         VK_FORMAT_R16G16B16A16_SFLOAT,
-        { 0, 0, 0, 0 }));
+        { 0.f, 0.f, 0.f, 1.f }));
 
     // Allocate g-buffer depth texture
     m_rgResources.gbuffDepthTexture = m_gfxDevice->createDepthTarget(
@@ -466,7 +498,7 @@ void Engine::prepareRenderGraphResources()
         extent.width,
         extent.height,
         VK_FORMAT_D32_SFLOAT_S8_UINT,
-        { 0, 0, 0, 0 });
+        { 0.f, 0.f, 0.f, 1.f });
 
     m_rgResources.gbuffModelDescriptorPool = VkGfxDescriptorPool::Builder(ctx)
                                                  .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1)
@@ -486,7 +518,7 @@ void Engine::prepareRenderGraphResources()
         "model_buffer",
         &m_rgResources.gbuffModelsBuffer);
 
-    // create descriptor set
+    // create model descriptor set
     m_rgResources.gbuffModelDescriptorSet = m_rgResources.gbuffModelDescriptorPool->allocateDescriptorSet(
         *m_rgResources.gbuffModelDescriptorSetLayout, "model_desc_set");
 
@@ -519,12 +551,11 @@ void Engine::prepareRenderGraphResources()
     std::filesystem::path buildPath  = STRING(DUSK_BUILD_PATH);
     std::filesystem::path shaderPath = buildPath / "shaders/";
 
-    // load shaders
-    auto vertShaderCode = FileSystem::readFileBinary(shaderPath / "g_buffer.vert.spv");
+    // load shaders modules
+    auto vertShaderCode         = FileSystem::readFileBinary(shaderPath / "g_buffer.vert.spv");
 
-    auto fragShaderCode = FileSystem::readFileBinary(shaderPath / "g_buffer.frag.spv");
+    auto fragShaderCode         = FileSystem::readFileBinary(shaderPath / "g_buffer.frag.spv");
 
-    // create pipeline
     m_rgResources.gbuffPipeline = VkGfxRenderPipeline::Builder(ctx)
                                       .setVertexShaderCode(vertShaderCode)
                                       .setFragmentShaderCode(fragShaderCode)
@@ -532,6 +563,53 @@ void Engine::prepareRenderGraphResources()
                                       .addColorAttachmentFormat(VK_FORMAT_R8G8B8A8_UNORM)      // albedo
                                       .addColorAttachmentFormat(VK_FORMAT_R16G16B16A16_SFLOAT) // normal
                                       .build();
+
+    // presentation pass
+
+    // input descriptor
+    m_rgResources.presentTexDescriptorPool = VkGfxDescriptorPool::Builder(ctx)
+                                                 .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1)
+                                                 .setDebugName("present_desc_pool")
+                                                 .build(1);
+
+    m_rgResources.presentTexDescriptorSetLayout = VkGfxDescriptorSetLayout::Builder(ctx)
+                                                      .addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
+                                                      .setDebugName("present_desc_set_layout")
+                                                      .build();
+
+    m_rgResources.presentTexDescriptorSet = m_rgResources.presentTexDescriptorPool->allocateDescriptorSet(
+        *m_rgResources.presentTexDescriptorSetLayout,
+        "present_desc_set");
+
+    m_gfxDevice->createImageSampler(&m_rgResources.presentTexSampler);
+
+    VkDescriptorImageInfo imageInfo {};
+    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    imageInfo.imageView   = m_rgResources.gbuffRenderTargets[0].imageView;
+    imageInfo.sampler     = m_rgResources.presentTexSampler.sampler;
+
+    m_rgResources.presentTexDescriptorSet->configureImage(
+        0,
+        0,
+        1,
+        &imageInfo);
+    m_rgResources.presentTexDescriptorSet->applyConfiguration();
+
+    // pipeline
+    m_rgResources.presentPipelineLayout = VkGfxPipelineLayout::Builder(ctx)
+                                              .addDescriptorSetLayout(m_rgResources.presentTexDescriptorSetLayout->layout)
+                                              .build();
+
+    auto presentVertShaderCode    = FileSystem::readFileBinary(shaderPath / "present.vert.spv");
+
+    auto presentFragShaderCode    = FileSystem::readFileBinary(shaderPath / "present.frag.spv");
+
+    m_rgResources.presentPipeline = VkGfxRenderPipeline::Builder(ctx)
+                                        .setVertexShaderCode(presentVertShaderCode)
+                                        .setFragmentShaderCode(presentFragShaderCode)
+                                        .setPipelineLayout(*m_rgResources.presentPipelineLayout)
+                                        .addColorAttachmentFormat(VK_FORMAT_B8G8R8A8_SRGB)
+                                        .build();
 }
 
 void Engine::releaseRenderGraphResources()
@@ -551,6 +629,16 @@ void Engine::releaseRenderGraphResources()
     m_rgResources.gbuffModelDescriptorPool      = nullptr;
 
     m_rgResources.gbuffModelsBuffer.free();
+
+    // release present pass resources
+    m_rgResources.presentPipeline       = nullptr;
+    m_rgResources.presentPipelineLayout = nullptr;
+
+    m_rgResources.presentTexDescriptorPool->resetPool();
+    m_rgResources.presentTexDescriptorSetLayout = nullptr;
+    m_rgResources.presentTexDescriptorPool      = nullptr;
+
+    m_gfxDevice->freeImageSampler(&m_rgResources.presentTexSampler);
 }
 
 void Engine::setSkyboxVisibility(bool state)

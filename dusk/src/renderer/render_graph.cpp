@@ -26,9 +26,11 @@ void RenderGraph::execute(FrameData& frameData)
         renderCtx.cmdBuffer               = frameData.commandBuffer;
         renderCtx.extent                  = { frameData.width, frameData.height };
 
+        vkdebug::cmdBeginLabel(frameData.commandBuffer, pass.name.c_str(), glm::vec4(0.7f, 0.7f, 0.f, 0.f));
         renderCtx.begin();
         pass.recordFn(frameData, renderCtx);
         renderCtx.end();
+        vkdebug::cmdEndLabel(frameData.commandBuffer);
     }
 }
 } // namespace dusk

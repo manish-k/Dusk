@@ -45,6 +45,14 @@ struct RenderGraphResources
     Unique<VkGfxDescriptorSetLayout> gbuffModelDescriptorSetLayout = nullptr;
     Unique<VkGfxDescriptorSet>       gbuffModelDescriptorSet       = nullptr;
     GfxBuffer                        gbuffModelsBuffer;
+
+    // presentation pass resources
+    Unique<VkGfxRenderPipeline>      presentPipeline               = nullptr;
+    Unique<VkGfxPipelineLayout>      presentPipelineLayout         = nullptr;
+    Unique<VkGfxDescriptorPool>      presentTexDescriptorPool      = nullptr;
+    Unique<VkGfxDescriptorSetLayout> presentTexDescriptorSetLayout = nullptr;
+    Unique<VkGfxDescriptorSet>       presentTexDescriptorSet       = nullptr;
+    VulkanSampler                    presentTexSampler;
 };
 
 const uint32_t GLOBAL_SET_INDEX   = 0;

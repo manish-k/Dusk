@@ -123,6 +123,7 @@ set(RENDERER_FILES
 	"${RENDERER_SYSTEMS_DIR}/skybox_render_system.cpp"
 	"${RENDERER_SYSTEMS_DIR}/lights_system.cpp"
 	"${RENDERER_PASSES_DIR}/g_buffer_pass.cpp"
+	"${RENDERER_PASSES_DIR}/presentation_pass.cpp"
 )
 
 set(SCENE_DIR "${PROJECT_SOURCE_DIR}/src/scene")

@@ -93,9 +93,9 @@ struct VkGfxRenderPassContext
             depthAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
             depthAttachmentInfo.loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR;
             depthAttachmentInfo.storeOp     = VK_ATTACHMENT_STORE_OP_STORE;
-            depthAttachmentInfo.clearValue  = depthTarget.clearValue;
+            depthAttachmentInfo.clearValue  = { 1.0f, 0 };
 
-                VkImageMemoryBarrier depthBarrier { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
+            VkImageMemoryBarrier depthBarrier { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
             depthBarrier.dstAccessMask    = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
             depthBarrier.oldLayout        = VK_IMAGE_LAYOUT_UNDEFINED;
             depthBarrier.newLayout        = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;

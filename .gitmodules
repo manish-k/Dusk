@@ -35,3 +35,6 @@
 [submodule "dusk/vendor/assimp"]
 	path = dusk/vendor/assimp
 	url = https://github.com/assimp/assimp.git
+[submodule "dusk/vendor/tracy"]
+	path = dusk/vendor/tracy
+	url = https://github.com/wolfpld/tracy.git

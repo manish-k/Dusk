@@ -6,6 +6,11 @@ set(CMAKE_CXX_STANDARD 20)
 # spdlog
 add_subdirectory(spdlog)
 
+# tracy
+set(TRACY_ENABLE ON)
+set(TRACY_TIMER_FALLBACK ON)
+add_subdirectory(tracy)
+
 # glfw
 option(GLFW_BUILD_DOCS OFF)
 option(GLFW_BUILD_TESTS OFF)

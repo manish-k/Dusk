@@ -349,6 +349,11 @@ Error VkGfxDevice::createDevice()
         }
         pDeviceInfo->deviceFeatures2.features.samplerAnisotropy = VK_TRUE;
 
+        // check for gpu profiling extension/features
+#ifdef DUSK_ENABLE_PROFILING
+        
+#endif
+
         // check for descriptor indexing
         if (!deviceFeaturesVk12.descriptorIndexing)
         {

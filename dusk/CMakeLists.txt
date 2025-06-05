@@ -65,7 +65,9 @@ set(DEBUG_DIR "${PROJECT_SOURCE_DIR}/src/debug")
 set(DEBUG_FILES
 	# Header files
 	"${DEBUG_DIR}/renderdoc.h"
+	"${DEBUG_DIR}/profiler.h"
 	# Source files
+	"${DEBUG_DIR}/debug.cpp"
 )
 
 set(LOADERS_DIR "${PROJECT_SOURCE_DIR}/src/loaders")
@@ -215,6 +217,19 @@ target_include_directories(
 	${UTILS_DIR}
 )
 
+target_compile_definitions(${PROJECT_NAME} PUBLIC 
+	ENABLE_RENDERDOC
+)
+
+target_compile_definitions(${PROJECT_NAME} PUBLIC 
+	DUSK_ENABLE_PROFILING
+	TRACY_ENABLE
+)
+
+target_compile_definitions(${PROJECT_NAME} PUBLIC 
+	IMGUI_IMPL_VULKAN_USE_VOLK
+)
+
 add_subdirectory(vendor)
 
 # TODO: making links private, does not work currently
@@ -233,6 +248,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
 	excalibur_hash
 	renderdoc
 	assimp
+	TracyClient
 )
 
 if(CLANG_FORMAT_EXE)
@@ -262,14 +278,6 @@ elseif(UNIX)
 		DUSK_PLATFORM_UNIX
 	)
 endif()
-
-target_compile_definitions(${PROJECT_NAME} PUBLIC 
-	ENABLE_RENDERDOC
-)
-
-target_compile_definitions(${PROJECT_NAME} PUBLIC 
-	IMGUI_IMPL_VULKAN_USE_VOLK
-)
 
 set (ENGINE_TEXTURES_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/systems/textures")
 set (ENGINE_TEXTURES_DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/textures")

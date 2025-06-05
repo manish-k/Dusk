@@ -108,10 +108,14 @@ bool Engine::start(Shared<Application> app)
 
 void Engine::run()
 {
+    DUSK_PROFILE_FUNCTION;
+
     TimePoint m_lastFrameTime = Time::now();
 
     while (m_running)
     {
+        DUSK_PROFILE_FRAME;
+
         TimePoint newTime = Time::now();
         m_deltaTime       = newTime - m_lastFrameTime;
         m_lastFrameTime   = newTime;
@@ -146,6 +150,8 @@ void Engine::shutdown()
 
 void Engine::onUpdate(TimeStep dt)
 {
+    DUSK_PROFILE_FUNCTION;
+
     uint32_t currentFrameIndex = m_renderer->getCurrentFrameIndex();
 
     if (VkCommandBuffer commandBuffer = m_renderer->beginFrame())
@@ -170,6 +176,8 @@ void Engine::onUpdate(TimeStep dt)
 
         if (m_currentScene)
         {
+            DUSK_PROFILE_SECTION("scene_updates");
+
             m_currentScene->onUpdate(dt);
 
             CameraComponent& camera = m_currentScene->getMainCamera();
@@ -204,7 +212,10 @@ void Engine::onUpdate(TimeStep dt)
         m_renderer->endFrame();
     }
 
-    m_renderer->deviceWaitIdle();
+    {
+        DUSK_PROFILE_SECTION("wait_idle");
+        m_renderer->deviceWaitIdle();
+    }
 }
 
 void Engine::onEvent(Event& ev)
@@ -266,6 +277,8 @@ void Engine::loadScene(Scene* scene)
 
 void Engine::renderFrame(FrameData& frameData)
 {
+    DUSK_PROFILE_FUNCTION;
+
     RenderGraph renderGraph;
 
     // create g-buffer pass

@@ -28,6 +28,8 @@ void recordGBufferCmds(
     FrameData&              frameData,
     VkGfxRenderPassContext& ctx)
 {
+    DUSK_PROFILE_FUNCTION;
+
     if (!frameData.scene) return;
 
     Scene&           scene         = *frameData.scene;

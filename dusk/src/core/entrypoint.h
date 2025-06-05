@@ -12,8 +12,11 @@ using namespace dusk;
 
 extern Unique<dusk::Application> dusk::createApplication(int argc, char** argv);
 
-int                              main(int argc, char** argv)
+// main func
+int main(int argc, char** argv)
 {
+    DUSK_PROFILE_THREAD("main");
+
     // start logger
     dusk::Logger::init();
 
@@ -27,16 +30,22 @@ int                              main(int argc, char** argv)
     // create application
     Shared<Application> app = std::move(dusk::createApplication(argc, argv));
 
-    if (!engine->start(app))
     {
-        DUSK_ERROR("Failed to start engine");
-        return -1;
+        DUSK_PROFILE_SECTION("engine start");
+        if (!engine->start(app))
+        {
+            DUSK_ERROR("Failed to start engine");
+            return -1;
+        }
     }
 
-    if (!app->start())
     {
-        DUSK_ERROR("Failed to start app");
-        return -1;
+        DUSK_PROFILE_SECTION("app start");
+        if (!app->start())
+        {
+            DUSK_ERROR("Failed to start app");
+            return -1;
+        }
     }
 
     engine->run();

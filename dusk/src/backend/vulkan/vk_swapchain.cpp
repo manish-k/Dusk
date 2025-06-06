@@ -457,7 +457,7 @@ void VkGfxSwapChain::destroyDepthResources()
     }
     m_depthImageViews.clear();
 
-    for (auto& depthImage: m_depthImages)
+    for (auto& depthImage : m_depthImages)
     {
         vulkan::freeGPUImage(*m_gpuAllocator, &depthImage);
     }
@@ -557,7 +557,7 @@ VkExtent2D VkGfxSwapChain::getSwapExtent(uint32_t width, uint32_t height) const
 VkFormat VkGfxSwapChain::findDepthFormat()
 {
     DynamicArray<VkFormat> candidates { VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT };
-    
+
     for (VkFormat format : candidates)
     {
         VkFormatProperties props;

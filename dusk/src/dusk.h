@@ -9,8 +9,6 @@
 #include "utils/hash.h"
 #include "utils/utils.h"
 
-#include "debug/profiler.h"
-
 #include <glm/glm.hpp>
 
 #ifdef DDEBUG // Dusk Debug

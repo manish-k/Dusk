@@ -35,10 +35,11 @@ public:
     VkRenderPass   getRenderPass() const { return m_renderPass->get(); }
     VkFormat       getImageFormat() const { return m_imageFormat; }
     VkImage        getImage(uint32_t imageIndex) const { return m_swapChainImages[imageIndex]; }
-    VkImage        getDepthImage(uint32_t imageIndex) {
-        return m_depthImages[imageIndex].image; 
+    VkImage        getDepthImage(uint32_t imageIndex)
+    {
+        return m_depthImages[imageIndex].image;
     };
-    VkImageView    getDepthImageView(uint32_t imageIndex) { return m_depthImageViews[imageIndex]; };
+    VkImageView getDepthImageView(uint32_t imageIndex) { return m_depthImageViews[imageIndex]; };
 
 private:
     Error              createSwapChain(const VkGfxSwapChainParams& params);

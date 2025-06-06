@@ -2,6 +2,8 @@
 
 #include "vk_renderer.h"
 
+#include "debug/profiler.h"
+
 #define VOLK_IMPLEMENTATION
 #include <volk.h>
 
@@ -82,6 +84,11 @@ VkCommandBuffer VulkanRenderer::beginFrame()
     {
         DUSK_ERROR("beginFrame Failed to begin recording command buffer! {}", result.toString());
     }
+
+    // profiler stuff
+#ifdef DUSK_ENABLE_PROFILING
+    TracyVkCollect(VkGfxDevice::getProfilerContext(), commandBuffer);
+#endif
 
     return commandBuffer;
 }

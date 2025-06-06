@@ -9,6 +9,10 @@ namespace dusk
 {
 VulkanContext VkGfxDevice::s_sharedVkContext = VulkanContext {};
 
+#ifdef DUSK_ENABLE_PROFILING
+tracy::VkCtx* VkGfxDevice::s_gpuProfilerCtx = VK_NULL_HANDLE;
+#endif
+
 VkGfxDevice::VkGfxDevice(GLFWVulkanWindow& window) :
     m_window(window)
 {
@@ -351,7 +355,20 @@ Error VkGfxDevice::createDevice()
 
         // check for gpu profiling extension/features
 #ifdef DUSK_ENABLE_PROFILING
-        
+        if (!availableExtensionsSet.has(hash(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME)))
+        {
+            DUSK_INFO("Skipping device because it does not support calibrated timestamps");
+            continue;
+        }
+        pDeviceInfo->activeDeviceExtensions.push_back(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME);
+
+        if (!availableExtensionsSet.has(hash(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME)))
+        {
+            DUSK_INFO("Skipping device because it does not support host query reset extension");
+            continue;
+        }
+        pDeviceInfo->deviceFeaturesVk12.hostQueryReset = VK_TRUE;
+        pDeviceInfo->activeDeviceExtensions.push_back(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
 #endif
 
         // check for descriptor indexing
@@ -530,6 +547,16 @@ Error VkGfxDevice::createDevice()
 
     DUSK_INFO("Command pool created with graphics queue");
 
+    // setup tracy profiling ctx
+#ifdef DUSK_ENABLE_PROFILING
+    s_gpuProfilerCtx = TracyVkContextHostCalibrated(
+        m_physicalDevice,
+        m_device,
+        vkResetQueryPool,
+        vkGetPhysicalDeviceCalibrateableTimeDomainsEXT,
+        vkGetCalibratedTimestampsEXT);
+#endif
+
     s_sharedVkContext.vulkanInstance           = m_instance;
     s_sharedVkContext.physicalDevice           = m_physicalDevice;
     s_sharedVkContext.device                   = m_device;
@@ -571,6 +598,11 @@ void VkGfxDevice::destroyDevice()
 
     if (m_commandPool != VK_NULL_HANDLE)
         vkDestroyCommandPool(m_device, m_commandPool, nullptr);
+
+#ifdef DUSK_ENABLE_PROFILING
+    TracyVkDestroy(s_gpuProfilerCtx);
+    s_gpuProfilerCtx = VK_NULL_HANDLE;
+#endif
 
     if (m_device != VK_NULL_HANDLE)
         vkDestroyDevice(m_device, nullptr);

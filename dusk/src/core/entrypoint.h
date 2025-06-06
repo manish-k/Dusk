@@ -7,6 +7,8 @@
 #include "engine.h"
 #include "core/application.h"
 #include "debug/renderdoc.h"
+#include "debug/profiler.h"
+
 
 using namespace dusk;
 

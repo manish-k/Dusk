@@ -12,6 +12,11 @@
 #include <unordered_map>
 #include <optional>
 
+#ifdef DUSK_ENABLE_PROFILING
+#    include <tracy/Tracy.hpp>
+#    include <tracy/TracyVulkan.hpp>
+#endif
+
 namespace dusk
 {
 class VkGfxDevice
@@ -102,15 +107,18 @@ public:
         VkFormat           format,
         VkClearValue       clearValue);
 
+    static VulkanContext& getSharedVulkanContext() { return s_sharedVkContext; }
+
 #ifdef VK_RENDERER_DEBUG
     static VKAPI_ATTR VkBool32 VKAPI_CALL vulkanDebugMessengerCallback(
         VkDebugUtilsMessageSeverityFlagBitsEXT      messageSeverity,
         VkDebugUtilsMessageTypeFlagsEXT             messageType,
         const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
         void*                                       pUserData);
+#endif
 
-    static VulkanContext& getSharedVulkanContext() { return s_sharedVkContext; }
-
+#ifdef DUSK_ENABLE_PROFILING
+    static tracy::VkCtx* getProfilerContext() { return s_gpuProfilerCtx; };
 #endif
 
 private:
@@ -138,5 +146,9 @@ private:
 
 private:
     static VulkanContext s_sharedVkContext;
+
+#ifdef DUSK_ENABLE_PROFILING
+    static tracy::VkCtx* s_gpuProfilerCtx;
+#endif
 };
 } // namespace dusk

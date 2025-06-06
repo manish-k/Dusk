@@ -5,6 +5,7 @@
 #include "platform/file_system.h"
 #include "utils/utils.h"
 #include "ui/ui.h"
+#include "debug/profiler.h"
 
 #include "scene/scene.h"
 #include "scene/components/camera.h"

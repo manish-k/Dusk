@@ -4,6 +4,7 @@
 #include "vk.h"
 #include "frame_data.h"
 #include "engine.h"
+#include "debug/profiler.h"
 
 #include "scene/scene.h"
 #include "scene/components/transform.h"
@@ -21,7 +22,6 @@
 #include "backend/vulkan/vk_pipeline_layout.h"
 #include "backend/vulkan/vk_pass.h"
 
-
 namespace dusk
 {
 void recordGBufferCmds(
@@ -36,41 +36,44 @@ void recordGBufferCmds(
     VkCommandBuffer  commandBuffer = frameData.commandBuffer;
     CameraComponent& camera        = scene.getMainCamera();
 
-    auto&             resources     = Engine::get().getRenderGraphResources();
+    auto&            resources     = Engine::get().getRenderGraphResources();
 
     resources.gbuffPipeline->bind(commandBuffer);
 
     // TODO:: this might be required only once, check case
     // where new textures are added on the fly (streaming textures)
-    vkCmdBindDescriptorSets(
-        frameData.commandBuffer,
-        VK_PIPELINE_BIND_POINT_GRAPHICS,
-        resources.gbuffPipelineLayout->get(),
-        GLOBAL_SET_INDEX,
-        1,
-        &frameData.globalDescriptorSet,
-        0,
-        nullptr);
+    {
+        DUSK_PROFILE_GPU_ZONE("gbuffer_bind_descset", commandBuffer);
+        vkCmdBindDescriptorSets(
+            frameData.commandBuffer,
+            VK_PIPELINE_BIND_POINT_GRAPHICS,
+            resources.gbuffPipelineLayout->get(),
+            GLOBAL_SET_INDEX,
+            1,
+            &frameData.globalDescriptorSet,
+            0,
+            nullptr);
 
-    vkCmdBindDescriptorSets(
-        frameData.commandBuffer,
-        VK_PIPELINE_BIND_POINT_GRAPHICS,
-        resources.gbuffPipelineLayout->get(),
-        MATERIAL_SET_INDEX,
-        1,
-        &frameData.materialDescriptorSet,
-        0,
-        nullptr);
+        vkCmdBindDescriptorSets(
+            frameData.commandBuffer,
+            VK_PIPELINE_BIND_POINT_GRAPHICS,
+            resources.gbuffPipelineLayout->get(),
+            MATERIAL_SET_INDEX,
+            1,
+            &frameData.materialDescriptorSet,
+            0,
+            nullptr);
 
-    vkCmdBindDescriptorSets(
-        frameData.commandBuffer,
-        VK_PIPELINE_BIND_POINT_GRAPHICS,
-        resources.gbuffPipelineLayout->get(),
-        LIGHTS_SET_INDEX,
-        1,
-        &frameData.lightsDescriptorSet,
-        0,
-        nullptr);
+        vkCmdBindDescriptorSets(
+            frameData.commandBuffer,
+            VK_PIPELINE_BIND_POINT_GRAPHICS,
+            resources.gbuffPipelineLayout->get(),
+            LIGHTS_SET_INDEX,
+            1,
+            &frameData.lightsDescriptorSet,
+            0,
+            nullptr);
+    }
 
     auto renderablesView = scene.GetGameObjectsWith<TransformComponent, MeshComponent>();
 
@@ -98,15 +101,18 @@ void recordGBufferCmds(
             resources.gbuffModelsBuffer.writeAndFlushAtIndex(objectId, &md, sizeof(ModelData));
 
             uint32_t dynamicOffset = objectId * static_cast<uint32_t>(resources.gbuffModelsBuffer.instanceAlignmentSize);
-            vkCmdBindDescriptorSets(
-                commandBuffer,
-                VK_PIPELINE_BIND_POINT_GRAPHICS,
-                resources.gbuffPipelineLayout->get(),
-                MODEL_SET_INDEX,
-                1,
-                &resources.gbuffModelDescriptorSet->set,
-                1,
-                &dynamicOffset);
+            {
+                DUSK_PROFILE_GPU_ZONE("gbuffer_bind_model", commandBuffer);
+                vkCmdBindDescriptorSets(
+                    commandBuffer,
+                    VK_PIPELINE_BIND_POINT_GRAPHICS,
+                    resources.gbuffPipelineLayout->get(),
+                    MODEL_SET_INDEX,
+                    1,
+                    &resources.gbuffModelDescriptorSet->set,
+                    1,
+                    &dynamicOffset);
+            }
 
             vkCmdPushConstants(
                 commandBuffer,
@@ -116,11 +122,17 @@ void recordGBufferCmds(
                 sizeof(DrawData),
                 &push);
 
-            vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
+            {
+                DUSK_PROFILE_GPU_ZONE("gbuffer_bind_vertex", commandBuffer);
+                vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
 
-            vkCmdBindIndexBuffer(commandBuffer, mesh.getIndexBuffer().vkBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+                vkCmdBindIndexBuffer(commandBuffer, mesh.getIndexBuffer().vkBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+            }
 
-            vkCmdDrawIndexed(commandBuffer, mesh.getIndexCount(), 1, 0, 0, 0);
+            {
+                DUSK_PROFILE_GPU_ZONE("gbuffer_draw", commandBuffer);
+                vkCmdDrawIndexed(commandBuffer, mesh.getIndexCount(), 1, 0, 0, 0);
+            }
         }
     }
 }

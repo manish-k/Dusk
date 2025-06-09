@@ -44,16 +44,14 @@ Scene::Scene(const std::string_view name) :
     m_cameraId         = camera->getId();
     addGameObject(std::move(camera), rootId);
 
-    // TODO:: temporary default texture
     glm::u8vec4 whiteColor { 255 };
 
-    Image     defaultTextureImg {
-        1,
-        1,
-        4,
-        4,
-        (unsigned char*)&whiteColor
-    };
+    Image       defaultTextureImg {};
+    defaultTextureImg.width    = 1;
+    defaultTextureImg.height   = 1;
+    defaultTextureImg.channels = 4;
+    defaultTextureImg.size     = 4;
+    defaultTextureImg.data     = (unsigned char*)&whiteColor;
 
     Texture2D defaultTex { m_defaultTextureId };
     defaultTex.init(defaultTextureImg, "default_tex");

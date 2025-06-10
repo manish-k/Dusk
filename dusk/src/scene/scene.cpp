@@ -154,6 +154,7 @@ int Scene::loadTexture(std::string& path)
         return -1;
     }
 
+    DUSK_DEBUG("Loading texture {}", path);
     if (!m_texPathMap.has(path))
     {
         // Texture was not loaded earlier
@@ -173,6 +174,8 @@ int Scene::loadTexture(std::string& path)
             m_textures.push_back(std::move(newTex));
 
             ImageLoader::freeImage(*img);
+
+            DUSK_DEBUG("Texture loaded to gpu");
             return newId;
         }
         else
@@ -182,6 +185,7 @@ int Scene::loadTexture(std::string& path)
         }
     }
 
+    DUSK_DEBUG("Texture already present");
     // Texture has been loaded already
     return m_texPathMap[path];
 }

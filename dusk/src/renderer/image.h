@@ -12,6 +12,7 @@ struct Image
     int            channels = 0;
     size_t         size     = 0;
     unsigned char* data     = nullptr;
+    std::string    name     = "";
 
     Image()                 = default;
 };

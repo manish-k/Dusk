@@ -21,13 +21,16 @@ AssimpLoader::~AssimpLoader()
 {
 }
 
-Unique<Scene> AssimpLoader::readScene(const std::string& fileName)
+Unique<Scene> AssimpLoader::readScene(const std::filesystem::path& filePath)
 {
-    const aiScene* assimpScene = m_importer.ReadFile(fileName, aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_FlipUVs);
+    m_sceneDir                 = filePath.parent_path();
+
+    const aiScene* assimpScene = m_importer.ReadFile(filePath.string(), aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_FlipUVs);
 
     if (assimpScene == nullptr)
     {
         DUSK_ERROR("Unable to read scene file. {}", m_importer.GetErrorString());
+        m_sceneDir = "";
         return nullptr;
     }
 
@@ -187,8 +190,6 @@ std::string AssimpLoader::getTexturePath(aiMaterial* mat, aiTextureType type)
 
 void AssimpLoader::parseMaterials(Scene& scene, const aiScene* aiScene)
 {
-    std::string textureSubDir = "assets/scenes/";
-
     for (uint32_t matIndex = 0; matIndex < aiScene->mNumMaterials; ++matIndex)
     {
         aiMaterial* aiMat = aiScene->mMaterials[matIndex];
@@ -199,7 +200,7 @@ void AssimpLoader::parseMaterials(Scene& scene, const aiScene* aiScene)
         uint32_t    diffuseTexId         = -1;
         if (!baseColorTexturePath.empty())
         {
-            auto texturePath = textureSubDir + baseColorTexturePath;
+            auto texturePath = (m_sceneDir / baseColorTexturePath).string();
             diffuseTexId     = scene.loadTexture(texturePath);
         }
         else

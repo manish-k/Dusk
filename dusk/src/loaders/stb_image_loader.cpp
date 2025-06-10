@@ -41,6 +41,7 @@ Unique<Image> ImageLoader::readImage(const std::string& filepath)
 
     img.channels = 4;
     img.size     = img.width * img.height * img.channels;
+    img.name     = filepath;
 
     return createUnique<Image>(std::move(img));
 }

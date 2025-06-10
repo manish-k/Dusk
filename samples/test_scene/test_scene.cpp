@@ -23,9 +23,11 @@ Unique<dusk::Application> dusk::createApplication(int argc, char** argv)
 bool TestScene::start()
 {
     // std::string scenePath = "assets/scenes/EnvironmentTest.gltf";
-    std::string scenePath = "assets/scenes/Scene.gltf";
+    // std::string scenePath = "assets/scenes/Scene.gltf";
 
-    m_testScene           = Scene::createSceneFromGLTF(scenePath);
+    std::string scenePath
+        = "assets/scenes/tea_cup/DiffuseTransmissionTeacup.gltf";
+    m_testScene = Scene::createSceneFromGLTF(scenePath);
 
     Engine::get().loadScene(m_testScene.get());
 

@@ -13,6 +13,7 @@ struct Texture2D
     uint32_t      width       = 0;
     uint32_t      height      = 0;
     uint32_t      numChannels = 0;
+    std::string   name        = "";
 
     VulkanTexture vkTexture {};
     VulkanSampler vkSampler {}; // TODO: sampler can be a common one instead of per texture

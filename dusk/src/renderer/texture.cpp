@@ -18,6 +18,7 @@ Error Texture2D::init(Image& texImage, const char* debugName)
     width           = texImage.width;
     height          = texImage.height;
     numChannels     = texImage.channels;
+    name            = texImage.name;
 
     // staging buffer for transfer
     GfxBuffer stagingBuffer;

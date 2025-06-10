@@ -6,6 +6,7 @@
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include <filesystem>
 
 namespace dusk
 {
@@ -18,7 +19,7 @@ public:
     AssimpLoader();
     ~AssimpLoader();
 
-    Unique<Scene> readScene(const std::string& fileName);
+    Unique<Scene> readScene(const std::filesystem::path& filePath);
 
 private:
     Unique<Scene> parseScene(const aiScene* scene);
@@ -33,5 +34,7 @@ private:
 
 private:
     Assimp::Importer m_importer;
+
+    std::filesystem::path m_sceneDir = "";
 };
 } // namespace dusk

@@ -5,3 +5,5 @@
 ## Gallery
 
 ![](docs/sample.png)
+
+![](docs/sponza-sample.png)

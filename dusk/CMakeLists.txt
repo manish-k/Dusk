@@ -249,6 +249,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
 	renderdoc
 	assimp
 	TracyClient
+	taskflow
 )
 
 if(CLANG_FORMAT_EXE)

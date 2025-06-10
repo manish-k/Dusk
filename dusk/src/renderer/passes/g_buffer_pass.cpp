@@ -22,6 +22,8 @@
 #include "backend/vulkan/vk_pipeline_layout.h"
 #include "backend/vulkan/vk_pass.h"
 
+#include <taskflow/taskflow.hpp>
+
 namespace dusk
 {
 void recordGBufferCmds(
@@ -76,6 +78,7 @@ void recordGBufferCmds(
     }
 
     auto renderablesView = scene.GetGameObjectsWith<TransformComponent, MeshComponent>();
+    renderablesView.size_hint();
 
     // possiblity of cache unfriendliness here. Only first component is
     // cache friendly. https://gamedev.stackexchange.com/a/212879

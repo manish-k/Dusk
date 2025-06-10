@@ -100,3 +100,8 @@ add_library(stb INTERFACE)
 set(STB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/stb)
 target_sources(stb INTERFACE ${STB_DIR}/stb_image.h)
 target_include_directories(stb INTERFACE ${STB_DIR})
+
+# taskflow
+add_library(taskflow INTERFACE)
+set(TASKFLOW_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/taskflow/)
+target_include_directories(taskflow INTERFACE ${TASKFLOW_INCLUDE_DIR})

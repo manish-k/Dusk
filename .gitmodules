@@ -38,3 +38,6 @@
 [submodule "dusk/vendor/tracy"]
 	path = dusk/vendor/tracy
 	url = https://github.com/wolfpld/tracy.git
+[submodule "dusk/vendor/taskflow"]
+	path = dusk/vendor/taskflow
+	url = https://github.com/taskflow/taskflow.git

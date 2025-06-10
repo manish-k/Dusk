@@ -439,20 +439,22 @@ void Engine::cleanupGlobals()
 
 void Engine::registerTextures(DynamicArray<Texture2D>& textures)
 {
+    DynamicArray<VkDescriptorImageInfo> texDescInfos;
+    texDescInfos.resize(textures.size());
+
     for (uint32_t texIndex = 0u; texIndex < textures.size(); ++texIndex)
     {
-        Texture2D&            tex = textures[texIndex];
+        Texture2D& tex                     = textures[texIndex];
 
-        VkDescriptorImageInfo imageInfo {};
-        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        imageInfo.imageView   = tex.vkTexture.imageView;
-        imageInfo.sampler     = tex.vkSampler.sampler;
+        texDescInfos[texIndex].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        texDescInfos[texIndex].imageView   = tex.vkTexture.imageView;
+        texDescInfos[texIndex].sampler     = tex.vkSampler.sampler;
 
         m_globalDescriptorSet->configureImage(
             1,
             tex.id,
             1,
-            &imageInfo);
+            &texDescInfos[texIndex]);
     }
 
     m_globalDescriptorSet->applyConfiguration();

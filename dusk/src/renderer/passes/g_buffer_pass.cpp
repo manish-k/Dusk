@@ -45,12 +45,12 @@ void recordGBufferCmds(
     // TODO:: this might be required only once, check case
     // where new textures are added on the fly (streaming textures)
     {
-        DUSK_PROFILE_GPU_ZONE("gbuffer_bind_descset", commandBuffer);
+        DUSK_PROFILE_GPU_ZONE("gbuffer_bind_desc_set", commandBuffer);
         vkCmdBindDescriptorSets(
             frameData.commandBuffer,
             VK_PIPELINE_BIND_POINT_GRAPHICS,
             resources.gbuffPipelineLayout->get(),
-            GLOBAL_SET_INDEX,
+            0, // global desc set binding location
             1,
             &frameData.globalDescriptorSet,
             0,
@@ -60,19 +60,9 @@ void recordGBufferCmds(
             frameData.commandBuffer,
             VK_PIPELINE_BIND_POINT_GRAPHICS,
             resources.gbuffPipelineLayout->get(),
-            MATERIAL_SET_INDEX,
+            1, // material desc set binding location
             1,
             &frameData.materialDescriptorSet,
-            0,
-            nullptr);
-
-        vkCmdBindDescriptorSets(
-            frameData.commandBuffer,
-            VK_PIPELINE_BIND_POINT_GRAPHICS,
-            resources.gbuffPipelineLayout->get(),
-            LIGHTS_SET_INDEX,
-            1,
-            &frameData.lightsDescriptorSet,
             0,
             nullptr);
     }
@@ -110,7 +100,7 @@ void recordGBufferCmds(
                     commandBuffer,
                     VK_PIPELINE_BIND_POINT_GRAPHICS,
                     resources.gbuffPipelineLayout->get(),
-                    MODEL_SET_INDEX,
+                    2, // light desc set binding location
                     1,
                     &resources.gbuffModelDescriptorSet[frameData.frameIndex]->set,
                     1,

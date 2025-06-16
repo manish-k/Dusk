@@ -26,7 +26,7 @@ layout (set = 0, binding = 0) uniform GlobalUBO
 	uvec4 spotLightIndices[32];
 } globalubo[];
 
-layout (set = 3, binding = 0) uniform ModelUBO 
+layout (set = 2, binding = 0) uniform ModelUBO 
 {
 	mat4 modelMatrix;
 	mat4 normalMatrix;

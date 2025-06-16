@@ -564,7 +564,6 @@ void Engine::prepareRenderGraphResources()
                                             .addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(DrawData))
                                             .addDescriptorSetLayout(m_globalDescriptorSetLayout->layout)
                                             .addDescriptorSetLayout(m_materialDescriptorSetLayout->layout)
-                                            .addDescriptorSetLayout(m_lightsSystem->getLightsDescriptorSetLayout().layout)
                                             .addDescriptorSetLayout(m_rgResources.gbuffModelDescriptorSetLayout->layout)
 
                                             .build();

@@ -65,6 +65,16 @@ void recordGBufferCmds(
             &frameData.materialDescriptorSet,
             0,
             nullptr);
+
+        vkCmdBindDescriptorSets(
+            commandBuffer,
+            VK_PIPELINE_BIND_POINT_GRAPHICS,
+            resources.gbuffPipelineLayout->get(),
+            2, // model desc set binding location
+            1,
+            &resources.gbuffModelDescriptorSet[frameData.frameIndex]->set,
+            0,
+            nullptr);
     }
 
     auto renderablesView = scene.GetGameObjectsWith<TransformComponent, MeshComponent>();
@@ -88,24 +98,11 @@ void recordGBufferCmds(
             DrawData      push {};
             push.cameraBufferIdx = frameData.frameIndex;
             push.materialIdx     = materialId;
+            push.modelIdx        = meshId;
 
             // update mesh transform data
             ModelData md { transform.mat4(), transform.normalMat4() };
-            resources.gbuffModelsBuffer[frameData.frameIndex].writeAndFlushAtIndex(objectId, &md, sizeof(ModelData));
-
-            uint32_t dynamicOffset = objectId * static_cast<uint32_t>(resources.gbuffModelsBuffer[frameData.frameIndex].instanceAlignmentSize);
-            {
-                DUSK_PROFILE_GPU_ZONE("gbuffer_bind_model", commandBuffer);
-                vkCmdBindDescriptorSets(
-                    commandBuffer,
-                    VK_PIPELINE_BIND_POINT_GRAPHICS,
-                    resources.gbuffPipelineLayout->get(),
-                    2, // light desc set binding location
-                    1,
-                    &resources.gbuffModelDescriptorSet[frameData.frameIndex]->set,
-                    1,
-                    &dynamicOffset);
-            }
+            resources.gbuffModelsBuffer[frameData.frameIndex].writeAndFlushAtIndex(meshId, &md, sizeof(ModelData));
 
             vkCmdPushConstants(
                 commandBuffer,

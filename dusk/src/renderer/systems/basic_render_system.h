@@ -21,6 +21,7 @@ struct DrawData
 {
     uint32_t cameraBufferIdx;
     uint32_t materialIdx;
+    uint32_t modelIdx;
     uint32_t directionalLightsCount;
     uint32_t pointLightsCount;
     uint32_t spotLightsCount;

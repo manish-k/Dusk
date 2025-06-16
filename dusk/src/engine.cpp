@@ -518,12 +518,12 @@ void Engine::prepareRenderGraphResources()
         { 0.f, 0.f, 0.f, 1.f });
 
     m_rgResources.gbuffModelDescriptorPool = VkGfxDescriptorPool::Builder(ctx)
-                                                 .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1)
+                                                 .addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, maxFramesCount * maxRenderableMeshes)
                                                  .setDebugName("model_desc_pool")
-                                                 .build(maxFramesCount);
+                                                 .build(maxFramesCount, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
 
     m_rgResources.gbuffModelDescriptorSetLayout = VkGfxDescriptorSetLayout::Builder(ctx)
-                                                      .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT, 1)
+                                                      .addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, maxRenderableMeshes, true)
                                                       .setDebugName("model_desc_set_layout")
                                                       .build();
 
@@ -534,7 +534,7 @@ void Engine::prepareRenderGraphResources()
     for (uint32_t frameIdx = 0u; frameIdx < maxFramesCount; ++frameIdx)
     {
         GfxBuffer::createHostWriteBuffer(
-            GfxBufferUsageFlags::UniformBuffer,
+            GfxBufferUsageFlags::StorageBuffer,
             sizeof(ModelData),
             maxRenderableMeshes,
             "model_buffer_" + std::to_string(frameIdx),
@@ -553,7 +553,7 @@ void Engine::prepareRenderGraphResources()
         m_rgResources.gbuffModelDescriptorSet[frameIdx]->configureBuffer(
             0,
             0,
-            1,
+            meshBufferInfo.size(),
             meshBufferInfo.data());
 
         m_rgResources.gbuffModelDescriptorSet[frameIdx]->applyConfiguration();
@@ -565,7 +565,6 @@ void Engine::prepareRenderGraphResources()
                                             .addDescriptorSetLayout(m_globalDescriptorSetLayout->layout)
                                             .addDescriptorSetLayout(m_materialDescriptorSetLayout->layout)
                                             .addDescriptorSetLayout(m_rgResources.gbuffModelDescriptorSetLayout->layout)
-
                                             .build();
 
     // create g-buffer pipeline

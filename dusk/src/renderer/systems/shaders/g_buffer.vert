@@ -26,29 +26,31 @@ layout (set = 0, binding = 0) uniform GlobalUBO
 	uvec4 spotLightIndices[32];
 } globalubo[];
 
-layout (set = 2, binding = 0) uniform ModelUBO 
+layout (set = 2, binding = 0) buffer ModelUBO 
 {
 	mat4 modelMatrix;
 	mat4 normalMatrix;
-} modelubo;
+} modelubo[];
 
 layout(push_constant) uniform DrawData 
 {
 	uint cameraIdx;
 	uint materialIdx;
+	uint modelIdx;
 } push;
 
 void main() {	
-	vec4 worldPos = modelubo.modelMatrix * vec4(position, 1.0);
-
 	uint globalIdx = nonuniformEXT(push.cameraIdx);
+	uint modelIdx = nonuniformEXT(push.modelIdx);
+
+	vec4 worldPos = modelubo[modelIdx].modelMatrix * vec4(position, 1.0);
 
 	mat4 view = globalubo[globalIdx].view;
 	mat4 proj = globalubo[globalIdx].projection;
 
 	fragUV = uv;
 	fragWorldPos = worldPos.xyz;
-	fragNormal = normalize(mat3(modelubo.normalMatrix) * normal);
+	fragNormal = normalize(mat3(modelubo[modelIdx].normalMatrix) * normal);
 	
 	gl_Position = proj * (view * worldPos); 
 }

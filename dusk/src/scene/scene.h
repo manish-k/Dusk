@@ -20,6 +20,12 @@ class Event;
 
 struct Vertex;
 
+struct ModelData
+{
+    glm::mat4 model { 1.f };
+    glm::mat4 normal { 1.f };
+};
+
 class Scene
 {
 public:
@@ -127,6 +133,8 @@ public:
     DynamicArray<Material>&  getMaterials() { return m_materials; }
     DynamicArray<EntityId>&  getChildren() { return m_children; }
     uint32_t                 getDefaultTextureId() const { return m_defaultTextureId; }
+
+    void                     updateModelsBuffer(GfxBuffer& modelBuffer);
 
     /**
      * @brief Create a scene from a gltf file

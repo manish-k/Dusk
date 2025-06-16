@@ -13,6 +13,8 @@
 #include "components/mesh.h"
 #include "components/transform.h"
 
+#include "debug/profiler.h"
+
 #include "backend/vulkan/vk_renderer.h"
 
 namespace dusk
@@ -211,6 +213,20 @@ void Scene::addMaterial(Material& mat)
 void Scene::freeMaterials()
 {
     m_materials.clear();
+}
+
+void Scene::updateModelsBuffer(GfxBuffer& modelBuffer)
+{
+    DUSK_PROFILE_FUNCTION;
+    auto entities = GetGameObjectsWith<TransformComponent>();
+    for (auto& entity : entities)
+    {
+        auto      objectId  = static_cast<entt::id_type>(entity);
+        auto&     transform = entities.get<TransformComponent>(entity);
+
+        ModelData md { transform.mat4(), transform.normalMat4() };
+        modelBuffer.writeAndFlushAtIndex(objectId, &md, sizeof(ModelData));
+    }
 }
 
 } // namespace dusk

@@ -77,51 +77,51 @@ void recordGBufferCmds(
             nullptr);
     }
 
-    auto renderablesView = scene.GetGameObjectsWith<TransformComponent, MeshComponent>();
-    renderablesView.size_hint();
+    auto renderablesView = scene.GetGameObjectsWith<MeshComponent>();
 
     // possiblity of cache unfriendliness here. Only first component is
     // cache friendly. https://gamedev.stackexchange.com/a/212879
     // TODO: Profile below code
-    for (auto [entity, transform, meshData] : renderablesView.each())
     {
-        for (uint32_t index = 0u; index < meshData.meshes.size(); ++index)
+        DUSK_PROFILE_SECTION("draw_calls_recording");
+        for (auto& entity : renderablesView)
         {
-            entt::id_type objectId   = static_cast<entt::id_type>(entity);
-            int32_t       meshId     = meshData.meshes[index];
-            int32_t       materialId = meshData.materials[index];
+            entt::id_type objectId = static_cast<entt::id_type>(entity);
+            auto&         meshData = renderablesView.get<MeshComponent>(entity);
 
-            SubMesh&      mesh       = scene.getSubMesh(meshId);
-            VkBuffer      buffers[]  = { mesh.getVertexBuffer().vkBuffer.buffer };
-            VkDeviceSize  offsets[]  = { 0 };
-
-            DrawData      push {};
-            push.cameraBufferIdx = frameData.frameIndex;
-            push.materialIdx     = materialId;
-            push.modelIdx        = meshId;
-
-            // update mesh transform data
-            ModelData md { transform.mat4(), transform.normalMat4() };
-            resources.gbuffModelsBuffer[frameData.frameIndex].writeAndFlushAtIndex(meshId, &md, sizeof(ModelData));
-
-            vkCmdPushConstants(
-                commandBuffer,
-                resources.gbuffPipelineLayout->get(),
-                VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-                0,
-                sizeof(DrawData),
-                &push);
-
+            for (uint32_t index = 0u; index < meshData.meshes.size(); ++index)
             {
-                DUSK_PROFILE_GPU_ZONE("gbuffer_bind_vertex", commandBuffer);
-                vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
+                int32_t      meshId     = meshData.meshes[index];
+                int32_t      materialId = meshData.materials[index];
 
-                vkCmdBindIndexBuffer(commandBuffer, mesh.getIndexBuffer().vkBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
-            }
+                SubMesh&     mesh       = scene.getSubMesh(meshId);
+                VkBuffer     buffers[]  = { mesh.getVertexBuffer().vkBuffer.buffer };
+                VkDeviceSize offsets[]  = { 0 };
 
-            {
-                DUSK_PROFILE_GPU_ZONE("gbuffer_draw", commandBuffer);
-                vkCmdDrawIndexed(commandBuffer, mesh.getIndexCount(), 1, 0, 0, 0);
+                DrawData     push {};
+                push.cameraBufferIdx = frameData.frameIndex;
+                push.materialIdx     = materialId;
+                push.modelIdx        = objectId;
+
+                vkCmdPushConstants(
+                    commandBuffer,
+                    resources.gbuffPipelineLayout->get(),
+                    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                    0,
+                    sizeof(DrawData),
+                    &push);
+
+                {
+                    DUSK_PROFILE_GPU_ZONE("gbuffer_bind_vertex", commandBuffer);
+                    vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
+
+                    vkCmdBindIndexBuffer(commandBuffer, mesh.getIndexBuffer().vkBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+                }
+
+                {
+                    DUSK_PROFILE_GPU_ZONE("gbuffer_draw", commandBuffer);
+                    vkCmdDrawIndexed(commandBuffer, mesh.getIndexCount(), 1, 0, 0, 0);
+                }
             }
         }
     }

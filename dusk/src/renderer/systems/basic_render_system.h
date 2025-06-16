@@ -27,12 +27,6 @@ struct DrawData
     uint32_t spotLightsCount;
 };
 
-struct ModelData
-{
-    glm::mat4 model { 1.f };
-    glm::mat4 normal { 1.f };
-};
-
 // TODO: figure out the best way to configure this
 constexpr uint32_t maxRenderableMeshes = 10000;
 

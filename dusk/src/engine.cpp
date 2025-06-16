@@ -181,6 +181,8 @@ void Engine::onUpdate(TimeStep dt)
 
             m_currentScene->onUpdate(dt);
 
+            m_currentScene->updateModelsBuffer(m_rgResources.gbuffModelsBuffer[currentFrameIndex]);
+
             CameraComponent& camera = m_currentScene->getMainCamera();
             camera.setAspectRatio(m_renderer->getAspectRatio());
 

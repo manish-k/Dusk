@@ -101,9 +101,9 @@ void recordGBufferCmds(
 
             // update mesh transform data
             ModelData md { transform.mat4(), transform.normalMat4() };
-            resources.gbuffModelsBuffer.writeAndFlushAtIndex(objectId, &md, sizeof(ModelData));
+            resources.gbuffModelsBuffer[frameData.frameIndex].writeAndFlushAtIndex(objectId, &md, sizeof(ModelData));
 
-            uint32_t dynamicOffset = objectId * static_cast<uint32_t>(resources.gbuffModelsBuffer.instanceAlignmentSize);
+            uint32_t dynamicOffset = objectId * static_cast<uint32_t>(resources.gbuffModelsBuffer[frameData.frameIndex].instanceAlignmentSize);
             {
                 DUSK_PROFILE_GPU_ZONE("gbuffer_bind_model", commandBuffer);
                 vkCmdBindDescriptorSets(
@@ -112,7 +112,7 @@ void recordGBufferCmds(
                     resources.gbuffPipelineLayout->get(),
                     MODEL_SET_INDEX,
                     1,
-                    &resources.gbuffModelDescriptorSet->set,
+                    &resources.gbuffModelDescriptorSet[frameData.frameIndex]->set,
                     1,
                     &dynamicOffset);
             }

@@ -37,14 +37,14 @@ constexpr uint32_t maxMaterialCount = 1000;
 struct RenderGraphResources
 {
     // g-buffer resources
-    DynamicArray<VulkanRenderTarget> gbuffRenderTargets;
-    VulkanRenderTarget               gbuffDepthTexture;
-    Unique<VkGfxRenderPipeline>      gbuffPipeline                 = nullptr;
-    Unique<VkGfxPipelineLayout>      gbuffPipelineLayout           = nullptr;
-    Unique<VkGfxDescriptorPool>      gbuffModelDescriptorPool      = nullptr;
-    Unique<VkGfxDescriptorSetLayout> gbuffModelDescriptorSetLayout = nullptr;
-    Unique<VkGfxDescriptorSet>       gbuffModelDescriptorSet       = nullptr;
-    GfxBuffer                        gbuffModelsBuffer;
+    DynamicArray<VulkanRenderTarget>         gbuffRenderTargets            = {};
+    VulkanRenderTarget                       gbuffDepthTexture             = {};
+    Unique<VkGfxRenderPipeline>              gbuffPipeline                 = nullptr;
+    Unique<VkGfxPipelineLayout>              gbuffPipelineLayout           = nullptr;
+    Unique<VkGfxDescriptorPool>              gbuffModelDescriptorPool      = nullptr;
+    Unique<VkGfxDescriptorSetLayout>         gbuffModelDescriptorSetLayout = nullptr;
+    DynamicArray<Unique<VkGfxDescriptorSet>> gbuffModelDescriptorSet       = {};
+    DynamicArray<GfxBuffer>                  gbuffModelsBuffer             = {};
 
     // presentation pass resources
     Unique<VkGfxRenderPipeline>      presentPipeline               = nullptr;

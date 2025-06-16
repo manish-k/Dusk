@@ -490,8 +490,9 @@ void Engine::updateMaterialsBuffer(DynamicArray<Material>& materials)
 
 void Engine::prepareRenderGraphResources()
 {
-    auto& ctx    = VkGfxDevice::getSharedVulkanContext();
-    auto  extent = m_renderer->getSwapChain().getCurrentExtent();
+    auto&    ctx            = VkGfxDevice::getSharedVulkanContext();
+    auto     extent         = m_renderer->getSwapChain().getCurrentExtent();
+    uint32_t maxFramesCount = m_renderer->getMaxFramesCount();
 
     // g-buffer resources
     // Allocate g-buffer render targets
@@ -519,39 +520,44 @@ void Engine::prepareRenderGraphResources()
     m_rgResources.gbuffModelDescriptorPool = VkGfxDescriptorPool::Builder(ctx)
                                                  .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1)
                                                  .setDebugName("model_desc_pool")
-                                                 .build(1);
+                                                 .build(maxFramesCount);
 
     m_rgResources.gbuffModelDescriptorSetLayout = VkGfxDescriptorSetLayout::Builder(ctx)
                                                       .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT, 1)
                                                       .setDebugName("model_desc_set_layout")
                                                       .build();
 
-    // create dynamic ubo
-    GfxBuffer::createHostWriteBuffer(
-        GfxBufferUsageFlags::UniformBuffer,
-        sizeof(ModelData),
-        maxRenderableMeshes,
-        "model_buffer",
-        &m_rgResources.gbuffModelsBuffer);
+    // create models buffer and descriptor set
+    m_rgResources.gbuffModelsBuffer.resize(maxFramesCount);
+    m_rgResources.gbuffModelDescriptorSet.resize(maxFramesCount);
 
-    // create model descriptor set
-    m_rgResources.gbuffModelDescriptorSet = m_rgResources.gbuffModelDescriptorPool->allocateDescriptorSet(
-        *m_rgResources.gbuffModelDescriptorSetLayout, "model_desc_set");
-
-    DynamicArray<VkDescriptorBufferInfo> meshBufferInfo;
-    meshBufferInfo.reserve(maxRenderableMeshes);
-    for (uint32_t meshIdx = 0u; meshIdx < maxRenderableMeshes; ++meshIdx)
+    for (uint32_t frameIdx = 0u; frameIdx < maxFramesCount; ++frameIdx)
     {
-        meshBufferInfo.push_back(m_rgResources.gbuffModelsBuffer.getDescriptorInfoAtIndex(meshIdx));
+        GfxBuffer::createHostWriteBuffer(
+            GfxBufferUsageFlags::UniformBuffer,
+            sizeof(ModelData),
+            maxRenderableMeshes,
+            "model_buffer_" + std::to_string(frameIdx),
+            &m_rgResources.gbuffModelsBuffer[frameIdx]);
+
+        m_rgResources.gbuffModelDescriptorSet[frameIdx] = m_rgResources.gbuffModelDescriptorPool->allocateDescriptorSet(
+            *m_rgResources.gbuffModelDescriptorSetLayout, "model_desc_set");
+
+        DynamicArray<VkDescriptorBufferInfo> meshBufferInfo;
+        meshBufferInfo.reserve(maxRenderableMeshes);
+        for (uint32_t meshIdx = 0u; meshIdx < maxRenderableMeshes; ++meshIdx)
+        {
+            meshBufferInfo.push_back(m_rgResources.gbuffModelsBuffer[frameIdx].getDescriptorInfoAtIndex(meshIdx));
+        }
+
+        m_rgResources.gbuffModelDescriptorSet[frameIdx]->configureBuffer(
+            0,
+            0,
+            1,
+            meshBufferInfo.data());
+
+        m_rgResources.gbuffModelDescriptorSet[frameIdx]->applyConfiguration();
     }
-
-    m_rgResources.gbuffModelDescriptorSet->configureBuffer(
-        0,
-        0,
-        1,
-        meshBufferInfo.data());
-
-    m_rgResources.gbuffModelDescriptorSet->applyConfiguration();
 
     // create g-buff pipeline layout
     m_rgResources.gbuffPipelineLayout = VkGfxPipelineLayout::Builder(ctx)
@@ -644,7 +650,8 @@ void Engine::releaseRenderGraphResources()
     m_rgResources.gbuffModelDescriptorSetLayout = nullptr;
     m_rgResources.gbuffModelDescriptorPool      = nullptr;
 
-    m_rgResources.gbuffModelsBuffer.free();
+    for (auto& buffer : m_rgResources.gbuffModelsBuffer)
+        buffer.free();
 
     // release present pass resources
     m_rgResources.presentPipeline       = nullptr;

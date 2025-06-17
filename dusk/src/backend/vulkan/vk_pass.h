@@ -3,6 +3,7 @@
 #include "dusk.h"
 #include "vk.h"
 #include "vk_types.h"
+#include "vk_device.h"
 
 namespace dusk
 {
@@ -24,6 +25,10 @@ struct VkGfxRenderPassContext
     VkRenderingInfo                         renderingInfo {};
 
     DynamicArray<VulkanImageBarier>         preBarriers;
+
+    uint32_t                                maxParallelism = 1u;
+    DynamicArray<VkCommandPool>             secondaryCmdPools;
+    DynamicArray<VkCommandBuffer>           secondaryCmdBuffers;
 
     /**
      * @brief
@@ -74,6 +79,8 @@ struct VkGfxRenderPassContext
             }
         }
 
+        DynamicArray<VkFormat> colorFormats;
+
         colorAttachmentInfos.clear();
         for (const auto& target : colorTargets)
         {
@@ -84,6 +91,8 @@ struct VkGfxRenderPassContext
             colorAttachment.storeOp     = VK_ATTACHMENT_STORE_OP_STORE;
             colorAttachment.clearValue  = target.clearValue;
             colorAttachmentInfos.push_back(colorAttachment);
+
+            colorFormats.push_back(target.format);
         }
 
         if (useDepth)
@@ -137,6 +146,49 @@ struct VkGfxRenderPassContext
         scissor.offset = { 0, 0 };
         scissor.extent = extent;
         vkCmdSetScissor(cmdBuffer, 0, 1, &scissor);
+
+        if (maxParallelism > 1u)
+        {
+            auto& ctx = VkGfxDevice::getSharedVulkanContext();
+
+            // allocate pools per thread
+            secondaryCmdPools.resize(maxParallelism);
+            secondaryCmdBuffers.resize(maxParallelism);
+
+            VkCommandBufferInheritanceRenderingInfo renderingInheritanceInfo {
+                .sType                   = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO,
+                .colorAttachmentCount    = static_cast<uint32_t>(colorFormats.size()),
+                .pColorAttachmentFormats = colorFormats.data(),
+            };
+
+            if (useDepth) renderingInheritanceInfo.depthAttachmentFormat = depthTarget.format;
+
+            VkCommandBufferInheritanceInfo inheritance {
+                .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO,
+                .pNext = &renderingInheritanceInfo
+            };
+
+            for (uint32_t i = 0u; i < maxParallelism; ++i)
+            {
+                VkCommandPoolCreateInfo poolInfo = { VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
+                poolInfo.flags                   = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+                poolInfo.queueFamilyIndex        = ctx.graphicsQueueFamilyIndex;
+
+                VulkanResult result              = vkCreateCommandPool(ctx.device, &poolInfo, nullptr, &secondaryCmdPools[i]);
+
+                DASSERT(result.isOk());
+
+                // allocate secondary cmd buffers
+                VkCommandBufferAllocateInfo allocInfo = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
+                allocInfo.commandPool                 = secondaryCmdPools[i];
+                allocInfo.level                       = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
+                allocInfo.commandBufferCount          = 1;
+
+                result                                = vkAllocateCommandBuffers(ctx.device, &allocInfo, &secondaryCmdBuffers[i]);
+
+                DASSERT(result.isOk());
+            }
+        }
     }
 
     /**
@@ -145,6 +197,18 @@ struct VkGfxRenderPassContext
     void end()
     {
         vkCmdEndRendering(cmdBuffer);
+
+        if (maxParallelism > 1u)
+        {
+            // TODO:: creating and destroying pools and cmd buffers every frame is not optimal
+            //  Ideally need a global sytem/mngr to provide pools to allocate from
+            auto& ctx = VkGfxDevice::getSharedVulkanContext();
+            for (uint32_t i = 0u; i < maxParallelism; ++i)
+            {
+                vkFreeCommandBuffers(ctx.device, secondaryCmdPools[i], 1, &secondaryCmdBuffers[i]);
+                vkDestroyCommandPool(ctx.device, secondaryCmdPools[i], nullptr);
+            }
+        }
     }
 };
 } // namespace dusk

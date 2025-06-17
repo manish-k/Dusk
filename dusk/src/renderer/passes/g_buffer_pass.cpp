@@ -36,7 +36,6 @@ void recordGBufferCmds(
 
     Scene&           scene         = *frameData.scene;
     VkCommandBuffer  commandBuffer = frameData.commandBuffer;
-    CameraComponent& camera        = scene.getMainCamera();
 
     auto&            resources     = Engine::get().getRenderGraphResources();
 

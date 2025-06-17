@@ -171,10 +171,6 @@ void Engine::onUpdate(TimeStep dt)
             m_materialsDescriptorSet->set
         };
 
-        // m_renderer->beginRendering(commandBuffer);
-
-        // m_ui->beginRendering();
-
         if (m_currentScene)
         {
             DUSK_PROFILE_SECTION("scene_updates");
@@ -196,21 +192,9 @@ void Engine::onUpdate(TimeStep dt)
             m_globalUbos.writeAndFlushAtIndex(currentFrameIndex, &ubo, sizeof(GlobalUbo));
 
             updateMaterialsBuffer(m_currentScene->getMaterials());
-
-            // TODO:: maybe scene onUpdate is the right place for this
-            // m_ui->renderSceneWidgets(*m_currentScene);
         }
 
-        // m_basicRenderSystem->renderGameObjects(frameData);
-
-        // m_gridRenderSystem->renderGrid(frameData);
-        // m_skyboxRenderSystem->renderSkybox(frameData);
-
-        // m_ui->endRendering(commandBuffer);
-
         renderFrame(frameData);
-
-        // m_renderer->endRendering(commandBuffer);
 
         m_renderer->endFrame();
     }
@@ -286,9 +270,10 @@ void Engine::renderFrame(FrameData& frameData)
 
     // create g-buffer pass
     auto gbuffCtx = VkGfxRenderPassContext {
-        .colorTargets = m_rgResources.gbuffRenderTargets, // TODO: avoidable copy
-        .depthTarget  = m_rgResources.gbuffDepthTexture,
-        .useDepth     = true
+        .colorTargets   = m_rgResources.gbuffRenderTargets, // TODO: avoidable copy
+        .depthTarget    = m_rgResources.gbuffDepthTexture,
+        .useDepth       = true,
+        .maxParallelism = 3
     };
 
     gbuffCtx.insertTransitionBarrier(

@@ -23,6 +23,7 @@
 #include "backend/vulkan/vk_pass.h"
 
 #include <taskflow/taskflow.hpp>
+#include <taskflow/algorithm/for_each.hpp>
 
 namespace dusk
 {
@@ -34,94 +35,197 @@ void recordGBufferCmds(
 
     if (!frameData.scene) return;
 
-    Scene&           scene         = *frameData.scene;
-    VkCommandBuffer  commandBuffer = frameData.commandBuffer;
+    Scene&          scene           = *frameData.scene;
+    VkCommandBuffer commandBuffer   = frameData.commandBuffer;
 
-    auto&            resources     = Engine::get().getRenderGraphResources();
+    auto&           resources       = Engine::get().getRenderGraphResources();
 
-    resources.gbuffPipeline->bind(commandBuffer);
-
-    // TODO:: this might be required only once, check case
-    // where new textures are added on the fly (streaming textures)
-    {
-        DUSK_PROFILE_GPU_ZONE("gbuffer_bind_desc_set", commandBuffer);
-        vkCmdBindDescriptorSets(
-            frameData.commandBuffer,
-            VK_PIPELINE_BIND_POINT_GRAPHICS,
-            resources.gbuffPipelineLayout->get(),
-            0, // global desc set binding location
-            1,
-            &frameData.globalDescriptorSet,
-            0,
-            nullptr);
-
-        vkCmdBindDescriptorSets(
-            frameData.commandBuffer,
-            VK_PIPELINE_BIND_POINT_GRAPHICS,
-            resources.gbuffPipelineLayout->get(),
-            1, // material desc set binding location
-            1,
-            &frameData.materialDescriptorSet,
-            0,
-            nullptr);
-
-        vkCmdBindDescriptorSets(
-            commandBuffer,
-            VK_PIPELINE_BIND_POINT_GRAPHICS,
-            resources.gbuffPipelineLayout->get(),
-            2, // model desc set binding location
-            1,
-            &resources.gbuffModelDescriptorSet[frameData.frameIndex]->set,
-            0,
-            nullptr);
-    }
-
-    auto renderablesView = scene.GetGameObjectsWith<MeshComponent>();
+    auto            renderablesView = scene.GetGameObjectsWith<MeshComponent>();
 
     // possiblity of cache unfriendliness here. Only first component is
     // cache friendly. https://gamedev.stackexchange.com/a/212879
     // TODO: Profile below code
     {
         DUSK_PROFILE_SECTION("draw_calls_recording");
-        for (auto& entity : renderablesView)
+
+        if (ctx.maxParallelism <= 1)
         {
-            entt::id_type objectId = static_cast<entt::id_type>(entity);
-            auto&         meshData = renderablesView.get<MeshComponent>(entity);
+            resources.gbuffPipeline->bind(commandBuffer);
 
-            for (uint32_t index = 0u; index < meshData.meshes.size(); ++index)
+            // TODO:: this might be required only once, check case
+            // where new textures are added on the fly (streaming textures)
             {
-                int32_t      meshId     = meshData.meshes[index];
-                int32_t      materialId = meshData.materials[index];
-
-                SubMesh&     mesh       = scene.getSubMesh(meshId);
-                VkBuffer     buffers[]  = { mesh.getVertexBuffer().vkBuffer.buffer };
-                VkDeviceSize offsets[]  = { 0 };
-
-                DrawData     push {};
-                push.cameraBufferIdx = frameData.frameIndex;
-                push.materialIdx     = materialId;
-                push.modelIdx        = objectId;
-
-                vkCmdPushConstants(
-                    commandBuffer,
+                DUSK_PROFILE_GPU_ZONE("gbuffer_bind_desc_set", commandBuffer);
+                vkCmdBindDescriptorSets(
+                    frameData.commandBuffer,
+                    VK_PIPELINE_BIND_POINT_GRAPHICS,
                     resources.gbuffPipelineLayout->get(),
-                    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                    0, // global desc set binding location
+                    1,
+                    &frameData.globalDescriptorSet,
                     0,
-                    sizeof(DrawData),
-                    &push);
+                    nullptr);
 
+                vkCmdBindDescriptorSets(
+                    frameData.commandBuffer,
+                    VK_PIPELINE_BIND_POINT_GRAPHICS,
+                    resources.gbuffPipelineLayout->get(),
+                    1, // material desc set binding location
+                    1,
+                    &frameData.materialDescriptorSet,
+                    0,
+                    nullptr);
+
+                vkCmdBindDescriptorSets(
+                    commandBuffer,
+                    VK_PIPELINE_BIND_POINT_GRAPHICS,
+                    resources.gbuffPipelineLayout->get(),
+                    2, // model desc set binding location
+                    1,
+                    &resources.gbuffModelDescriptorSet[frameData.frameIndex]->set,
+                    0,
+                    nullptr);
+            }
+
+            for (auto& entity : renderablesView)
+            {
+                entt::id_type objectId = static_cast<entt::id_type>(entity);
+                auto&         meshData = renderablesView.get<MeshComponent>(entity);
+
+                for (uint32_t index = 0u; index < meshData.meshes.size(); ++index)
                 {
-                    DUSK_PROFILE_GPU_ZONE("gbuffer_bind_vertex", commandBuffer);
-                    vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
+                    int32_t      meshId     = meshData.meshes[index];
+                    int32_t      materialId = meshData.materials[index];
 
-                    vkCmdBindIndexBuffer(commandBuffer, mesh.getIndexBuffer().vkBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
-                }
+                    SubMesh&     mesh       = scene.getSubMesh(meshId);
+                    VkBuffer     buffers[]  = { mesh.getVertexBuffer().vkBuffer.buffer };
+                    VkDeviceSize offsets[]  = { 0 };
 
-                {
-                    DUSK_PROFILE_GPU_ZONE("gbuffer_draw", commandBuffer);
-                    vkCmdDrawIndexed(commandBuffer, mesh.getIndexCount(), 1, 0, 0, 0);
+                    DrawData     push {};
+                    push.cameraBufferIdx = frameData.frameIndex;
+                    push.materialIdx     = materialId;
+                    push.modelIdx        = objectId;
+
+                    vkCmdPushConstants(
+                        commandBuffer,
+                        resources.gbuffPipelineLayout->get(),
+                        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                        0,
+                        sizeof(DrawData),
+                        &push);
+
+                    {
+                        DUSK_PROFILE_GPU_ZONE("gbuffer_bind_vertex", commandBuffer);
+                        vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
+
+                        vkCmdBindIndexBuffer(commandBuffer, mesh.getIndexBuffer().vkBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+                    }
+
+                    {
+                        DUSK_PROFILE_GPU_ZONE("gbuffer_draw", commandBuffer);
+                        vkCmdDrawIndexed(commandBuffer, mesh.getIndexCount(), 1, 0, 0, 0);
+                    }
                 }
             }
+        }
+        else
+        {
+            tf::Executor               executor(ctx.maxParallelism);
+            tf::Taskflow               taskflow;
+
+            DynamicArray<entt::entity> renderables(renderablesView.begin(), renderablesView.end());
+            uint32_t                   stepSize = renderables.size() / ctx.maxParallelism;
+            tf::IndexRange<int>        range(0, renderables.size(), std::max(stepSize, 1u));
+
+            taskflow.for_each_by_index(
+                range,
+                [&](tf::IndexRange<int> subrange)
+                {
+                    int             workerId       = executor.this_worker_id();
+                    VkCommandBuffer secondayBuffer = ctx.secondaryCmdBuffers[workerId];
+
+                    resources.gbuffPipeline->bind(secondayBuffer);
+
+                    // TODO:: this might be required only once, check case
+                    // where new textures are added on the fly (streaming textures)
+                    {
+                        DUSK_PROFILE_GPU_ZONE("gbuffer_bind_desc_set", secondayBuffer);
+                        vkCmdBindDescriptorSets(
+                            secondayBuffer,
+                            VK_PIPELINE_BIND_POINT_GRAPHICS,
+                            resources.gbuffPipelineLayout->get(),
+                            0, // global desc set binding location
+                            1,
+                            &frameData.globalDescriptorSet,
+                            0,
+                            nullptr);
+
+                        vkCmdBindDescriptorSets(
+                            secondayBuffer,
+                            VK_PIPELINE_BIND_POINT_GRAPHICS,
+                            resources.gbuffPipelineLayout->get(),
+                            1, // material desc set binding location
+                            1,
+                            &frameData.materialDescriptorSet,
+                            0,
+                            nullptr);
+
+                        vkCmdBindDescriptorSets(
+                            secondayBuffer,
+                            VK_PIPELINE_BIND_POINT_GRAPHICS,
+                            resources.gbuffPipelineLayout->get(),
+                            2, // model desc set binding location
+                            1,
+                            &resources.gbuffModelDescriptorSet[frameData.frameIndex]->set,
+                            0,
+                            nullptr);
+                    }
+
+                    for (int index = subrange.begin(); index < subrange.end(); index += 1)
+                    {
+                        entt::entity  entity   = renderables[index];
+
+                        entt::id_type objectId = static_cast<entt::id_type>(entity);
+                        auto&         meshData = renderablesView.get<MeshComponent>(entity);
+
+                        for (uint32_t index = 0u; index < meshData.meshes.size(); ++index)
+                        {
+                            int32_t      meshId     = meshData.meshes[index];
+                            int32_t      materialId = meshData.materials[index];
+
+                            SubMesh&     mesh       = scene.getSubMesh(meshId);
+                            VkBuffer     buffers[]  = { mesh.getVertexBuffer().vkBuffer.buffer };
+                            VkDeviceSize offsets[]  = { 0 };
+
+                            DrawData     push {};
+                            push.cameraBufferIdx = frameData.frameIndex;
+                            push.materialIdx     = materialId;
+                            push.modelIdx        = objectId;
+
+                            vkCmdPushConstants(
+                                secondayBuffer,
+                                resources.gbuffPipelineLayout->get(),
+                                VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                                0,
+                                sizeof(DrawData),
+                                &push);
+
+                            {
+                                DUSK_PROFILE_GPU_ZONE("gbuffer_bind_vertex", secondayBuffer);
+                                vkCmdBindVertexBuffers(secondayBuffer, 0, 1, buffers, offsets);
+
+                                vkCmdBindIndexBuffer(secondayBuffer, mesh.getIndexBuffer().vkBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+                            }
+
+                            {
+                                DUSK_PROFILE_GPU_ZONE("gbuffer_draw", secondayBuffer);
+                                vkCmdDrawIndexed(secondayBuffer, mesh.getIndexCount(), 1, 0, 0, 0);
+                            }
+                        }
+                    }
+                });
+
+            executor.run(taskflow).wait();
         }
     }
 }

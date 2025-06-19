@@ -130,6 +130,7 @@ struct VkGfxRenderPassContext
         renderingInfo.colorAttachmentCount = static_cast<uint32_t>(colorAttachmentInfos.size());
         renderingInfo.pColorAttachments    = colorAttachmentInfos.data();
         renderingInfo.pDepthAttachment     = useDepth ? &depthAttachmentInfo : nullptr;
+        renderingInfo.flags                = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT;
 
         vkCmdBeginRendering(cmdBuffer, &renderingInfo);
 
@@ -155,18 +156,19 @@ struct VkGfxRenderPassContext
             secondaryCmdPools.resize(maxParallelism);
             secondaryCmdBuffers.resize(maxParallelism);
 
-            VkCommandBufferInheritanceRenderingInfo renderingInheritanceInfo {
-                .sType                   = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO,
-                .colorAttachmentCount    = static_cast<uint32_t>(colorFormats.size()),
-                .pColorAttachmentFormats = colorFormats.data(),
-            };
+            VkCommandBufferInheritanceRenderingInfo renderingInheritanceInfo { VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO };
+            renderingInheritanceInfo.colorAttachmentCount    = static_cast<uint32_t>(colorFormats.size());
+            renderingInheritanceInfo.pColorAttachmentFormats = colorFormats.data();
+            renderingInheritanceInfo.rasterizationSamples    = VK_SAMPLE_COUNT_1_BIT;
 
-            if (useDepth) renderingInheritanceInfo.depthAttachmentFormat = depthTarget.format;
+            if (useDepth)
+            {
+                renderingInheritanceInfo.depthAttachmentFormat = depthTarget.format;
+                // renderingInheritanceInfo.stencilAttachmentFormat = depthTarget.format;
+            }
 
-            VkCommandBufferInheritanceInfo inheritance {
-                .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO,
-                .pNext = &renderingInheritanceInfo
-            };
+            VkCommandBufferInheritanceInfo inheritance { VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO };
+            inheritance.pNext = &renderingInheritanceInfo;
 
             for (uint32_t i = 0u; i < maxParallelism; ++i)
             {
@@ -187,6 +189,34 @@ struct VkGfxRenderPassContext
                 result                                = vkAllocateCommandBuffers(ctx.device, &allocInfo, &secondaryCmdBuffers[i]);
 
                 DASSERT(result.isOk());
+
+#ifdef VK_RENDERER_DEBUG
+                vkdebug::setObjectName(
+                    ctx.device,
+                    VK_OBJECT_TYPE_COMMAND_BUFFER,
+                    (uint64_t)secondaryCmdBuffers[i],
+                    ("seconday_cmd_buffer_" + std::to_string(i)).c_str());
+#endif
+
+                VkCommandBufferBeginInfo beginInfo { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
+                beginInfo.flags            = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT | VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+                beginInfo.pInheritanceInfo = &inheritance;
+
+                vkBeginCommandBuffer(secondaryCmdBuffers[i], &beginInfo);
+
+                VkViewport viewport {};
+                viewport.x        = 0.0f;
+                viewport.y        = 0.0f;
+                viewport.width    = static_cast<float>(extent.width);
+                viewport.height   = static_cast<float>(extent.height);
+                viewport.minDepth = 0.0f;
+                viewport.maxDepth = 1.0f;
+                vkCmdSetViewport(secondaryCmdBuffers[i], 0, 1, &viewport);
+
+                VkRect2D scissor {};
+                scissor.offset = { 0, 0 };
+                scissor.extent = extent;
+                vkCmdSetScissor(secondaryCmdBuffers[i], 0, 1, &scissor);
             }
         }
     }
@@ -196,6 +226,16 @@ struct VkGfxRenderPassContext
      */
     void end()
     {
+        if (maxParallelism > 1u)
+        {
+            for (uint32_t i = 0u; i < maxParallelism; ++i)
+            {
+                vkEndCommandBuffer(secondaryCmdBuffers[i]);
+            }
+
+            vkCmdExecuteCommands(cmdBuffer, secondaryCmdBuffers.size(), secondaryCmdBuffers.data());
+        }
+
         vkCmdEndRendering(cmdBuffer);
 
         if (maxParallelism > 1u)
@@ -205,8 +245,8 @@ struct VkGfxRenderPassContext
             auto& ctx = VkGfxDevice::getSharedVulkanContext();
             for (uint32_t i = 0u; i < maxParallelism; ++i)
             {
-                vkFreeCommandBuffers(ctx.device, secondaryCmdPools[i], 1, &secondaryCmdBuffers[i]);
-                vkDestroyCommandPool(ctx.device, secondaryCmdPools[i], nullptr);
+                /*vkFreeCommandBuffers(ctx.device, secondaryCmdPools[i], 1, &secondaryCmdBuffers[i]);
+                vkResetCommandPool(ctx.device, secondaryCmdPools[i], 0);*/
             }
         }
     }

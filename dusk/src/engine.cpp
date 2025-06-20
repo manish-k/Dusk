@@ -270,10 +270,11 @@ void Engine::renderFrame(FrameData& frameData)
 
     // create g-buffer pass
     auto gbuffCtx = VkGfxRenderPassContext {
-        .colorTargets   = m_rgResources.gbuffRenderTargets, // TODO: avoidable copy
-        .depthTarget    = m_rgResources.gbuffDepthTexture,
-        .useDepth       = true,
-        .maxParallelism = 3
+        .colorTargets        = m_rgResources.gbuffRenderTargets, // TODO: avoidable copy
+        .depthTarget         = m_rgResources.gbuffDepthTexture,
+        .useDepth            = true,
+        .maxParallelism      = 3,
+        .secondaryCmdBuffers = m_renderer->getSecondayCmdBuffers(frameData.frameIndex)
     };
 
     gbuffCtx.insertTransitionBarrier(
@@ -307,7 +308,8 @@ void Engine::renderFrame(FrameData& frameData)
 
     auto presentCtx = VkGfxRenderPassContext {
         .colorTargets = { swapImageTarget },
-        .useDepth     = false
+        .useDepth     = false,
+        .secondaryCmdBuffers = m_renderer->getSecondayCmdBuffers(frameData.frameIndex)
     };
 
     presentCtx.insertTransitionBarrier(

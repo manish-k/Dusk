@@ -1,11 +1,11 @@
 #pragma once
 
 #include "vk_renderer.h"
-
 #include "debug/profiler.h"
 
 #define VOLK_IMPLEMENTATION
 #include <volk.h>
+#include <thread>
 
 namespace dusk
 {
@@ -350,6 +350,9 @@ Error VulkanRenderer::createCommandBuffers()
 
     DUSK_INFO("Command buffers created = {}", m_commandBuffers.size());
 
+    Error err = createSecondaryCmdPoolsAndBuffers();
+    if (err != Error::Ok) return err;
+
     return Error::Ok;
 }
 
@@ -358,6 +361,8 @@ void VulkanRenderer::freeCommandBuffers()
     auto& context = VkGfxDevice::getSharedVulkanContext();
     vkFreeCommandBuffers(context.device, context.commandPool, static_cast<uint32_t>(m_commandBuffers.size()), m_commandBuffers.data());
     m_commandBuffers.clear();
+
+    freeSecondaryCmdPoolsAndBuffers();
 }
 
 Error VulkanRenderer::recreateCommandBuffers()
@@ -367,6 +372,101 @@ Error VulkanRenderer::recreateCommandBuffers()
     freeCommandBuffers();
 
     return createCommandBuffers();
+}
+
+Error VulkanRenderer::createSecondaryCmdPoolsAndBuffers()
+{
+    auto&          context    = VkGfxDevice::getSharedVulkanContext();
+    const uint32_t poolsCount = std::thread::hardware_concurrency();
+    const uint32_t maxFrames  = m_swapChain->getImagesCount();
+
+    m_secondaryCmdPools.resize(poolsCount);
+    m_secondaryCmdBuffers.resize(maxFrames);
+    for (uint32_t i = 0u; i < maxFrames; ++i)
+    {
+        m_secondaryCmdBuffers[i].resize(poolsCount);
+    }
+
+    for (uint32_t i = 0u; i < poolsCount; ++i)
+    {
+        VkCommandPoolCreateInfo poolInfo = { VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
+        poolInfo.flags                   = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+        poolInfo.queueFamilyIndex        = context.graphicsQueueFamilyIndex;
+
+        VulkanResult result              = vkCreateCommandPool(context.device, &poolInfo, nullptr, &m_secondaryCmdPools[i]);
+        if (result.hasError())
+        {
+            DUSK_ERROR("Unable to create secondary command pools {}", result.toString());
+            return Error::InitializationFailed;
+        }
+
+#ifdef VK_RENDERER_DEBUG
+        vkdebug::setObjectName(
+            context.device,
+            VK_OBJECT_TYPE_COMMAND_POOL,
+            (uint64_t)m_secondaryCmdPools[i],
+            ("seconday_cmd_pool_" + std::to_string(i)).c_str());
+
+#endif
+
+        // allocate secondary cmd buffers
+        for (uint32_t frameIdx = 0u; frameIdx < maxFrames; ++frameIdx)
+        {
+            VkCommandBufferAllocateInfo allocInfo = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
+            allocInfo.commandPool                 = m_secondaryCmdPools[i];
+            allocInfo.level                       = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
+            allocInfo.commandBufferCount          = 1;
+
+            result                                = vkAllocateCommandBuffers(context.device, &allocInfo, &m_secondaryCmdBuffers[frameIdx][i]);
+            if (result.hasError())
+            {
+                DUSK_ERROR("Unable to create secondary command buffers {}", result.toString());
+                return Error::InitializationFailed;
+            }
+#ifdef VK_RENDERER_DEBUG
+
+            vkdebug::setObjectName(
+                context.device,
+                VK_OBJECT_TYPE_COMMAND_BUFFER,
+                (uint64_t)m_secondaryCmdBuffers[frameIdx][i],
+                ("seconday_cmd_buffer_" + std::to_string(frameIdx) + "_" + std::to_string(i)).c_str());
+#endif
+        }
+    }
+
+    return Error::Ok;
+}
+
+void VulkanRenderer::freeSecondaryCmdPoolsAndBuffers()
+{
+    auto&          context   = VkGfxDevice::getSharedVulkanContext();
+    const uint32_t maxFrames = m_swapChain->getImagesCount();
+
+    for (uint32_t frameIdx = 0u; frameIdx < maxFrames; ++frameIdx)
+    {
+        for (uint32_t cmdBuffIdx = 0u; cmdBuffIdx < m_secondaryCmdBuffers.size(); ++cmdBuffIdx)
+        {
+            vkFreeCommandBuffers(context.device, m_secondaryCmdPools[cmdBuffIdx], 1, &m_secondaryCmdBuffers[frameIdx][cmdBuffIdx]);
+        }
+    }
+
+    for (uint32_t cmdPoolIdx = 0u; cmdPoolIdx < m_secondaryCmdPools.size(); ++cmdPoolIdx)
+    {
+        vkDestroyCommandPool(context.device, m_secondaryCmdPools[cmdPoolIdx], nullptr);
+    }
+
+    m_secondaryCmdPools.clear();
+    m_secondaryCmdBuffers.clear();
+}
+
+void VulkanRenderer::resetSecondaryCmdBuffers(uint32_t frameIdx)
+{
+    auto& context = VkGfxDevice::getSharedVulkanContext();
+
+    for (uint32_t cmdBuffIdx = 0u; cmdBuffIdx < m_secondaryCmdBuffers.size(); ++cmdBuffIdx)
+    {
+        vkFreeCommandBuffers(context.device, m_secondaryCmdPools[cmdBuffIdx], 1, &m_secondaryCmdBuffers[frameIdx][cmdBuffIdx]);
+    }
 }
 
 } // namespace dusk

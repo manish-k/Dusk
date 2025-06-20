@@ -27,7 +27,6 @@ struct VkGfxRenderPassContext
     DynamicArray<VulkanImageBarier>         preBarriers;
 
     uint32_t                                maxParallelism = 1u;
-    DynamicArray<VkCommandPool>             secondaryCmdPools;
     DynamicArray<VkCommandBuffer>           secondaryCmdBuffers;
 
     /**
@@ -150,11 +149,7 @@ struct VkGfxRenderPassContext
 
         if (maxParallelism > 1u)
         {
-            auto& ctx = VkGfxDevice::getSharedVulkanContext();
-
-            // allocate pools per thread
-            secondaryCmdPools.resize(maxParallelism);
-            secondaryCmdBuffers.resize(maxParallelism);
+            auto&                                   ctx = VkGfxDevice::getSharedVulkanContext();
 
             VkCommandBufferInheritanceRenderingInfo renderingInheritanceInfo { VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO };
             renderingInheritanceInfo.colorAttachmentCount    = static_cast<uint32_t>(colorFormats.size());
@@ -164,7 +159,6 @@ struct VkGfxRenderPassContext
             if (useDepth)
             {
                 renderingInheritanceInfo.depthAttachmentFormat = depthTarget.format;
-                // renderingInheritanceInfo.stencilAttachmentFormat = depthTarget.format;
             }
 
             VkCommandBufferInheritanceInfo inheritance { VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO };
@@ -172,32 +166,6 @@ struct VkGfxRenderPassContext
 
             for (uint32_t i = 0u; i < maxParallelism; ++i)
             {
-                VkCommandPoolCreateInfo poolInfo = { VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
-                poolInfo.flags                   = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-                poolInfo.queueFamilyIndex        = ctx.graphicsQueueFamilyIndex;
-
-                VulkanResult result              = vkCreateCommandPool(ctx.device, &poolInfo, nullptr, &secondaryCmdPools[i]);
-
-                DASSERT(result.isOk());
-
-                // allocate secondary cmd buffers
-                VkCommandBufferAllocateInfo allocInfo = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
-                allocInfo.commandPool                 = secondaryCmdPools[i];
-                allocInfo.level                       = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
-                allocInfo.commandBufferCount          = 1;
-
-                result                                = vkAllocateCommandBuffers(ctx.device, &allocInfo, &secondaryCmdBuffers[i]);
-
-                DASSERT(result.isOk());
-
-#ifdef VK_RENDERER_DEBUG
-                vkdebug::setObjectName(
-                    ctx.device,
-                    VK_OBJECT_TYPE_COMMAND_BUFFER,
-                    (uint64_t)secondaryCmdBuffers[i],
-                    ("seconday_cmd_buffer_" + std::to_string(i)).c_str());
-#endif
-
                 VkCommandBufferBeginInfo beginInfo { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
                 beginInfo.flags            = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT | VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
                 beginInfo.pInheritanceInfo = &inheritance;
@@ -233,22 +201,10 @@ struct VkGfxRenderPassContext
                 vkEndCommandBuffer(secondaryCmdBuffers[i]);
             }
 
-            vkCmdExecuteCommands(cmdBuffer, secondaryCmdBuffers.size(), secondaryCmdBuffers.data());
+            vkCmdExecuteCommands(cmdBuffer, maxParallelism, secondaryCmdBuffers.data());
         }
 
         vkCmdEndRendering(cmdBuffer);
-
-        if (maxParallelism > 1u)
-        {
-            // TODO:: creating and destroying pools and cmd buffers every frame is not optimal
-            //  Ideally need a global sytem/mngr to provide pools to allocate from
-            auto& ctx = VkGfxDevice::getSharedVulkanContext();
-            for (uint32_t i = 0u; i < maxParallelism; ++i)
-            {
-                /*vkFreeCommandBuffers(ctx.device, secondaryCmdPools[i], 1, &secondaryCmdBuffers[i]);
-                vkResetCommandPool(ctx.device, secondaryCmdPools[i], 0);*/
-            }
-        }
     }
 };
 } // namespace dusk

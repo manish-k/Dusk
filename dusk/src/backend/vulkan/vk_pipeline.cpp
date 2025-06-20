@@ -25,12 +25,6 @@ VkGfxRenderPipeline::Builder& VkGfxRenderPipeline::Builder::setFragmentShaderCod
     return *this;
 }
 
-// VkGfxRenderPipeline::Builder& VkGfxRenderPipeline::Builder::setRenderPass(VkRenderPass renderPass)
-//{
-//     m_renderConfig.renderPass = renderPass;
-//     return *this;
-// }
-
 VkGfxRenderPipeline::Builder& VkGfxRenderPipeline::Builder::setSubPassIndex(uint32_t index)
 {
     m_renderConfig.subpassIndex = index;
@@ -64,6 +58,12 @@ VkGfxRenderPipeline::Builder& VkGfxRenderPipeline::Builder::addColorAttachmentFo
 VkGfxRenderPipeline::Builder& VkGfxRenderPipeline::Builder::setCullMode(VkCullModeFlagBits flags)
 {
     m_renderConfig.cullMode = flags;
+    return *this;
+}
+
+VkGfxRenderPipeline::Builder& VkGfxRenderPipeline::Builder::removeVertexInputState()
+{
+    m_renderConfig.noInputState = true;
     return *this;
 }
 
@@ -213,7 +213,6 @@ VkGfxRenderPipeline::VkGfxRenderPipeline(VulkanContext& vkContext, VkGfxRenderPi
     pipelineInfo.sType               = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pipelineInfo.stageCount          = 2;
     pipelineInfo.pStages             = shaderStages;
-    pipelineInfo.pVertexInputState   = &vertexInputInfo;
     pipelineInfo.pInputAssemblyState = &inputAssemblyInfo;
     pipelineInfo.pViewportState      = &viewportState;
     pipelineInfo.pRasterizationState = &rasterizationInfo;
@@ -222,18 +221,23 @@ VkGfxRenderPipeline::VkGfxRenderPipeline(VulkanContext& vkContext, VkGfxRenderPi
     pipelineInfo.pDepthStencilState  = &depthStencilInfo;
     pipelineInfo.pDynamicState       = &dynamicStatesInfo;
 
-    pipelineInfo.renderPass          = VK_NULL_HANDLE;
-    pipelineInfo.subpass             = renderConfig.subpassIndex;
-    pipelineInfo.layout              = renderConfig.pipelineLayout;
+    if (!renderConfig.noInputState)
+    {
+        pipelineInfo.pVertexInputState = &vertexInputInfo;
+    }
+
+    pipelineInfo.renderPass = VK_NULL_HANDLE;
+    pipelineInfo.subpass    = renderConfig.subpassIndex;
+    pipelineInfo.layout     = renderConfig.pipelineLayout;
 
     // dynamic rendering is enabled
     VkPipelineRenderingCreateInfo renderingCreateInfo { VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO };
     renderingCreateInfo.colorAttachmentCount    = static_cast<size_t>(renderConfig.colorAttachmentFormats.size());
     renderingCreateInfo.pColorAttachmentFormats = renderConfig.colorAttachmentFormats.data();
     renderingCreateInfo.depthAttachmentFormat   = VK_FORMAT_D32_SFLOAT_S8_UINT;
-    //renderingCreateInfo.stencilAttachmentFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
+    // renderingCreateInfo.stencilAttachmentFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
 
-    pipelineInfo.pNext                          = &renderingCreateInfo;
+    pipelineInfo.pNext = &renderingCreateInfo;
 
     // create pipeline
     VulkanResult result = vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_pipeline);

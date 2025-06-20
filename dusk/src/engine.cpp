@@ -618,6 +618,7 @@ void Engine::prepareRenderGraphResources()
                                         .setFragmentShaderCode(presentFragShaderCode)
                                         .setPipelineLayout(*m_rgResources.presentPipelineLayout)
                                         .addColorAttachmentFormat(VK_FORMAT_B8G8R8A8_SRGB)
+                                        .removeVertexInputState()
                                         .build();
 }
 

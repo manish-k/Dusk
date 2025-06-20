@@ -29,6 +29,7 @@ struct VkGfxRenderPipelineConfig
     VkPipelineLayout                                  pipelineLayout = VK_NULL_HANDLE;
 
     VkCullModeFlagBits                                cullMode       = VK_CULL_MODE_NONE;
+    bool                                              noInputState   = false;
 };
 
 class VkGfxRenderPipeline
@@ -47,6 +48,7 @@ public:
         Builder& setPipelineLayout(VkGfxPipelineLayout& pipelineLayout);
         Builder& addColorAttachmentFormat(VkFormat format);
         Builder& setCullMode(VkCullModeFlagBits flags);
+        Builder& removeVertexInputState();
 
         /**
          * @brief build VkGfxPipeline object with given config

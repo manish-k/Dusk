@@ -1,5 +1,7 @@
 #include "assimp_loader.h"
 
+#include "debug/profiler.h"
+
 #include "scene/scene.h"
 #include "scene/components/transform.h"
 #include "scene/components/mesh.h"
@@ -23,15 +25,21 @@ AssimpLoader::~AssimpLoader()
 
 Unique<Scene> AssimpLoader::readScene(const std::filesystem::path& filePath)
 {
-    m_sceneDir                 = filePath.parent_path();
+    DUSK_PROFILE_FUNCTION;
 
-    const aiScene* assimpScene = m_importer.ReadFile(filePath.string(), aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_FlipUVs);
+    m_sceneDir = filePath.parent_path();
+    const aiScene* assimpScene;
 
-    if (assimpScene == nullptr)
     {
-        DUSK_ERROR("Unable to read scene file. {}", m_importer.GetErrorString());
-        m_sceneDir = "";
-        return nullptr;
+        DUSK_PROFILE_SECTION("read_scene_file");
+        assimpScene = m_importer.ReadFile(filePath.string(), aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_FlipUVs);
+
+        if (assimpScene == nullptr)
+        {
+            DUSK_ERROR("Unable to read scene file. {}", m_importer.GetErrorString());
+            m_sceneDir = "";
+            return nullptr;
+        }
     }
 
     return parseScene(assimpScene);
@@ -39,6 +47,8 @@ Unique<Scene> AssimpLoader::readScene(const std::filesystem::path& filePath)
 
 Unique<Scene> AssimpLoader::parseScene(const aiScene* assimpScene)
 {
+    DUSK_PROFILE_FUNCTION;
+
     auto newScene = createUnique<Scene>(assimpScene->mName.C_Str());
 
     if (assimpScene->mNumMeshes > 0)
@@ -63,6 +73,8 @@ Unique<Scene> AssimpLoader::parseScene(const aiScene* assimpScene)
 
 void AssimpLoader::traverseSceneNodes(Scene& scene, const aiNode* node, const aiScene* aiScene, EntityId parentId)
 {
+    DUSK_PROFILE_FUNCTION;
+
     auto gameObject   = createUnique<GameObject>(parseAssimpNode(node));
     auto gameObjectId = gameObject->getId();
 
@@ -95,6 +107,8 @@ void AssimpLoader::traverseSceneNodes(Scene& scene, const aiNode* node, const ai
 
 GameObject AssimpLoader::parseAssimpNode(const aiNode* node)
 {
+    DUSK_PROFILE_FUNCTION;
+
     GameObject newGameObject;
     auto&      transform = newGameObject.getComponent<TransformComponent>();
 
@@ -137,6 +151,8 @@ GameObject AssimpLoader::parseAssimpNode(const aiNode* node)
 
 void AssimpLoader::parseMeshes(Scene& scene, const aiScene* aiScene)
 {
+    DUSK_PROFILE_FUNCTION;
+
     for (uint32_t meshIndex = 0u; meshIndex < aiScene->mNumMeshes; ++meshIndex)
     {
         DynamicArray<Vertex>   vertices {};
@@ -190,6 +206,8 @@ std::string AssimpLoader::getTexturePath(aiMaterial* mat, aiTextureType type)
 
 void AssimpLoader::parseMaterials(Scene& scene, const aiScene* aiScene)
 {
+    DUSK_PROFILE_FUNCTION;
+
     for (uint32_t matIndex = 0; matIndex < aiScene->mNumMaterials; ++matIndex)
     {
         aiMaterial* aiMat = aiScene->mMaterials[matIndex];

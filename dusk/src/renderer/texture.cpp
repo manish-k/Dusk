@@ -2,6 +2,7 @@
 
 #include "engine.h"
 #include "image.h"
+#include "debug/profiler.h"
 #include "backend/vulkan/vk_allocator.h"
 #include "backend/vulkan/vk_types.h"
 #include "backend/vulkan/vk_descriptors.h"
@@ -12,6 +13,8 @@ namespace dusk
 
 Error Texture2D::init(Image& texImage, const char* debugName)
 {
+    DUSK_PROFILE_FUNCTION;
+
     auto& device    = Engine::get().getGfxDevice();
     auto& vkContext = device.getSharedVulkanContext();
 

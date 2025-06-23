@@ -17,7 +17,7 @@ extern Unique<dusk::Application> dusk::createApplication(int argc, char** argv);
 // main func
 int main(int argc, char** argv)
 {
-    DUSK_PROFILE_THREAD("main");
+    DUSK_PROFILE_THREAD("main_thread");
 
     // start logger
     dusk::Logger::init();

@@ -41,6 +41,8 @@ Engine::~Engine() { }
 
 bool Engine::start(Shared<Application> app)
 {
+    DUSK_PROFILE_FUNCTION;
+
     DASSERT(!m_app, "Application is null")
 
     m_app = app;
@@ -273,7 +275,7 @@ void Engine::renderFrame(FrameData& frameData)
         .colorTargets        = m_rgResources.gbuffRenderTargets, // TODO: avoidable copy
         .depthTarget         = m_rgResources.gbuffDepthTexture,
         .useDepth            = true,
-        .maxParallelism      = 3,
+        .maxParallelism      = 16,
         .secondaryCmdBuffers = m_renderer->getSecondayCmdBuffers(frameData.frameIndex)
     };
 
@@ -479,6 +481,8 @@ void Engine::updateMaterialsBuffer(DynamicArray<Material>& materials)
 
 void Engine::prepareRenderGraphResources()
 {
+    DUSK_PROFILE_FUNCTION;
+
     auto&    ctx            = VkGfxDevice::getSharedVulkanContext();
     auto     extent         = m_renderer->getSwapChain().getCurrentExtent();
     uint32_t maxFramesCount = m_renderer->getMaxFramesCount();

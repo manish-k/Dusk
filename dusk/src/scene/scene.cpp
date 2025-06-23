@@ -38,7 +38,7 @@ Scene::Scene(const std::string_view name) :
 
     auto&       cameraComponent         = camera->addComponent<CameraComponent>();
     const auto& currentExtent           = Engine::get().getRenderer().getSwapChain().getCurrentExtent();
-    cameraComponent.setPerspectiveProjection(glm::radians(50.f), static_cast<float>(currentExtent.width) / static_cast<float>(currentExtent.height), 0.5f, 1000.f);
+    cameraComponent.setPerspectiveProjection(glm::radians(50.f), static_cast<float>(currentExtent.width) / static_cast<float>(currentExtent.height), 0.5f, 10000.f);
     cameraComponent.setView(cameraTransform.translation, cameraTransform.rotation);
 
     m_cameraController = createUnique<CameraController>(*camera, currentExtent.width, currentExtent.height);
@@ -144,12 +144,16 @@ TransformComponent& Scene::getMainCameraTransform()
 
 Unique<Scene> Scene::createSceneFromGLTF(const std::string& fileName)
 {
+    DUSK_PROFILE_FUNCTION;
+
     AssimpLoader loader {};
     return loader.readScene(fileName);
 }
 
 int Scene::loadTexture(std::string& path)
 {
+    DUSK_PROFILE_FUNCTION;
+
     if (path.empty())
     {
         DUSK_ERROR("empty path for loading th texture");
@@ -160,9 +164,16 @@ int Scene::loadTexture(std::string& path)
     if (!m_texPathMap.has(path))
     {
         // Texture was not loaded earlier
-        auto img = ImageLoader::readImage(path);
+        Unique<Image> img;
+
+        {
+            DUSK_PROFILE_SECTION("texture_file_read");
+            img = ImageLoader::readImage(path);
+        }
+
         if (img)
         {
+            DUSK_PROFILE_SECTION("texture_file_upload");
             uint32_t  newId = m_textures.size();
             Texture2D newTex(newId);
 

@@ -46,10 +46,10 @@ void recordGBufferCmds(
     // cache friendly. https://gamedev.stackexchange.com/a/212879
     // TODO: Profile below code
     {
-        DUSK_PROFILE_SECTION("draw_calls_recording");
-
         if (ctx.maxParallelism <= 1)
         {
+            DUSK_PROFILE_SECTION("draw_calls_recording_single_thread");
+
             resources.gbuffPipeline->bind(commandBuffer);
 
             // TODO:: this might be required only once, check case
@@ -130,6 +130,8 @@ void recordGBufferCmds(
         }
         else
         {
+            DUSK_PROFILE_SECTION("draw_calls_recording_multi_thread");
+
             tf::Executor               executor(ctx.maxParallelism);
             tf::Taskflow               taskflow;
 
@@ -143,6 +145,7 @@ void recordGBufferCmds(
                 {
                     int             workerId       = executor.this_worker_id();
                     VkCommandBuffer secondayBuffer = ctx.secondaryCmdBuffers[workerId];
+
 
                     resources.gbuffPipeline->bind(secondayBuffer);
 
@@ -183,6 +186,8 @@ void recordGBufferCmds(
 
                     for (int index = subrange.begin(); index < subrange.end(); index += 1)
                     {
+                        DUSK_PROFILE_SECTION("sub_range_recording");
+
                         entt::entity  entity   = renderables[index];
 
                         entt::id_type objectId = static_cast<entt::id_type>(entity);

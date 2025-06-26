@@ -20,17 +20,17 @@ constexpr uint32_t maxAllowedTextures = 1000;
 class TextureDB
 {
 public:
-    TextureDB(VkGfxDevice& device) :
-        m_gfxDevice(device) { };
+    TextureDB(VkGfxDevice& device);
     ~TextureDB() = default;
 
-    Error    init();
+    bool     init();
     void     cleanup();
     int      getTexture();
-    uint32_t loadTexture();
+    uint32_t loadTextureAsync(std::string& path);
+    void     onUpdate();
 
 public:
-    static TextureDB* cache();
+    static TextureDB* cache() { return s_db; };
 
 private:
     Error initDefaultTexture();
@@ -39,20 +39,22 @@ private:
     void  freeAllResources();
 
 private:
-    uint32_t                             m_idCounter = 0;
-    std::mutex                           m_idMutex;
+    uint32_t                         m_idCounter = 0;
+    std::mutex                       m_mutex;
 
-    tf::Executor                         m_tfExecutor;
+    tf::Executor                     m_tfExecutor;
 
-    DynamicArray<Texture2D>              m_textures = {};
+    DynamicArray<Texture2D>          m_textures                 = {};
+    HashMap<std::string, uint32_t>   m_loadedTextures           = {};
+    HashMap<std::string, uint32_t>   m_currentlyLoadingTextures = {};
+    HashMap<uint32_t, Unique<Image>> m_pendingImages            = {};
 
-    VkGfxDevice&                         m_gfxDevice;
-    Unique<VkGfxDescriptorPool>          m_textureDescriptorPool      = nullptr;
-    Unique<VkGfxDescriptorSetLayout>     m_textureDescriptorSetLayout = nullptr;
-    Unique<VkGfxDescriptorSet>           m_textureDescriptorSet       = nullptr;
+    VkGfxDevice&                     m_gfxDevice;
+    Unique<VkGfxDescriptorPool>      m_textureDescriptorPool      = nullptr;
+    Unique<VkGfxDescriptorSetLayout> m_textureDescriptorSetLayout = nullptr;
+    Unique<VkGfxDescriptorSet>       m_textureDescriptorSet       = nullptr;
 
-    Texture2D                            m_default2dTexture           = { 0 }; // id 0 is reserved for default Texture
-    VulkanSampler                        m_defaultSampler;
+    VulkanSampler                    m_defaultSampler;
 
 private:
     static TextureDB* s_db;

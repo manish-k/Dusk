@@ -544,8 +544,37 @@ Error VkGfxDevice::createDevice()
         DUSK_ERROR("Failed to create command pool {}", result.toString());
         return result.getErrorId();
     }
-
     DUSK_INFO("Command pool created with graphics queue");
+
+#ifdef VK_RENDERER_DEBUG
+    vkdebug::setObjectName(
+        m_device,
+        VK_OBJECT_TYPE_COMMAND_POOL,
+        (uint64_t)m_commandPool,
+        "cmd_pool");
+
+#endif
+
+    VkCommandPoolCreateInfo poolInfo = { VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
+    poolInfo.flags                   = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    poolInfo.queueFamilyIndex        = pSelectedDeviceInfo->transferQueueIndex;
+
+    result                           = vkCreateCommandPool(m_device, &poolInfo, nullptr, &m_transferCommandPool);
+    if (result.hasError())
+    {
+        DUSK_ERROR("Unable to create transfer command pools {}", result.toString());
+        return result.getErrorId();
+    }
+    DUSK_INFO("Command pool created with transfer queue");
+
+#ifdef VK_RENDERER_DEBUG
+    vkdebug::setObjectName(
+        m_device,
+        VK_OBJECT_TYPE_COMMAND_POOL,
+        (uint64_t)m_transferCommandPool,
+        "transfer_cmd_pool");
+
+#endif
 
     // setup tracy profiling ctx
 #ifdef DUSK_ENABLE_PROFILING
@@ -562,6 +591,7 @@ Error VkGfxDevice::createDevice()
     s_sharedVkContext.device                   = m_device;
     s_sharedVkContext.surface                  = m_surface;
     s_sharedVkContext.commandPool              = m_commandPool;
+    s_sharedVkContext.transferCommandPool      = m_transferCommandPool;
 
     s_sharedVkContext.physicalDeviceProperties = pSelectedDeviceInfo->deviceProperties;
     s_sharedVkContext.physicalDeviceFeatures   = pSelectedDeviceInfo->deviceFeatures2.features;
@@ -598,6 +628,8 @@ void VkGfxDevice::destroyDevice()
 
     if (m_commandPool != VK_NULL_HANDLE)
         vkDestroyCommandPool(m_device, m_commandPool, nullptr);
+
+    vkDestroyCommandPool(m_device, m_transferCommandPool, nullptr);
 
 #ifdef DUSK_ENABLE_PROFILING
     TracyVkDestroy(s_gpuProfilerCtx);

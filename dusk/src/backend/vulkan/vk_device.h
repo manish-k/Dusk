@@ -124,11 +124,12 @@ public:
 private:
     GLFWVulkanWindow&  m_window;
 
-    VkInstance         m_instance       = VK_NULL_HANDLE;
-    VkPhysicalDevice   m_physicalDevice = VK_NULL_HANDLE;
-    VkDevice           m_device         = VK_NULL_HANDLE;
-    VkCommandPool      m_commandPool    = VK_NULL_HANDLE;
-    VkSurfaceKHR       m_surface        = VK_NULL_HANDLE;
+    VkInstance         m_instance            = VK_NULL_HANDLE;
+    VkPhysicalDevice   m_physicalDevice      = VK_NULL_HANDLE;
+    VkDevice           m_device              = VK_NULL_HANDLE;
+    VkCommandPool      m_commandPool         = VK_NULL_HANDLE;
+    VkCommandPool      m_transferCommandPool = VK_NULL_HANDLE;
+    VkSurfaceKHR       m_surface             = VK_NULL_HANDLE;
 
     VulkanGPUAllocator m_gpuAllocator {};
 

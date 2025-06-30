@@ -245,6 +245,7 @@ Error Texture2D::initAndRecordUpload(
         1,
         &region);
 
+    // release ownership from transfer queue
     barrier                                 = {};
     barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     barrier.oldLayout                       = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
@@ -273,18 +274,27 @@ Error Texture2D::initAndRecordUpload(
 
     vkEndCommandBuffer(transferBuffer);
 
+    VkSemaphoreCreateInfo semInfo {
+        .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
+    };
+
+    VkSemaphore uploadFinishedSemaphore;
+    vkCreateSemaphore(vkContext.device, &semInfo, nullptr, &uploadFinishedSemaphore);
+
     // submit
     VkSubmitInfo submitInfo {};
-    submitInfo.sType              = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers    = &transferBuffer;
+    submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount   = 1;
+    submitInfo.pCommandBuffers      = &transferBuffer;
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores    = &uploadFinishedSemaphore;
 
     vkQueueSubmit(vkContext.transferQueue, 1, &submitInfo, VK_NULL_HANDLE);
     vkQueueWaitIdle(vkContext.transferQueue);
 
     vkBeginCommandBuffer(graphicsBuffer, &beginInfo);
 
-    // sync layout for graphics queue
+    // graphics queue will require ownership
     barrier                                 = {};
     barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     barrier.oldLayout                       = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
@@ -313,12 +323,22 @@ Error Texture2D::initAndRecordUpload(
 
     vkEndCommandBuffer(graphicsBuffer);
 
+    VkPipelineStageFlags waitStages[] = {
+        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
+    };
+
     submitInfo                    = {};
     submitInfo.sType              = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers    = &graphicsBuffer;
+    submitInfo.waitSemaphoreCount = 1;
+    submitInfo.pWaitSemaphores    = &uploadFinishedSemaphore;
+    submitInfo.pWaitDstStageMask  = waitStages;
+
     vkQueueSubmit(vkContext.graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
     vkQueueWaitIdle(vkContext.graphicsQueue);
+
+    vkDestroySemaphore(vkContext.device, uploadFinishedSemaphore, nullptr);
 
     stagingBuffer.free();
 

@@ -28,6 +28,8 @@ public:
     void     cleanup();
     int      getTexture();
     uint32_t loadTextureAsync(std::string& path);
+    VkGfxDescriptorSet& getTextureDescriptorSet() const { return *m_textureDescriptorSet; };
+    VkGfxDescriptorSetLayout& getTextureDescriptorSetLayout() const { return *m_textureDescriptorSetLayout; };
     void     onUpdate();
 
 public:

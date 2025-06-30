@@ -57,7 +57,7 @@ void recordGBufferCmds(
             {
                 DUSK_PROFILE_GPU_ZONE("gbuffer_bind_desc_set", commandBuffer);
                 vkCmdBindDescriptorSets(
-                    frameData.commandBuffer,
+                    commandBuffer,
                     VK_PIPELINE_BIND_POINT_GRAPHICS,
                     resources.gbuffPipelineLayout->get(),
                     0, // global desc set binding location
@@ -67,7 +67,7 @@ void recordGBufferCmds(
                     nullptr);
 
                 vkCmdBindDescriptorSets(
-                    frameData.commandBuffer,
+                    commandBuffer,
                     VK_PIPELINE_BIND_POINT_GRAPHICS,
                     resources.gbuffPipelineLayout->get(),
                     1, // material desc set binding location
@@ -83,6 +83,16 @@ void recordGBufferCmds(
                     2, // model desc set binding location
                     1,
                     &resources.gbuffModelDescriptorSet[frameData.frameIndex]->set,
+                    0,
+                    nullptr);
+
+                vkCmdBindDescriptorSets(
+                    commandBuffer,
+                    VK_PIPELINE_BIND_POINT_GRAPHICS,
+                    resources.gbuffPipelineLayout->get(),
+                    3, // texture desc set binding location
+                    1,
+                    &frameData.textureDescriptorSet,
                     0,
                     nullptr);
             }
@@ -146,7 +156,6 @@ void recordGBufferCmds(
                     int             workerId       = executor.this_worker_id();
                     VkCommandBuffer secondayBuffer = ctx.secondaryCmdBuffers[workerId];
 
-
                     resources.gbuffPipeline->bind(secondayBuffer);
 
                     // TODO:: this might be required only once, check case
@@ -182,12 +191,20 @@ void recordGBufferCmds(
                             &resources.gbuffModelDescriptorSet[frameData.frameIndex]->set,
                             0,
                             nullptr);
+
+                        vkCmdBindDescriptorSets(
+                            secondayBuffer,
+                            VK_PIPELINE_BIND_POINT_GRAPHICS,
+                            resources.gbuffPipelineLayout->get(),
+                            3, // texture desc set binding location
+                            1,
+                            &frameData.textureDescriptorSet,
+                            0,
+                            nullptr);
                     }
 
                     for (int index = subrange.begin(); index < subrange.end(); index += 1)
                     {
-                        DUSK_PROFILE_SECTION("sub_range_recording");
-
                         entt::entity  entity   = renderables[index];
 
                         entt::id_type objectId = static_cast<entt::id_type>(entity);

@@ -67,8 +67,9 @@ public:
 
     CLASS_UNCOPYABLE(VkGfxRenderPipeline);
 
-    bool isValid() const { return m_pipeline != VK_NULL_HANDLE; };
-    void bind(VkCommandBuffer commandBuffer) const;
+    bool       isValid() const { return m_pipeline != VK_NULL_HANDLE; };
+    void       bind(VkCommandBuffer commandBuffer) const;
+    VkPipeline get() const { return m_pipeline; }
 
 private:
     void createShaderModule(const DynamicArray<char>& shaderCode, VkShaderModule* shaderModule) const;

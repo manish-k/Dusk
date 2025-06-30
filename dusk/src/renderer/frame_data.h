@@ -34,8 +34,9 @@ struct FrameData
     Scene*           scene;
     uint32_t         width;
     uint32_t         height;
-    
+
     VkDescriptorSet& globalDescriptorSet;
+    VkDescriptorSet& textureDescriptorSet;
     VkDescriptorSet& lightsDescriptorSet;
     VkDescriptorSet& materialDescriptorSet;
 };

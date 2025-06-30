@@ -174,6 +174,7 @@ void Engine::onUpdate(TimeStep dt)
             extent.width,
             extent.height,
             m_globalDescriptorSet->set,
+            m_textureDB->getTextureDescriptorSet().set,
             m_lightsSystem->getLightsDescriptorSet().set,
             m_materialsDescriptorSet->set
         };
@@ -263,7 +264,6 @@ void Engine::onEvent(Event& ev)
 void Engine::loadScene(Scene* scene)
 {
     m_currentScene = scene;
-    //registerTextures(scene->getTextures());
     registerMaterials(scene->getMaterials());
 
     m_lightsSystem->registerAllLights(*scene);
@@ -433,29 +433,6 @@ void Engine::cleanupGlobals()
     releaseRenderGraphResources();
 }
 
-void Engine::registerTextures(DynamicArray<Texture2D>& textures)
-{
-    DynamicArray<VkDescriptorImageInfo> texDescInfos;
-    texDescInfos.resize(textures.size());
-
-    for (uint32_t texIndex = 0u; texIndex < textures.size(); ++texIndex)
-    {
-        Texture2D& tex                     = textures[texIndex];
-
-        texDescInfos[texIndex].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        texDescInfos[texIndex].imageView   = tex.vkTexture.imageView;
-        //texDescInfos[texIndex].sampler     = tex.vkSampler.sampler;
-
-        m_globalDescriptorSet->configureImage(
-            1,
-            tex.id,
-            1,
-            &texDescInfos[texIndex]);
-    }
-
-    m_globalDescriptorSet->applyConfiguration();
-}
-
 void Engine::registerMaterials(DynamicArray<Material>& materials)
 {
     DynamicArray<VkDescriptorBufferInfo> matInfo;
@@ -563,7 +540,16 @@ void Engine::prepareRenderGraphResources()
                                             .addDescriptorSetLayout(m_globalDescriptorSetLayout->layout)
                                             .addDescriptorSetLayout(m_materialDescriptorSetLayout->layout)
                                             .addDescriptorSetLayout(m_rgResources.gbuffModelDescriptorSetLayout->layout)
+                                            .addDescriptorSetLayout(m_textureDB->getTextureDescriptorSetLayout().layout)
                                             .build();
+
+#ifdef VK_RENDERER_DEBUG
+    vkdebug::setObjectName(
+        ctx.device,
+        VK_OBJECT_TYPE_PIPELINE_LAYOUT,
+        (uint64_t)m_rgResources.gbuffPipelineLayout->get(),
+        "gbuff_pipeline_layout");
+#endif // VK_RENDERER_DEBUG
 
     // create g-buffer pipeline
     std::filesystem::path buildPath  = STRING(DUSK_BUILD_PATH);
@@ -581,6 +567,14 @@ void Engine::prepareRenderGraphResources()
                                       .addColorAttachmentFormat(VK_FORMAT_R8G8B8A8_UNORM)      // albedo
                                       .addColorAttachmentFormat(VK_FORMAT_R16G16B16A16_SFLOAT) // normal
                                       .build();
+
+#ifdef VK_RENDERER_DEBUG
+    vkdebug::setObjectName(
+        ctx.device,
+        VK_OBJECT_TYPE_PIPELINE,
+        (uint64_t)m_rgResources.gbuffPipeline->get(),
+        "gbuff_pipeline");
+#endif // VK_RENDERER_DEBUG
 
     // presentation pass
 

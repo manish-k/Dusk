@@ -25,13 +25,13 @@ TextureDB::TextureDB(VkGfxDevice& device) :
 
 bool TextureDB::init()
 {
-    Error err = initDefaultTexture();
-    if (err != Error::Ok) return false;
-
-    err = initDefaultSampler();
-    if (err != Error::Ok) return false;
-
     setupDescriptors();
+
+    Error err = initDefaultSampler();
+    if (err != Error::Ok) return false;
+
+    err = initDefaultTexture();
+    if (err != Error::Ok) return false;
 
     return true;
 }
@@ -50,10 +50,14 @@ void TextureDB::freeAllResources()
     m_textureDescriptorPool      = nullptr;
     m_textureDescriptorSet       = nullptr;
 
+    auto& defaultTex             = m_textures[0];
     for (auto& tex : m_textures)
     {
-        tex.free();
+        // some textures might be using default texture image and image views
+        if (tex.vkTexture.image.image != defaultTex.vkTexture.image.image)
+            tex.free();
     }
+    defaultTex.free();
 
     m_textures.clear();
     m_loadedTextures.clear();
@@ -74,6 +78,20 @@ Error TextureDB::initDefaultTexture()
     Error     err = default2dTexture.init(defaultTextureImg, "default_tex_2d");
 
     m_textures.push_back(default2dTexture);
+
+    // update corrosponding descriptor with new image
+    VkDescriptorImageInfo texDescInfos {};
+    texDescInfos.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    texDescInfos.imageView   = default2dTexture.vkTexture.imageView;
+    texDescInfos.sampler     = m_defaultSampler.sampler;
+
+    m_textureDescriptorSet->configureImage(
+        0,
+        default2dTexture.id,
+        1,
+        &texDescInfos);
+
+    m_textureDescriptorSet->applyConfiguration();
     return err;
 }
 
@@ -143,8 +161,6 @@ uint32_t TextureDB::loadTextureAsync(std::string& path)
                           {
         auto& filePath = m_textures[newId].name;
 
-        DASSERT(m_currentlyLoadingTextures.has(filePath));
-
         Shared<Image> img = nullptr;
         {
             DUSK_PROFILE_SECTION("texture_file_read");
@@ -179,9 +195,11 @@ uint32_t TextureDB::loadTextureAsync(std::string& path)
 
 void TextureDB::onUpdate()
 {
+    DUSK_PROFILE_FUNCTION;
+
     if (m_pendingImages.size() > 0)
     {
-        DUSK_PROFILE_SECTION("texture_file_upload");
+        DUSK_DEBUG("pending texture to upload {}", m_pendingImages.size());
 
         std::lock_guard<std::mutex> updateLock(m_mutex);
 

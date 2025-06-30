@@ -24,8 +24,6 @@ layout (set = 0, binding = 0) uniform GlobalUBO
 	uvec4 spotLightIndices[32];
 } globalubo[];
 
-layout (set = 0, binding = 1) uniform sampler2D textures[];
-
 layout (set = 1, binding = 0) buffer Material 
 {
 	int id;
@@ -35,6 +33,8 @@ layout (set = 1, binding = 0) buffer Material
 	vec4 albedoColor;
 
 } materials[];
+
+layout (set = 3, binding = 0) uniform sampler2D textures[];
 
 layout(push_constant) uniform DrawData 
 {

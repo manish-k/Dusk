@@ -102,7 +102,6 @@ public:
     bool                  setupGlobals();
     void                  cleanupGlobals();
 
-    void                  registerTextures(DynamicArray<Texture2D>& textures);
     void                  registerMaterials(DynamicArray<Material>& materials);
 
     void                  updateMaterialsBuffer(DynamicArray<Material>& materials);

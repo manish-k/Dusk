@@ -10,6 +10,8 @@
 #include "backend/vulkan/vk_pipeline.h"
 #include "backend/vulkan/vk_pipeline_layout.h"
 
+#include <taskflow/taskflow.hpp>
+
 namespace dusk
 {
 
@@ -23,6 +25,7 @@ class BasicRenderSystem;
 class GridRenderSystem;
 class SkyboxRenderSystem;
 class LightsSystem;
+class TextureDB;
 class VulkanRenderer;
 class VkGfxDevice;
 
@@ -110,6 +113,8 @@ public:
     void                  releaseRenderGraphResources();
     RenderGraphResources& getRenderGraphResources() { return m_rgResources; };
 
+    tf::Executor&         getTfExecutor() { return m_tfExecutor; }
+
     // TODO:: should be part of config
     void setSkyboxVisibility(bool state);
 
@@ -126,6 +131,8 @@ private:
     Unique<GridRenderSystem>         m_gridRenderSystem   = nullptr;
     Unique<SkyboxRenderSystem>       m_skyboxRenderSystem = nullptr;
     Unique<LightsSystem>             m_lightsSystem       = nullptr;
+
+    Unique<TextureDB>                m_textureDB          = nullptr;
 
     Unique<UI>                       m_ui                 = nullptr;
 
@@ -150,6 +157,8 @@ private:
     Unique<VkGfxDescriptorSet>       m_materialsDescriptorSet;
 
     RenderGraphResources             m_rgResources;
+
+    tf::Executor                     m_tfExecutor;
 
 private:
     static Engine* s_instance;

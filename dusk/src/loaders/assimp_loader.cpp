@@ -8,6 +8,7 @@
 
 #include "renderer/texture.h"
 #include "renderer/material.h"
+#include "renderer/texture_db.h"
 
 #include <glm/gtx/matrix_decompose.hpp>
 #include <assimp/pbrmaterial.h>
@@ -219,11 +220,12 @@ void AssimpLoader::parseMaterials(Scene& scene, const aiScene* aiScene)
         if (!baseColorTexturePath.empty())
         {
             auto texturePath = (m_sceneDir / baseColorTexturePath).string();
-            diffuseTexId     = scene.loadTexture(texturePath);
+            //diffuseTexId     = scene.loadTexture(texturePath);
+            diffuseTexId = TextureDB::cache()->loadTextureAsync(texturePath);
         }
         else
         {
-            diffuseTexId = scene.getDefaultTextureId();
+            //diffuseTexId = scene.getDefaultTextureId();
         }
 
         aiColor3D diffuseColor { 1.0f };

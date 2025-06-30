@@ -19,6 +19,7 @@
 
 #include "renderer/material.h"
 #include "renderer/texture.h"
+#include "renderer/texture_db.h"
 #include "renderer/systems/basic_render_system.h"
 #include "renderer/systems/grid_render_system.h"
 #include "renderer/systems/skybox_render_system.h"
@@ -75,8 +76,15 @@ bool Engine::start(Shared<Application> app)
         return false;
     }
 
-    m_running          = true;
-    m_paused           = false;
+    m_running   = true;
+    m_paused    = false;
+
+    m_textureDB = createUnique<TextureDB>(*m_gfxDevice);
+    if (!m_textureDB->init())
+    {
+        DUSK_ERROR("Texture DB initialization failed");
+        return false;
+    }
 
     bool globalsStatus = setupGlobals();
     if (!globalsStatus) return false;
@@ -88,14 +96,6 @@ bool Engine::start(Shared<Application> app)
         *m_globalDescriptorSetLayout,
         *m_materialDescriptorSetLayout,
         m_lightsSystem->getLightsDescriptorSetLayout());
-
-    m_gridRenderSystem = createUnique<GridRenderSystem>(
-        *m_gfxDevice,
-        *m_globalDescriptorSetLayout);
-
-    m_skyboxRenderSystem = createUnique<SkyboxRenderSystem>(
-        *m_gfxDevice,
-        *m_globalDescriptorSetLayout);
 
     prepareRenderGraphResources();
 
@@ -126,6 +126,8 @@ void Engine::run()
         // poll events from window
         m_window->onUpdate(m_deltaTime);
 
+        m_textureDB->onUpdate();
+
         onUpdate(m_deltaTime);
 
         m_app->onUpdate(m_deltaTime);
@@ -146,6 +148,9 @@ void Engine::shutdown()
     m_ui = nullptr;
 
     cleanupGlobals();
+
+    m_textureDB->cleanup();
+    m_textureDB = nullptr;
 
     m_renderer->cleanup();
     m_gfxDevice->cleanupGfxDevice();
@@ -258,7 +263,7 @@ void Engine::onEvent(Event& ev)
 void Engine::loadScene(Scene* scene)
 {
     m_currentScene = scene;
-    registerTextures(scene->getTextures());
+    //registerTextures(scene->getTextures());
     registerMaterials(scene->getMaterials());
 
     m_lightsSystem->registerAllLights(*scene);
@@ -309,8 +314,8 @@ void Engine::renderFrame(FrameData& frameData)
     };
 
     auto presentCtx = VkGfxRenderPassContext {
-        .colorTargets = { swapImageTarget },
-        .useDepth     = false,
+        .colorTargets        = { swapImageTarget },
+        .useDepth            = false,
         .secondaryCmdBuffers = m_renderer->getSecondayCmdBuffers(frameData.frameIndex)
     };
 
@@ -439,7 +444,7 @@ void Engine::registerTextures(DynamicArray<Texture2D>& textures)
 
         texDescInfos[texIndex].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         texDescInfos[texIndex].imageView   = tex.vkTexture.imageView;
-        texDescInfos[texIndex].sampler     = tex.vkSampler.sampler;
+        //texDescInfos[texIndex].sampler     = tex.vkSampler.sampler;
 
         m_globalDescriptorSet->configureImage(
             1,

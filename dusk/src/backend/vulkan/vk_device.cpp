@@ -555,11 +555,11 @@ Error VkGfxDevice::createDevice()
 
 #endif
 
-    VkCommandPoolCreateInfo poolInfo = { VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
-    poolInfo.flags                   = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    poolInfo.queueFamilyIndex        = pSelectedDeviceInfo->transferQueueIndex;
+    poolInfo                  = { VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
+    poolInfo.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    poolInfo.queueFamilyIndex = pSelectedDeviceInfo->transferQueueIndex;
 
-    result                           = vkCreateCommandPool(m_device, &poolInfo, nullptr, &m_transferCommandPool);
+    result                    = vkCreateCommandPool(m_device, &poolInfo, nullptr, &m_transferCommandPool);
     if (result.hasError())
     {
         DUSK_ERROR("Unable to create transfer command pools {}", result.toString());

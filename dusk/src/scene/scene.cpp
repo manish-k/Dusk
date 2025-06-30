@@ -45,20 +45,6 @@ Scene::Scene(const std::string_view name) :
 
     m_cameraId         = camera->getId();
     addGameObject(std::move(camera), rootId);
-
-    glm::u8vec4 whiteColor { 255 };
-
-    Image       defaultTextureImg {};
-    defaultTextureImg.width    = 1;
-    defaultTextureImg.height   = 1;
-    defaultTextureImg.channels = 4;
-    defaultTextureImg.size     = 4;
-    defaultTextureImg.data     = (unsigned char*)&whiteColor;
-
-    Texture2D defaultTex { m_defaultTextureId };
-    defaultTex.init(defaultTextureImg, "default_tex");
-
-    m_textures.push_back(defaultTex);
 }
 
 Scene::~Scene()

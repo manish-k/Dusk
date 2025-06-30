@@ -34,6 +34,7 @@ Unique<Image> ImageLoader::readImage(const std::string& filepath)
     }
     else
     {
+        // TODO:: extra copying might not be required
         memcpy(img.data, rawImgData, img.width * img.height * 4);
     }
 
@@ -41,7 +42,6 @@ Unique<Image> ImageLoader::readImage(const std::string& filepath)
 
     img.channels = 4;
     img.size     = img.width * img.height * img.channels;
-    img.name     = filepath;
 
     return createUnique<Image>(std::move(img));
 }

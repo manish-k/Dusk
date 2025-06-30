@@ -11,7 +11,10 @@
 
 namespace dusk
 {
-TextureDB* TextureDB::s_db = nullptr;
+TextureDB*     TextureDB::s_db         = nullptr;
+
+constexpr char texTransferBufferName[] = "tex_transfer_buffer";
+constexpr char texGraphicBufferName[]  = "tex_graphic_buffer";
 
 TextureDB::TextureDB(VkGfxDevice& device) :
     m_gfxDevice(device)
@@ -46,6 +49,14 @@ void TextureDB::freeAllResources()
     m_textureDescriptorSetLayout = nullptr;
     m_textureDescriptorPool      = nullptr;
     m_textureDescriptorSet       = nullptr;
+
+    for (auto& tex : m_textures)
+    {
+        tex.free();
+    }
+
+    m_textures.clear();
+    m_loadedTextures.clear();
 }
 
 Error TextureDB::initDefaultTexture()
@@ -134,7 +145,7 @@ uint32_t TextureDB::loadTextureAsync(std::string& path)
 
         DASSERT(m_currentlyLoadingTextures.has(filePath));
 
-        Unique<Image> img;
+        Shared<Image> img = nullptr;
         {
             DUSK_PROFILE_SECTION("texture_file_read");
             img = ImageLoader::readImage(filePath);
@@ -144,10 +155,9 @@ uint32_t TextureDB::loadTextureAsync(std::string& path)
         {
             {
                 std::lock_guard<std::mutex> updateLock(m_mutex);
-                m_pendingImages.emplace(newId, std::move(img));
+                DUSK_DEBUG("Queuing texture {} for gpu upload", newId);
+                m_pendingImages.emplace(newId, img);
             }
-
-            return;
         } });
 
     // update corrosponding descriptor to use default image
@@ -187,6 +197,14 @@ void TextureDB::onUpdate()
 
         vkAllocateCommandBuffers(vkContext.device, &allocInfo, &transferBuffer);
 
+#ifdef VK_RENDERER_DEBUG
+        vkdebug::setObjectName(
+            vkContext.device,
+            VK_OBJECT_TYPE_COMMAND_BUFFER,
+            (uint64_t)transferBuffer,
+            texTransferBufferName);
+#endif // VK_RENDERER_DEBUG
+
         allocInfo                    = {};
         allocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
         allocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -195,28 +213,29 @@ void TextureDB::onUpdate()
 
         vkAllocateCommandBuffers(vkContext.device, &allocInfo, &gfxBuffer);
 
-        VkCommandBufferBeginInfo beginInfo {};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-        vkBeginCommandBuffer(gfxBuffer, &beginInfo);
-        vkBeginCommandBuffer(transferBuffer, &beginInfo);
+#ifdef VK_RENDERER_DEBUG
+        vkdebug::setObjectName(
+            vkContext.device,
+            VK_OBJECT_TYPE_COMMAND_BUFFER,
+            (uint64_t)gfxBuffer,
+            texGraphicBufferName);
+#endif // VK_RENDERER_DEBUG
 
         for (uint32_t key : m_pendingImages.keys())
         {
             Texture2D& tex = m_textures[key];
             Image&     img = *m_pendingImages[key];
-            Error      err = tex.initAndRecordUpload(img, gfxBuffer, transferBuffer, img.name.c_str());
+            Error      err = tex.initAndRecordUpload(img, gfxBuffer, transferBuffer, tex.name.c_str());
             if (err != Error::Ok)
             {
-                DUSK_ERROR("Unable to record texture upload cmds for {}", img.name);
+                DUSK_ERROR("Unable to record texture upload cmds for {}", tex.name);
                 break;
             }
 
-            m_currentlyLoadingTextures.erase(img.name);
-            m_loadedTextures.emplace(img.name, tex.id);
+            m_currentlyLoadingTextures.erase(tex.name);
+            m_loadedTextures.emplace(tex.name, tex.id);
 
-            DUSK_DEBUG("Texture {} loaded to gpu", img.name);
+            DUSK_DEBUG("Texture {} loaded to gpu", tex.name);
 
             // update corrosponding descriptor with new image
             VkDescriptorImageInfo texDescInfos {};
@@ -235,25 +254,7 @@ void TextureDB::onUpdate()
             ImageLoader::freeImage(img);
         }
 
-        // submit
-        vkEndCommandBuffer(transferBuffer);
-        VkSubmitInfo submitInfo {};
-        submitInfo.sType              = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers    = &transferBuffer;
-
-        vkQueueSubmit(vkContext.transferQueue, 1, &submitInfo, VK_NULL_HANDLE);
-        vkQueueWaitIdle(vkContext.transferQueue);
         vkFreeCommandBuffers(vkContext.device, vkContext.transferCommandPool, 1, &transferBuffer);
-
-        vkEndCommandBuffer(gfxBuffer);
-
-        submitInfo                    = {};
-        submitInfo.sType              = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers    = &gfxBuffer;
-        vkQueueSubmit(vkContext.graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-        vkQueueWaitIdle(vkContext.graphicsQueue);
         vkFreeCommandBuffers(vkContext.device, vkContext.commandPool, 1, &gfxBuffer);
 
         m_pendingImages.clear();

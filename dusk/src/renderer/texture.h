@@ -16,14 +16,18 @@ struct Texture2D
     std::string   name        = "";
 
     VulkanTexture vkTexture {};
-    VulkanSampler vkSampler {}; // TODO: sampler can be a common one instead of per texture
 
     Texture2D(uint32_t id) :
-        id(id) {};
+        id(id) { };
     ~Texture2D() = default;
 
     Error init(Image& texImage, const char* debugName = nullptr);
-    void  free();
+    Error initAndRecordUpload(
+        Image&          texImage,
+        VkCommandBuffer graphicsBuffer,
+        VkCommandBuffer transferBuffer,
+        const char*     debugName = nullptr);
+    void free();
 };
 
 struct Texture3D
@@ -38,7 +42,7 @@ struct Texture3D
     VulkanSampler vkSampler {}; // TODO: sampler can be a common one instead of per texture
 
     Texture3D(uint32_t id) :
-        id(id) {};
+        id(id) { };
     ~Texture3D() = default;
 
     Error init(DynamicArray<Image>& texImages); // TODO: input params not ideal, maybe support with shared ptr?

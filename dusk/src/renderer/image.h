@@ -4,7 +4,7 @@
 
 namespace dusk
 {
-// TODO:: make class uncopyable
+// TODO:: make class uncopyable. Currently doesn't follow RAII
 struct Image
 {
     int            width    = 0;
@@ -12,7 +12,6 @@ struct Image
     int            channels = 0;
     size_t         size     = 0;
     unsigned char* data     = nullptr;
-    std::string    name     = "";
 
     Image()                 = default;
 };

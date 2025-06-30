@@ -24,21 +24,71 @@ public:
     TextureDB(VkGfxDevice& device);
     ~TextureDB() = default;
 
-    bool     init();
-    void     cleanup();
-    int      getTexture();
-    uint32_t loadTextureAsync(std::string& path);
-    VkGfxDescriptorSet& getTextureDescriptorSet() const { return *m_textureDescriptorSet; };
+    /**
+     * @brief Initialize the texture database
+     */
+    bool init();
+
+    /**
+     * @brief Start cleanup of the texture database
+     */
+    void cleanup();
+
+    /**
+     * @brief Get Texture for the given Id
+     * @params texture id
+     */
+    Texture2D getTexture2D(uint32_t texId) const { return m_textures[texId]; };
+
+    /**
+     * @brief Asynchronously loads a texture and returns its identifier.
+     * @params Path of the texture
+     * @return The unique identifier of the loaded texture.
+     */
+    uint32_t                  loadTextureAsync(std::string& path);
+    
+    /**
+     * @brief Get descriptor set for the textures
+     */
+    VkGfxDescriptorSet&       getTextureDescriptorSet() const { return *m_textureDescriptorSet; };
+    
+    /**
+     * @brief Get descriptor set layout for texture set
+     */
     VkGfxDescriptorSetLayout& getTextureDescriptorSetLayout() const { return *m_textureDescriptorSetLayout; };
-    void     onUpdate();
+    
+    /**
+     * @brief Per frame update call to upload pending textures
+     */
+    void                      onUpdate();
 
 public:
+
+    /**
+     * @brief Static method to get texture db cache instance
+     */
     static TextureDB* cache() { return s_db; };
 
 private:
+
+    /**
+     * @brief Initialize a default texture of 1x1 image
+     */
     Error initDefaultTexture();
+    
+    /**
+     * @brief Initialize a common sampler for all textures
+     */
     Error initDefaultSampler();
+
+    /**
+     * @brief Setup the texture descriptor
+     */
     bool  setupDescriptors();
+
+    /**
+     * @brief Free up all the allocated resources
+     */
     void  freeAllResources();
 
 private:

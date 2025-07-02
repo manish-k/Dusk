@@ -290,7 +290,6 @@ Error Texture2D::initAndRecordUpload(
     submitInfo.pSignalSemaphores    = &uploadFinishedSemaphore;
 
     vkQueueSubmit(vkContext.transferQueue, 1, &submitInfo, VK_NULL_HANDLE);
-    vkQueueWaitIdle(vkContext.transferQueue);
 
     vkBeginCommandBuffer(graphicsBuffer, &beginInfo);
 
@@ -336,6 +335,8 @@ Error Texture2D::initAndRecordUpload(
     submitInfo.pWaitDstStageMask  = waitStages;
 
     vkQueueSubmit(vkContext.graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+    
+    // wait for graphics queue to finish
     vkQueueWaitIdle(vkContext.graphicsQueue);
 
     vkDestroySemaphore(vkContext.device, uploadFinishedSemaphore, nullptr);

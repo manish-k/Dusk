@@ -273,7 +273,13 @@ void Engine::renderFrame(FrameData& frameData)
 {
     DUSK_PROFILE_FUNCTION;
 
-    RenderGraph renderGraph;
+    RenderGraph        renderGraph;
+
+    VulkanRenderTarget swapImageTarget = {
+        .image     = { .image = m_renderer->getSwapChain().getImage(frameData.frameIndex) },
+        .imageView = m_renderer->getSwapChain().getImageView(frameData.frameIndex),
+        .format    = m_renderer->getSwapChain().getImageFormat()
+    };
 
     // create g-buffer pass
     auto gbuffCtx = VkGfxRenderPassContext {
@@ -307,12 +313,6 @@ void Engine::renderFrame(FrameData& frameData)
     // create lighting pass
 
     // create presentation pass
-    VulkanRenderTarget swapImageTarget = {
-        .image     = { .image = m_renderer->getSwapChain().getImage(frameData.frameIndex) },
-        .imageView = m_renderer->getSwapChain().getImageView(frameData.frameIndex),
-        .format    = m_renderer->getSwapChain().getImageFormat()
-    };
-
     auto presentCtx = VkGfxRenderPassContext {
         .colorTargets        = { swapImageTarget },
         .useDepth            = false,

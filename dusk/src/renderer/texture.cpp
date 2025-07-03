@@ -336,7 +336,7 @@ Error Texture2D::initAndRecordUpload(
 
     vkQueueSubmit(vkContext.graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
     
-    // wait for graphics queue to finish
+    // wait for graphics queue operation to finish
     vkQueueWaitIdle(vkContext.graphicsQueue);
 
     vkDestroySemaphore(vkContext.device, uploadFinishedSemaphore, nullptr);

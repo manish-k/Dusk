@@ -16,12 +16,13 @@ public:
     UI()  = default;
     ~UI() = default;
 
-    bool init(Window& window);
-    void shutdown();
-    void beginRendering();
-    void endRendering(VkCommandBuffer cb);
-    void renderSceneWidgets(Scene& scene);
-    void onEvent(Event& ev);
+    bool            init(Window& window);
+    void            shutdown();
+    void            beginRendering();
+    void            renderCommonWidgets();
+    void            endRendering(VkCommandBuffer cb);
+    void            renderSceneWidgets(Scene& scene);
+    void            onEvent(Event& ev);
 
     static UIState& state() { return s_uiState; }
 

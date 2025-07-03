@@ -98,6 +98,7 @@ public:
 
     VulkanRenderer&       getRenderer() { return *m_renderer; }
     VkGfxDevice&          getGfxDevice() { return *m_gfxDevice; }
+    UI&                   getEditorUI() { return *m_ui; }
 
     bool                  setupGlobals();
     void                  cleanupGlobals();

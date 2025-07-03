@@ -49,10 +49,8 @@ bool           UI::init(Window& window)
     VkPipelineRenderingCreateInfo renderingCreateInfo { VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO };
     renderingCreateInfo.colorAttachmentCount    = static_cast<size_t>(colorAttachmentFormats.size());
     renderingCreateInfo.pColorAttachmentFormats = colorAttachmentFormats.data();
-    renderingCreateInfo.depthAttachmentFormat   = VK_FORMAT_D32_SFLOAT_S8_UINT;
-    renderingCreateInfo.stencilAttachmentFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
 
-    // setup imgui with out backend
+    // setup imgui with our backend
     ImGui_ImplVulkan_InitInfo initInfo   = {};
     initInfo.Instance                    = ctx.vulkanInstance;
     initInfo.PhysicalDevice              = ctx.physicalDevice;
@@ -90,10 +88,13 @@ void UI::beginRendering()
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
+}
 
+void UI::renderCommonWidgets()
+{
     drawStatsWidget();
     drawRendererWidget();
-    //ImGui::ShowDemoWindow();
+    // ImGui::ShowDemoWindow();
 }
 
 void UI::endRendering(VkCommandBuffer cb)

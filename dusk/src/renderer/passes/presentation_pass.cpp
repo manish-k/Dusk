@@ -5,6 +5,7 @@
 #include "vk_swapchain.h"
 #include "vk_renderer.h"
 #include "engine.h"
+#include "ui/ui.h"
 
 namespace dusk
 {
@@ -16,10 +17,10 @@ void recordPresentationCmds(
 
     auto& resources = Engine::get().getRenderGraphResources();
 
-    resources.presentPipeline->bind(frameData.commandBuffer);
+    resources.presentPipeline->bind(ctx.cmdBuffer);
 
     vkCmdBindDescriptorSets(
-        frameData.commandBuffer,
+        ctx.cmdBuffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
         resources.presentPipelineLayout->get(),
         0,
@@ -28,7 +29,15 @@ void recordPresentationCmds(
         0,
         nullptr);
 
-    vkCmdDraw(frameData.commandBuffer, 3, 1, 0, 0);
+    vkCmdDraw(ctx.cmdBuffer, 3, 1, 0, 0);
+
+    // record commands for editor ui here
+    auto& editorUI = Engine::get().getEditorUI();
+
+    editorUI.beginRendering();
+    editorUI.renderCommonWidgets();
+    editorUI.renderSceneWidgets(*frameData.scene);
+    editorUI.endRendering(ctx.cmdBuffer);
 
     return;
 }

@@ -3,7 +3,7 @@
 #include "engine.h"
 #include "platform/file_system.h"
 #include "loaders/stb_image_loader.h"
-#include "ui/ui.h"
+#include "ui/editor_ui.h"
 #include "renderer/frame_data.h"
 
 #include "scene/scene.h"
@@ -115,7 +115,7 @@ SkyboxRenderSystem::SkyboxRenderSystem(VkGfxDevice& device, VkGfxDescriptorSetLa
     createPipeLine();
 
     // enable flag in ui
-    UI::state().rendererState.useSkybox = true;
+    EditorUI::state().rendererState.useSkybox = true;
 
     // free texture images
     for (uint32_t texIndex = 0u; texIndex < skyboxTextures.size(); ++texIndex)
@@ -140,7 +140,7 @@ SkyboxRenderSystem::~SkyboxRenderSystem()
 void SkyboxRenderSystem::renderSkybox(const FrameData& frameData)
 {
     // enable/disable from UI
-    m_isEnable = UI::state().rendererState.useSkybox;
+    m_isEnable = EditorUI::state().rendererState.useSkybox;
     if (!m_isEnable) return;
 
     if (!frameData.scene) return;
@@ -261,7 +261,7 @@ void SkyboxRenderSystem::setupDescriptors()
 
 void SkyboxRenderSystem::setVisble(bool visibility)
 {
-    UI::state().rendererState.useSkybox = visibility;
+    EditorUI::state().rendererState.useSkybox = visibility;
     m_isEnable                          = visibility;
 };
 

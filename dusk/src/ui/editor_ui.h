@@ -10,11 +10,11 @@
 
 namespace dusk
 {
-class UI
+class EditorUI
 {
 public:
-    UI()  = default;
-    ~UI() = default;
+    EditorUI()  = default;
+    ~EditorUI() = default;
 
     bool            init(Window& window);
     void            shutdown();

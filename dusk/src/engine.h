@@ -19,7 +19,7 @@ namespace dusk
 class Application;
 class Window;
 class Event;
-class UI;
+class EditorUI;
 class Scene;
 class BasicRenderSystem;
 class GridRenderSystem;
@@ -98,7 +98,7 @@ public:
 
     VulkanRenderer&       getRenderer() { return *m_renderer; }
     VkGfxDevice&          getGfxDevice() { return *m_gfxDevice; }
-    UI&                   getEditorUI() { return *m_ui; }
+    EditorUI&             getEditorUI() { return *m_editorUI; }
 
     bool                  setupGlobals();
     void                  cleanupGlobals();
@@ -134,7 +134,7 @@ private:
 
     Unique<TextureDB>                m_textureDB          = nullptr;
 
-    Unique<UI>                       m_ui                 = nullptr;
+    Unique<EditorUI>                 m_editorUI           = nullptr;
 
     bool                             m_running            = false;
     bool                             m_paused             = false;

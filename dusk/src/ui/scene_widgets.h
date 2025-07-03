@@ -22,7 +22,7 @@ inline void drawGameObjectSubTree(Scene& scene, EntityId objectId)
 
     auto&              gObject    = scene.getGameObject(objectId);
     auto&              children   = gObject.getChildren();
-    SceneUIState&      sceneState = UI::state().sceneState;
+    SceneUIState&      sceneState = EditorUI::state().sceneState;
 
     if (children.size() > 0)
     {
@@ -55,7 +55,7 @@ inline void drawGameObjectSubTree(Scene& scene, EntityId objectId)
 
 inline void drawSceneGraphWidget(Scene& scene)
 {
-    SceneUIState& sceneState = UI::state().sceneState;
+    SceneUIState& sceneState = EditorUI::state().sceneState;
 
     ImGui::Begin("Scene");
 

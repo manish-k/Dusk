@@ -154,13 +154,13 @@ set(SCENE_FILES
 set(UI_DIR "${PROJECT_SOURCE_DIR}/src/ui")
 set(UI_FILES
 	# Header files
-	"${UI_DIR}/ui.h"
+	"${UI_DIR}/editor_ui.h"
 	"${UI_DIR}/ui_states.h"
 	"${UI_DIR}/scene_widgets.h"
 	"${UI_DIR}/renderer_widgets.h"
 	"${UI_DIR}/stats_widgets.h"
 	# Source files
-	"${UI_DIR}/ui.cpp"
+	"${UI_DIR}/editor_ui.cpp"
 	"${UI_DIR}/../../vendor/imgui-docking/backends/imgui_impl_vulkan.cpp"
 	"${UI_DIR}/../../vendor/imgui-docking/backends/imgui_impl_glfw.cpp"
 )

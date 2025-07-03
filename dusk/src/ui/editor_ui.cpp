@@ -1,4 +1,4 @@
-#include "ui.h"
+#include "editor_ui.h"
 
 #include "engine.h"
 #include "scene_widgets.h"
@@ -17,9 +17,9 @@ namespace dusk
 {
 constexpr char imguiConfigFile[] = CONCAT(STRING(DUSK_BUILD_PATH), "/dusk_imgui.ini");
 
-UIState        UI::s_uiState     = {};
+UIState        EditorUI::s_uiState     = {};
 
-bool           UI::init(Window& window)
+bool           EditorUI::init(Window& window)
 {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -74,7 +74,7 @@ bool           UI::init(Window& window)
     return true;
 }
 
-void UI::shutdown()
+void EditorUI::shutdown()
 {
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
@@ -83,21 +83,21 @@ void UI::shutdown()
     m_descriptorPool = nullptr;
 }
 
-void UI::beginRendering()
+void EditorUI::beginRendering()
 {
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 }
 
-void UI::renderCommonWidgets()
+void EditorUI::renderCommonWidgets()
 {
     drawStatsWidget();
     drawRendererWidget();
     // ImGui::ShowDemoWindow();
 }
 
-void UI::endRendering(VkCommandBuffer cb)
+void EditorUI::endRendering(VkCommandBuffer cb)
 {
     ImGui::Render();
 
@@ -105,12 +105,12 @@ void UI::endRendering(VkCommandBuffer cb)
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cb);
 }
 
-void UI::renderSceneWidgets(Scene& scene)
+void EditorUI::renderSceneWidgets(Scene& scene)
 {
     drawSceneGraphWidget(scene);
 }
 
-void UI::onEvent(Event& ev)
+void EditorUI::onEvent(Event& ev)
 {
     EventDispatcher dispatcher(ev);
 
@@ -126,7 +126,7 @@ void UI::onEvent(Event& ev)
         });
 }
 
-void UI::setupImGuiTheme()
+void EditorUI::setupImGuiTheme()
 {
     // TODO:: enable alpha blending in the backend
 
@@ -197,7 +197,7 @@ void UI::setupImGuiTheme()
     colors[ImGuiCol_ModalWindowDimBg]      = almostBlack;
 }
 
-void UI::checkVkResult(VkResult err)
+void EditorUI::checkVkResult(VkResult err)
 {
     VulkanResult result(err);
 

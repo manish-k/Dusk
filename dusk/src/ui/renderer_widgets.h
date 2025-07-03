@@ -10,7 +10,7 @@ namespace dusk
 {
 inline void drawRendererWidget()
 {
-    RendererUIState& rendererState = UI::state().rendererState;
+    RendererUIState& rendererState = EditorUI::state().rendererState;
 
     ImGui::Begin("Renderer");
 

@@ -5,7 +5,7 @@
 #include "vk_swapchain.h"
 #include "vk_renderer.h"
 #include "engine.h"
-#include "ui/ui.h"
+#include "ui/editor_ui.h"
 
 namespace dusk
 {

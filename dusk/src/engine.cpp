@@ -4,7 +4,7 @@
 #include "platform/window.h"
 #include "platform/file_system.h"
 #include "utils/utils.h"
-#include "ui/ui.h"
+#include "ui/editor_ui.h"
 #include "debug/profiler.h"
 
 #include "scene/scene.h"
@@ -99,8 +99,8 @@ bool Engine::start(Shared<Application> app)
 
     prepareRenderGraphResources();
 
-    m_ui = createUnique<UI>();
-    if (!m_ui->init(*m_window))
+    m_editorUI = createUnique<EditorUI>();
+    if (!m_editorUI->init(*m_window))
     {
         DUSK_ERROR("Unable to init UI");
         return false;
@@ -144,8 +144,8 @@ void Engine::shutdown()
 
     m_lightsSystem       = nullptr;
 
-    m_ui->shutdown();
-    m_ui = nullptr;
+    m_editorUI->shutdown();
+    m_editorUI = nullptr;
 
     cleanupGlobals();
 
@@ -244,7 +244,7 @@ void Engine::onEvent(Event& ev)
         });
 
     // pass event to UI layer
-    m_ui->onEvent(ev);
+    m_editorUI->onEvent(ev);
 
     // pass event to debug layer
 

@@ -203,7 +203,7 @@ void recordGBufferCmds(
                             nullptr);
                     }
 
-                    for (int index = subrange.begin(); index < subrange.end(); index += 1)
+                    for (int index = subrange.begin(); index < subrange.end() && index < renderablesView.size(); index += 1)
                     {
                         entt::entity  entity   = renderables[index];
 

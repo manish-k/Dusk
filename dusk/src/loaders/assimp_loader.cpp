@@ -29,13 +29,17 @@ Unique<Scene> AssimpLoader::readScene(const std::filesystem::path& filePath)
     DUSK_PROFILE_FUNCTION;
 
     m_sceneDir = filePath.parent_path();
+
+    if (filePath.extension() == ".gltf")
+        m_isGltf = true;
+
     const aiScene* assimpScene;
 
     {
         DUSK_PROFILE_SECTION("read_scene_file");
         assimpScene = m_importer.ReadFile(filePath.string(), aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_FlipUVs);
 
-        if (assimpScene == nullptr)
+        if (!assimpScene || assimpScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !assimpScene->mRootNode)
         {
             DUSK_ERROR("Unable to read scene file. {}", m_importer.GetErrorString());
             m_sceneDir = "";
@@ -194,7 +198,18 @@ void AssimpLoader::parseMeshes(Scene& scene, const aiScene* aiScene)
     }
 }
 
-std::string AssimpLoader::getTexturePath(aiMaterial* mat, aiTextureType type)
+std::filesystem::path AssimpLoader::getGltfTexturePath(aiMaterial* mat)
+{
+    aiString path;
+    aiReturn result = mat->GetTexture(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_BASE_COLOR_TEXTURE, &path);
+
+    if (result == aiReturn_FAILURE)
+        return "";
+
+    return std::filesystem::path(path.C_Str());
+}
+
+std::filesystem::path AssimpLoader::getTexturePath(aiMaterial* mat, aiTextureType type)
 {
     aiString path;
     aiReturn result = mat->GetTexture(type, 0, &path);
@@ -202,7 +217,7 @@ std::string AssimpLoader::getTexturePath(aiMaterial* mat, aiTextureType type)
     if (result == aiReturn_FAILURE)
         return "";
 
-    return std::string(path.C_Str());
+    return std::filesystem::path(path.C_Str());
 }
 
 void AssimpLoader::parseMaterials(Scene& scene, const aiScene* aiScene)
@@ -211,21 +226,33 @@ void AssimpLoader::parseMaterials(Scene& scene, const aiScene* aiScene)
 
     for (uint32_t matIndex = 0; matIndex < aiScene->mNumMaterials; ++matIndex)
     {
-        aiMaterial* aiMat = aiScene->mMaterials[matIndex];
+        aiMaterial*           aiMat                = aiScene->mMaterials[matIndex];
+        std::filesystem::path baseColorTexturePath = "";
+        uint32_t              diffuseTexId         = -1;
 
-        // load diffuse texture
-        std::string baseColorTexturePath = getTexturePath(aiMat, aiTextureType_BASE_COLOR);
+        if (m_isGltf)
+        {
+            baseColorTexturePath = getGltfTexturePath(aiMat);
+        }
 
-        uint32_t    diffuseTexId         = -1;
+        if (baseColorTexturePath.empty())
+        {
+            baseColorTexturePath = getTexturePath(aiMat, aiTextureType_BASE_COLOR);
+
+            if (baseColorTexturePath.empty())
+            {
+                baseColorTexturePath = getTexturePath(aiMat, aiTextureType_DIFFUSE);
+            }
+        }
+
         if (!baseColorTexturePath.empty())
         {
-            auto texturePath = (m_sceneDir / baseColorTexturePath).string();
-            //diffuseTexId     = scene.loadTexture(texturePath);
-            diffuseTexId = TextureDB::cache()->loadTextureAsync(texturePath);
+            auto texturePath = (m_sceneDir / baseColorTexturePath).make_preferred().string();
+            diffuseTexId     = TextureDB::cache()->loadTextureAsync(texturePath);
         }
         else
         {
-            //diffuseTexId = scene.getDefaultTextureId();
+            // diffuseTexId = scene.getDefaultTextureId();
         }
 
         aiColor3D diffuseColor { 1.0f };

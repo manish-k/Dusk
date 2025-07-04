@@ -159,20 +159,19 @@ uint32_t TextureDB::loadTextureAsync(std::string& path)
     auto&      executor   = Engine::get().getTfExecutor();
     executor.silent_async([&, newId]()
                           {
-        auto& filePath = m_textures[newId].name;
+        auto filePath = m_textures[newId].name;
 
         Shared<Image> img = nullptr;
         {
             DUSK_PROFILE_SECTION("texture_file_read");
             img = ImageLoader::readImage(filePath);
-        }
-
-        if (img)
-        {
+            if (img)
             {
-                std::lock_guard<std::mutex> updateLock(m_mutex);
-                DUSK_DEBUG("Queuing texture {} for gpu upload", newId);
-                m_pendingImages.emplace(newId, img);
+                {
+                    std::lock_guard<std::mutex> updateLock(m_mutex);
+                    DUSK_DEBUG("Queuing texture {} for gpu upload", newId);
+                    m_pendingImages.emplace(newId, img);
+                }
             }
         } });
 

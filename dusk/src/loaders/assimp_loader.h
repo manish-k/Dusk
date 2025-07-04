@@ -30,11 +30,14 @@ private:
 
     GameObject    parseAssimpNode(const aiNode* node);
 
-    std::string   getTexturePath(aiMaterial* mat, aiTextureType type);
+    std::filesystem::path getGltfTexturePath(aiMaterial* mat);
+    std::filesystem::path getTexturePath(aiMaterial* mat, aiTextureType type);
 
 private:
     Assimp::Importer m_importer;
 
     std::filesystem::path m_sceneDir = "";
+
+    bool                  m_isGltf   = false;
 };
 } // namespace dusk

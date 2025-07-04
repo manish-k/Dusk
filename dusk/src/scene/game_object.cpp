@@ -8,14 +8,14 @@ namespace dusk
 {
 GameObject::GameObject()
 {
-    DUSK_DEBUG("Creating GameObject");
+    //DUSK_DEBUG("Creating GameObject");
     m_name = "New GameObject";
     addComponent<TransformComponent>();
 }
 
 GameObject::~GameObject()
 {
-    DUSK_DEBUG("Destroying GameObject {}", m_name);
+    //DUSK_DEBUG("Destroying GameObject {}", m_name);
 }
 
 void GameObject::addChild(GameObject& child)

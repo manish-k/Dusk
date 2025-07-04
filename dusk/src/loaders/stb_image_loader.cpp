@@ -7,6 +7,8 @@ namespace dusk
 {
 Unique<Image> ImageLoader::readImage(const std::string& filepath)
 {
+    DUSK_DEBUG("Reading texture file {}", filepath);
+
     stbi_set_flip_vertically_on_load(true);
 
     Image img {};

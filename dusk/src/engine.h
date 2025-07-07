@@ -5,6 +5,7 @@
 #include "renderer/render_api.h"
 #include "renderer/gfx_buffer.h"
 #include "renderer/frame_data.h"
+#include "renderer/render_target.h"
 
 #include "backend/vulkan/vk_descriptors.h"
 #include "backend/vulkan/vk_pipeline.h"
@@ -30,7 +31,6 @@ class VulkanRenderer;
 class VkGfxDevice;
 
 struct Material;
-struct Texture2D;
 struct VkGfxDescriptorPool;
 struct VkGfxDescriptorSetLayout;
 struct VkGfxDescriptorSet;
@@ -40,8 +40,8 @@ constexpr uint32_t maxMaterialCount = 1000;
 struct RenderGraphResources
 {
     // g-buffer resources
-    DynamicArray<VulkanRenderTarget>         gbuffRenderTargets            = {};
-    VulkanRenderTarget                       gbuffDepthTexture             = {};
+    DynamicArray<RenderTarget>               gbuffRenderTargets            = {};
+    RenderTarget                             gbuffDepthTexture             = {};
     Unique<VkGfxRenderPipeline>              gbuffPipeline                 = nullptr;
     Unique<VkGfxPipelineLayout>              gbuffPipelineLayout           = nullptr;
     Unique<VkGfxDescriptorPool>              gbuffModelDescriptorPool      = nullptr;

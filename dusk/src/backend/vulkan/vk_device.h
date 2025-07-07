@@ -83,29 +83,16 @@ public:
         uint32_t        layersCount);
 
     VulkanResult createImageView(
-        VulkanGfxImage* img,
-        VkImageViewType type,
-        VkFormat        format,
-        uint32_t        mipLevelCount,
-        uint32_t        layersCount,
-        VkImageView*    pImageView) const;
-    void               freeImageView(VkImageView* pImageView) const;
-    VulkanResult       createImageSampler(VulkanSampler* sampler) const;
-    void               freeImageSampler(VulkanSampler* sampler) const;
-
-    VulkanRenderTarget createRenderTarget(
-        const std::string& name,
-        uint32_t           width,
-        uint32_t           height,
+        VulkanGfxImage*    img,
+        VkImageViewType    type,
         VkFormat           format,
-        VkClearValue       clearValue);
-    void               freeRenderTarget(VulkanRenderTarget& renderTarget);
-    VulkanRenderTarget createDepthTarget(
-        const std::string& name,
-        uint32_t           width,
-        uint32_t           height,
-        VkFormat           format,
-        VkClearValue       clearValue);
+        VkImageAspectFlags aspectMaskFlags,
+        uint32_t           mipLevelCount,
+        uint32_t           layersCount,
+        VkImageView*       pImageView) const;
+    void                  freeImageView(VkImageView* pImageView) const;
+    VulkanResult          createImageSampler(VulkanSampler* sampler) const;
+    void                  freeImageSampler(VulkanSampler* sampler) const;
 
     static VulkanContext& getSharedVulkanContext() { return s_sharedVkContext; }
 

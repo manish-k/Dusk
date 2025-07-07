@@ -4,9 +4,12 @@
 
 #include "texture.h"
 #include "image.h"
+#include "render_target.h"
 
 #include <taskflow/taskflow.hpp>
 #include <thread>
+
+#define COLOR_BINDING_INDEX 0
 
 namespace dusk
 {
@@ -41,41 +44,71 @@ public:
     Texture2D getTexture2D(uint32_t texId) const { return m_textures[texId]; };
 
     /**
-     * @brief Asynchronously loads a texture and returns its identifier.
+     * @brief Creates a new texture asynchronously and returns its identifier.
      * @params Path of the texture
      * @return The unique identifier of the loaded texture.
      */
-    uint32_t                  loadTextureAsync(std::string& path);
-    
+    uint32_t createTextureAsync(std::string& path);
+
     /**
      * @brief Get descriptor set for the textures
      */
-    VkGfxDescriptorSet&       getTextureDescriptorSet() const { return *m_textureDescriptorSet; };
-    
+    VkGfxDescriptorSet& getTexturesDescriptorSet() const { return *m_textureDescriptorSet; };
+
     /**
      * @brief Get descriptor set layout for texture set
      */
-    VkGfxDescriptorSetLayout& getTextureDescriptorSetLayout() const { return *m_textureDescriptorSetLayout; };
-    
+    VkGfxDescriptorSetLayout& getTexturesDescriptorSetLayout() const { return *m_textureDescriptorSetLayout; };
+
     /**
      * @brief Per frame update call to upload pending textures
      */
-    void                      onUpdate();
+    void         onUpdate();
+
+    /**
+     * @brief clear a render target for color attachment
+     * @param name of the render target
+     * @param width of the render target
+     * @param height of the render target
+     * @param format of the render target
+     * @param clearValue of the render target
+     * @return RenderTarget struct
+     */
+    RenderTarget createColorTarget(
+        const std::string& name,
+        uint32_t           width,
+        uint32_t           height,
+        VkFormat           format,
+        VkClearValue       clearValue);
+
+    /**
+     * @brief clear a render target for depth attachment
+     * @param name of the render target
+     * @param width of the render target
+     * @param height of the render target
+     * @param format of the render target
+     * @param clearValue of the render target
+     * @return RenderTarget struct
+     */
+    RenderTarget createDepthTarget(
+        const std::string& name,
+        uint32_t           width,
+        uint32_t           height,
+        VkFormat           format,
+        VkClearValue       clearValue);
 
 public:
-
     /**
      * @brief Static method to get texture db cache instance
      */
     static TextureDB* cache() { return s_db; };
 
 private:
-
     /**
      * @brief Initialize a default texture of 1x1 image
      */
     Error initDefaultTexture();
-    
+
     /**
      * @brief Initialize a common sampler for all textures
      */
@@ -84,12 +117,12 @@ private:
     /**
      * @brief Setup the texture descriptor
      */
-    bool  setupDescriptors();
+    bool setupDescriptors();
 
     /**
      * @brief Free up all the allocated resources
      */
-    void  freeAllResources();
+    void freeAllResources();
 
 private:
     uint32_t                         m_idCounter = 0;

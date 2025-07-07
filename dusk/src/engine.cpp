@@ -174,7 +174,7 @@ void Engine::onUpdate(TimeStep dt)
             extent.width,
             extent.height,
             m_globalDescriptorSet->set,
-            m_textureDB->getTextureDescriptorSet().set,
+            m_textureDB->getTexturesDescriptorSet().set,
             m_lightsSystem->getLightsDescriptorSet().set,
             m_materialsDescriptorSet->set
         };
@@ -273,13 +273,9 @@ void Engine::renderFrame(FrameData& frameData)
 {
     DUSK_PROFILE_FUNCTION;
 
-    RenderGraph        renderGraph;
+    RenderGraph  renderGraph;
 
-    VulkanRenderTarget swapImageTarget = {
-        .image     = { .image = m_renderer->getSwapChain().getImage(frameData.frameIndex) },
-        .imageView = m_renderer->getSwapChain().getImageView(frameData.frameIndex),
-        .format    = m_renderer->getSwapChain().getImageFormat()
-    };
+    RenderTarget swapImageTarget = m_renderer->getSwapChain().getCurrentSwapImageTarget();
 
     // create g-buffer pass
     auto gbuffCtx = VkGfxRenderPassContext {
@@ -291,21 +287,21 @@ void Engine::renderFrame(FrameData& frameData)
     };
 
     gbuffCtx.insertTransitionBarrier(
-        { gbuffCtx.colorTargets[0].image.image,
-          VK_IMAGE_LAYOUT_UNDEFINED,
-          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-          0,
-          VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-          VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-          VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT });
+        { .image     = gbuffCtx.colorTargets[0].texture.image.image,
+          .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+          .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+          .srcAccess = 0,
+          .dstAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+          .srcStage  = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+          .dstStage  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT });
     gbuffCtx.insertTransitionBarrier(
-        { gbuffCtx.colorTargets[1].image.image,
-          VK_IMAGE_LAYOUT_UNDEFINED,
-          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-          0,
-          VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-          VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-          VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT });
+        { .image     = gbuffCtx.colorTargets[1].texture.image.image,
+          .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+          .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+          .srcAccess = 0,
+          .dstAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+          .srcStage  = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+          .dstStage  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT });
 
     renderGraph.setPassContext("gbuffer_pass", gbuffCtx);
     renderGraph.addPass("gbuffer_pass", recordGBufferCmds);
@@ -320,21 +316,21 @@ void Engine::renderFrame(FrameData& frameData)
     };
 
     presentCtx.insertTransitionBarrier(
-        { gbuffCtx.colorTargets[0].image.image,
-          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-          VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-          VK_ACCESS_SHADER_READ_BIT,
-          VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-          VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT });
+        { .image     = gbuffCtx.colorTargets[0].texture.image.image,
+          .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+          .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+          .srcAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+          .dstAccess = VK_ACCESS_SHADER_READ_BIT,
+          .srcStage  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+          .dstStage  = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT });
     presentCtx.insertTransitionBarrier(
-        { swapImageTarget.image.image,
-          VK_IMAGE_LAYOUT_UNDEFINED,
-          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-          0,
-          VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-          VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-          VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT });
+        { .image     = swapImageTarget.texture.image.image,
+          .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+          .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+          .srcAccess = 0,
+          .dstAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+          .srcStage  = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+          .dstStage  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT });
 
     renderGraph.setPassContext("present_pass", presentCtx);
     renderGraph.addPass("present_pass", recordPresentationCmds);
@@ -471,13 +467,13 @@ void Engine::prepareRenderGraphResources()
 
     // g-buffer resources
     // Allocate g-buffer render targets
-    m_rgResources.gbuffRenderTargets.push_back(m_gfxDevice->createRenderTarget(
+    m_rgResources.gbuffRenderTargets.push_back(m_textureDB->createColorTarget(
         "gbuffer_albedo",
         extent.width,
         extent.height,
         VK_FORMAT_R8G8B8A8_UNORM,
         { 0.f, 0.f, 0.f, 1.f }));
-    m_rgResources.gbuffRenderTargets.push_back(m_gfxDevice->createRenderTarget(
+    m_rgResources.gbuffRenderTargets.push_back(m_textureDB->createColorTarget(
         "gbuffer_normal",
         extent.width,
         extent.height,
@@ -485,7 +481,7 @@ void Engine::prepareRenderGraphResources()
         { 0.f, 0.f, 0.f, 1.f }));
 
     // Allocate g-buffer depth texture
-    m_rgResources.gbuffDepthTexture = m_gfxDevice->createDepthTarget(
+    m_rgResources.gbuffDepthTexture = m_textureDB->createDepthTarget(
         "gbuffer_depth",
         extent.width,
         extent.height,
@@ -540,7 +536,7 @@ void Engine::prepareRenderGraphResources()
                                             .addDescriptorSetLayout(m_globalDescriptorSetLayout->layout)
                                             .addDescriptorSetLayout(m_materialDescriptorSetLayout->layout)
                                             .addDescriptorSetLayout(m_rgResources.gbuffModelDescriptorSetLayout->layout)
-                                            .addDescriptorSetLayout(m_textureDB->getTextureDescriptorSetLayout().layout)
+                                            .addDescriptorSetLayout(m_textureDB->getTexturesDescriptorSetLayout().layout)
                                             .build();
 
 #ifdef VK_RENDERER_DEBUG
@@ -597,7 +593,7 @@ void Engine::prepareRenderGraphResources()
 
     VkDescriptorImageInfo imageInfo {};
     imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    imageInfo.imageView   = m_rgResources.gbuffRenderTargets[0].imageView;
+    imageInfo.imageView   = m_rgResources.gbuffRenderTargets[0].texture.imageView;
     imageInfo.sampler     = m_rgResources.presentTexSampler.sampler;
 
     m_rgResources.presentTexDescriptorSet->configureImage(
@@ -627,13 +623,6 @@ void Engine::prepareRenderGraphResources()
 
 void Engine::releaseRenderGraphResources()
 {
-    // release g-buffer resources
-    for (auto& target : m_rgResources.gbuffRenderTargets)
-    {
-        m_gfxDevice->freeRenderTarget(target);
-    }
-    m_gfxDevice->freeRenderTarget(m_rgResources.gbuffDepthTexture);
-
     m_rgResources.gbuffPipeline       = nullptr;
     m_rgResources.gbuffPipelineLayout = nullptr;
 

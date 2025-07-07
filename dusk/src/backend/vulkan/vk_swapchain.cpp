@@ -155,6 +155,18 @@ VulkanResult VkGfxSwapChain::submitCommandBuffers(const VkCommandBuffer* buffers
     return result;
 }
 
+RenderTarget VkGfxSwapChain::getCurrentSwapImageTarget()
+{
+    Texture2D tex(10000 + m_currentFrame);
+    tex.image.image = m_swapChainImages[m_currentFrame];
+    tex.imageView   = m_swapChainImageViews[m_currentFrame];
+
+    return RenderTarget {
+        .texture = tex,
+        .format  = m_imageFormat,
+    };
+}
+
 Error VkGfxSwapChain::createSwapChain(const VkGfxSwapChainParams& params)
 {
     VulkanResult result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(

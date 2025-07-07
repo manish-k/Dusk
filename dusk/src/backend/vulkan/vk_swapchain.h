@@ -5,6 +5,7 @@
 #include "vk_types.h"
 #include "vk_renderpass.h"
 #include "vk_allocator.h"
+#include "renderer/render_target.h"
 
 namespace dusk
 {
@@ -40,6 +41,7 @@ public:
         return m_depthImages[imageIndex].image;
     };
     VkImageView getDepthImageView(uint32_t imageIndex) { return m_depthImageViews[imageIndex]; };
+    RenderTarget getCurrentSwapImageTarget();
 
 private:
     Error              createSwapChain(const VkGfxSwapChainParams& params);

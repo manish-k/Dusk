@@ -32,7 +32,6 @@ layout (set = 1, binding = 0) buffer Material
 	int normalTexId;
 	int pad0;
 	vec4 albedoColor;
-
 } materials[];
 
 layout(set = 2, binding = 0) buffer AmbientLight
@@ -148,7 +147,7 @@ vec3 computeSpotLight(uint lightIdx, vec3 fragPosition, vec3 viewDirection, vec3
 		if (theta < innerCutOff)
 			intensityFalloffMult = clamp((theta - outerCutOff) / epsilon, 0.0, 1.0);
 
-			// diffuse shading
+		// diffuse shading
 		float diff = max(dot(normal, lightSrcDirection), 0.0);
     
 		// specular shading

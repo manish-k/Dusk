@@ -247,7 +247,7 @@ void SkyboxRenderSystem::setupDescriptors()
     // write image info to descriptor
     VkDescriptorImageInfo imageInfo {};
     imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    imageInfo.imageView   = m_skyboxTexture.vkTexture.imageView;
+    imageInfo.imageView   = m_skyboxTexture.imageView;
     imageInfo.sampler     = m_skyboxTexture.vkSampler.sampler;
 
     m_texDescriptorSet->configureImage(

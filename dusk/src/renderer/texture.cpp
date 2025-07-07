@@ -58,7 +58,7 @@ Error Texture2D::init(Image& texImage, const char* debugName)
         imageInfo,
         VMA_MEMORY_USAGE_AUTO,
         VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
-        &vkTexture.image);
+        &image);
 
     if (result.hasError())
     {
@@ -72,13 +72,13 @@ Error Texture2D::init(Image& texImage, const char* debugName)
         vkdebug::setObjectName(
             vkContext.device,
             VK_OBJECT_TYPE_IMAGE,
-            (uint64_t)vkTexture.image.image,
+            (uint64_t)image.image,
             debugName);
     }
 #endif // VK_RENDERER_DEBUG
 
     device.transitionImageWithLayout(
-        &vkTexture.image,
+        &image,
         VK_FORMAT_R8G8B8A8_SRGB,
         VK_IMAGE_LAYOUT_UNDEFINED,
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
@@ -87,12 +87,12 @@ Error Texture2D::init(Image& texImage, const char* debugName)
 
     device.copyBufferToImage(
         &stagingBuffer.vkBuffer,
-        &vkTexture.image,
+        &image,
         texImage.width,
         texImage.height);
 
     device.transitionImageWithLayout(
-        &vkTexture.image,
+        &image,
         VK_FORMAT_R8G8B8A8_SRGB,
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
@@ -102,17 +102,100 @@ Error Texture2D::init(Image& texImage, const char* debugName)
     stagingBuffer.free();
 
     result = device.createImageView(
-        &vkTexture.image,
+        &image,
         VK_IMAGE_VIEW_TYPE_2D,
         VK_FORMAT_R8G8B8A8_SRGB,
+        VK_IMAGE_ASPECT_COLOR_BIT,
         1,
         1,
-        &vkTexture.imageView);
+        &imageView);
 
     if (result.hasError())
     {
         return Error::InitializationFailed;
     }
+
+    return Error::Ok;
+}
+
+Error Texture2D::init(
+    uint32_t          width,
+    uint32_t          height,
+    VkFormat          format,
+    VkImageUsageFlags usage,
+    const char*       name)
+{
+    DUSK_PROFILE_FUNCTION;
+
+    auto&             device    = Engine::get().getGfxDevice();
+    auto&             vkContext = VkGfxDevice::getSharedVulkanContext();
+
+    VkImageCreateInfo imageInfo { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
+    imageInfo.imageType     = VK_IMAGE_TYPE_2D;
+    imageInfo.extent.width  = width;
+    imageInfo.extent.height = height;
+    imageInfo.extent.depth  = 1;
+    imageInfo.mipLevels     = 1;
+    imageInfo.arrayLayers   = 1;
+    imageInfo.format        = format;
+    imageInfo.tiling        = VK_IMAGE_TILING_OPTIMAL;
+    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageInfo.usage         = usage;
+    imageInfo.samples       = VK_SAMPLE_COUNT_1_BIT;
+    imageInfo.sharingMode   = VK_SHARING_MODE_EXCLUSIVE;
+    imageInfo.flags         = 0;
+
+    // create image
+    VulkanResult result = vulkan::allocateGPUImage(
+        vkContext.gpuAllocator,
+        imageInfo,
+        VMA_MEMORY_USAGE_AUTO,
+        VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
+        &image);
+
+    if (result.hasError())
+    {
+        DUSK_ERROR("Unable to create image for texture {}", result.toString());
+        return Error::InitializationFailed;
+    }
+
+#ifdef VK_RENDERER_DEBUG
+    vkdebug::setObjectName(
+        vkContext.device,
+        VK_OBJECT_TYPE_IMAGE,
+        (uint64_t)image.image,
+        name);
+
+#endif // VK_RENDERER_DEBUG
+
+    auto imageAspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
+    if (usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
+    {
+        imageAspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT;
+    }
+
+    result = device.createImageView(
+        &image,
+        VK_IMAGE_VIEW_TYPE_2D,
+        format,
+        imageAspectFlags,
+        1,
+        1,
+        &imageView);
+
+    if (result.hasError())
+    {
+        DUSK_ERROR("Unable to create image view for texture {}", result.toString());
+        return Error::InitializationFailed;
+    }
+
+#ifdef VK_RENDERER_DEBUG
+    vkdebug::setObjectName(
+        vkContext.device,
+        VK_OBJECT_TYPE_IMAGE_VIEW,
+        (uint64_t)imageView,
+        name);
+#endif // VK_RENDERER_DEBUG
 
     return Error::Ok;
 }
@@ -168,7 +251,7 @@ Error Texture2D::initAndRecordUpload(
         imageInfo,
         VMA_MEMORY_USAGE_AUTO,
         VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
-        &vkTexture.image);
+        &image);
 
     if (result.hasError())
     {
@@ -182,7 +265,7 @@ Error Texture2D::initAndRecordUpload(
         vkdebug::setObjectName(
             vkContext.device,
             VK_OBJECT_TYPE_IMAGE,
-            (uint64_t)vkTexture.image.image,
+            (uint64_t)image.image,
             debugName);
     }
 #endif // VK_RENDERER_DEBUG
@@ -199,7 +282,7 @@ Error Texture2D::initAndRecordUpload(
     barrier.newLayout                       = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     barrier.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
     barrier.dstQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
-    barrier.image                           = vkTexture.image.image;
+    barrier.image                           = image.image;
     barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
     barrier.subresourceRange.baseMipLevel   = 0;
     barrier.subresourceRange.levelCount     = 1;
@@ -240,7 +323,7 @@ Error Texture2D::initAndRecordUpload(
     vkCmdCopyBufferToImage(
         transferBuffer,
         stagingBuffer.vkBuffer.buffer,
-        vkTexture.image.image,
+        image.image,
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         1,
         &region);
@@ -252,7 +335,7 @@ Error Texture2D::initAndRecordUpload(
     barrier.newLayout                       = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     barrier.srcQueueFamilyIndex             = vkContext.transferQueueFamilyIndex;
     barrier.dstQueueFamilyIndex             = vkContext.graphicsQueueFamilyIndex;
-    barrier.image                           = vkTexture.image.image;
+    barrier.image                           = image.image;
     barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
     barrier.subresourceRange.baseMipLevel   = 0;
     barrier.subresourceRange.levelCount     = 1;
@@ -300,7 +383,7 @@ Error Texture2D::initAndRecordUpload(
     barrier.newLayout                       = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     barrier.srcQueueFamilyIndex             = vkContext.transferQueueFamilyIndex;
     barrier.dstQueueFamilyIndex             = vkContext.graphicsQueueFamilyIndex;
-    barrier.image                           = vkTexture.image.image;
+    barrier.image                           = image.image;
     barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
     barrier.subresourceRange.baseMipLevel   = 0;
     barrier.subresourceRange.levelCount     = 1;
@@ -335,7 +418,7 @@ Error Texture2D::initAndRecordUpload(
     submitInfo.pWaitDstStageMask  = waitStages;
 
     vkQueueSubmit(vkContext.graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-    
+
     // wait for graphics queue operation to finish
     vkQueueWaitIdle(vkContext.graphicsQueue);
 
@@ -344,12 +427,13 @@ Error Texture2D::initAndRecordUpload(
     stagingBuffer.free();
 
     result = device.createImageView(
-        &vkTexture.image,
+        &image,
         VK_IMAGE_VIEW_TYPE_2D,
         VK_FORMAT_R8G8B8A8_SRGB,
+        VK_IMAGE_ASPECT_COLOR_BIT,
         1,
         1,
-        &vkTexture.imageView);
+        &imageView);
 
     if (result.hasError())
     {
@@ -364,9 +448,9 @@ void Texture2D::free()
     auto& device    = Engine::get().getGfxDevice();
     auto& vkContext = device.getSharedVulkanContext();
 
-    device.freeImageView(&vkTexture.imageView);
+    device.freeImageView(&imageView);
 
-    vulkan::freeGPUImage(vkContext.gpuAllocator, &vkTexture.image);
+    vulkan::freeGPUImage(vkContext.gpuAllocator, &image);
 }
 
 Error Texture3D::init(DynamicArray<Image>& texImages)
@@ -444,7 +528,7 @@ Error Texture3D::init(DynamicArray<Image>& texImages)
         imageInfo,
         VMA_MEMORY_USAGE_AUTO,
         VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
-        &vkTexture.image);
+        &image);
 
     if (result.hasError())
     {
@@ -453,7 +537,7 @@ Error Texture3D::init(DynamicArray<Image>& texImages)
     }
 
     device.transitionImageWithLayout(
-        &vkTexture.image,
+        &image,
         VK_FORMAT_R8G8B8A8_SRGB,
         VK_IMAGE_LAYOUT_UNDEFINED,
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
@@ -462,11 +546,11 @@ Error Texture3D::init(DynamicArray<Image>& texImages)
 
     device.copyBufferToImageRegions(
         &stagingBuffer.vkBuffer,
-        &vkTexture.image,
+        &image,
         bufferCopyRegions);
 
     device.transitionImageWithLayout(
-        &vkTexture.image,
+        &image,
         VK_FORMAT_R8G8B8A8_SRGB,
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
@@ -476,12 +560,13 @@ Error Texture3D::init(DynamicArray<Image>& texImages)
     stagingBuffer.free();
 
     result = device.createImageView(
-        &vkTexture.image,
+        &image,
         VK_IMAGE_VIEW_TYPE_CUBE,
         VK_FORMAT_R8G8B8A8_SRGB,
+        VK_IMAGE_ASPECT_COLOR_BIT,
         1,
         numImages,
-        &vkTexture.imageView);
+        &imageView);
 
     if (result.hasError())
     {
@@ -496,9 +581,9 @@ void Texture3D::free()
     auto& device    = Engine::get().getGfxDevice();
     auto& vkContext = device.getSharedVulkanContext();
 
-    device.freeImageView(&vkTexture.imageView);
+    device.freeImageView(&imageView);
 
-    vulkan::freeGPUImage(vkContext.gpuAllocator, &vkTexture.image);
+    vulkan::freeGPUImage(vkContext.gpuAllocator, &image);
 }
 
 } // namespace dusk

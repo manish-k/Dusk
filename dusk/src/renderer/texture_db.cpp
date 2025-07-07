@@ -54,7 +54,7 @@ void TextureDB::freeAllResources()
     for (auto& tex : m_textures)
     {
         // some textures might be using default texture image and image views
-        if (tex.vkTexture.image.image != defaultTex.vkTexture.image.image)
+        if (tex.image.image != defaultTex.image.image)
             tex.free();
     }
     defaultTex.free();
@@ -82,7 +82,7 @@ Error TextureDB::initDefaultTexture()
     // update corrosponding descriptor with new image
     VkDescriptorImageInfo texDescInfos {};
     texDescInfos.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    texDescInfos.imageView   = default2dTexture.vkTexture.imageView;
+    texDescInfos.imageView   = default2dTexture.imageView;
     texDescInfos.sampler     = m_defaultSampler.sampler;
 
     m_textureDescriptorSet->configureImage(
@@ -118,7 +118,12 @@ bool TextureDB::setupDescriptors()
     CHECK_AND_RETURN_FALSE(!m_textureDescriptorPool);
 
     m_textureDescriptorSetLayout = VkGfxDescriptorSetLayout::Builder(ctx)
-                                       .addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, maxAllowedTextures, true)
+                                       .addBinding(
+                                           COLOR_BINDING_INDEX,
+                                           VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                           VK_SHADER_STAGE_FRAGMENT_BIT,
+                                           maxAllowedTextures,
+                                           true)
                                        .setDebugName("texture_desc_set_layout")
                                        .build();
     CHECK_AND_RETURN_FALSE(!m_textureDescriptorSetLayout);
@@ -127,7 +132,7 @@ bool TextureDB::setupDescriptors()
     CHECK_AND_RETURN_FALSE(!m_textureDescriptorSet);
 }
 
-uint32_t TextureDB::loadTextureAsync(std::string& path)
+uint32_t TextureDB::createTextureAsync(std::string& path)
 {
     DASSERT(!path.empty());
 
@@ -145,8 +150,8 @@ uint32_t TextureDB::loadTextureAsync(std::string& path)
         newTex.name = path;
 
         // default texture image till actual tex is uploaded
-        newTex.vkTexture.image     = m_textures[0].vkTexture.image;
-        newTex.vkTexture.imageView = m_textures[0].vkTexture.imageView;
+        newTex.image     = m_textures[0].image;
+        newTex.imageView = m_textures[0].imageView;
 
         m_textures.push_back(newTex);
         m_currentlyLoadingTextures.emplace(path, newId);
@@ -178,11 +183,11 @@ uint32_t TextureDB::loadTextureAsync(std::string& path)
     // update corrosponding descriptor to use default image
     VkDescriptorImageInfo texDescInfos {};
     texDescInfos.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    texDescInfos.imageView   = newTexture.vkTexture.imageView;
+    texDescInfos.imageView   = newTexture.imageView;
     texDescInfos.sampler     = m_defaultSampler.sampler;
 
     m_textureDescriptorSet->configureImage(
-        0,
+        COLOR_BINDING_INDEX,
         newId,
         1,
         &texDescInfos);
@@ -257,11 +262,11 @@ void TextureDB::onUpdate()
             // update corrosponding descriptor with new image
             VkDescriptorImageInfo texDescInfos {};
             texDescInfos.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            texDescInfos.imageView   = tex.vkTexture.imageView;
+            texDescInfos.imageView   = tex.imageView;
             texDescInfos.sampler     = m_defaultSampler.sampler;
 
             m_textureDescriptorSet->configureImage(
-                0,
+                COLOR_BINDING_INDEX,
                 tex.id,
                 1,
                 &texDescInfos);
@@ -276,6 +281,90 @@ void TextureDB::onUpdate()
 
         m_pendingImages.clear();
     }
+}
+
+RenderTarget TextureDB::createColorTarget(
+    const std::string& name,
+    uint32_t           width,
+    uint32_t           height,
+    VkFormat           format,
+    VkClearValue       clearValue)
+{
+    std::lock_guard<std::mutex> updateLock(m_mutex);
+
+    // initialize texture for render target
+    uint32_t  newId = m_textures.size();
+
+    Texture2D newTex { newId };
+    newTex.init(
+        width,
+        height,
+        format,
+        VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+        name.c_str());
+    m_textures.push_back(newTex);
+
+    // update corrosponding descriptor with new image
+    VkDescriptorImageInfo texDescInfos {};
+    texDescInfos.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    texDescInfos.imageView   = newTex.imageView;
+    texDescInfos.sampler     = m_defaultSampler.sampler;
+
+    m_textureDescriptorSet->configureImage(
+        COLOR_BINDING_INDEX,
+        newTex.id,
+        1,
+        &texDescInfos);
+
+    m_textureDescriptorSet->applyConfiguration();
+
+    return RenderTarget {
+        .texture    = newTex,
+        .format     = format,
+        .clearValue = clearValue
+    };
+}
+
+RenderTarget TextureDB::createDepthTarget(
+    const std::string& name,
+    uint32_t           width,
+    uint32_t           height,
+    VkFormat           format,
+    VkClearValue       clearValue)
+{
+    std::lock_guard<std::mutex> updateLock(m_mutex);
+
+    // initialize texture for render target
+    uint32_t  newId = m_textures.size();
+
+    Texture2D newTex { newId };
+    newTex.init(
+        width,
+        height,
+        format,
+        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+        name.c_str());
+    m_textures.push_back(newTex);
+
+    // update corrosponding descriptor with new image
+    VkDescriptorImageInfo texDescInfos {};
+    texDescInfos.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    texDescInfos.imageView   = newTex.imageView;
+    texDescInfos.sampler     = m_defaultSampler.sampler;
+
+    m_textureDescriptorSet->configureImage(
+        COLOR_BINDING_INDEX,
+        newTex.id,
+        1,
+        &texDescInfos);
+
+    m_textureDescriptorSet->applyConfiguration();
+
+    return RenderTarget {
+        .texture    = newTex,
+        .format     = format,
+        .clearValue = clearValue
+    };
 }
 
 } // namespace dusk

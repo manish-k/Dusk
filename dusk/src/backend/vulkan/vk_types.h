@@ -31,47 +31,33 @@ struct VulkanGfxImage
 
 struct VulkanContext
 {
-    VkInstance                  vulkanInstance;
-    VkPhysicalDevice            physicalDevice;
-    VkDevice                    device;
-    VkSurfaceKHR                surface;
+    VkInstance                 vulkanInstance;
+    VkPhysicalDevice           physicalDevice;
+    VkDevice                   device;
+    VkSurfaceKHR               surface;
 
-    VkCommandPool               commandPool;
-    VkCommandPool               transferCommandPool;
+    VkCommandPool              commandPool;
+    VkCommandPool              transferCommandPool;
 
-    VkPhysicalDeviceProperties  physicalDeviceProperties;
-    VkPhysicalDeviceFeatures    physicalDeviceFeatures;
+    VkPhysicalDeviceProperties physicalDeviceProperties;
+    VkPhysicalDeviceFeatures   physicalDeviceFeatures;
 
-    uint32_t                    graphicsQueueFamilyIndex;
-    uint32_t                    presentQueueFamilyIndex;
-    uint32_t                    computeQueueFamilyIndex;
-    uint32_t                    transferQueueFamilyIndex;
+    uint32_t                   graphicsQueueFamilyIndex;
+    uint32_t                   presentQueueFamilyIndex;
+    uint32_t                   computeQueueFamilyIndex;
+    uint32_t                   transferQueueFamilyIndex;
 
-    VkQueue                     graphicsQueue;
-    VkQueue                     presentQueue;
-    VkQueue                     computeQueue;
-    VkQueue                     transferQueue;
+    VkQueue                    graphicsQueue;
+    VkQueue                    presentQueue;
+    VkQueue                    computeQueue;
+    VkQueue                    transferQueue;
 
-    VulkanGPUAllocator          gpuAllocator;
-};
-
-struct VulkanTexture
-{
-    VulkanGfxImage image;
-    VkImageView    imageView;
+    VulkanGPUAllocator         gpuAllocator;
 };
 
 struct VulkanSampler
 {
     VkSampler sampler;
-};
-
-struct VulkanRenderTarget
-{
-    VulkanGfxImage image;
-    VkImageView    imageView;
-    VkFormat       format;
-    VkClearValue   clearValue;
 };
 
 struct VulkanImageBarier

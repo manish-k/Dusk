@@ -4,6 +4,7 @@
 #include "vk.h"
 #include "vk_types.h"
 #include "vk_device.h"
+#include "renderer/render_target.h"
 
 namespace dusk
 {
@@ -16,8 +17,8 @@ struct VkGfxRenderPassContext
 {
     VkCommandBuffer                         cmdBuffer;
     VkExtent2D                              extent;
-    DynamicArray<VulkanRenderTarget>        colorTargets;
-    VulkanRenderTarget                      depthTarget;
+    DynamicArray<RenderTarget>              colorTargets;
+    RenderTarget                            depthTarget;
     bool                                    useDepth = false;
 
     DynamicArray<VkRenderingAttachmentInfo> colorAttachmentInfos;
@@ -52,7 +53,7 @@ struct VkGfxRenderPassContext
         {
             for (const auto& barrierInfo : preBarriers)
             {
-                VkImageMemoryBarrier barrier            = { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
+                VkImageMemoryBarrier barrier { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
                 barrier.oldLayout                       = barrierInfo.oldLayout;
                 barrier.newLayout                       = barrierInfo.newLayout;
                 barrier.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
@@ -84,7 +85,7 @@ struct VkGfxRenderPassContext
         for (const auto& target : colorTargets)
         {
             VkRenderingAttachmentInfo colorAttachment { VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
-            colorAttachment.imageView   = target.imageView;
+            colorAttachment.imageView   = target.texture.imageView;
             colorAttachment.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
             colorAttachment.loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR;
             colorAttachment.storeOp     = VK_ATTACHMENT_STORE_OP_STORE;
@@ -97,7 +98,7 @@ struct VkGfxRenderPassContext
         if (useDepth)
         {
             depthAttachmentInfo             = { VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
-            depthAttachmentInfo.imageView   = depthTarget.imageView;
+            depthAttachmentInfo.imageView   = depthTarget.texture.imageView;
             depthAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
             depthAttachmentInfo.loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR;
             depthAttachmentInfo.storeOp     = VK_ATTACHMENT_STORE_OP_STORE;
@@ -107,7 +108,7 @@ struct VkGfxRenderPassContext
             depthBarrier.dstAccessMask    = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
             depthBarrier.oldLayout        = VK_IMAGE_LAYOUT_UNDEFINED;
             depthBarrier.newLayout        = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-            depthBarrier.image            = depthTarget.image.image;
+            depthBarrier.image            = depthTarget.texture.image.image;
             depthBarrier.subresourceRange = { VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1 };
 
             vkCmdPipelineBarrier(

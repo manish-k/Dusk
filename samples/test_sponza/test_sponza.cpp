@@ -23,7 +23,8 @@ bool TestSponza::start()
 
     m_testSponza          = Scene::createSceneFromGLTF(scenePath);
 
-    Engine::get().loadScene(m_testSponza.get());
+    if (m_testSponza)
+        Engine::get().loadScene(m_testSponza.get());
 
     return true;
 }

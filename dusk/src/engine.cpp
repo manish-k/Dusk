@@ -282,7 +282,7 @@ void Engine::renderFrame(FrameData& frameData)
         .colorTargets        = m_rgResources.gbuffRenderTargets, // TODO: avoidable copy
         .depthTarget         = m_rgResources.gbuffDepthTexture,
         .useDepth            = true,
-        .maxParallelism      = 16,
+        .maxParallelism      = 1,
         .secondaryCmdBuffers = m_renderer->getSecondayCmdBuffers(frameData.frameIndex)
     };
 

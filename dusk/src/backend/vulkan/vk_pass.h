@@ -108,7 +108,7 @@ struct VkGfxRenderPassContext
             depthBarrier.dstAccessMask    = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
             depthBarrier.oldLayout        = VK_IMAGE_LAYOUT_UNDEFINED;
             depthBarrier.newLayout        = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-            depthBarrier.image            = depthTarget.texture.image.image;
+            depthBarrier.image            = depthTarget.texture.image.vkImage;
             depthBarrier.subresourceRange = { VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1 };
 
             vkCmdPipelineBarrier(

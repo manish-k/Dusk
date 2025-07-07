@@ -72,7 +72,7 @@ Error Texture2D::init(Image& texImage, const char* debugName)
         vkdebug::setObjectName(
             vkContext.device,
             VK_OBJECT_TYPE_IMAGE,
-            (uint64_t)image.image,
+            (uint64_t)image.vkImage,
             debugName);
     }
 #endif // VK_RENDERER_DEBUG
@@ -163,7 +163,7 @@ Error Texture2D::init(
     vkdebug::setObjectName(
         vkContext.device,
         VK_OBJECT_TYPE_IMAGE,
-        (uint64_t)image.image,
+        (uint64_t)image.vkImage,
         name);
 
 #endif // VK_RENDERER_DEBUG
@@ -265,7 +265,7 @@ Error Texture2D::initAndRecordUpload(
         vkdebug::setObjectName(
             vkContext.device,
             VK_OBJECT_TYPE_IMAGE,
-            (uint64_t)image.image,
+            (uint64_t)image.vkImage,
             debugName);
     }
 #endif // VK_RENDERER_DEBUG
@@ -282,7 +282,7 @@ Error Texture2D::initAndRecordUpload(
     barrier.newLayout                       = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     barrier.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
     barrier.dstQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
-    barrier.image                           = image.image;
+    barrier.image                           = image.vkImage;
     barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
     barrier.subresourceRange.baseMipLevel   = 0;
     barrier.subresourceRange.levelCount     = 1;
@@ -323,7 +323,7 @@ Error Texture2D::initAndRecordUpload(
     vkCmdCopyBufferToImage(
         transferBuffer,
         stagingBuffer.vkBuffer.buffer,
-        image.image,
+        image.vkImage,
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         1,
         &region);
@@ -335,7 +335,7 @@ Error Texture2D::initAndRecordUpload(
     barrier.newLayout                       = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     barrier.srcQueueFamilyIndex             = vkContext.transferQueueFamilyIndex;
     barrier.dstQueueFamilyIndex             = vkContext.graphicsQueueFamilyIndex;
-    barrier.image                           = image.image;
+    barrier.image                           = image.vkImage;
     barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
     barrier.subresourceRange.baseMipLevel   = 0;
     barrier.subresourceRange.levelCount     = 1;
@@ -383,7 +383,7 @@ Error Texture2D::initAndRecordUpload(
     barrier.newLayout                       = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     barrier.srcQueueFamilyIndex             = vkContext.transferQueueFamilyIndex;
     barrier.dstQueueFamilyIndex             = vkContext.graphicsQueueFamilyIndex;
-    barrier.image                           = image.image;
+    barrier.image                           = image.vkImage;
     barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
     barrier.subresourceRange.baseMipLevel   = 0;
     barrier.subresourceRange.levelCount     = 1;

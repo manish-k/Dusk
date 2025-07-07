@@ -38,9 +38,9 @@ public:
     VkImage        getImage(uint32_t imageIndex) const { return m_swapChainImages[imageIndex]; }
     VkImage        getDepthImage(uint32_t imageIndex)
     {
-        return m_depthImages[imageIndex].image;
+        return m_depthImages[imageIndex].vkImage;
     };
-    VkImageView getDepthImageView(uint32_t imageIndex) { return m_depthImageViews[imageIndex]; };
+    VkImageView  getDepthImageView(uint32_t imageIndex) { return m_depthImageViews[imageIndex]; };
     RenderTarget getCurrentSwapImageTarget();
 
 private:

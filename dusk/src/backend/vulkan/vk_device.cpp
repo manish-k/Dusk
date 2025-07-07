@@ -807,7 +807,7 @@ void VkGfxDevice::copyBufferToImage(
     vkCmdCopyBufferToImage(
         commandBuffer,
         buffer->buffer,
-        img->image,
+        img->vkImage,
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         1,
         &region);
@@ -825,7 +825,7 @@ void VkGfxDevice::copyBufferToImageRegions(
     vkCmdCopyBufferToImage(
         commandBuffer,
         buffer->buffer,
-        img->image,
+        img->vkImage,
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         regions.size(),
         regions.data());
@@ -849,7 +849,7 @@ Error VkGfxDevice::transitionImageWithLayout(
     barrier.newLayout                       = newLayout;
     barrier.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
     barrier.dstQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
-    barrier.image                           = img->image;
+    barrier.image                           = img->vkImage;
     barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
     barrier.subresourceRange.baseMipLevel   = 0;
     barrier.subresourceRange.levelCount     = mipLevelCount;
@@ -908,7 +908,7 @@ VulkanResult VkGfxDevice::createImageView(
 {
     VkImageViewCreateInfo viewInfo {};
     viewInfo.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    viewInfo.image                           = img->image;
+    viewInfo.image                           = img->vkImage;
     viewInfo.viewType                        = type;
     viewInfo.format                          = format;
     viewInfo.subresourceRange.aspectMask     = aspectMaskFlags;

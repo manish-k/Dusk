@@ -22,7 +22,7 @@ struct VulkanGfxBuffer
 
 struct VulkanGfxImage
 {
-    VkImage               image        = VK_NULL_HANDLE;
+    VkImage               vkImage      = VK_NULL_HANDLE;
     VmaAllocation         allocation   = VK_NULL_HANDLE;
     void*                 mappedMemory = nullptr;
     size_t                sizeInBytes  = 0u;

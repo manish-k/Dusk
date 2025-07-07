@@ -158,8 +158,8 @@ VulkanResult VkGfxSwapChain::submitCommandBuffers(const VkCommandBuffer* buffers
 RenderTarget VkGfxSwapChain::getCurrentSwapImageTarget()
 {
     Texture2D tex(10000 + m_currentFrame);
-    tex.image.image = m_swapChainImages[m_currentFrame];
-    tex.imageView   = m_swapChainImageViews[m_currentFrame];
+    tex.image.vkImage = m_swapChainImages[m_currentFrame];
+    tex.imageView     = m_swapChainImageViews[m_currentFrame];
 
     return RenderTarget {
         .texture = tex,
@@ -440,7 +440,7 @@ Error VkGfxSwapChain::createDepthResources()
 
         VkImageViewCreateInfo viewInfo {};
         viewInfo.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        viewInfo.image                           = m_depthImages[depthImageIndex].image;
+        viewInfo.image                           = m_depthImages[depthImageIndex].vkImage;
         viewInfo.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
         viewInfo.format                          = depthFormat;
         viewInfo.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_DEPTH_BIT;

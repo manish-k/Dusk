@@ -154,7 +154,7 @@ VulkanResult vulkan::allocateGPUImage(
         gpuAllocator.vmaAllocator,
         &imageCreateInfo,
         &allocCreateInfo,
-        &pImageResult->image,
+        &pImageResult->vkImage,
         &pImageResult->allocation,
         &allocationInfo);
 
@@ -166,9 +166,9 @@ VulkanResult vulkan::allocateGPUImage(
 void vulkan::freeGPUImage(VulkanGPUAllocator& gpuAllocator, VulkanGfxImage* pGfxImage)
 {
     DASSERT(pGfxImage != nullptr, "attempt to free a nullptr image");
-    if (pGfxImage->image)
+    if (pGfxImage->vkImage)
     {
-        vmaDestroyImage(gpuAllocator.vmaAllocator, pGfxImage->image, pGfxImage->allocation);
+        vmaDestroyImage(gpuAllocator.vmaAllocator, pGfxImage->vkImage, pGfxImage->allocation);
     }
 }
 

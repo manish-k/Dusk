@@ -287,7 +287,7 @@ void Engine::renderFrame(FrameData& frameData)
     };
 
     gbuffCtx.insertTransitionBarrier(
-        { .image     = gbuffCtx.colorTargets[0].texture.image.image,
+        { .image     = gbuffCtx.colorTargets[0].texture.image.vkImage,
           .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
           .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
           .srcAccess = 0,
@@ -295,7 +295,7 @@ void Engine::renderFrame(FrameData& frameData)
           .srcStage  = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
           .dstStage  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT });
     gbuffCtx.insertTransitionBarrier(
-        { .image     = gbuffCtx.colorTargets[1].texture.image.image,
+        { .image     = gbuffCtx.colorTargets[1].texture.image.vkImage,
           .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
           .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
           .srcAccess = 0,
@@ -316,7 +316,7 @@ void Engine::renderFrame(FrameData& frameData)
     };
 
     presentCtx.insertTransitionBarrier(
-        { .image     = gbuffCtx.colorTargets[0].texture.image.image,
+        { .image     = gbuffCtx.colorTargets[0].texture.image.vkImage,
           .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
           .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
           .srcAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
@@ -324,7 +324,7 @@ void Engine::renderFrame(FrameData& frameData)
           .srcStage  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
           .dstStage  = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT });
     presentCtx.insertTransitionBarrier(
-        { .image     = swapImageTarget.texture.image.image,
+        { .image     = swapImageTarget.texture.image.vkImage,
           .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
           .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
           .srcAccess = 0,

@@ -65,10 +65,10 @@ struct VulkanImageBarier
     VkImage              image;
     VkImageLayout        oldLayout;
     VkImageLayout        newLayout;
-    VkAccessFlags        srcAccess;
-    VkAccessFlags        dstAccess;
     VkPipelineStageFlags srcStage;
+    VkAccessFlags        srcAccess;
     VkPipelineStageFlags dstStage;
+    VkAccessFlags        dstAccess;
 };
 
 } // namespace dusk

@@ -279,29 +279,33 @@ void Engine::renderFrame(FrameData& frameData)
 
     // create g-buffer pass
     auto gbuffCtx = VkGfxRenderPassContext {
-        .colorTargets        = m_rgResources.gbuffRenderTargets, // TODO: avoidable copy
-        .depthTarget         = m_rgResources.gbuffDepthTexture,
+        .outColorAttachments = m_rgResources.gbuffRenderTargets, // TODO: avoidable copy
+        .depthAttachment     = m_rgResources.gbuffDepthTexture,
         .useDepth            = true,
         .maxParallelism      = 1,
         .secondaryCmdBuffers = m_renderer->getSecondayCmdBuffers(frameData.frameIndex)
     };
 
     gbuffCtx.insertTransitionBarrier(
-        { .image     = gbuffCtx.colorTargets[0].texture.image.vkImage,
-          .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-          .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-          .srcAccess = 0,
-          .dstAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-          .srcStage  = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-          .dstStage  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT });
+        {
+            .image     = gbuffCtx.outColorAttachments[0].texture.image.vkImage,
+            .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+            .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            .srcStage  = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+            .srcAccess = 0,
+            .dstStage  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            .dstAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+        });
     gbuffCtx.insertTransitionBarrier(
-        { .image     = gbuffCtx.colorTargets[1].texture.image.vkImage,
-          .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-          .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-          .srcAccess = 0,
-          .dstAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-          .srcStage  = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-          .dstStage  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT });
+        {
+            .image     = gbuffCtx.outColorAttachments[1].texture.image.vkImage,
+            .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+            .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            .srcStage  = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+            .srcAccess = 0,
+            .dstStage  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            .dstAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+        });
 
     renderGraph.setPassContext("gbuffer_pass", gbuffCtx);
     renderGraph.addPass("gbuffer_pass", recordGBufferCmds);
@@ -310,27 +314,32 @@ void Engine::renderFrame(FrameData& frameData)
 
     // create presentation pass
     auto presentCtx = VkGfxRenderPassContext {
-        .colorTargets        = { swapImageTarget },
+        .inAttachments       = { gbuffCtx.outColorAttachments[0] },
+        .outColorAttachments = { swapImageTarget },
         .useDepth            = false,
         .secondaryCmdBuffers = m_renderer->getSecondayCmdBuffers(frameData.frameIndex)
     };
 
     presentCtx.insertTransitionBarrier(
-        { .image     = gbuffCtx.colorTargets[0].texture.image.vkImage,
-          .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-          .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-          .srcAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-          .dstAccess = VK_ACCESS_SHADER_READ_BIT,
-          .srcStage  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-          .dstStage  = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT });
+        {
+            .image     = gbuffCtx.outColorAttachments[0].texture.image.vkImage,
+            .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            .srcStage  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            .srcAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+            .dstStage  = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            .dstAccess = VK_ACCESS_SHADER_READ_BIT,
+        });
     presentCtx.insertTransitionBarrier(
-        { .image     = swapImageTarget.texture.image.vkImage,
-          .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-          .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-          .srcAccess = 0,
-          .dstAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-          .srcStage  = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-          .dstStage  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT });
+        {
+            .image     = swapImageTarget.texture.image.vkImage,
+            .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+            .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            .srcStage  = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+            .srcAccess = 0,
+            .dstStage  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            .dstAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+        });
 
     renderGraph.setPassContext("present_pass", presentCtx);
     renderGraph.addPass("present_pass", recordPresentationCmds);

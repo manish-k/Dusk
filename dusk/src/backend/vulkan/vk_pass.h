@@ -17,8 +17,9 @@ struct VkGfxRenderPassContext
 {
     VkCommandBuffer                         cmdBuffer;
     VkExtent2D                              extent;
-    DynamicArray<RenderTarget>              colorTargets;
-    RenderTarget                            depthTarget;
+    DynamicArray<RenderTarget>              inAttachments;
+    DynamicArray<RenderTarget>              outColorAttachments;
+    RenderTarget                            depthAttachment;
     bool                                    useDepth = false;
 
     DynamicArray<VkRenderingAttachmentInfo> colorAttachmentInfos;
@@ -64,6 +65,8 @@ struct VkGfxRenderPassContext
                 barrier.subresourceRange.levelCount     = 1;
                 barrier.subresourceRange.baseArrayLayer = 0;
                 barrier.subresourceRange.layerCount     = 1;
+                barrier.srcAccessMask                   = barrierInfo.srcAccess;
+                barrier.dstAccessMask                   = barrierInfo.dstAccess;
 
                 vkCmdPipelineBarrier(
                     cmdBuffer,
@@ -82,12 +85,12 @@ struct VkGfxRenderPassContext
         DynamicArray<VkFormat> colorFormats;
 
         colorAttachmentInfos.clear();
-        for (const auto& target : colorTargets)
+        for (const auto& target : outColorAttachments)
         {
             VkRenderingAttachmentInfo colorAttachment { VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
             colorAttachment.imageView   = target.texture.imageView;
             colorAttachment.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
-            colorAttachment.loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR;
+            colorAttachment.loadOp      = VK_ATTACHMENT_LOAD_OP_LOAD;
             colorAttachment.storeOp     = VK_ATTACHMENT_STORE_OP_STORE;
             colorAttachment.clearValue  = target.clearValue;
             colorAttachmentInfos.push_back(colorAttachment);
@@ -97,8 +100,13 @@ struct VkGfxRenderPassContext
 
         if (useDepth)
         {
+            for (uint32_t inAttachmentIdx = 0u; inAttachmentIdx < inAttachments.size(); ++inAttachmentIdx)
+            {
+                DASSERT(inAttachments[inAttachmentIdx].texture.image.vkImage != depthAttachment.texture.image.vkImage);
+            }
+
             depthAttachmentInfo             = { VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
-            depthAttachmentInfo.imageView   = depthTarget.texture.imageView;
+            depthAttachmentInfo.imageView   = depthAttachment.texture.imageView;
             depthAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
             depthAttachmentInfo.loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR;
             depthAttachmentInfo.storeOp     = VK_ATTACHMENT_STORE_OP_STORE;
@@ -108,7 +116,7 @@ struct VkGfxRenderPassContext
             depthBarrier.dstAccessMask    = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
             depthBarrier.oldLayout        = VK_IMAGE_LAYOUT_UNDEFINED;
             depthBarrier.newLayout        = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-            depthBarrier.image            = depthTarget.texture.image.vkImage;
+            depthBarrier.image            = depthAttachment.texture.image.vkImage;
             depthBarrier.subresourceRange = { VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1 };
 
             vkCmdPipelineBarrier(
@@ -150,8 +158,6 @@ struct VkGfxRenderPassContext
 
         if (maxParallelism > 1u)
         {
-            auto&                                   ctx = VkGfxDevice::getSharedVulkanContext();
-
             VkCommandBufferInheritanceRenderingInfo renderingInheritanceInfo { VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO };
             renderingInheritanceInfo.colorAttachmentCount    = static_cast<uint32_t>(colorFormats.size());
             renderingInheritanceInfo.pColorAttachmentFormats = colorFormats.data();
@@ -159,7 +165,7 @@ struct VkGfxRenderPassContext
 
             if (useDepth)
             {
-                renderingInheritanceInfo.depthAttachmentFormat = depthTarget.format;
+                renderingInheritanceInfo.depthAttachmentFormat = depthAttachment.format;
             }
 
             VkCommandBufferInheritanceInfo inheritance { VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO };

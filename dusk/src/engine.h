@@ -50,12 +50,13 @@ struct RenderGraphResources
     DynamicArray<GfxBuffer>                  gbuffModelsBuffer             = {};
 
     // presentation pass resources
-    Unique<VkGfxRenderPipeline>      presentPipeline               = nullptr;
-    Unique<VkGfxPipelineLayout>      presentPipelineLayout         = nullptr;
-    //Unique<VkGfxDescriptorPool>      presentTexDescriptorPool      = nullptr;
-    //Unique<VkGfxDescriptorSetLayout> presentTexDescriptorSetLayout = nullptr;
-    //Unique<VkGfxDescriptorSet>       presentTexDescriptorSet       = nullptr;
-    VulkanSampler                    presentTexSampler;
+    Unique<VkGfxRenderPipeline> presentPipeline       = nullptr;
+    Unique<VkGfxPipelineLayout> presentPipelineLayout = nullptr;
+
+    // lighting pass resources
+    RenderTarget                lightingRenderTarget   = {};
+    Unique<VkGfxRenderPipeline> lightingPipeline       = nullptr;
+    Unique<VkGfxPipelineLayout> lightingPipelineLayout = nullptr;
 };
 
 const uint32_t GLOBAL_SET_INDEX   = 0;

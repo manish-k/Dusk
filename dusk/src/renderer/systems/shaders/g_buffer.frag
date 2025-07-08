@@ -13,6 +13,7 @@ layout (set = 0, binding = 0) uniform GlobalUBO
 	mat4 projection;
 	mat4 view;
 	mat4 inverseView;
+	mat4 inverseViewProjection;
 		
 	uint directionalLightsCount;
 	uint pointLightsCount;     

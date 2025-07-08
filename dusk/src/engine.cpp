@@ -191,9 +191,10 @@ void Engine::onUpdate(TimeStep dt)
             camera.setAspectRatio(m_renderer->getAspectRatio());
 
             GlobalUbo ubo {};
-            ubo.view        = camera.viewMatrix;
-            ubo.prjoection  = camera.projectionMatrix;
-            ubo.inverseView = camera.inverseViewMatrix;
+            ubo.view                  = camera.viewMatrix;
+            ubo.prjoection            = camera.projectionMatrix;
+            ubo.inverseView           = camera.inverseViewMatrix;
+            ubo.inverseViewProjection = glm::inverse(camera.viewMatrix * camera.projectionMatrix);
 
             m_lightsSystem->updateLights(*m_currentScene, ubo);
 
@@ -311,10 +312,67 @@ void Engine::renderFrame(FrameData& frameData)
     renderGraph.addPass("gbuffer_pass", recordGBufferCmds);
 
     // create lighting pass
+    auto lightingCtx = VkGfxRenderPassContext {
+        .inAttachments       = { m_rgResources.gbuffRenderTargets[0], m_rgResources.gbuffRenderTargets[1], m_rgResources.gbuffDepthTexture },
+        .outColorAttachments = { m_rgResources.lightingRenderTarget },
+        .useDepth            = false,
+        .secondaryCmdBuffers = m_renderer->getSecondayCmdBuffers(frameData.frameIndex)
+    };
+
+    // albedo texture layout change
+    gbuffCtx.insertTransitionBarrier(
+        {
+            .image     = lightingCtx.inAttachments[0].texture.image.vkImage,
+            .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            .srcStage  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            .srcAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+            .dstStage  = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            .dstAccess = VK_ACCESS_SHADER_READ_BIT,
+        });
+
+    // normal texture layout change
+    gbuffCtx.insertTransitionBarrier(
+        {
+            .image     = lightingCtx.inAttachments[1].texture.image.vkImage,
+            .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            .srcStage  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            .srcAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+            .dstStage  = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            .dstAccess = VK_ACCESS_SHADER_READ_BIT,
+        });
+
+    // depth texture layout change
+    gbuffCtx.insertTransitionBarrier(
+        {
+            .image     = lightingCtx.inAttachments[2].texture.image.vkImage,
+            .oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+            .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            .srcStage  = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+            .srcAccess = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+            .dstStage  = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            .dstAccess = VK_ACCESS_SHADER_READ_BIT,
+        });
+
+    // lighting result layout transition
+    gbuffCtx.insertTransitionBarrier(
+        {
+            .image     = lightingCtx.outColorAttachments[0].texture.image.vkImage,
+            .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+            .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            .srcStage  = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+            .srcAccess = 0,
+            .dstStage  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            .dstAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+        });
+
+    renderGraph.setPassContext("lighting_pass", lightingCtx);
+    renderGraph.addPass("lighting_pass", recordLightingCmds);
 
     // create presentation pass
     auto presentCtx = VkGfxRenderPassContext {
-        .inAttachments       = { gbuffCtx.outColorAttachments[0] },
+        .inAttachments       = { m_rgResources.lightingRenderTarget },
         .outColorAttachments = { swapImageTarget },
         .useDepth            = false,
         .secondaryCmdBuffers = m_renderer->getSecondayCmdBuffers(frameData.frameIndex)
@@ -477,13 +535,13 @@ void Engine::prepareRenderGraphResources()
     // g-buffer resources
     // Allocate g-buffer render targets
     m_rgResources.gbuffRenderTargets.push_back(m_textureDB->createColorTarget(
-        "gbuffer_albedo",
+        "gbuffer_pass_albedo",
         extent.width,
         extent.height,
         VK_FORMAT_R8G8B8A8_UNORM,
         { 0.f, 0.f, 0.f, 1.f }));
     m_rgResources.gbuffRenderTargets.push_back(m_textureDB->createColorTarget(
-        "gbuffer_normal",
+        "gbuffer_pass_normal",
         extent.width,
         extent.height,
         VK_FORMAT_R16G16B16A16_SFLOAT,
@@ -491,7 +549,7 @@ void Engine::prepareRenderGraphResources()
 
     // Allocate g-buffer depth texture
     m_rgResources.gbuffDepthTexture = m_textureDB->createDepthTarget(
-        "gbuffer_depth",
+        "gbuffer_pass_depth",
         extent.width,
         extent.height,
         VK_FORMAT_D32_SFLOAT_S8_UINT,
@@ -587,6 +645,14 @@ void Engine::prepareRenderGraphResources()
                                               .addDescriptorSetLayout(m_textureDB->getTexturesDescriptorSetLayout().layout)
                                               .build();
 
+#ifdef VK_RENDERER_DEBUG
+    vkdebug::setObjectName(
+        ctx.device,
+        VK_OBJECT_TYPE_PIPELINE_LAYOUT,
+        (uint64_t)m_rgResources.presentPipelineLayout->get(),
+        "presentation_pipeline_layout");
+#endif // VK_RENDERER_DEBUG
+
     auto presentVertShaderCode    = FileSystem::readFileBinary(shaderPath / "present.vert.spv");
 
     auto presentFragShaderCode    = FileSystem::readFileBinary(shaderPath / "present.frag.spv");
@@ -598,6 +664,56 @@ void Engine::prepareRenderGraphResources()
                                         .addColorAttachmentFormat(VK_FORMAT_B8G8R8A8_SRGB)
                                         .removeVertexInputState()
                                         .build();
+
+#ifdef VK_RENDERER_DEBUG
+    vkdebug::setObjectName(
+        ctx.device,
+        VK_OBJECT_TYPE_PIPELINE,
+        (uint64_t)m_rgResources.presentPipeline->get(),
+        "presentation_pipeline");
+#endif // VK_RENDERER_DEBUG
+
+    // lighting pass
+    m_rgResources.lightingRenderTarget = m_textureDB->createColorTarget(
+        "light_pass_color",
+        extent.width,
+        extent.height,
+        VK_FORMAT_R8G8B8A8_UNORM,
+        { 0.f, 0.f, 0.f, 1.f });
+
+    m_rgResources.lightingPipelineLayout = VkGfxPipelineLayout::Builder(ctx)
+                                               .addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(LightingPushConstant))
+                                               .addDescriptorSetLayout(m_globalDescriptorSetLayout->layout)
+                                               .addDescriptorSetLayout(m_textureDB->getTexturesDescriptorSetLayout().layout)
+                                               .addDescriptorSetLayout(m_lightsSystem->getLightsDescriptorSetLayout().layout)
+                                               .build();
+
+#ifdef VK_RENDERER_DEBUG
+    vkdebug::setObjectName(
+        ctx.device,
+        VK_OBJECT_TYPE_PIPELINE_LAYOUT,
+        (uint64_t)m_rgResources.lightingPipelineLayout->get(),
+        "lighting_pipeline_layout");
+#endif // VK_RENDERER_DEBUG
+
+    auto lightingVertShaderCode    = FileSystem::readFileBinary(shaderPath / "lighting.vert.spv");
+
+    auto lightingFragShaderCode    = FileSystem::readFileBinary(shaderPath / "lighting.frag.spv");
+
+    m_rgResources.lightingPipeline = VkGfxRenderPipeline::Builder(ctx)
+                                         .setVertexShaderCode(lightingVertShaderCode)
+                                         .setFragmentShaderCode(lightingFragShaderCode)
+                                         .setPipelineLayout(*m_rgResources.lightingPipelineLayout)
+                                         .addColorAttachmentFormat(VK_FORMAT_R8G8B8A8_UNORM)
+                                         .removeVertexInputState()
+                                         .build();
+#ifdef VK_RENDERER_DEBUG
+    vkdebug::setObjectName(
+        ctx.device,
+        VK_OBJECT_TYPE_PIPELINE,
+        (uint64_t)m_rgResources.lightingPipeline->get(),
+        "lighting_pipeline");
+#endif // VK_RENDERER_DEBUG
 }
 
 void Engine::releaseRenderGraphResources()
@@ -615,6 +731,10 @@ void Engine::releaseRenderGraphResources()
     // release present pass resources
     m_rgResources.presentPipeline       = nullptr;
     m_rgResources.presentPipelineLayout = nullptr;
+
+    // release lighting pass resources
+    m_rgResources.lightingPipeline       = nullptr;
+    m_rgResources.lightingPipelineLayout = nullptr;
 }
 
 void Engine::setSkyboxVisibility(bool state)

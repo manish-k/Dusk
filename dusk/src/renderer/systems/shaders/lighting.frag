@@ -1,11 +1,13 @@
 #version 450
 #extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_ARB_shading_language_include : enable
 
-layout(location = 0) in vec3 fragWorldPos;
-layout(location = 1) in vec2 fragUV;
-layout(location = 2) in vec3 fragNormal;
+#line 0
+#include "common.glsl"
 
-layout (location = 0) out vec4 outColor;
+layout(location = 0) in vec2 fragUV;
+
+layout(location = 0) out vec4 outColor;
 
 layout (set = 0, binding = 0) uniform GlobalUBO 
 {
@@ -24,16 +26,7 @@ layout (set = 0, binding = 0) uniform GlobalUBO
 	uvec4 spotLightIndices[32];
 } globalubo[];
 
-layout (set = 0, binding = 1) uniform sampler2D textures[];
-
-layout (set = 1, binding = 0) buffer Material 
-{
-	int id;
-	int albedoTexId;
-	int normalTexId;
-	int pad0;
-	vec4 albedoColor;
-} materials[];
+layout (set = 1, binding = 0) uniform sampler2D textures[];
 
 layout(set = 2, binding = 0) buffer AmbientLight
 {
@@ -73,10 +66,12 @@ layout(set = 2, binding = 3) buffer SpotLight
 	float outerCutOff;
 } spotLights[];
 
-layout(push_constant) uniform DrawData 
+layout(push_constant) uniform PushConstant 
 {
-	uint cameraIdx;
-	uint materialIdx;
+	uint frameIdx;
+	uint albedoTextureIdx;
+    uint normalTextureIdx;
+    uint depthTextureIdx;
 } push;
 
 vec3 computeDirectionalLight(uint lightIdx, vec3 viewDirection, vec3 normal)
@@ -176,20 +171,25 @@ vec3 computeSpotLight(uint lightIdx, vec3 fragPosition, vec3 viewDirection, vec3
 	}
 }
 
+
 void main() {
-	uint guboIdx = nonuniformEXT(push.cameraIdx);
+    uint guboIdx = nonuniformEXT(push.frameIdx);
+	uint albedoTexIdx = nonuniformEXT(push.albedoTextureIdx);
+	uint normalTexIdx = nonuniformEXT(push.normalTextureIdx);
+	uint depthTexIdx = nonuniformEXT(push.depthTextureIdx);
 
-	vec3 surfaceNormal = normalize(fragNormal);
+	vec3 surfaceNormal = normalize(texture(textures[normalTexIdx], fragUV).xyz);
+	vec3 baseColor = texture(textures[albedoTexIdx], fragUV).xyz;
+	float ndcDepth = texture(textures[depthTexIdx], fragUV).x;
+	
+	
 	vec3 cameraPos = globalubo[guboIdx].inverseView[3].xyz;
-	vec3 viewDirection = normalize(cameraPos - fragWorldPos);
-
-	uint materialIdx = nonuniformEXT(push.materialIdx);
-	int textureIdx = materials[materialIdx].albedoTexId;
-	vec4 baseColor = materials[materialIdx].albedoColor;
+	vec3 worldPos = worldPosFromDepth(fragUV, ndcDepth, globalubo[guboIdx].inverseViewProjection);
+	vec3 viewDirection = normalize(cameraPos - worldPos);
 	
 	vec3 ambientColor = ambientLight.color.xyz * ambientLight.color.w;
 
-	vec3 lightColor = baseColor.xyz * texture(textures[nonuniformEXT(textureIdx)], fragUV).xyz;;
+	vec3 lightColor = baseColor.xyz;
 	
 	// compute contribution of all directional light
 	uint dirCount  = globalubo[guboIdx].directionalLightsCount;
@@ -204,32 +204,6 @@ void main() {
         if (4u*v + 3u < dirCount) lightColor = lightColor + computeDirectionalLight(idx4.w, viewDirection, surfaceNormal);
     }
 
-	// compute contribution of all point lights
-	uint pointCount  = globalubo[guboIdx].pointLightsCount;
-    vec4Count = (pointCount + 3u) >> 2;   // divide by 4, round up
-    for (uint v = 0u; v < vec4Count; ++v)
-    {
-        uvec4 idx4 = globalubo[guboIdx].pointLightIndices[v];
-
-        if (4u*v + 0u < pointCount) lightColor = lightColor + computePointLight(idx4.x, fragWorldPos, viewDirection, surfaceNormal);
-        if (4u*v + 1u < pointCount) lightColor = lightColor + computePointLight(idx4.y, fragWorldPos, viewDirection, surfaceNormal);
-        if (4u*v + 2u < pointCount) lightColor = lightColor + computePointLight(idx4.z, fragWorldPos, viewDirection, surfaceNormal);
-        if (4u*v + 3u < pointCount) lightColor = lightColor + computePointLight(idx4.w, fragWorldPos, viewDirection, surfaceNormal);
-    }
-
-	// compute contribution of all spot lights
-	uint spotCount  = globalubo[guboIdx].spotLightsCount;
-    vec4Count = (spotCount + 3u) >> 2;   // divide by 4, round up
-    for (uint v = 0u; v < vec4Count; ++v)
-    {
-        uvec4 idx4 = globalubo[guboIdx].spotLightIndices[v];
-
-        if (4u*v + 0u < spotCount) lightColor = lightColor + computeSpotLight(idx4.x, fragWorldPos, viewDirection, surfaceNormal);
-        if (4u*v + 1u < spotCount) lightColor = lightColor + computeSpotLight(idx4.y, fragWorldPos, viewDirection, surfaceNormal);
-        if (4u*v + 2u < spotCount) lightColor = lightColor + computeSpotLight(idx4.z, fragWorldPos, viewDirection, surfaceNormal);
-        if (4u*v + 3u < spotCount) lightColor = lightColor + computeSpotLight(idx4.w, fragWorldPos, viewDirection, surfaceNormal);
-    }
-	
 	lightColor = lightColor + ambientColor;
 	outColor = vec4(lightColor.xyz, 1.0f);
 }

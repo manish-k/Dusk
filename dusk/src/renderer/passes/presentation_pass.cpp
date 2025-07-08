@@ -25,9 +25,20 @@ void recordPresentationCmds(
         resources.presentPipelineLayout->get(),
         0,
         1,
-        &resources.presentTexDescriptorSet->set,
+        &frameData.textureDescriptorSet,
         0,
         nullptr);
+
+    PresentationPushConstant push {};
+    push.inputTextureIdx = ctx.inAttachments[0].texture.id;
+
+    vkCmdPushConstants(
+        ctx.cmdBuffer,
+        resources.presentPipelineLayout->get(),
+        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+        0,
+        sizeof(PresentationPushConstant),
+        &push);
 
     vkCmdDraw(ctx.cmdBuffer, 3, 1, 0, 0);
 

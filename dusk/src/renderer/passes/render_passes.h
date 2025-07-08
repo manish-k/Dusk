@@ -1,9 +1,16 @@
 #pragma once
 
+#include "dusk.h"
+
 namespace dusk
 {
 struct FrameData;
 struct VkGfxRenderPassContext;
+
+struct PresentationPushConstant
+{
+    uint32_t inputTextureIdx;
+};
 
 void recordGBufferCmds(
     FrameData&              frameData,

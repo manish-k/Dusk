@@ -52,9 +52,9 @@ struct RenderGraphResources
     // presentation pass resources
     Unique<VkGfxRenderPipeline>      presentPipeline               = nullptr;
     Unique<VkGfxPipelineLayout>      presentPipelineLayout         = nullptr;
-    Unique<VkGfxDescriptorPool>      presentTexDescriptorPool      = nullptr;
-    Unique<VkGfxDescriptorSetLayout> presentTexDescriptorSetLayout = nullptr;
-    Unique<VkGfxDescriptorSet>       presentTexDescriptorSet       = nullptr;
+    //Unique<VkGfxDescriptorPool>      presentTexDescriptorPool      = nullptr;
+    //Unique<VkGfxDescriptorSetLayout> presentTexDescriptorSetLayout = nullptr;
+    //Unique<VkGfxDescriptorSet>       presentTexDescriptorSet       = nullptr;
     VulkanSampler                    presentTexSampler;
 };
 

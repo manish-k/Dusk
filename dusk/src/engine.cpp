@@ -582,39 +582,9 @@ void Engine::prepareRenderGraphResources()
 #endif // VK_RENDERER_DEBUG
 
     // presentation pass
-
-    // input descriptor
-    m_rgResources.presentTexDescriptorPool = VkGfxDescriptorPool::Builder(ctx)
-                                                 .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1)
-                                                 .setDebugName("present_desc_pool")
-                                                 .build(1);
-
-    m_rgResources.presentTexDescriptorSetLayout = VkGfxDescriptorSetLayout::Builder(ctx)
-                                                      .addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
-                                                      .setDebugName("present_desc_set_layout")
-                                                      .build();
-
-    m_rgResources.presentTexDescriptorSet = m_rgResources.presentTexDescriptorPool->allocateDescriptorSet(
-        *m_rgResources.presentTexDescriptorSetLayout,
-        "present_desc_set");
-
-    m_gfxDevice->createImageSampler(&m_rgResources.presentTexSampler);
-
-    VkDescriptorImageInfo imageInfo {};
-    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    imageInfo.imageView   = m_rgResources.gbuffRenderTargets[0].texture.imageView;
-    imageInfo.sampler     = m_rgResources.presentTexSampler.sampler;
-
-    m_rgResources.presentTexDescriptorSet->configureImage(
-        0,
-        0,
-        1,
-        &imageInfo);
-    m_rgResources.presentTexDescriptorSet->applyConfiguration();
-
-    // pipeline
     m_rgResources.presentPipelineLayout = VkGfxPipelineLayout::Builder(ctx)
-                                              .addDescriptorSetLayout(m_rgResources.presentTexDescriptorSetLayout->layout)
+                                              .addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PresentationPushConstant))
+                                              .addDescriptorSetLayout(m_textureDB->getTexturesDescriptorSetLayout().layout)
                                               .build();
 
     auto presentVertShaderCode    = FileSystem::readFileBinary(shaderPath / "present.vert.spv");
@@ -645,12 +615,6 @@ void Engine::releaseRenderGraphResources()
     // release present pass resources
     m_rgResources.presentPipeline       = nullptr;
     m_rgResources.presentPipelineLayout = nullptr;
-
-    m_rgResources.presentTexDescriptorPool->resetPool();
-    m_rgResources.presentTexDescriptorSetLayout = nullptr;
-    m_rgResources.presentTexDescriptorPool      = nullptr;
-
-    m_gfxDevice->freeImageSampler(&m_rgResources.presentTexSampler);
 }
 
 void Engine::setSkyboxVisibility(bool state)

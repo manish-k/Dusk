@@ -90,7 +90,7 @@ struct VkGfxRenderPassContext
             VkRenderingAttachmentInfo colorAttachment { VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
             colorAttachment.imageView   = target.texture.imageView;
             colorAttachment.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
-            colorAttachment.loadOp      = VK_ATTACHMENT_LOAD_OP_LOAD;
+            colorAttachment.loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR;
             colorAttachment.storeOp     = VK_ATTACHMENT_STORE_OP_STORE;
             colorAttachment.clearValue  = target.clearValue;
             colorAttachmentInfos.push_back(colorAttachment);

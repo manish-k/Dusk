@@ -204,6 +204,32 @@ void main() {
         if (4u*v + 3u < dirCount) lightColor = lightColor + computeDirectionalLight(idx4.w, viewDirection, surfaceNormal);
     }
 
+		// compute contribution of all point lights
+	uint pointCount  = globalubo[guboIdx].pointLightsCount;
+    vec4Count = (pointCount + 3u) >> 2;   // divide by 4, round up
+    for (uint v = 0u; v < vec4Count; ++v)
+    {
+        uvec4 idx4 = globalubo[guboIdx].pointLightIndices[v];
+
+        if (4u*v + 0u < pointCount) lightColor = lightColor + computePointLight(idx4.x, worldPos, viewDirection, surfaceNormal);
+        if (4u*v + 1u < pointCount) lightColor = lightColor + computePointLight(idx4.y, worldPos, viewDirection, surfaceNormal);
+        if (4u*v + 2u < pointCount) lightColor = lightColor + computePointLight(idx4.z, worldPos, viewDirection, surfaceNormal);
+        if (4u*v + 3u < pointCount) lightColor = lightColor + computePointLight(idx4.w, worldPos, viewDirection, surfaceNormal);
+    }
+
+	// compute contribution of all spot lights
+	uint spotCount  = globalubo[guboIdx].spotLightsCount;
+    vec4Count = (spotCount + 3u) >> 2;   // divide by 4, round up
+    for (uint v = 0u; v < vec4Count; ++v)
+    {
+        uvec4 idx4 = globalubo[guboIdx].spotLightIndices[v];
+
+        if (4u*v + 0u < spotCount) lightColor = lightColor + computeSpotLight(idx4.x, worldPos, viewDirection, surfaceNormal);
+        if (4u*v + 1u < spotCount) lightColor = lightColor + computeSpotLight(idx4.y, worldPos, viewDirection, surfaceNormal);
+        if (4u*v + 2u < spotCount) lightColor = lightColor + computeSpotLight(idx4.z, worldPos, viewDirection, surfaceNormal);
+        if (4u*v + 3u < spotCount) lightColor = lightColor + computeSpotLight(idx4.w, worldPos, viewDirection, surfaceNormal);
+    }
+
 	lightColor = lightColor + ambientColor;
 	outColor = vec4(lightColor.xyz, 1.0f);
 }

@@ -290,6 +290,7 @@ void Engine::renderFrame(FrameData& frameData)
     gbuffCtx.insertTransitionBarrier(
         {
             .image     = gbuffCtx.outColorAttachments[0].texture.image.vkImage,
+            .usage     = getTextureUsageFlagBits(gbuffCtx.outColorAttachments[0].texture.usage),
             .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
             .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
             .srcStage  = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
@@ -300,6 +301,7 @@ void Engine::renderFrame(FrameData& frameData)
     gbuffCtx.insertTransitionBarrier(
         {
             .image     = gbuffCtx.outColorAttachments[1].texture.image.vkImage,
+            .usage     = getTextureUsageFlagBits(gbuffCtx.outColorAttachments[1].texture.usage),
             .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
             .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
             .srcStage  = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
@@ -323,6 +325,7 @@ void Engine::renderFrame(FrameData& frameData)
     lightingCtx.insertTransitionBarrier(
         {
             .image     = lightingCtx.inAttachments[0].texture.image.vkImage,
+            .usage     = getTextureUsageFlagBits(lightingCtx.inAttachments[0].texture.usage),
             .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
             .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
             .srcStage  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -335,6 +338,7 @@ void Engine::renderFrame(FrameData& frameData)
     lightingCtx.insertTransitionBarrier(
         {
             .image     = lightingCtx.inAttachments[1].texture.image.vkImage,
+            .usage     = getTextureUsageFlagBits(lightingCtx.inAttachments[1].texture.usage),
             .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
             .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
             .srcStage  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -347,6 +351,7 @@ void Engine::renderFrame(FrameData& frameData)
     lightingCtx.insertTransitionBarrier(
         {
             .image     = lightingCtx.inAttachments[2].texture.image.vkImage,
+            .usage     = getTextureUsageFlagBits(lightingCtx.inAttachments[2].texture.usage),
             .oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
             .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
             .srcStage  = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
@@ -359,6 +364,7 @@ void Engine::renderFrame(FrameData& frameData)
     lightingCtx.insertTransitionBarrier(
         {
             .image     = lightingCtx.outColorAttachments[0].texture.image.vkImage,
+            .usage     = getTextureUsageFlagBits(lightingCtx.outColorAttachments[0].texture.usage),
             .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
             .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
             .srcStage  = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
@@ -381,6 +387,7 @@ void Engine::renderFrame(FrameData& frameData)
     presentCtx.insertTransitionBarrier(
         {
             .image     = presentCtx.inAttachments[0].texture.image.vkImage,
+            .usage     = getTextureUsageFlagBits(presentCtx.inAttachments[0].texture.usage),
             .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
             .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
             .srcStage  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -391,6 +398,7 @@ void Engine::renderFrame(FrameData& frameData)
     presentCtx.insertTransitionBarrier(
         {
             .image     = swapImageTarget.texture.image.vkImage,
+            .usage     = getTextureUsageFlagBits(swapImageTarget.texture.usage),
             .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
             .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
             .srcStage  = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,

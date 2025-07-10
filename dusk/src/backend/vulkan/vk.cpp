@@ -1,5 +1,6 @@
 #include "vk.h"
 #include "renderer/gfx_buffer.h"
+#include "renderer/texture.h"
 
 namespace dusk
 {
@@ -384,6 +385,19 @@ VkBufferUsageFlags getBufferUsageFlagBits(uint32_t usage)
     if (usage & GfxBufferUsageFlags::VertexBuffer) flags |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     if (usage & GfxBufferUsageFlags::IndexBuffer) flags |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
     if (usage & GfxBufferUsageFlags::StorageBuffer) flags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+
+    return flags;
+}
+
+VkImageUsageFlags getTextureUsageFlagBits(uint32_t usage)
+{
+    VkImageUsageFlags flags = 0u;
+    if (usage & TextureUsageFlags::TransferSrcTexture) flags |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    if (usage & TextureUsageFlags::TransferDstTexture) flags |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    if (usage & TextureUsageFlags::SampledTexture) flags |= VK_IMAGE_USAGE_SAMPLED_BIT;
+    if (usage & TextureUsageFlags::StorageTexture) flags |= VK_IMAGE_USAGE_STORAGE_BIT;
+    if (usage & TextureUsageFlags::ColorTexture) flags |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    if (usage & TextureUsageFlags::DepthStencilTexture) flags |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
     return flags;
 }

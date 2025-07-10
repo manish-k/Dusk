@@ -50,6 +50,7 @@ DynamicArray<VkVertexInputAttributeDescription> getVertexAtrributeDescription();
 
 // Buffer usage and type related funcs
 VkBufferUsageFlags getBufferUsageFlagBits(uint32_t usage);
+VkImageUsageFlags  getTextureUsageFlagBits(uint32_t usage);
 uint32_t           getVmaAllocationCreateFlagBits(uint32_t flags);
 
 } // namespace dusk

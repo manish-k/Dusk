@@ -63,6 +63,7 @@ struct VulkanSampler
 struct VulkanImageBarier
 {
     VkImage              image;
+    VkImageUsageFlags    usage;
     VkImageLayout        oldLayout;
     VkImageLayout        newLayout;
     VkPipelineStageFlags srcStage;

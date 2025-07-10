@@ -75,7 +75,7 @@ Error TextureDB::initDefaultTexture()
     defaultTextureImg.data     = (unsigned char*)&whiteColor;
 
     Texture2D default2dTexture { 0 };
-    Error     err = default2dTexture.init(defaultTextureImg, "default_tex_2d");
+    Error     err = default2dTexture.init(defaultTextureImg, TransferDstTexture | SampledTexture, "default_tex_2d");
 
     m_textures.push_back(default2dTexture);
 
@@ -247,7 +247,13 @@ void TextureDB::onUpdate()
         {
             Texture2D& tex = m_textures[key];
             Image&     img = *m_pendingImages[key];
-            Error      err = tex.initAndRecordUpload(img, gfxBuffer, transferBuffer, tex.name.c_str());
+            Error      err = tex.initAndRecordUpload(
+                img,
+                TransferDstTexture | SampledTexture,
+                gfxBuffer,
+                transferBuffer,
+                tex.name.c_str());
+            
             if (err != Error::Ok)
             {
                 DUSK_ERROR("Unable to record texture upload cmds for {}", tex.name);
@@ -300,7 +306,7 @@ RenderTarget TextureDB::createColorTarget(
         width,
         height,
         format,
-        VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+        StorageTexture | SampledTexture | ColorTexture | TransferDstTexture,
         name.c_str());
     m_textures.push_back(newTex);
 
@@ -342,7 +348,7 @@ RenderTarget TextureDB::createDepthTarget(
         width,
         height,
         format,
-        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+        DepthStencilTexture | SampledTexture,
         name.c_str());
     m_textures.push_back(newTex);
 

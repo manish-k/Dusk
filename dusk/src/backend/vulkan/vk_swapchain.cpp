@@ -160,6 +160,7 @@ RenderTarget VkGfxSwapChain::getCurrentSwapImageTarget()
     Texture2D tex(10000 + m_currentFrame);
     tex.image.vkImage = m_swapChainImages[m_currentFrame];
     tex.imageView     = m_swapChainImageViews[m_currentFrame];
+    tex.usage         = ColorTexture | TransferDstTexture;
 
     return RenderTarget {
         .texture = tex,

@@ -54,13 +54,19 @@ struct VkGfxRenderPassContext
         {
             for (const auto& barrierInfo : preBarriers)
             {
+                VkImageAspectFlags imageAspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
+                if (barrierInfo.usage & DepthStencilTexture)
+                {
+                    imageAspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+                }
+
                 VkImageMemoryBarrier barrier { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
                 barrier.oldLayout                       = barrierInfo.oldLayout;
                 barrier.newLayout                       = barrierInfo.newLayout;
                 barrier.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
                 barrier.dstQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
                 barrier.image                           = barrierInfo.image;
-                barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+                barrier.subresourceRange.aspectMask     = imageAspectFlags;
                 barrier.subresourceRange.baseMipLevel   = 0;
                 barrier.subresourceRange.levelCount     = 1;
                 barrier.subresourceRange.baseArrayLayer = 0;

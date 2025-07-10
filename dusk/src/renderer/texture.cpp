@@ -11,7 +11,7 @@
 namespace dusk
 {
 
-Error Texture2D::init(Image& texImage, const char* debugName)
+Error Texture2D::init(Image& texImage, uint32_t usage, const char* debugName)
 {
     DUSK_PROFILE_FUNCTION;
 
@@ -47,7 +47,7 @@ Error Texture2D::init(Image& texImage, const char* debugName)
     imageInfo.format        = VK_FORMAT_R8G8B8A8_SRGB;
     imageInfo.tiling        = VK_IMAGE_TILING_OPTIMAL;
     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    imageInfo.usage         = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    imageInfo.usage         = getTextureUsageFlagBits(usage);
     imageInfo.samples       = VK_SAMPLE_COUNT_1_BIT;
     imageInfo.sharingMode   = VK_SHARING_MODE_EXCLUSIVE;
     imageInfo.flags         = 0;
@@ -119,13 +119,18 @@ Error Texture2D::init(Image& texImage, const char* debugName)
 }
 
 Error Texture2D::init(
-    uint32_t          width,
-    uint32_t          height,
-    VkFormat          format,
-    VkImageUsageFlags usage,
-    const char*       name)
+    uint32_t    width,
+    uint32_t    height,
+    VkFormat    format,
+    uint32_t    usage,
+    const char* name)
 {
     DUSK_PROFILE_FUNCTION;
+
+    this->width                 = width;
+    this->height                = height;
+    this->usage                 = usage;
+    this->name                  = name;
 
     auto&             device    = Engine::get().getGfxDevice();
     auto&             vkContext = VkGfxDevice::getSharedVulkanContext();
@@ -140,7 +145,7 @@ Error Texture2D::init(
     imageInfo.format        = format;
     imageInfo.tiling        = VK_IMAGE_TILING_OPTIMAL;
     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    imageInfo.usage         = usage;
+    imageInfo.usage         = getTextureUsageFlagBits(usage);
     imageInfo.samples       = VK_SAMPLE_COUNT_1_BIT;
     imageInfo.sharingMode   = VK_SHARING_MODE_EXCLUSIVE;
     imageInfo.flags         = 0;
@@ -169,7 +174,7 @@ Error Texture2D::init(
 #endif // VK_RENDERER_DEBUG
 
     auto imageAspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
-    if (usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
+    if (usage & DepthStencilTexture)
     {
         imageAspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT;
     }
@@ -202,18 +207,20 @@ Error Texture2D::init(
 
 Error Texture2D::initAndRecordUpload(
     Image&          texImage,
+    uint32_t        usage,
     VkCommandBuffer graphicsBuffer,
     VkCommandBuffer transferBuffer,
     const char*     debugName)
 {
     DUSK_PROFILE_FUNCTION;
 
-    auto& device    = Engine::get().getGfxDevice();
-    auto& vkContext = device.getSharedVulkanContext();
+    auto& device      = Engine::get().getGfxDevice();
+    auto& vkContext   = device.getSharedVulkanContext();
 
-    width           = texImage.width;
-    height          = texImage.height;
-    numChannels     = texImage.channels;
+    this->width       = texImage.width;
+    this->height      = texImage.height;
+    this->numChannels = texImage.channels;
+    this->usage       = usage;
 
     // staging buffer for transfer
     GfxBuffer stagingBuffer;
@@ -240,7 +247,7 @@ Error Texture2D::initAndRecordUpload(
     imageInfo.format        = VK_FORMAT_R8G8B8A8_SRGB;
     imageInfo.tiling        = VK_IMAGE_TILING_OPTIMAL;
     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    imageInfo.usage         = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    imageInfo.usage         = getTextureUsageFlagBits(usage);
     imageInfo.samples       = VK_SAMPLE_COUNT_1_BIT;
     imageInfo.sharingMode   = VK_SHARING_MODE_EXCLUSIVE;
     imageInfo.flags         = 0;
@@ -270,6 +277,12 @@ Error Texture2D::initAndRecordUpload(
     }
 #endif // VK_RENDERER_DEBUG
 
+    auto imageAspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
+    if (usage & DepthStencilTexture)
+    {
+        imageAspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT;
+    }
+
     VkCommandBufferBeginInfo beginInfo {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -283,7 +296,7 @@ Error Texture2D::initAndRecordUpload(
     barrier.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
     barrier.dstQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
     barrier.image                           = image.vkImage;
-    barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.aspectMask     = imageAspectFlags;
     barrier.subresourceRange.baseMipLevel   = 0;
     barrier.subresourceRange.levelCount     = 1;
     barrier.subresourceRange.baseArrayLayer = 0;
@@ -308,7 +321,7 @@ Error Texture2D::initAndRecordUpload(
     region.bufferRowLength                 = 0;
     region.bufferImageHeight               = 0;
 
-    region.imageSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.imageSubresource.aspectMask     = imageAspectFlags;
     region.imageSubresource.mipLevel       = 0;
     region.imageSubresource.baseArrayLayer = 0;
     region.imageSubresource.layerCount     = 1;
@@ -336,7 +349,7 @@ Error Texture2D::initAndRecordUpload(
     barrier.srcQueueFamilyIndex             = vkContext.transferQueueFamilyIndex;
     barrier.dstQueueFamilyIndex             = vkContext.graphicsQueueFamilyIndex;
     barrier.image                           = image.vkImage;
-    barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.aspectMask     = imageAspectFlags;
     barrier.subresourceRange.baseMipLevel   = 0;
     barrier.subresourceRange.levelCount     = 1;
     barrier.subresourceRange.baseArrayLayer = 0;
@@ -384,7 +397,7 @@ Error Texture2D::initAndRecordUpload(
     barrier.srcQueueFamilyIndex             = vkContext.transferQueueFamilyIndex;
     barrier.dstQueueFamilyIndex             = vkContext.graphicsQueueFamilyIndex;
     barrier.image                           = image.vkImage;
-    barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.aspectMask     = imageAspectFlags;
     barrier.subresourceRange.baseMipLevel   = 0;
     barrier.subresourceRange.levelCount     = 1;
     barrier.subresourceRange.baseArrayLayer = 0;
@@ -430,7 +443,7 @@ Error Texture2D::initAndRecordUpload(
         &image,
         VK_IMAGE_VIEW_TYPE_2D,
         VK_FORMAT_R8G8B8A8_SRGB,
-        VK_IMAGE_ASPECT_COLOR_BIT,
+        imageAspectFlags,
         1,
         1,
         &imageView);

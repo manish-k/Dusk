@@ -252,7 +252,7 @@ void AssimpLoader::parseMaterials(Scene& scene, const aiScene* aiScene)
         }
         else
         {
-            // diffuseTexId = scene.getDefaultTextureId();
+            diffuseTexId = TextureDB::cache()->getDefaultTexture2D().id;
         }
 
         aiColor3D diffuseColor { 1.0f };

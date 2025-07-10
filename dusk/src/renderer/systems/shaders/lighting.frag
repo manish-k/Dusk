@@ -189,7 +189,7 @@ void main() {
 	
 	vec3 ambientColor = ambientLight.color.xyz * ambientLight.color.w;
 
-	vec3 lightColor = baseColor.xyz;
+	vec3 lightColor = ambientColor * baseColor.xyz;
 	
 	// compute contribution of all directional light
 	uint dirCount  = globalubo[guboIdx].directionalLightsCount;
@@ -204,7 +204,7 @@ void main() {
         if (4u*v + 3u < dirCount) lightColor = lightColor + computeDirectionalLight(idx4.w, viewDirection, surfaceNormal);
     }
 
-		// compute contribution of all point lights
+	// compute contribution of all point lights
 	uint pointCount  = globalubo[guboIdx].pointLightsCount;
     vec4Count = (pointCount + 3u) >> 2;   // divide by 4, round up
     for (uint v = 0u; v < vec4Count; ++v)
@@ -230,6 +230,5 @@ void main() {
         if (4u*v + 3u < spotCount) lightColor = lightColor + computeSpotLight(idx4.w, worldPos, viewDirection, surfaceNormal);
     }
 
-	lightColor = lightColor + ambientColor;
 	outColor = vec4(lightColor.xyz, 1.0f);
 }

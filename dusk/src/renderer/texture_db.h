@@ -41,7 +41,12 @@ public:
      * @brief Get Texture for the given Id
      * @params texture id
      */
-    Texture2D getTexture2D(uint32_t texId) const { return m_textures[texId]; };
+    Texture2D& getTexture2D(uint32_t texId) { return m_textures[texId]; };
+
+    /**
+     * @brief Get default texture
+     */
+    Texture2D& getDefaultTexture2D() { return m_textures[0]; };
 
     /**
      * @brief Creates a new texture asynchronously and returns its identifier.
@@ -63,7 +68,7 @@ public:
     /**
      * @brief Per frame update call to upload pending textures
      */
-    void         onUpdate();
+    void onUpdate();
 
     /**
      * @brief clear a render target for color attachment

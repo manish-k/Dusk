@@ -15,24 +15,25 @@ constexpr glm::vec3 baseUpDir      = glm::vec3 { 0.f, -1.f, 0.f };
 
 struct CameraComponent
 {
-    glm::vec3 forwardDirection  = baseForwardDir; // default; looking in -z axis dir
-    glm::vec3 rightDirection    = baseRightDir;
-    glm::vec3 upDirection       = baseUpDir;      // default; -y axis is up dir
+    glm::vec3 forwardDirection        = baseForwardDir; // default; looking in -z axis dir
+    glm::vec3 rightDirection          = baseRightDir;
+    glm::vec3 upDirection             = baseUpDir;      // default; -y axis is up dir
 
-    glm::mat4 projectionMatrix  = glm::mat4 { 1.0f };
-    glm::mat4 viewMatrix        = glm::mat4 { 1.0f };
-    glm::mat4 inverseViewMatrix = glm::mat4 { 1.0f };
+    glm::mat4 projectionMatrix        = glm::mat4 { 1.0f };
+    glm::mat4 viewMatrix              = glm::mat4 { 1.0f };
+    glm::mat4 inverseViewMatrix       = glm::mat4 { 1.0f };
+    glm::mat4 inverseProjectionMatrix = glm::mat4 { 1.0f };
 
-    float     leftPlane         = 0.f;
-    float     rightPlane        = 0.f;
-    float     topPlane          = 0.f;
-    float     bottomPlane       = 0.f;
-    float     nearPlane         = 0.f;
-    float     farPlane          = 0.f;
-    float     aspectRatio       = 0.f;
-    float     fovY              = 0.f;
+    float     leftPlane               = 0.f;
+    float     rightPlane              = 0.f;
+    float     topPlane                = 0.f;
+    float     bottomPlane             = 0.f;
+    float     nearPlane               = 0.f;
+    float     farPlane                = 0.f;
+    float     aspectRatio             = 0.f;
+    float     fovY                    = 0.f;
 
-    bool      isPerspective     = false;
+    bool      isPerspective           = false;
 
     /**
      * @brief Set camera projection as orthographic
@@ -45,21 +46,30 @@ struct CameraComponent
      */
     void setOrthographicProjection(float left, float right, float top, float bottom, float n, float f)
     {
-        leftPlane              = left;
-        rightPlane             = right;
-        topPlane               = top;
-        bottomPlane            = bottom;
-        nearPlane              = n;
-        farPlane               = f;
-        isPerspective          = false;
+        leftPlane                     = left;
+        rightPlane                    = right;
+        topPlane                      = top;
+        bottomPlane                   = bottom;
+        nearPlane                     = n;
+        farPlane                      = f;
+        isPerspective                 = false;
 
-        projectionMatrix       = glm::mat4 { 1.0f };
-        projectionMatrix[0][0] = 2.f / (right - left);
-        projectionMatrix[1][1] = 2.f / (bottom - top);
-        projectionMatrix[2][2] = 1.f / (f - n);
-        projectionMatrix[3][0] = -(right + left) / (right - left);
-        projectionMatrix[3][1] = -(bottom + top) / (bottom - top);
-        projectionMatrix[3][2] = -n / (f - n);
+        projectionMatrix              = glm::mat4 { 1.0f };
+        projectionMatrix[0][0]        = 2.f / (right - left);
+        projectionMatrix[1][1]        = 2.f / (bottom - top);
+        projectionMatrix[2][2]        = 1.f / (f - n);
+        projectionMatrix[3][0]        = -(right + left) / (right - left);
+        projectionMatrix[3][1]        = -(bottom + top) / (bottom - top);
+        projectionMatrix[3][2]        = -n / (f - n);
+
+        inverseProjectionMatrix       = glm::mat4(1.0f);
+        inverseProjectionMatrix[0][0] = (right - left) / 2.0f;
+        inverseProjectionMatrix[1][1] = (bottom - top) / 2.0f;
+        inverseProjectionMatrix[2][2] = f - n;
+        inverseProjectionMatrix[3][0] = (right + left) / 2.0f;
+        inverseProjectionMatrix[3][1] = (bottom + top) / 2.0f;
+        inverseProjectionMatrix[3][2] = n;
+        inverseProjectionMatrix[3][3] = 1.0f;
     };
 
     /**
@@ -73,26 +83,33 @@ struct CameraComponent
     {
         DASSERT(glm::abs(aspect - std::numeric_limits<float>::epsilon()) > 0.0f);
 
-        nearPlane               = n;
-        farPlane                = f;
-        aspectRatio             = aspect;
-        fovY                    = fovy;
-        isPerspective           = true;
+        nearPlane                     = n;
+        farPlane                      = f;
+        aspectRatio                   = aspect;
+        fovY                          = fovy;
+        isPerspective                 = true;
 
-        const float tanHalfFovy = tan(fovy / 2.f);
-        projectionMatrix        = glm::mat4 { 0.0f };
-        projectionMatrix[0][0]  = 1.f / (aspect * tanHalfFovy);
-        projectionMatrix[1][1]  = 1.f / (tanHalfFovy);
-        projectionMatrix[2][2]  = f / (f - n);
-        projectionMatrix[2][3]  = 1.f;
-        projectionMatrix[3][2]  = -(f * n) / (f - n);
+        const float tanHalfFovy       = tan(fovy / 2.f);
+        projectionMatrix              = glm::mat4 { 0.0f };
+        projectionMatrix[0][0]        = 1.f / (aspect * tanHalfFovy);
+        projectionMatrix[1][1]        = 1.f / (tanHalfFovy);
+        projectionMatrix[2][2]        = f / (f - n);
+        projectionMatrix[2][3]        = 1.f;
+        projectionMatrix[3][2]        = -(f * n) / (f - n);
+
+        inverseProjectionMatrix       = glm::mat4(0.0f);
+        inverseProjectionMatrix[0][0] = aspect * tanHalfFovy;
+        inverseProjectionMatrix[1][1] = tanHalfFovy;
+        inverseProjectionMatrix[2][3] = -(f - n) / (f * n);
+        inverseProjectionMatrix[3][2] = 1.0f;
+        inverseProjectionMatrix[3][3] = 1.0f / n;
     };
 
     void setAspectRatio(float aspect)
     {
         if (isPerspective)
         {
-            setPerspectiveProjection(fovY,aspect, nearPlane, farPlane);
+            setPerspectiveProjection(fovY, aspect, nearPlane, farPlane);
         }
     }
 

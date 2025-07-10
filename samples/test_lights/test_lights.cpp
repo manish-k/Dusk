@@ -41,13 +41,6 @@ bool TestLights::start()
     dLight.color     = glm::vec4(1.f, 1.f, 1.f, 0.2);
     m_testScene->addGameObject(std::move(directionalLight), m_testScene->getRootId());
 
-    // auto directionalLight2 = dusk::createUnique<GameObject>();
-    // directionalLight2->setName("directional_light_2");
-    // auto& light2     = directionalLight2->addComponent<DirectionalLightComponent>();
-    // light2.direction = glm::vec3(3.f, 3.f, -3.f);
-    // light2.color     = glm::vec4(255, 0, 0, 200);
-    // m_testScene->addGameObject(std::move(directionalLight2), m_testScene->getRootId());
-
     // adding point light
     auto pointLight = dusk::createUnique<GameObject>();
     pointLight->setName("point_light_0");
@@ -55,7 +48,6 @@ bool TestLights::start()
     pointTransform.translation = glm::vec3(0.f, 3.f, 0.f);
     auto& pLight               = pointLight->addComponent<PointLightComponent>();
     pLight.color               = glm::vec4(1.f, 1.f, 1.f, 0.6);
-
     m_testScene->addGameObject(std::move(pointLight), m_testScene->getRootId());
 
     // adding spot light
@@ -68,7 +60,6 @@ bool TestLights::start()
     sLight.direction          = glm::vec3(0.f, -2.f, 0.f);
     sLight.innerCutOff        = 0.86f; // 30 degrees
     sLight.outerCutOff        = 0.8f;  // ~35 degrees
-
     m_testScene->addGameObject(std::move(spotLight), m_testScene->getRootId());
 
     Engine::get().loadScene(m_testScene.get());

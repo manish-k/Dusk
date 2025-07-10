@@ -2,7 +2,7 @@
 #extension GL_EXT_nonuniform_qualifier : enable
 #extension GL_ARB_shading_language_include : enable
 
-#line 0
+#line 5
 #include "common.glsl"
 
 layout(location = 0) in vec2 fragUV;
@@ -14,7 +14,7 @@ layout (set = 0, binding = 0) uniform GlobalUBO
 	mat4 projection;
 	mat4 view;
 	mat4 inverseView;
-	mat4 inverseViewProjection;
+	mat4 inverseProjection;
 		
 	uint directionalLightsCount;
 	uint pointLightsCount;     
@@ -171,7 +171,6 @@ vec3 computeSpotLight(uint lightIdx, vec3 fragPosition, vec3 viewDirection, vec3
 	}
 }
 
-
 void main() {
     uint guboIdx = nonuniformEXT(push.frameIdx);
 	uint albedoTexIdx = nonuniformEXT(push.albedoTextureIdx);
@@ -181,10 +180,8 @@ void main() {
 	vec3 surfaceNormal = normalize(texture(textures[normalTexIdx], fragUV).xyz);
 	vec3 baseColor = texture(textures[albedoTexIdx], fragUV).xyz;
 	float ndcDepth = texture(textures[depthTexIdx], fragUV).x;
-	
-	
 	vec3 cameraPos = globalubo[guboIdx].inverseView[3].xyz;
-	vec3 worldPos = worldPosFromDepth(fragUV, ndcDepth, globalubo[guboIdx].inverseViewProjection);
+	vec3 worldPos = worldPosFromDepth(fragUV, ndcDepth, globalubo[guboIdx].inverseProjection, globalubo[guboIdx].inverseView);
 	vec3 viewDirection = normalize(cameraPos - worldPos);
 	
 	vec3 ambientColor = ambientLight.color.xyz * ambientLight.color.w;

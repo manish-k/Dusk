@@ -194,7 +194,7 @@ void Engine::onUpdate(TimeStep dt)
             ubo.view                  = camera.viewMatrix;
             ubo.prjoection            = camera.projectionMatrix;
             ubo.inverseView           = camera.inverseViewMatrix;
-            ubo.inverseViewProjection = glm::inverse(camera.viewMatrix * camera.projectionMatrix);
+            ubo.inverseProjection     = camera.inverseProjectionMatrix;
 
             m_lightsSystem->updateLights(*m_currentScene, ubo);
 

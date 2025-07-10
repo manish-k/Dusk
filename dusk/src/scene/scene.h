@@ -109,11 +109,6 @@ public:
 
     TransformComponent& getMainCameraTransform();
 
-    void             initTexturesCache(uint32_t textureCount)
-    {
-        m_textures.reserve(textureCount);
-    };
-
     int  loadTexture(std::string& path);
 
     void freeTextures();
@@ -129,7 +124,6 @@ public:
 
     void                     freeMaterials();
 
-    DynamicArray<Texture2D>& getTextures() { return m_textures; }
     DynamicArray<Material>&  getMaterials() { return m_materials; }
     DynamicArray<EntityId>&  getChildren() { return m_children; }
 
@@ -153,9 +147,6 @@ private:
 
     EntityId                       m_cameraId;
     Unique<CameraController>       m_cameraController;
-
-    HashMap<std::string, uint32_t> m_texPathMap; // currently loaded textures
-    DynamicArray<Texture2D>        m_textures;
 
     DynamicArray<Material>         m_materials;
 };

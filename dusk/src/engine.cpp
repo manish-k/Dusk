@@ -546,7 +546,7 @@ void Engine::prepareRenderGraphResources()
         "gbuffer_pass_albedo",
         extent.width,
         extent.height,
-        VK_FORMAT_R8G8B8A8_UNORM,
+        VK_FORMAT_R8G8B8A8_SRGB,
         { 0.f, 0.f, 0.f, 1.f }));
     m_rgResources.gbuffRenderTargets.push_back(m_textureDB->createColorTarget(
         "gbuffer_pass_normal",
@@ -635,7 +635,7 @@ void Engine::prepareRenderGraphResources()
                                       .setVertexShaderCode(vertShaderCode)
                                       .setFragmentShaderCode(fragShaderCode)
                                       .setPipelineLayout(*m_rgResources.gbuffPipelineLayout)
-                                      .addColorAttachmentFormat(VK_FORMAT_R8G8B8A8_UNORM)      // albedo
+                                      .addColorAttachmentFormat(VK_FORMAT_R8G8B8A8_SRGB)       // albedo
                                       .addColorAttachmentFormat(VK_FORMAT_R16G16B16A16_SFLOAT) // normal
                                       .build();
 
@@ -686,7 +686,7 @@ void Engine::prepareRenderGraphResources()
         "light_pass_color",
         extent.width,
         extent.height,
-        VK_FORMAT_R8G8B8A8_UNORM,
+        VK_FORMAT_R8G8B8A8_SRGB,
         { 0.f, 0.f, 0.f, 1.f });
 
     m_rgResources.lightingPipelineLayout = VkGfxPipelineLayout::Builder(ctx)
@@ -712,7 +712,7 @@ void Engine::prepareRenderGraphResources()
                                          .setVertexShaderCode(lightingVertShaderCode)
                                          .setFragmentShaderCode(lightingFragShaderCode)
                                          .setPipelineLayout(*m_rgResources.lightingPipelineLayout)
-                                         .addColorAttachmentFormat(VK_FORMAT_R8G8B8A8_UNORM)
+                                         .addColorAttachmentFormat(VK_FORMAT_R8G8B8A8_SRGB)
                                          .removeVertexInputState()
                                          .build();
 #ifdef VK_RENDERER_DEBUG

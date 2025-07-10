@@ -311,7 +311,7 @@ RenderTarget TextureDB::createColorTarget(
         width,
         height,
         format,
-        StorageTexture | SampledTexture | ColorTexture | TransferDstTexture,
+        SampledTexture | ColorTexture | TransferDstTexture,
         name.c_str());
     m_textures.push_back(newTex);
 

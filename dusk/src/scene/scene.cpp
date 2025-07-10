@@ -52,7 +52,6 @@ Scene::~Scene()
     DUSK_DEBUG("Destroying scene {}", m_name);
 
     freeSubMeshes();
-    freeTextures();
     freeMaterials();
 
     Registry::getRegistry().clear();
@@ -134,71 +133,6 @@ Unique<Scene> Scene::createSceneFromGLTF(const std::string& fileName)
 
     AssimpLoader loader {};
     return loader.readScene(fileName);
-}
-
-int Scene::loadTexture(std::string& path)
-{
-    DUSK_PROFILE_FUNCTION;
-
-    if (path.empty())
-    {
-        DUSK_ERROR("empty path for loading th texture");
-        return -1;
-    }
-
-    DUSK_DEBUG("Loading texture {}", path);
-    if (!m_texPathMap.has(path))
-    {
-        // Texture was not loaded earlier
-        Unique<Image> img;
-
-        {
-            DUSK_PROFILE_SECTION("texture_file_read");
-            img = ImageLoader::readImage(path);
-        }
-
-        if (img)
-        {
-            DUSK_PROFILE_SECTION("texture_file_upload");
-            uint32_t  newId = m_textures.size();
-            Texture2D newTex(newId);
-
-            Error     err = newTex.init(*img, path.c_str());
-            if (err != Error::Ok)
-            {
-                return -1;
-            }
-
-            m_texPathMap.emplace(path, newId);
-            m_textures.push_back(std::move(newTex));
-
-            ImageLoader::freeImage(*img);
-
-            DUSK_DEBUG("Texture loaded to gpu");
-            return newId;
-        }
-        else
-        {
-            ImageLoader::freeImage(*img);
-            return -1; // file not found
-        }
-    }
-
-    DUSK_DEBUG("Texture already present");
-    // Texture has been loaded already
-    return m_texPathMap[path];
-}
-
-void Scene::freeTextures()
-{
-    uint32_t texCount = m_textures.size();
-    for (uint32_t texIndex = 0u; texIndex < texCount; ++texIndex)
-    {
-        m_textures[texIndex].free();
-    }
-
-    m_textures.clear();
-    m_texPathMap.clear();
 }
 
 void Scene::addMaterial(Material& mat)

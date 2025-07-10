@@ -109,10 +109,6 @@ public:
 
     TransformComponent& getMainCameraTransform();
 
-    int  loadTexture(std::string& path);
-
-    void freeTextures();
-
     void initMaterialCache(uint32_t materialCount)
     {
         m_materials.reserve(materialCount);

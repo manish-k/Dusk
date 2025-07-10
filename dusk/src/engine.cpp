@@ -320,7 +320,7 @@ void Engine::renderFrame(FrameData& frameData)
     };
 
     // albedo texture layout change
-    gbuffCtx.insertTransitionBarrier(
+    lightingCtx.insertTransitionBarrier(
         {
             .image     = lightingCtx.inAttachments[0].texture.image.vkImage,
             .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -332,7 +332,7 @@ void Engine::renderFrame(FrameData& frameData)
         });
 
     // normal texture layout change
-    gbuffCtx.insertTransitionBarrier(
+    lightingCtx.insertTransitionBarrier(
         {
             .image     = lightingCtx.inAttachments[1].texture.image.vkImage,
             .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -344,7 +344,7 @@ void Engine::renderFrame(FrameData& frameData)
         });
 
     // depth texture layout change
-    gbuffCtx.insertTransitionBarrier(
+    lightingCtx.insertTransitionBarrier(
         {
             .image     = lightingCtx.inAttachments[2].texture.image.vkImage,
             .oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
@@ -356,7 +356,7 @@ void Engine::renderFrame(FrameData& frameData)
         });
 
     // lighting result layout transition
-    gbuffCtx.insertTransitionBarrier(
+    lightingCtx.insertTransitionBarrier(
         {
             .image     = lightingCtx.outColorAttachments[0].texture.image.vkImage,
             .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
@@ -380,7 +380,7 @@ void Engine::renderFrame(FrameData& frameData)
 
     presentCtx.insertTransitionBarrier(
         {
-            .image     = gbuffCtx.outColorAttachments[0].texture.image.vkImage,
+            .image     = presentCtx.inAttachments[0].texture.image.vkImage,
             .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
             .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
             .srcStage  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,

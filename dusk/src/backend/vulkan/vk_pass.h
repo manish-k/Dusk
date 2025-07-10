@@ -101,7 +101,7 @@ struct VkGfxRenderPassContext
             colorAttachment.clearValue  = target.clearValue;
             colorAttachmentInfos.push_back(colorAttachment);
 
-            colorFormats.push_back(target.format);
+            colorFormats.push_back(target.texture.format);
         }
 
         if (useDepth)
@@ -171,7 +171,7 @@ struct VkGfxRenderPassContext
 
             if (useDepth)
             {
-                renderingInheritanceInfo.depthAttachmentFormat = depthAttachment.format;
+                renderingInheritanceInfo.depthAttachmentFormat = depthAttachment.texture.format;
             }
 
             VkCommandBufferInheritanceInfo inheritance { VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO };

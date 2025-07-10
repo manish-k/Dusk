@@ -157,14 +157,14 @@ VulkanResult VkGfxSwapChain::submitCommandBuffers(const VkCommandBuffer* buffers
 
 RenderTarget VkGfxSwapChain::getCurrentSwapImageTarget()
 {
-    Texture2D tex(10000 + m_currentFrame);
+    Texture2D tex(10000 + m_currentFrame); // some random id
     tex.image.vkImage = m_swapChainImages[m_currentFrame];
     tex.imageView     = m_swapChainImageViews[m_currentFrame];
     tex.usage         = ColorTexture | TransferDstTexture;
+    tex.format        = m_imageFormat;
 
     return RenderTarget {
         .texture = tex,
-        .format  = m_imageFormat,
     };
 }
 

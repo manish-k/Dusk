@@ -28,6 +28,7 @@ struct Texture2D
 
     VulkanGfxImage image       = {};
     VkImageView    imageView   = {};
+    VkFormat       format      = {};
 
     Texture2D(uint32_t id) :
         id(id) { };
@@ -42,7 +43,11 @@ struct Texture2D
      * @params Optional name for the texture resources
      * @return Error status for the complete operation
      */
-    Error init(Image& texImage, uint32_t usage, const char* name = nullptr);
+    Error init(
+        Image&      texImage,
+        VkFormat    format,
+        uint32_t    usage,
+        const char* name = nullptr);
 
     /**
      * @brief Initialize an empty texture
@@ -73,6 +78,7 @@ struct Texture2D
      */
     Error initAndRecordUpload(
         Image&          texImage,
+        VkFormat        format,
         uint32_t        usage,
         VkCommandBuffer graphicsBuffer,
         VkCommandBuffer transferBuffer,

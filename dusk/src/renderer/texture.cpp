@@ -11,16 +11,21 @@
 namespace dusk
 {
 
-Error Texture2D::init(Image& texImage, uint32_t usage, const char* debugName)
+Error Texture2D::init(
+    Image&      texImage,
+    VkFormat    format,
+    uint32_t    usage,
+    const char* debugName)
 {
     DUSK_PROFILE_FUNCTION;
 
-    auto& device    = Engine::get().getGfxDevice();
-    auto& vkContext = device.getSharedVulkanContext();
+    auto& device      = Engine::get().getGfxDevice();
+    auto& vkContext   = device.getSharedVulkanContext();
 
-    width           = texImage.width;
-    height          = texImage.height;
-    numChannels     = texImage.channels;
+    this->width       = texImage.width;
+    this->height      = texImage.height;
+    this->numChannels = texImage.channels;
+    this->format      = format;
 
     // staging buffer for transfer
     GfxBuffer stagingBuffer;
@@ -44,7 +49,7 @@ Error Texture2D::init(Image& texImage, uint32_t usage, const char* debugName)
     imageInfo.extent.depth  = 1;
     imageInfo.mipLevels     = 1;
     imageInfo.arrayLayers   = 1;
-    imageInfo.format        = VK_FORMAT_R8G8B8A8_SRGB;
+    imageInfo.format        = format;
     imageInfo.tiling        = VK_IMAGE_TILING_OPTIMAL;
     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     imageInfo.usage         = getTextureUsageFlagBits(usage);
@@ -79,7 +84,7 @@ Error Texture2D::init(Image& texImage, uint32_t usage, const char* debugName)
 
     device.transitionImageWithLayout(
         &image,
-        VK_FORMAT_R8G8B8A8_SRGB,
+        format,
         VK_IMAGE_LAYOUT_UNDEFINED,
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         1,
@@ -93,7 +98,7 @@ Error Texture2D::init(Image& texImage, uint32_t usage, const char* debugName)
 
     device.transitionImageWithLayout(
         &image,
-        VK_FORMAT_R8G8B8A8_SRGB,
+        format,
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
         1,
@@ -104,7 +109,7 @@ Error Texture2D::init(Image& texImage, uint32_t usage, const char* debugName)
     result = device.createImageView(
         &image,
         VK_IMAGE_VIEW_TYPE_2D,
-        VK_FORMAT_R8G8B8A8_SRGB,
+        format,
         VK_IMAGE_ASPECT_COLOR_BIT,
         1,
         1,
@@ -131,6 +136,7 @@ Error Texture2D::init(
     this->height                = height;
     this->usage                 = usage;
     this->name                  = name;
+    this->format                = format;
 
     auto&             device    = Engine::get().getGfxDevice();
     auto&             vkContext = VkGfxDevice::getSharedVulkanContext();
@@ -207,6 +213,7 @@ Error Texture2D::init(
 
 Error Texture2D::initAndRecordUpload(
     Image&          texImage,
+    VkFormat        format,
     uint32_t        usage,
     VkCommandBuffer graphicsBuffer,
     VkCommandBuffer transferBuffer,
@@ -221,6 +228,7 @@ Error Texture2D::initAndRecordUpload(
     this->height      = texImage.height;
     this->numChannels = texImage.channels;
     this->usage       = usage;
+    this->format      = format;
 
     // staging buffer for transfer
     GfxBuffer stagingBuffer;
@@ -244,7 +252,7 @@ Error Texture2D::initAndRecordUpload(
     imageInfo.extent.depth  = 1;
     imageInfo.mipLevels     = 1;
     imageInfo.arrayLayers   = 1;
-    imageInfo.format        = VK_FORMAT_R8G8B8A8_SRGB;
+    imageInfo.format        = format;
     imageInfo.tiling        = VK_IMAGE_TILING_OPTIMAL;
     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     imageInfo.usage         = getTextureUsageFlagBits(usage);
@@ -442,7 +450,7 @@ Error Texture2D::initAndRecordUpload(
     result = device.createImageView(
         &image,
         VK_IMAGE_VIEW_TYPE_2D,
-        VK_FORMAT_R8G8B8A8_SRGB,
+        format,
         imageAspectFlags,
         1,
         1,

@@ -75,7 +75,11 @@ Error TextureDB::initDefaultTexture()
     defaultTextureImg.data     = (unsigned char*)&whiteColor;
 
     Texture2D default2dTexture { 0 };
-    Error     err = default2dTexture.init(defaultTextureImg, TransferDstTexture | SampledTexture, "default_tex_2d");
+    Error     err = default2dTexture.init(
+        defaultTextureImg,
+        VK_FORMAT_R8G8B8A8_SRGB,
+        TransferDstTexture | SampledTexture,
+        "default_tex_2d");
 
     m_textures.push_back(default2dTexture);
 
@@ -249,11 +253,12 @@ void TextureDB::onUpdate()
             Image&     img = *m_pendingImages[key];
             Error      err = tex.initAndRecordUpload(
                 img,
+                VK_FORMAT_R8G8B8A8_SRGB,
                 TransferDstTexture | SampledTexture,
                 gfxBuffer,
                 transferBuffer,
                 tex.name.c_str());
-            
+
             if (err != Error::Ok)
             {
                 DUSK_ERROR("Unable to record texture upload cmds for {}", tex.name);
@@ -326,7 +331,6 @@ RenderTarget TextureDB::createColorTarget(
 
     return RenderTarget {
         .texture    = newTex,
-        .format     = format,
         .clearValue = clearValue
     };
 }
@@ -368,7 +372,6 @@ RenderTarget TextureDB::createDepthTarget(
 
     return RenderTarget {
         .texture    = newTex,
-        .format     = format,
         .clearValue = clearValue
     };
 }

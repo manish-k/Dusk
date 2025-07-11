@@ -87,7 +87,19 @@ struct Texture2D
     /**
      * @brief free the allocated Image and ImageView for the texture
      */
-    void free();
+    void        free();
+
+    /**
+     * @brief get vulkan image
+     * @return VkImage
+     */
+    VkImage     getVkImage() const { return image.vkImage; };
+    
+    /**
+     * @brief get vulkan image views
+     * @return VkImageView
+     */
+    VkImageView getVkImagView() const { return imageView; };
 };
 
 struct Texture3D

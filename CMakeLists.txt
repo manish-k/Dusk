@@ -23,6 +23,7 @@ if(Vulkan_FOUND)
 endif()
 
 add_compile_definitions($<$<CONFIG:DEBUG>:DDEBUG>)
+add_compile_definitions(NOMINMAX)
 
 add_subdirectory(dusk)
 add_subdirectory(samples)

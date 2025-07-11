@@ -4,11 +4,13 @@
 #include "vk.h"
 #include "vk_types.h"
 #include "vk_device.h"
-#include "renderer/render_target.h"
+#include "renderer/gfx_types.h"
+
+#define DEFAULT_COLOR_CLEAR_VALUE   { 0.f, 0.f, 0.f, 1.f }
+#define DEFAULT_DEPTH_STENCIL_VALUE { 1.0f, 0 }
 
 namespace dusk
 {
-
 /**
  * @brief Encapsulation of a dynamic rednering pass. Not to be confused
  * with vkRenderPass.
@@ -17,9 +19,9 @@ struct VkGfxRenderPassContext
 {
     VkCommandBuffer                         cmdBuffer;
     VkExtent2D                              extent;
-    DynamicArray<RenderTarget>              inAttachments;
-    DynamicArray<RenderTarget>              outColorAttachments;
-    RenderTarget                            depthAttachment;
+    DynamicArray<GfxRenderingAttachment>    inAttachments;
+    DynamicArray<GfxRenderingAttachment>    outColorAttachments;
+    GfxRenderingAttachment                  depthAttachment;
     bool                                    useDepth = false;
 
     DynamicArray<VkRenderingAttachmentInfo> colorAttachmentInfos;
@@ -91,28 +93,30 @@ struct VkGfxRenderPassContext
         DynamicArray<VkFormat> colorFormats;
 
         colorAttachmentInfos.clear();
-        for (const auto& target : outColorAttachments)
+        for (const auto& attachment : outColorAttachments)
         {
+            DASSERT(attachment.texture, "valid texture is required");
+
             VkRenderingAttachmentInfo colorAttachment { VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
-            colorAttachment.imageView   = target.texture.imageView;
+            colorAttachment.imageView   = attachment.texture->imageView;
             colorAttachment.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
             colorAttachment.loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR;
             colorAttachment.storeOp     = VK_ATTACHMENT_STORE_OP_STORE;
-            colorAttachment.clearValue  = target.clearValue;
+            colorAttachment.clearValue  = attachment.clearValue;
             colorAttachmentInfos.push_back(colorAttachment);
 
-            colorFormats.push_back(target.texture.format);
+            colorFormats.push_back(attachment.texture->format);
         }
 
         if (useDepth)
         {
             for (uint32_t inAttachmentIdx = 0u; inAttachmentIdx < inAttachments.size(); ++inAttachmentIdx)
             {
-                DASSERT(inAttachments[inAttachmentIdx].texture.image.vkImage != depthAttachment.texture.image.vkImage);
+                // DASSERT(inAttachments[inAttachmentIdx].texture.image.vkImage != depthAttachment.texture.image.vkImage);
             }
 
             depthAttachmentInfo             = { VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
-            depthAttachmentInfo.imageView   = depthAttachment.texture.imageView;
+            depthAttachmentInfo.imageView   = depthAttachment.texture->imageView;
             depthAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
             depthAttachmentInfo.loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR;
             depthAttachmentInfo.storeOp     = VK_ATTACHMENT_STORE_OP_STORE;
@@ -122,7 +126,7 @@ struct VkGfxRenderPassContext
             depthBarrier.dstAccessMask    = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
             depthBarrier.oldLayout        = VK_IMAGE_LAYOUT_UNDEFINED;
             depthBarrier.newLayout        = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-            depthBarrier.image            = depthAttachment.texture.image.vkImage;
+            depthBarrier.image            = depthAttachment.texture->getVkImage();
             depthBarrier.subresourceRange = { VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1 };
 
             vkCmdPipelineBarrier(
@@ -171,7 +175,7 @@ struct VkGfxRenderPassContext
 
             if (useDepth)
             {
-                renderingInheritanceInfo.depthAttachmentFormat = depthAttachment.texture.format;
+                renderingInheritanceInfo.depthAttachmentFormat = depthAttachment.texture->format;
             }
 
             VkCommandBufferInheritanceInfo inheritance { VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO };

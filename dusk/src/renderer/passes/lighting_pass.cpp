@@ -54,9 +54,9 @@ void recordLightingCmds(
 
     LightingPushConstant push {};
     push.frameIdx         = frameData.frameIndex;
-    push.albedoTextureIdx = ctx.inAttachments[0].texture.id;
-    push.normalTextureIdx = ctx.inAttachments[1].texture.id;
-    push.depthTextureIdx  = ctx.inAttachments[2].texture.id;
+    push.albedoTextureIdx = ctx.inAttachments[0].texture->id;
+    push.normalTextureIdx = ctx.inAttachments[1].texture->id;
+    push.depthTextureIdx  = ctx.inAttachments[2].texture->id;
 
     vkCmdPushConstants(
         ctx.cmdBuffer,

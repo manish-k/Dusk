@@ -3,8 +3,7 @@
 #include "dusk.h"
 #include "vk_base.h"
 #include "vk_debug.h"
-#include "platform/platform.h"
-#include "renderer/vertex.h"
+#include "renderer/gfx_enums.h"
 
 #include <volk.h>
 #include <string>
@@ -49,8 +48,11 @@ DynamicArray<VkVertexInputBindingDescription>   getVertexBindingDescription();
 DynamicArray<VkVertexInputAttributeDescription> getVertexAtrributeDescription();
 
 // Buffer usage and type related funcs
-VkBufferUsageFlags getBufferUsageFlagBits(uint32_t usage);
-VkImageUsageFlags  getTextureUsageFlagBits(uint32_t usage);
-uint32_t           getVmaAllocationCreateFlagBits(uint32_t flags);
+VkBufferUsageFlags  getBufferUsageFlagBits(uint32_t usage);
+VkImageUsageFlags   getTextureUsageFlagBits(uint32_t usage);
+uint32_t            getVmaAllocationCreateFlagBits(uint32_t flags);
+
+VkAttachmentLoadOp  getLoadOp(GfxLoadOperation loadOp);
+VkAttachmentStoreOp getStoreOp(GfxStoreOperation storeOp);
 
 } // namespace dusk

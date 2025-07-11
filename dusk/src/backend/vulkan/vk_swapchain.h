@@ -5,7 +5,7 @@
 #include "vk_types.h"
 #include "vk_renderpass.h"
 #include "vk_allocator.h"
-#include "renderer/render_target.h"
+#include "renderer/texture.h"
 
 namespace dusk
 {
@@ -40,8 +40,8 @@ public:
     {
         return m_depthImages[imageIndex].vkImage;
     };
-    VkImageView  getDepthImageView(uint32_t imageIndex) { return m_depthImageViews[imageIndex]; };
-    RenderTarget getCurrentSwapImageTarget();
+    VkImageView getDepthImageView(uint32_t imageIndex) { return m_depthImageViews[imageIndex]; };
+    Texture2D   getCurrentSwapImageTexture();
 
 private:
     Error              createSwapChain(const VkGfxSwapChainParams& params);

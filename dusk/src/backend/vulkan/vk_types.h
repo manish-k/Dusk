@@ -1,6 +1,7 @@
 #pragma once
 
-#include "vk.h"
+#include <volk.h>
+#include <vk_mem_alloc.h>
 
 namespace dusk
 {

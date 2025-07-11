@@ -4,7 +4,6 @@
 
 #include "texture.h"
 #include "image.h"
-#include "render_target.h"
 
 #include <taskflow/taskflow.hpp>
 #include <thread>
@@ -71,15 +70,15 @@ public:
     void onUpdate();
 
     /**
-     * @brief clear a render target for color attachment
+     * @brief clear a render texture for color attachment
      * @param name of the render target
      * @param width of the render target
      * @param height of the render target
      * @param format of the render target
      * @param clearValue of the render target
-     * @return RenderTarget struct
+     * @return id of the texture
      */
-    RenderTarget createColorTarget(
+    uint32_t createColorTexture(
         const std::string& name,
         uint32_t           width,
         uint32_t           height,
@@ -87,15 +86,15 @@ public:
         VkClearValue       clearValue);
 
     /**
-     * @brief clear a render target for depth attachment
+     * @brief clear a render texture for depth attachment
      * @param name of the render target
      * @param width of the render target
      * @param height of the render target
      * @param format of the render target
      * @param clearValue of the render target
-     * @return RenderTarget struct
+     * @return id of the texture
      */
-    RenderTarget createDepthTarget(
+    uint32_t createDepthTexture(
         const std::string& name,
         uint32_t           width,
         uint32_t           height,

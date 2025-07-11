@@ -111,6 +111,7 @@ set(RENDERER_FILES
 	"${RENDERER_DIR}/material.h"
 	"${RENDERER_DIR}/render_graph.h"
 	"${RENDERER_DIR}/texture_db.h"
+	"${RENDERER_DIR}/gfx_types.h"
 	"${RENDERER_SYSTEMS_DIR}/basic_render_system.h"
 	"${RENDERER_SYSTEMS_DIR}/grid_render_system.h"
 	"${RENDERER_SYSTEMS_DIR}/skybox_render_system.h"
@@ -220,9 +221,7 @@ target_include_directories(
 	${UTILS_DIR}
 )
 
-target_compile_definitions(${PROJECT_NAME} PUBLIC 
-	ENABLE_RENDERDOC
-)
+##target_compile_definitions(${PROJECT_NAME} PUBLIC ENABLE_RENDERDOC)
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC 
 	DUSK_ENABLE_PROFILING

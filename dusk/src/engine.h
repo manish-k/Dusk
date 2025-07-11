@@ -5,7 +5,7 @@
 #include "renderer/render_api.h"
 #include "renderer/gfx_buffer.h"
 #include "renderer/frame_data.h"
-#include "renderer/render_target.h"
+#include "renderer/gfx_types.h"
 
 #include "backend/vulkan/vk_descriptors.h"
 #include "backend/vulkan/vk_pipeline.h"
@@ -40,8 +40,8 @@ constexpr uint32_t maxMaterialCount = 1000;
 struct RenderGraphResources
 {
     // g-buffer resources
-    DynamicArray<RenderTarget>               gbuffRenderTargets            = {};
-    RenderTarget                             gbuffDepthTexture             = {};
+    DynamicArray<uint32_t>                   gbuffRenderTextureIds         = {};
+    uint32_t                                 gbuffDepthTextureId           = {};
     Unique<VkGfxRenderPipeline>              gbuffPipeline                 = nullptr;
     Unique<VkGfxPipelineLayout>              gbuffPipelineLayout           = nullptr;
     Unique<VkGfxDescriptorPool>              gbuffModelDescriptorPool      = nullptr;
@@ -54,9 +54,9 @@ struct RenderGraphResources
     Unique<VkGfxPipelineLayout> presentPipelineLayout = nullptr;
 
     // lighting pass resources
-    RenderTarget                lightingRenderTarget   = {};
-    Unique<VkGfxRenderPipeline> lightingPipeline       = nullptr;
-    Unique<VkGfxPipelineLayout> lightingPipelineLayout = nullptr;
+    uint32_t                    lightingRenderTextureId = {};
+    Unique<VkGfxRenderPipeline> lightingPipeline        = nullptr;
+    Unique<VkGfxPipelineLayout> lightingPipelineLayout  = nullptr;
 };
 
 const uint32_t GLOBAL_SET_INDEX   = 0;

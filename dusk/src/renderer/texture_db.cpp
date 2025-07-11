@@ -294,7 +294,7 @@ void TextureDB::onUpdate()
     }
 }
 
-RenderTarget TextureDB::createColorTarget(
+uint32_t TextureDB::createColorTexture(
     const std::string& name,
     uint32_t           width,
     uint32_t           height,
@@ -329,13 +329,10 @@ RenderTarget TextureDB::createColorTarget(
 
     m_textureDescriptorSet->applyConfiguration();
 
-    return RenderTarget {
-        .texture    = newTex,
-        .clearValue = clearValue
-    };
+    return newId;
 }
 
-RenderTarget TextureDB::createDepthTarget(
+uint32_t TextureDB::createDepthTexture(
     const std::string& name,
     uint32_t           width,
     uint32_t           height,
@@ -370,10 +367,7 @@ RenderTarget TextureDB::createDepthTarget(
 
     m_textureDescriptorSet->applyConfiguration();
 
-    return RenderTarget {
-        .texture    = newTex,
-        .clearValue = clearValue
-    };
+    return newId;
 }
 
 } // namespace dusk

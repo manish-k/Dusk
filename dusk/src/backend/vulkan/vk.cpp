@@ -1,6 +1,8 @@
 #include "vk.h"
 #include "renderer/gfx_buffer.h"
 #include "renderer/texture.h"
+#include "renderer/vertex.h"
+
 
 namespace dusk
 {
@@ -416,6 +418,28 @@ uint32_t getVmaAllocationCreateFlagBits(uint32_t flags)
         creationFlags |= VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
 
     return creationFlags;
+}
+
+VkAttachmentLoadOp getLoadOp(GfxLoadOperation loadOp)
+{
+    switch (loadOp)
+    {
+        case GfxLoadOperation::DontCare: return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        case GfxLoadOperation::Load:     return VK_ATTACHMENT_LOAD_OP_LOAD;
+        case GfxLoadOperation::Clear:    return VK_ATTACHMENT_LOAD_OP_CLEAR;
+    }
+    return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+}
+
+VkAttachmentStoreOp getStoreOp(GfxStoreOperation storeOp)
+{
+    switch (storeOp)
+    {
+        case GfxStoreOperation::DontCare: return VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        case GfxStoreOperation::Store:    return VK_ATTACHMENT_STORE_OP_STORE;
+        case GfxStoreOperation::None:     return VK_ATTACHMENT_STORE_OP_NONE_KHR;
+    }
+    return VK_ATTACHMENT_STORE_OP_DONT_CARE;
 }
 
 } // namespace dusk

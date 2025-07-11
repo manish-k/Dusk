@@ -84,8 +84,12 @@ vec3 computeDirectionalLight(uint lightIdx, vec3 viewDirection, vec3 normal)
     float diff = max(dot(normal, lightDirection), 0.0);
     
 	// specular shading
-    vec3 reflectDirection = reflect(-lightDirection, normal);
-    float spec = pow(max(dot(viewDirection, reflectDirection), 0.0), 300);
+    //vec3 reflectDirection = reflect(-lightDirection, normal);
+    //float spec = pow(max(dot(viewDirection, reflectDirection), 0.0), 300);
+	vec3 halfAngle = normalize(lightDirection + viewDirection);
+	float blinnTerm = dot(normal, halfAngle);
+	blinnTerm = clamp(blinnTerm, 0, 1);
+	float spec = pow(blinnTerm, 512.0);
     
 	// combine results
     vec3 diffuse  = lightColor * diff * lightIntensity;
@@ -104,8 +108,12 @@ vec3 computePointLight(uint lightIdx, vec3 fragPosition, vec3 viewDirection, vec
     float diff = max(dot(normal, lightDirection), 0.0);
     
 	// specular shading
-    vec3 reflectDirection = reflect(-lightDirection, normal);
-    float spec = pow(max(dot(viewDirection, reflectDirection), 0.0), 300);
+    //vec3 reflectDirection = reflect(-lightDirection, normal);
+    //float spec = pow(max(dot(viewDirection, reflectDirection), 0.0), 300);
+	vec3 halfAngle = normalize(lightDirection + viewDirection);
+	float blinnTerm = dot(normal, halfAngle);
+	blinnTerm = clamp(blinnTerm, 0, 1);
+	float spec = pow(blinnTerm, 512.0);
     
 	// attenuation
 	float constant = pointLights[lightIdx].constantAttenuationFactor;
@@ -147,8 +155,12 @@ vec3 computeSpotLight(uint lightIdx, vec3 fragPosition, vec3 viewDirection, vec3
 		float diff = max(dot(normal, lightSrcDirection), 0.0);
     
 		// specular shading
-		vec3 reflectDirection = reflect(-lightSrcDirection, normal);
-		float spec = pow(max(dot(viewDirection, reflectDirection), 0.0), 300);
+		//vec3 reflectDirection = reflect(-lightSrcDirection, normal);
+		//float spec = pow(max(dot(viewDirection, reflectDirection), 0.0), 300);
+		vec3 halfAngle = normalize(lightDirection + viewDirection);
+		float blinnTerm = dot(normal, halfAngle);
+		blinnTerm = clamp(blinnTerm, 0, 1);
+		float spec = pow(blinnTerm, 512.0);
     
 		// attenuation
 		float constant = spotLights[lightIdx].constantAttenuationFactor;

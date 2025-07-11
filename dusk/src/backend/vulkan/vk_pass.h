@@ -19,8 +19,8 @@ struct VkGfxRenderPassContext
 {
     VkCommandBuffer                         cmdBuffer;
     VkExtent2D                              extent;
-    DynamicArray<GfxRenderingAttachment>    inAttachments;
-    DynamicArray<GfxRenderingAttachment>    outColorAttachments;
+    DynamicArray<GfxRenderingAttachment>    readAttachments;
+    DynamicArray<GfxRenderingAttachment>    writeColorAttachments;
     GfxRenderingAttachment                  depthAttachment;
     bool                                    useDepth = false;
 
@@ -93,7 +93,7 @@ struct VkGfxRenderPassContext
         DynamicArray<VkFormat> colorFormats;
 
         colorAttachmentInfos.clear();
-        for (const auto& attachment : outColorAttachments)
+        for (const auto& attachment : writeColorAttachments)
         {
             DASSERT(attachment.texture, "valid texture is required");
 
@@ -110,7 +110,7 @@ struct VkGfxRenderPassContext
 
         if (useDepth)
         {
-            for (uint32_t inAttachmentIdx = 0u; inAttachmentIdx < inAttachments.size(); ++inAttachmentIdx)
+            for (uint32_t inAttachmentIdx = 0u; inAttachmentIdx < readAttachments.size(); ++inAttachmentIdx)
             {
                 // DASSERT(inAttachments[inAttachmentIdx].texture.image.vkImage != depthAttachment.texture.image.vkImage);
             }

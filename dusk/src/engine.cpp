@@ -288,7 +288,7 @@ void Engine::renderFrame(FrameData& frameData)
 
     auto gbuffCtx
         = VkGfxRenderPassContext {
-              .outColorAttachments = {
+              .writeColorAttachments = {
                   GfxRenderingAttachment {
                       .texture    = &m_textureDB->getTexture2D(m_rgResources.gbuffRenderTextureIds[0]),
                       .clearValue = DEFAULT_COLOR_CLEAR_VALUE,
@@ -307,8 +307,8 @@ void Engine::renderFrame(FrameData& frameData)
 
     gbuffCtx.insertTransitionBarrier(
         {
-            .image     = gbuffCtx.outColorAttachments[0].texture->getVkImage(),
-            .usage     = getTextureUsageFlagBits(gbuffCtx.outColorAttachments[0].texture->usage),
+            .image     = gbuffCtx.writeColorAttachments[0].texture->getVkImage(),
+            .usage     = getTextureUsageFlagBits(gbuffCtx.writeColorAttachments[0].texture->usage),
             .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
             .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
             .srcStage  = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
@@ -318,8 +318,8 @@ void Engine::renderFrame(FrameData& frameData)
         });
     gbuffCtx.insertTransitionBarrier(
         {
-            .image     = gbuffCtx.outColorAttachments[1].texture->getVkImage(),
-            .usage     = getTextureUsageFlagBits(gbuffCtx.outColorAttachments[1].texture->usage),
+            .image     = gbuffCtx.writeColorAttachments[1].texture->getVkImage(),
+            .usage     = getTextureUsageFlagBits(gbuffCtx.writeColorAttachments[1].texture->usage),
             .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
             .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
             .srcStage  = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
@@ -332,7 +332,7 @@ void Engine::renderFrame(FrameData& frameData)
     renderGraph.addPass("gbuffer_pass", recordGBufferCmds);
 
     // create lighting pass
-    auto lightingPassInAttachments = {
+    auto lightingPassReadAttachments = {
         // color attachment
         GfxRenderingAttachment {
             .texture    = &m_textureDB->getTexture2D(m_rgResources.gbuffRenderTextureIds[0]),
@@ -352,7 +352,7 @@ void Engine::renderFrame(FrameData& frameData)
             .loadOp     = GfxLoadOperation::Clear,
             .storeOp    = GfxStoreOperation::Store }
     };
-    auto lighingPassOutAttachments = {
+    auto lighingPassWriteAttachments = {
         GfxRenderingAttachment {
             .texture    = &m_textureDB->getTexture2D(m_rgResources.lightingRenderTextureId),
             .clearValue = DEFAULT_COLOR_CLEAR_VALUE,
@@ -361,8 +361,8 @@ void Engine::renderFrame(FrameData& frameData)
     };
 
     auto lightingCtx = VkGfxRenderPassContext {
-        .inAttachments       = lightingPassInAttachments,
-        .outColorAttachments = lighingPassOutAttachments,
+        .readAttachments       = lightingPassReadAttachments,
+        .writeColorAttachments = lighingPassWriteAttachments,
         .useDepth            = false,
         .secondaryCmdBuffers = m_renderer->getSecondayCmdBuffers(frameData.frameIndex)
     };
@@ -370,8 +370,8 @@ void Engine::renderFrame(FrameData& frameData)
     // albedo texture layout change
     lightingCtx.insertTransitionBarrier(
         {
-            .image     = lightingCtx.inAttachments[0].texture->getVkImage(),
-            .usage     = getTextureUsageFlagBits(lightingCtx.inAttachments[0].texture->usage),
+            .image     = lightingCtx.readAttachments[0].texture->getVkImage(),
+            .usage     = getTextureUsageFlagBits(lightingCtx.readAttachments[0].texture->usage),
             .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
             .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
             .srcStage  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -383,8 +383,8 @@ void Engine::renderFrame(FrameData& frameData)
     // normal texture layout change
     lightingCtx.insertTransitionBarrier(
         {
-            .image     = lightingCtx.inAttachments[1].texture->getVkImage(),
-            .usage     = getTextureUsageFlagBits(lightingCtx.inAttachments[1].texture->usage),
+            .image     = lightingCtx.readAttachments[1].texture->getVkImage(),
+            .usage     = getTextureUsageFlagBits(lightingCtx.readAttachments[1].texture->usage),
             .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
             .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
             .srcStage  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -396,8 +396,8 @@ void Engine::renderFrame(FrameData& frameData)
     // depth texture layout change
     lightingCtx.insertTransitionBarrier(
         {
-            .image     = lightingCtx.inAttachments[2].texture->getVkImage(),
-            .usage     = getTextureUsageFlagBits(lightingCtx.inAttachments[2].texture->usage),
+            .image     = lightingCtx.readAttachments[2].texture->getVkImage(),
+            .usage     = getTextureUsageFlagBits(lightingCtx.readAttachments[2].texture->usage),
             .oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
             .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
             .srcStage  = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
@@ -409,8 +409,8 @@ void Engine::renderFrame(FrameData& frameData)
     // lighting result layout transition
     lightingCtx.insertTransitionBarrier(
         {
-            .image     = lightingCtx.outColorAttachments[0].texture->getVkImage(),
-            .usage     = getTextureUsageFlagBits(lightingCtx.outColorAttachments[0].texture->usage),
+            .image     = lightingCtx.writeColorAttachments[0].texture->getVkImage(),
+            .usage     = getTextureUsageFlagBits(lightingCtx.writeColorAttachments[0].texture->usage),
             .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
             .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
             .srcStage  = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
@@ -423,7 +423,7 @@ void Engine::renderFrame(FrameData& frameData)
     renderGraph.addPass("lighting_pass", recordLightingCmds);
 
     // create presentation pass
-    auto presentInAttachments = {
+    auto presentReadAttachments = {
         GfxRenderingAttachment {
             .texture    = &m_textureDB->getTexture2D(m_rgResources.lightingRenderTextureId),
             .clearValue = DEFAULT_COLOR_CLEAR_VALUE,
@@ -431,7 +431,7 @@ void Engine::renderFrame(FrameData& frameData)
             .storeOp    = GfxStoreOperation::Store }
     };
 
-    auto presentOutAttachments = {
+    auto presentWriteAttachments = {
         GfxRenderingAttachment {
             .texture    = &swapImageTexture,
             .clearValue = DEFAULT_COLOR_CLEAR_VALUE,
@@ -440,16 +440,16 @@ void Engine::renderFrame(FrameData& frameData)
     };
 
     auto presentCtx = VkGfxRenderPassContext {
-        .inAttachments       = presentInAttachments,
-        .outColorAttachments = presentOutAttachments,
+        .readAttachments       = presentReadAttachments,
+        .writeColorAttachments = presentWriteAttachments,
         .useDepth            = false,
         .secondaryCmdBuffers = m_renderer->getSecondayCmdBuffers(frameData.frameIndex)
     };
 
     presentCtx.insertTransitionBarrier(
         {
-            .image     = presentCtx.inAttachments[0].texture->getVkImage(),
-            .usage     = getTextureUsageFlagBits(presentCtx.inAttachments[0].texture->usage),
+            .image     = presentCtx.readAttachments[0].texture->getVkImage(),
+            .usage     = getTextureUsageFlagBits(presentCtx.readAttachments[0].texture->usage),
             .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
             .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
             .srcStage  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,

@@ -30,7 +30,7 @@ void recordPresentationCmds(
         nullptr);
 
     PresentationPushConstant push {};
-    push.inputTextureIdx = ctx.inAttachments[0].texture->id;
+    push.inputTextureIdx = ctx.readAttachments[0].texture->id;
 
     vkCmdPushConstants(
         ctx.cmdBuffer,

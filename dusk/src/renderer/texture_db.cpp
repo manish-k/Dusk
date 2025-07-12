@@ -75,7 +75,7 @@ Error TextureDB::initDefaultTexture()
     defaultTextureImg.size     = 4;
     defaultTextureImg.data     = (unsigned char*)&whiteColor;
 
-    Texture2D default2dTexture { 0 };
+    GfxTexture default2dTexture { 0 };
     Error     err = default2dTexture.init(
         defaultTextureImg,
         VK_FORMAT_R8G8B8A8_SRGB,
@@ -154,7 +154,7 @@ uint32_t TextureDB::createTextureAsync(const DynamicArray<std::string>& paths, T
         std::lock_guard<std::mutex> updateLock(m_mutex);
         newId = m_textures.size();
 
-        Texture2D newTex { newId };
+        GfxTexture newTex { newId };
         newTex.uploadHash = uploadHash;
         newTex.name       = combinedPaths;
         newTex.type       = type;
@@ -169,7 +169,7 @@ uint32_t TextureDB::createTextureAsync(const DynamicArray<std::string>& paths, T
 
     DASSERT(newId != 0);
 
-    Texture2D& newTexture = m_textures[newId];
+    GfxTexture& newTexture = m_textures[newId];
 
     auto&      executor   = Engine::get().getTfExecutor();
     executor.silent_async([&, newId, paths]()
@@ -261,7 +261,7 @@ void TextureDB::onUpdate()
 
         for (uint32_t key : m_pendingImageBatches.keys())
         {
-            Texture2D&   tex   = m_textures[key];
+            GfxTexture&  tex   = m_textures[key];
             ImagesBatch& batch = m_pendingImageBatches[key];
             Error        err   = tex.initAndRecordUpload(
                 batch,
@@ -322,7 +322,7 @@ uint32_t TextureDB::createColorTexture(
     // initialize texture for render target
     uint32_t  newId = m_textures.size();
 
-    Texture2D newTex { newId };
+    GfxTexture newTex { newId };
     newTex.init(
         width,
         height,
@@ -360,7 +360,7 @@ uint32_t TextureDB::createDepthTexture(
     // initialize texture for render target
     uint32_t  newId = m_textures.size();
 
-    Texture2D newTex { newId };
+    GfxTexture newTex { newId };
     newTex.init(
         width,
         height,

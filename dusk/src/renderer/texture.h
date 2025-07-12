@@ -28,7 +28,7 @@ enum class TextureType : uint32_t
     ArrayCube,
 };
 
-struct Texture2D
+struct GfxTexture
 {
     uint32_t       id;
     uint32_t       width       = 0;
@@ -43,10 +43,10 @@ struct Texture2D
     VkImageView    imageView   = {};
     VkFormat       format      = {};
 
-    Texture2D(uint32_t id) :
+    GfxTexture(uint32_t id) :
         id(id) { };
-    Texture2D()  = default;
-    ~Texture2D() = default;
+    GfxTexture()  = default;
+    ~GfxTexture() = default;
 
     /**
      * @brief Initialize the texture with the given image and upload it to

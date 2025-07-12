@@ -41,7 +41,7 @@ public:
         return m_depthImages[imageIndex].vkImage;
     };
     VkImageView getDepthImageView(uint32_t imageIndex) { return m_depthImageViews[imageIndex]; };
-    Texture2D   getCurrentSwapImageTexture();
+    GfxTexture  getCurrentSwapImageTexture();
 
 private:
     Error              createSwapChain(const VkGfxSwapChainParams& params);

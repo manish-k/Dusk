@@ -40,12 +40,12 @@ public:
      * @brief Get Texture for the given Id
      * @params texture id
      */
-    Texture2D& getTexture2D(uint32_t texId) { return m_textures[texId]; };
+    GfxTexture& getTexture2D(uint32_t texId) { return m_textures[texId]; };
 
     /**
      * @brief Get default texture
      */
-    Texture2D& getDefaultTexture2D() { return m_textures[0]; };
+    GfxTexture& getDefaultTexture2D() { return m_textures[0]; };
 
     /**
      * @brief Creates a new texture asynchronously from one or mulitple images
@@ -134,7 +134,7 @@ private:
     uint32_t                         m_idCounter = 0;
     std::mutex                       m_mutex;
 
-    DynamicArray<Texture2D>          m_textures                 = {};
+    DynamicArray<GfxTexture>         m_textures                 = {};
     HashMap<size_t, uint32_t>        m_loadedTextures           = {};
     HashMap<size_t, uint32_t>        m_currentlyLoadingTextures = {};
     HashMap<uint32_t, ImagesBatch>   m_pendingImageBatches      = {};

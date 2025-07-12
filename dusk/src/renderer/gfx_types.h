@@ -9,7 +9,7 @@ namespace dusk
 {
 struct GfxRenderingAttachment
 {
-    Texture2D*        texture    = nullptr;
+    GfxTexture*        texture    = nullptr;
     VkClearValue      clearValue = {};
     GfxLoadOperation  loadOp     = GfxLoadOperation::DontCare;
     GfxStoreOperation storeOp    = GfxStoreOperation::Store;

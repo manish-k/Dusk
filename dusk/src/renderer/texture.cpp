@@ -11,7 +11,7 @@
 namespace dusk
 {
 
-Error Texture2D::init(
+Error GfxTexture::init(
     Image&      texImage,
     VkFormat    format,
     uint32_t    usage,
@@ -123,7 +123,7 @@ Error Texture2D::init(
     return Error::Ok;
 }
 
-Error Texture2D::init(
+Error GfxTexture::init(
     uint32_t    width,
     uint32_t    height,
     VkFormat    format,
@@ -211,7 +211,7 @@ Error Texture2D::init(
     return Error::Ok;
 }
 
-Error Texture2D::initAndRecordUpload(
+Error GfxTexture::initAndRecordUpload(
     ImagesBatch&    texImages,
     TextureType     type,
     VkFormat        format,
@@ -483,7 +483,7 @@ Error Texture2D::initAndRecordUpload(
     return Error::Ok;
 }
 
-void Texture2D::free()
+void GfxTexture::free()
 {
     auto& device    = Engine::get().getGfxDevice();
     auto& vkContext = device.getSharedVulkanContext();

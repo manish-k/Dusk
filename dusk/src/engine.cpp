@@ -276,7 +276,7 @@ void Engine::renderFrame(FrameData& frameData)
 
     RenderGraph renderGraph;
 
-    Texture2D   swapImageTexture = m_renderer->getSwapChain().getCurrentSwapImageTexture();
+    GfxTexture  swapImageTexture = m_renderer->getSwapChain().getCurrentSwapImageTexture();
 
     // create g-buffer pass
     GfxRenderingAttachment depthAttachment = GfxRenderingAttachment {

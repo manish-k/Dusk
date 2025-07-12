@@ -1,6 +1,7 @@
 #pragma once
 
 #include "dusk.h"
+#include "gfx_enums.h"
 
 #include <glm/glm.hpp>
 

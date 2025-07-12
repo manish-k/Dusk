@@ -2,6 +2,8 @@
 
 #include "dusk.h"
 #include "texture.h"
+#include "gfx_enums.h"
+#include "gfx_buffer.h"
 
 namespace dusk
 {

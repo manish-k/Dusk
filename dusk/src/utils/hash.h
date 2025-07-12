@@ -1,5 +1,7 @@
 #pragma once
 
+#include "utils.h"
+
 #include <functional>
 
 namespace dusk
@@ -16,6 +18,19 @@ void hashCombine(std::size_t& seed, const T& v, const Rest&... rest)
 // from: http://www.cse.yorku.ca/~oz/hash.html
 inline size_t hash(const char* s)
 {
+    if (s == nullptr) return 0;
+
+    size_t h = 5381;
+    int    c;
+    while ((c = *s++))
+        h = ((h << 5) + h) + c; // DJB2 hash algorithm
+    return h;
+}
+
+inline size_t multiStringsHash(const DynamicArray<std::string>& stringsList)
+{
+    const char* s = combineStrings(stringsList).c_str();
+
     if (s == nullptr) return 0;
 
     size_t h = 5381;

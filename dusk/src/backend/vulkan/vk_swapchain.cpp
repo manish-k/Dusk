@@ -180,11 +180,11 @@ Error VkGfxSwapChain::createSwapChain(const VkGfxSwapChainParams& params)
     }
 
     VkSurfaceFormatKHR surfaceFormat = getBestSurfaceFormat();
-    DUSK_INFO("Selected surface format {}: colorspace {}", getVkFormatString(surfaceFormat.format), getVkColorSpaceString(surfaceFormat.colorSpace));
+    DUSK_INFO("Selected surface format {}: colorspace {}", vulkan::getVkFormatString(surfaceFormat.format), vulkan::getVkColorSpaceString(surfaceFormat.colorSpace));
     m_imageFormat                = surfaceFormat.format;
 
     VkPresentModeKHR presentMode = getPresentMode();
-    DUSK_INFO("Selecting present mode {}", getVkPresentModeString(presentMode));
+    DUSK_INFO("Selecting present mode {}", vulkan::getVkPresentModeString(presentMode));
 
     VkExtent2D extent = getSwapExtent(params.windowWidth, params.windowHeight);
     DUSK_INFO("Selecting extent width={}, height={}", extent.width, extent.height);
@@ -498,7 +498,7 @@ VkSurfaceFormatKHR VkGfxSwapChain::getBestSurfaceFormat() const
     for (uint32_t i = 0u; i < formatCount; ++i)
     {
         auto& surfaceFormat = surfaceFormats[i];
-        DUSK_INFO("- format {}: colorspace {}", getVkFormatString(surfaceFormat.format), getVkColorSpaceString(surfaceFormat.colorSpace));
+        DUSK_INFO("- format {}: colorspace {}", vulkan::getVkFormatString(surfaceFormat.format), vulkan::getVkColorSpaceString(surfaceFormat.colorSpace));
 
         if (surfaceFormat.format == VK_FORMAT_B8G8R8A8_SRGB && surfaceFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
         {
@@ -534,7 +534,7 @@ VkPresentModeKHR VkGfxSwapChain::getPresentMode() const
     {
         auto& presentMode = presentModes[i];
 
-        DUSK_INFO("- {}", getVkPresentModeString(presentMode));
+        DUSK_INFO("- {}", vulkan::getVkPresentModeString(presentMode));
 
         if (presentMode == VK_PRESENT_MODE_MAILBOX_KHR)
         {

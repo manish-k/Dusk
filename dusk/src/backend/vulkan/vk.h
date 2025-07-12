@@ -3,7 +3,7 @@
 #include "dusk.h"
 #include "vk_base.h"
 #include "vk_debug.h"
-#include "renderer/gfx_enums.h"
+#include "renderer/gfx_types.h"
 
 #include <volk.h>
 #include <string>
@@ -34,6 +34,9 @@ struct VulkanResult
     friend std::ostream& operator<<(std::ostream& os, const VulkanResult& result) { return os << result.toString(); }
 };
 
+namespace vulkan
+{
+
 // Vk values to string
 const char* getDeviceTypeString(VkPhysicalDeviceType deviceType);
 const char* getVkFormatString(VkFormat format);
@@ -48,11 +51,16 @@ DynamicArray<VkVertexInputBindingDescription>   getVertexBindingDescription();
 DynamicArray<VkVertexInputAttributeDescription> getVertexAtrributeDescription();
 
 // Buffer usage and type related funcs
-VkBufferUsageFlags  getBufferUsageFlagBits(uint32_t usage);
+VkBufferUsageFlags getBufferUsageFlagBits(uint32_t usage);
+uint32_t           getVmaAllocationCreateFlagBits(uint32_t flags);
+
+// Texture related helpers
 VkImageUsageFlags   getTextureUsageFlagBits(uint32_t usage);
-uint32_t            getVmaAllocationCreateFlagBits(uint32_t flags);
+VkImageType         getImageType(TextureType type);
+VkImageViewType     getImageViewType(TextureType type);
 
 VkAttachmentLoadOp  getLoadOp(GfxLoadOperation loadOp);
 VkAttachmentStoreOp getStoreOp(GfxStoreOperation storeOp);
+} // namespace vulkan
 
 } // namespace dusk

@@ -48,11 +48,13 @@ public:
     Texture2D& getDefaultTexture2D() { return m_textures[0]; };
 
     /**
-     * @brief Creates a new texture asynchronously and returns its identifier.
-     * @params Path of the texture
+     * @brief Creates a new texture asynchronously from one or mulitple images
+     * and returns its identifier.
+     * @params Paths of all images
+     * @params type of the texture
      * @return The unique identifier of the loaded texture.
      */
-    uint32_t createTextureAsync(std::string& path);
+    uint32_t createTextureAsync(const DynamicArray<std::string>& paths, TextureType type);
 
     /**
      * @brief Get descriptor set for the textures
@@ -132,12 +134,10 @@ private:
     uint32_t                         m_idCounter = 0;
     std::mutex                       m_mutex;
 
-    tf::Executor                     m_tfExecutor;
-
     DynamicArray<Texture2D>          m_textures                 = {};
-    HashMap<std::string, uint32_t>   m_loadedTextures           = {};
-    HashMap<std::string, uint32_t>   m_currentlyLoadingTextures = {};
-    HashMap<uint32_t, Shared<Image>> m_pendingImages            = {};
+    HashMap<size_t, uint32_t>        m_loadedTextures           = {};
+    HashMap<size_t, uint32_t>        m_currentlyLoadingTextures = {};
+    HashMap<uint32_t, ImagesBatch>   m_pendingImageBatches      = {};
 
     VkGfxDevice&                     m_gfxDevice;
     Unique<VkGfxDescriptorPool>      m_textureDescriptorPool      = nullptr;

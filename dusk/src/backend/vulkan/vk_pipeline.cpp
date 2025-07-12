@@ -161,8 +161,8 @@ VkGfxRenderPipeline::VkGfxRenderPipeline(VulkanContext& vkContext, VkGfxRenderPi
     };
 
     // vertex attributes info
-    auto bindingDescriptions   = getVertexBindingDescription();
-    auto attributeDescriptions = getVertexAtrributeDescription();
+    auto bindingDescriptions   = vulkan::getVertexBindingDescription();
+    auto attributeDescriptions = vulkan::getVertexAtrributeDescription();
 
     // input state info
     VkPipelineVertexInputStateCreateInfo vertexInputInfo {};

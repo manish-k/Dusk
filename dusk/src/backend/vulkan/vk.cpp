@@ -3,7 +3,6 @@
 #include "renderer/texture.h"
 #include "renderer/vertex.h"
 
-
 namespace dusk
 {
 Error VulkanResult::getErrorId() const
@@ -92,7 +91,7 @@ std::string VulkanResult::toString() const
     return ss.str();
 }
 
-const char* getDeviceTypeString(VkPhysicalDeviceType deviceType)
+const char* vulkan::getDeviceTypeString(VkPhysicalDeviceType deviceType)
 {
     switch (deviceType)
     {
@@ -106,7 +105,7 @@ const char* getDeviceTypeString(VkPhysicalDeviceType deviceType)
     return "unknown";
 }
 
-const char* getVkFormatString(VkFormat format)
+const char* vulkan::getVkFormatString(VkFormat format)
 {
     switch (format)
     {
@@ -307,7 +306,7 @@ const char* getVkFormatString(VkFormat format)
     }
 }
 
-const char* getVkColorSpaceString(VkColorSpaceKHR colorSpace)
+const char* vulkan::getVkColorSpaceString(VkColorSpaceKHR colorSpace)
 {
     switch (colorSpace)
     {
@@ -328,7 +327,7 @@ const char* getVkColorSpaceString(VkColorSpaceKHR colorSpace)
     }
 }
 
-const char* getVkPresentModeString(VkPresentModeKHR presentMode)
+const char* vulkan::getVkPresentModeString(VkPresentModeKHR presentMode)
 {
     switch (presentMode)
     {
@@ -340,7 +339,7 @@ const char* getVkPresentModeString(VkPresentModeKHR presentMode)
     }
 }
 
-VkFormat getVkVertexAttributeFormat(VertexAttributeFormat format)
+VkFormat vulkan::getVkVertexAttributeFormat(VertexAttributeFormat format)
 {
     switch (format)
     {
@@ -353,7 +352,7 @@ VkFormat getVkVertexAttributeFormat(VertexAttributeFormat format)
     return VK_FORMAT_UNDEFINED;
 }
 
-DynamicArray<VkVertexInputBindingDescription> getVertexBindingDescription()
+DynamicArray<VkVertexInputBindingDescription> vulkan::getVertexBindingDescription()
 {
     DynamicArray<VkVertexInputBindingDescription> bindingDescriptions(1);
     bindingDescriptions[0].binding   = 0;
@@ -362,7 +361,7 @@ DynamicArray<VkVertexInputBindingDescription> getVertexBindingDescription()
     return bindingDescriptions;
 }
 
-DynamicArray<VkVertexInputAttributeDescription> getVertexAtrributeDescription()
+DynamicArray<VkVertexInputAttributeDescription> vulkan::getVertexAtrributeDescription()
 {
     DynamicArray<VkVertexInputAttributeDescription> attributeDescriptions {};
 
@@ -378,7 +377,7 @@ DynamicArray<VkVertexInputAttributeDescription> getVertexAtrributeDescription()
     return attributeDescriptions;
 }
 
-VkBufferUsageFlags getBufferUsageFlagBits(uint32_t usage)
+VkBufferUsageFlags vulkan::getBufferUsageFlagBits(uint32_t usage)
 {
     VkBufferUsageFlags flags = 0u;
     if (usage & GfxBufferUsageFlags::TransferSource) flags |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
@@ -391,7 +390,7 @@ VkBufferUsageFlags getBufferUsageFlagBits(uint32_t usage)
     return flags;
 }
 
-VkImageUsageFlags getTextureUsageFlagBits(uint32_t usage)
+VkImageUsageFlags vulkan::getTextureUsageFlagBits(uint32_t usage)
 {
     VkImageUsageFlags flags = 0u;
     if (usage & TextureUsageFlags::TransferSrcTexture) flags |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
@@ -404,7 +403,35 @@ VkImageUsageFlags getTextureUsageFlagBits(uint32_t usage)
     return flags;
 }
 
-uint32_t getVmaAllocationCreateFlagBits(uint32_t flags)
+VkImageType vulkan::getImageType(TextureType type)
+{
+    switch (type)
+    {
+        case TextureType::Texture1D: return VK_IMAGE_TYPE_1D;
+        case TextureType::Texture2D: return VK_IMAGE_TYPE_2D;
+        case TextureType::Texture3D: return VK_IMAGE_TYPE_3D;
+        case TextureType::Cube:      return VK_IMAGE_TYPE_2D;
+        case TextureType::ArrayCube: return VK_IMAGE_TYPE_2D;
+    }
+
+    return VK_IMAGE_TYPE_MAX_ENUM;
+}
+
+VkImageViewType vulkan::getImageViewType(TextureType type)
+{
+    switch (type)
+    {
+        case TextureType::Texture1D: return VK_IMAGE_VIEW_TYPE_1D;
+        case TextureType::Texture2D: return VK_IMAGE_VIEW_TYPE_2D;
+        case TextureType::Texture3D: return VK_IMAGE_VIEW_TYPE_3D;
+        case TextureType::Cube:      return VK_IMAGE_VIEW_TYPE_CUBE;
+        case TextureType::ArrayCube: return VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
+    }
+
+    return VK_IMAGE_VIEW_TYPE_MAX_ENUM;
+}
+
+uint32_t vulkan::getVmaAllocationCreateFlagBits(uint32_t flags)
 {
     uint32_t creationFlags = 0u;
 
@@ -420,7 +447,7 @@ uint32_t getVmaAllocationCreateFlagBits(uint32_t flags)
     return creationFlags;
 }
 
-VkAttachmentLoadOp getLoadOp(GfxLoadOperation loadOp)
+VkAttachmentLoadOp vulkan::getLoadOp(GfxLoadOperation loadOp)
 {
     switch (loadOp)
     {
@@ -431,7 +458,7 @@ VkAttachmentLoadOp getLoadOp(GfxLoadOperation loadOp)
     return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 }
 
-VkAttachmentStoreOp getStoreOp(GfxStoreOperation storeOp)
+VkAttachmentStoreOp vulkan::getStoreOp(GfxStoreOperation storeOp)
 {
     switch (storeOp)
     {

@@ -248,7 +248,7 @@ void AssimpLoader::parseMaterials(Scene& scene, const aiScene* aiScene)
         if (!baseColorTexturePath.empty())
         {
             auto texturePath = (m_sceneDir / baseColorTexturePath).make_preferred().string();
-            diffuseTexId     = TextureDB::cache()->createTextureAsync(texturePath);
+            diffuseTexId     = TextureDB::cache()->createTextureAsync(DynamicArray<std::string> {texturePath}, TextureType::Texture2D);
         }
         else
         {

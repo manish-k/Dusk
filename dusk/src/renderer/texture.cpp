@@ -52,7 +52,7 @@ Error Texture2D::init(
     imageInfo.format        = format;
     imageInfo.tiling        = VK_IMAGE_TILING_OPTIMAL;
     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    imageInfo.usage         = getTextureUsageFlagBits(usage);
+    imageInfo.usage         = vulkan::getTextureUsageFlagBits(usage);
     imageInfo.samples       = VK_SAMPLE_COUNT_1_BIT;
     imageInfo.sharingMode   = VK_SHARING_MODE_EXCLUSIVE;
     imageInfo.flags         = 0;
@@ -151,7 +151,7 @@ Error Texture2D::init(
     imageInfo.format        = format;
     imageInfo.tiling        = VK_IMAGE_TILING_OPTIMAL;
     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    imageInfo.usage         = getTextureUsageFlagBits(usage);
+    imageInfo.usage         = vulkan::getTextureUsageFlagBits(usage);
     imageInfo.samples       = VK_SAMPLE_COUNT_1_BIT;
     imageInfo.sharingMode   = VK_SHARING_MODE_EXCLUSIVE;
     imageInfo.flags         = 0;
@@ -212,7 +212,8 @@ Error Texture2D::init(
 }
 
 Error Texture2D::initAndRecordUpload(
-    Image&          texImage,
+    ImagesBatch&    texImages,
+    TextureType     type,
     VkFormat        format,
     uint32_t        usage,
     VkCommandBuffer graphicsBuffer,
@@ -221,20 +222,39 @@ Error Texture2D::initAndRecordUpload(
 {
     DUSK_PROFILE_FUNCTION;
 
-    auto& device      = Engine::get().getGfxDevice();
-    auto& vkContext   = device.getSharedVulkanContext();
+    DASSERT(texImages.size() > 0);
 
-    this->width       = texImage.width;
-    this->height      = texImage.height;
-    this->numChannels = texImage.channels;
-    this->usage       = usage;
-    this->format      = format;
+    auto& device        = Engine::get().getGfxDevice();
+    auto& vkContext     = device.getSharedVulkanContext();
+
+    this->width         = texImages[0]->width;
+    this->height        = texImages[0]->height;
+    this->numChannels   = texImages[0]->channels;
+    this->usage         = usage;
+    this->format        = format;
+
+    uint32_t numImages  = texImages.size();
+    size_t   layerSize  = width * height * numChannels;
+    size_t   bufferSize = layerSize * numImages;
+
+    if (type == TextureType::Cube) DASSERT(numImages == 6);
+
+    for (auto& img : texImages)
+    {
+        DASSERT(img->width == width && img->height == height && this->numChannels == numChannels);
+    }
+
+    auto imageAspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
+    if (usage & DepthStencilTexture)
+    {
+        imageAspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT;
+    }
 
     // staging buffer for transfer
     GfxBuffer stagingBuffer;
     GfxBuffer::createHostWriteBuffer(
         GfxBufferUsageFlags::TransferSource,
-        texImage.size,
+        bufferSize,
         1,
         "staging_texture_2d_buffer",
         &stagingBuffer);
@@ -242,23 +262,42 @@ Error Texture2D::initAndRecordUpload(
     if (!stagingBuffer.isAllocated())
         return Error::InitializationFailed;
 
-    stagingBuffer.writeAndFlush(0, texImage.data, texImage.size);
+    DynamicArray<VkBufferImageCopy> bufferCopyRegions(numImages);
+    for (uint32_t imageIndex = 0u; imageIndex < numImages; ++imageIndex)
+    {
+        auto& img = texImages[imageIndex];
+
+        // copy image data
+        stagingBuffer.writeAndFlushAtIndex(imageIndex, img->data, layerSize);
+
+        VkBufferImageCopy& copyRegion              = bufferCopyRegions[imageIndex];
+        copyRegion.imageSubresource.aspectMask     = imageAspectFlags;
+        copyRegion.imageSubresource.mipLevel       = 0;
+        copyRegion.imageSubresource.baseArrayLayer = imageIndex;
+        copyRegion.imageSubresource.layerCount     = 1;
+        copyRegion.imageExtent.width               = width;
+        copyRegion.imageExtent.height              = height;
+        copyRegion.imageExtent.depth               = 1;
+        copyRegion.bufferOffset                    = layerSize * imageIndex;
+    }
 
     // create dest image
     VkImageCreateInfo imageInfo { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
-    imageInfo.imageType     = VK_IMAGE_TYPE_2D;
+    imageInfo.imageType     = vulkan::getImageType(type);
     imageInfo.extent.width  = width;
     imageInfo.extent.height = height;
     imageInfo.extent.depth  = 1;
     imageInfo.mipLevels     = 1;
-    imageInfo.arrayLayers   = 1;
+    imageInfo.arrayLayers   = numImages;
     imageInfo.format        = format;
     imageInfo.tiling        = VK_IMAGE_TILING_OPTIMAL;
     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    imageInfo.usage         = getTextureUsageFlagBits(usage);
+    imageInfo.usage         = vulkan::getTextureUsageFlagBits(usage);
     imageInfo.samples       = VK_SAMPLE_COUNT_1_BIT;
     imageInfo.sharingMode   = VK_SHARING_MODE_EXCLUSIVE;
-    imageInfo.flags         = 0;
+
+    if (type == TextureType::Cube)
+        imageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 
     // create image
     VulkanResult result = vulkan::allocateGPUImage(
@@ -285,12 +324,6 @@ Error Texture2D::initAndRecordUpload(
     }
 #endif // VK_RENDERER_DEBUG
 
-    auto imageAspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
-    if (usage & DepthStencilTexture)
-    {
-        imageAspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT;
-    }
-
     VkCommandBufferBeginInfo beginInfo {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -308,7 +341,7 @@ Error Texture2D::initAndRecordUpload(
     barrier.subresourceRange.baseMipLevel   = 0;
     barrier.subresourceRange.levelCount     = 1;
     barrier.subresourceRange.baseArrayLayer = 0;
-    barrier.subresourceRange.layerCount     = 1;
+    barrier.subresourceRange.layerCount     = numImages;
     barrier.srcAccessMask                   = 0;
     barrier.dstAccessMask                   = VK_ACCESS_MEMORY_WRITE_BIT;
 
@@ -324,30 +357,13 @@ Error Texture2D::initAndRecordUpload(
         1,
         &barrier);
 
-    VkBufferImageCopy region {};
-    region.bufferOffset                    = 0;
-    region.bufferRowLength                 = 0;
-    region.bufferImageHeight               = 0;
-
-    region.imageSubresource.aspectMask     = imageAspectFlags;
-    region.imageSubresource.mipLevel       = 0;
-    region.imageSubresource.baseArrayLayer = 0;
-    region.imageSubresource.layerCount     = 1;
-
-    region.imageOffset                     = { 0, 0, 0 };
-    region.imageExtent                     = {
-        width,
-        height,
-        1
-    };
-
     vkCmdCopyBufferToImage(
         transferBuffer,
         stagingBuffer.vkBuffer.buffer,
         image.vkImage,
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-        1,
-        &region);
+        bufferCopyRegions.size(),
+        bufferCopyRegions.data());
 
     // release ownership from transfer queue
     barrier                                 = {};
@@ -361,7 +377,7 @@ Error Texture2D::initAndRecordUpload(
     barrier.subresourceRange.baseMipLevel   = 0;
     barrier.subresourceRange.levelCount     = 1;
     barrier.subresourceRange.baseArrayLayer = 0;
-    barrier.subresourceRange.layerCount     = 1;
+    barrier.subresourceRange.layerCount     = numImages;
     barrier.srcAccessMask                   = VK_ACCESS_TRANSFER_WRITE_BIT;
 
     vkCmdPipelineBarrier(
@@ -409,7 +425,7 @@ Error Texture2D::initAndRecordUpload(
     barrier.subresourceRange.baseMipLevel   = 0;
     barrier.subresourceRange.levelCount     = 1;
     barrier.subresourceRange.baseArrayLayer = 0;
-    barrier.subresourceRange.layerCount     = 1;
+    barrier.subresourceRange.layerCount     = numImages;
     barrier.dstAccessMask                   = VK_ACCESS_SHADER_READ_BIT;
 
     vkCmdPipelineBarrier(
@@ -441,7 +457,10 @@ Error Texture2D::initAndRecordUpload(
     vkQueueSubmit(vkContext.graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
 
     // wait for graphics queue operation to finish
-    vkQueueWaitIdle(vkContext.graphicsQueue);
+    {
+        DUSK_PROFILE_SECTION("graphics_queue_wait");
+        vkQueueWaitIdle(vkContext.graphicsQueue);
+    }
 
     vkDestroySemaphore(vkContext.device, uploadFinishedSemaphore, nullptr);
 
@@ -449,11 +468,11 @@ Error Texture2D::initAndRecordUpload(
 
     result = device.createImageView(
         &image,
-        VK_IMAGE_VIEW_TYPE_2D,
+        vulkan::getImageViewType(type),
         format,
         imageAspectFlags,
         1,
-        1,
+        numImages,
         &imageView);
 
     if (result.hasError())

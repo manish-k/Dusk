@@ -713,11 +713,11 @@ VulkanResult VkGfxDevice::createBuffer(const GfxBufferParams& params, VulkanGfxB
 {
     VkBufferCreateInfo bufferCreateInfo { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
     bufferCreateInfo.size        = params.sizeInBytes;
-    bufferCreateInfo.usage       = getBufferUsageFlagBits(params.usage);
+    bufferCreateInfo.usage       = vulkan::getBufferUsageFlagBits(params.usage);
     bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     // allocation
-    VulkanResult result = vulkan::allocateGPUBuffer(m_gpuAllocator, bufferCreateInfo, VMA_MEMORY_USAGE_AUTO, getVmaAllocationCreateFlagBits(params.memoryType), pOutBuffer);
+    VulkanResult result = vulkan::allocateGPUBuffer(m_gpuAllocator, bufferCreateInfo, VMA_MEMORY_USAGE_AUTO, vulkan::getVmaAllocationCreateFlagBits(params.memoryType), pOutBuffer);
 
     if (result.hasError())
     {

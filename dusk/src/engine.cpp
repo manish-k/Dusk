@@ -308,7 +308,7 @@ void Engine::renderFrame(FrameData& frameData)
     gbuffCtx.insertTransitionBarrier(
         {
             .image     = gbuffCtx.writeColorAttachments[0].texture->getVkImage(),
-            .usage     = getTextureUsageFlagBits(gbuffCtx.writeColorAttachments[0].texture->usage),
+            .usage     = vulkan::getTextureUsageFlagBits(gbuffCtx.writeColorAttachments[0].texture->usage),
             .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
             .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
             .srcStage  = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
@@ -319,7 +319,7 @@ void Engine::renderFrame(FrameData& frameData)
     gbuffCtx.insertTransitionBarrier(
         {
             .image     = gbuffCtx.writeColorAttachments[1].texture->getVkImage(),
-            .usage     = getTextureUsageFlagBits(gbuffCtx.writeColorAttachments[1].texture->usage),
+            .usage     = vulkan::getTextureUsageFlagBits(gbuffCtx.writeColorAttachments[1].texture->usage),
             .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
             .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
             .srcStage  = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
@@ -371,7 +371,7 @@ void Engine::renderFrame(FrameData& frameData)
     lightingCtx.insertTransitionBarrier(
         {
             .image     = lightingCtx.readAttachments[0].texture->getVkImage(),
-            .usage     = getTextureUsageFlagBits(lightingCtx.readAttachments[0].texture->usage),
+            .usage     = vulkan::getTextureUsageFlagBits(lightingCtx.readAttachments[0].texture->usage),
             .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
             .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
             .srcStage  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -384,7 +384,7 @@ void Engine::renderFrame(FrameData& frameData)
     lightingCtx.insertTransitionBarrier(
         {
             .image     = lightingCtx.readAttachments[1].texture->getVkImage(),
-            .usage     = getTextureUsageFlagBits(lightingCtx.readAttachments[1].texture->usage),
+            .usage     = vulkan::getTextureUsageFlagBits(lightingCtx.readAttachments[1].texture->usage),
             .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
             .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
             .srcStage  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -397,7 +397,7 @@ void Engine::renderFrame(FrameData& frameData)
     lightingCtx.insertTransitionBarrier(
         {
             .image     = lightingCtx.readAttachments[2].texture->getVkImage(),
-            .usage     = getTextureUsageFlagBits(lightingCtx.readAttachments[2].texture->usage),
+            .usage     = vulkan::getTextureUsageFlagBits(lightingCtx.readAttachments[2].texture->usage),
             .oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
             .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
             .srcStage  = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
@@ -410,7 +410,7 @@ void Engine::renderFrame(FrameData& frameData)
     lightingCtx.insertTransitionBarrier(
         {
             .image     = lightingCtx.writeColorAttachments[0].texture->getVkImage(),
-            .usage     = getTextureUsageFlagBits(lightingCtx.writeColorAttachments[0].texture->usage),
+            .usage     = vulkan::getTextureUsageFlagBits(lightingCtx.writeColorAttachments[0].texture->usage),
             .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
             .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
             .srcStage  = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
@@ -449,7 +449,7 @@ void Engine::renderFrame(FrameData& frameData)
     presentCtx.insertTransitionBarrier(
         {
             .image     = presentCtx.readAttachments[0].texture->getVkImage(),
-            .usage     = getTextureUsageFlagBits(presentCtx.readAttachments[0].texture->usage),
+            .usage     = vulkan::getTextureUsageFlagBits(presentCtx.readAttachments[0].texture->usage),
             .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
             .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
             .srcStage  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -460,7 +460,7 @@ void Engine::renderFrame(FrameData& frameData)
     presentCtx.insertTransitionBarrier(
         {
             .image     = swapImageTexture.getVkImage(),
-            .usage     = getTextureUsageFlagBits(swapImageTexture.usage),
+            .usage     = vulkan::getTextureUsageFlagBits(swapImageTexture.usage),
             .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
             .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
             .srcStage  = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,

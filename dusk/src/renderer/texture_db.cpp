@@ -5,6 +5,7 @@
 
 #include "debug/profiler.h"
 #include "loaders/stb_image_loader.h"
+#include "utils/utils.h"
 
 #include "backend/vulkan/vk_device.h"
 #include "backend/vulkan/vk_descriptors.h"
@@ -19,7 +20,7 @@ constexpr char texGraphicBufferName[]  = "tex_graphic_buffer";
 TextureDB::TextureDB(VkGfxDevice& device) :
     m_gfxDevice(device)
 {
-    DASSERT(!s_db, "Engine instance already exists");
+    DASSERT(!s_db, "Texture DB instance already exists");
     s_db = this;
 };
 
@@ -136,13 +137,16 @@ bool TextureDB::setupDescriptors()
     CHECK_AND_RETURN_FALSE(!m_textureDescriptorSet);
 }
 
-uint32_t TextureDB::createTextureAsync(std::string& path)
+uint32_t TextureDB::createTextureAsync(const DynamicArray<std::string>& paths, TextureType type)
 {
-    DASSERT(!path.empty());
+    DASSERT(paths.size() != 0);
 
-    if (m_currentlyLoadingTextures.has(path)) return m_currentlyLoadingTextures[path];
+    std::string combinedPaths = combineStrings(paths);
+    auto        uploadHash    = hash(combinedPaths.c_str());
 
-    if (m_loadedTextures.has(path)) return m_loadedTextures[path];
+    if (m_currentlyLoadingTextures.has(uploadHash)) return m_currentlyLoadingTextures[uploadHash];
+
+    if (m_loadedTextures.has(uploadHash)) return m_loadedTextures[uploadHash];
 
     uint32_t newId = 0;
 
@@ -151,14 +155,16 @@ uint32_t TextureDB::createTextureAsync(std::string& path)
         newId = m_textures.size();
 
         Texture2D newTex { newId };
-        newTex.name = path;
+        newTex.uploadHash = uploadHash;
+        newTex.name       = combinedPaths;
+        newTex.type       = type;
 
         // default texture image till actual tex is uploaded
         newTex.image     = m_textures[0].image;
         newTex.imageView = m_textures[0].imageView;
 
         m_textures.push_back(newTex);
-        m_currentlyLoadingTextures.emplace(path, newId);
+        m_currentlyLoadingTextures.emplace(uploadHash, newId);
     }
 
     DASSERT(newId != 0);
@@ -166,22 +172,28 @@ uint32_t TextureDB::createTextureAsync(std::string& path)
     Texture2D& newTexture = m_textures[newId];
 
     auto&      executor   = Engine::get().getTfExecutor();
-    executor.silent_async([&, newId]()
+    executor.silent_async([&, newId, paths]()
                           {
-        auto filePath = m_textures[newId].name;
-
-        Shared<Image> img = nullptr;
+        DUSK_PROFILE_SECTION("texture_file_read");
+        DynamicArray<Shared<Image>> batch;
+        for (auto& path : paths)
         {
-            DUSK_PROFILE_SECTION("texture_file_read");
-            img = ImageLoader::readImage(filePath);
-            if (img)
+            DASSERT(!path.empty());
+            Shared<Image> img = nullptr;
             {
-                {
-                    std::lock_guard<std::mutex> updateLock(m_mutex);
-                    DUSK_DEBUG("Queuing texture {} for gpu upload", newId);
-                    m_pendingImages.emplace(newId, img);
-                }
+                img = ImageLoader::readImage(path);
             }
+
+            if (img)
+                batch.push_back(img);
+        }
+
+        DASSERT(batch.size() == paths.size());
+
+        {
+            std::lock_guard<std::mutex> updateLock(m_mutex);
+            DUSK_DEBUG("Queuing texture {} for gpu upload", newId);
+            m_pendingImageBatches.emplace(newId, batch);
         } });
 
     // update corrosponding descriptor to use default image
@@ -205,9 +217,9 @@ void TextureDB::onUpdate()
 {
     DUSK_PROFILE_FUNCTION;
 
-    if (m_pendingImages.size() > 0)
+    if (m_pendingImageBatches.size() > 0)
     {
-        DUSK_DEBUG("pending texture to upload {}", m_pendingImages.size());
+        DUSK_DEBUG("pending texture to upload {}", m_pendingImageBatches.size());
 
         std::lock_guard<std::mutex> updateLock(m_mutex);
 
@@ -247,12 +259,13 @@ void TextureDB::onUpdate()
             texGraphicBufferName);
 #endif // VK_RENDERER_DEBUG
 
-        for (uint32_t key : m_pendingImages.keys())
+        for (uint32_t key : m_pendingImageBatches.keys())
         {
-            Texture2D& tex = m_textures[key];
-            Image&     img = *m_pendingImages[key];
-            Error      err = tex.initAndRecordUpload(
-                img,
+            Texture2D&   tex   = m_textures[key];
+            ImagesBatch& batch = m_pendingImageBatches[key];
+            Error        err   = tex.initAndRecordUpload(
+                batch,
+                tex.type,
                 VK_FORMAT_R8G8B8A8_SRGB,
                 TransferDstTexture | SampledTexture,
                 gfxBuffer,
@@ -265,8 +278,8 @@ void TextureDB::onUpdate()
                 break;
             }
 
-            m_currentlyLoadingTextures.erase(tex.name);
-            m_loadedTextures.emplace(tex.name, tex.id);
+            m_currentlyLoadingTextures.erase(tex.uploadHash);
+            m_loadedTextures.emplace(tex.uploadHash, tex.id);
 
             DUSK_DEBUG("Texture {} loaded to gpu", tex.name);
 
@@ -284,13 +297,16 @@ void TextureDB::onUpdate()
 
             m_textureDescriptorSet->applyConfiguration();
 
-            ImageLoader::freeImage(img);
+            for (auto& img : batch)
+            {
+                ImageLoader::freeImage(*img);
+            }
         }
 
         vkFreeCommandBuffers(vkContext.device, vkContext.transferCommandPool, 1, &transferBuffer);
         vkFreeCommandBuffers(vkContext.device, vkContext.commandPool, 1, &gfxBuffer);
 
-        m_pendingImages.clear();
+        m_pendingImageBatches.clear();
     }
 }
 

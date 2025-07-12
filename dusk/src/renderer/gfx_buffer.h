@@ -7,7 +7,7 @@
 
 namespace dusk
 {
-struct VkGfxDevice;
+class VkGfxDevice;
 
 enum GfxBufferUsageFlags : uint32_t
 {

@@ -7,6 +7,8 @@ namespace dusk
 {
 class Image;
 
+using ImagesBatch = DynamicArray<Shared<Image>>;
+
 enum TextureUsageFlags : uint32_t
 {
     TransferSrcTexture  = 0x00000001,
@@ -17,6 +19,15 @@ enum TextureUsageFlags : uint32_t
     DepthStencilTexture = 0x00000020,
 };
 
+enum class TextureType : uint32_t
+{
+    Texture1D,
+    Texture2D,
+    Texture3D,
+    Cube,
+    ArrayCube,
+};
+
 struct Texture2D
 {
     uint32_t       id;
@@ -25,6 +36,8 @@ struct Texture2D
     uint32_t       numChannels = 0;
     std::string    name        = "";
     uint32_t       usage       = 0u;
+    TextureType    type        = TextureType::Texture2D;
+    size_t         uploadHash  = {};
 
     VulkanGfxImage image       = {};
     VkImageView    imageView   = {};
@@ -77,7 +90,8 @@ struct Texture2D
      * @return Error status for the complete operation
      */
     Error initAndRecordUpload(
-        Image&          texImage,
+        ImagesBatch&    texImages,
+        TextureType     type,
         VkFormat        format,
         uint32_t        usage,
         VkCommandBuffer graphicsBuffer,
@@ -87,14 +101,14 @@ struct Texture2D
     /**
      * @brief free the allocated Image and ImageView for the texture
      */
-    void        free();
+    void free();
 
     /**
      * @brief get vulkan image
      * @return VkImage
      */
-    VkImage     getVkImage() const { return image.vkImage; };
-    
+    VkImage getVkImage() const { return image.vkImage; };
+
     /**
      * @brief get vulkan image views
      * @return VkImageView

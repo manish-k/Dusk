@@ -72,13 +72,13 @@ void GfxBuffer::init(
     uint32_t           memoryType,
     const std::string& debugName)
 {
-    GfxBufferParams uboParams {};
-    uboParams.sizeInBytes = sizeInBytes;
-    uboParams.usage       = usage;
-    uboParams.memoryType  = memoryType;
-    uboParams.debugName   = debugName; // TODO: string copy
+    GfxBufferParams bufferParams {};
+    bufferParams.sizeInBytes = sizeInBytes;
+    bufferParams.usage       = usage;
+    bufferParams.memoryType  = memoryType;
+    bufferParams.debugName   = debugName; // TODO: string copy
 
-    Engine::get().getGfxDevice().createBuffer(uboParams, &vkBuffer);
+    Engine::get().getGfxDevice().createBuffer(bufferParams, &vkBuffer);
 }
 
 void GfxBuffer::free()

@@ -175,15 +175,11 @@ uint32_t TextureDB::createTextureAsync(const DynamicArray<std::string>& paths, T
     executor.silent_async([&, newId, paths]()
                           {
         DUSK_PROFILE_SECTION("texture_file_read");
-        DynamicArray<Shared<Image>> batch;
+        ImagesBatch batch;
         for (auto& path : paths)
         {
             DASSERT(!path.empty());
-            Shared<Image> img = nullptr;
-            {
-                img = ImageLoader::readImage(path);
-            }
-
+            Shared<Image> img = ImageLoader::readImage(path);
             if (img)
                 batch.push_back(img);
         }

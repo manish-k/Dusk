@@ -255,7 +255,7 @@ Error GfxTexture::initAndRecordUpload(
     GfxBuffer::createHostWriteBuffer(
         GfxBufferUsageFlags::TransferSource,
         bufferSize,
-        1,
+        numImages,
         "staging_texture_2d_buffer",
         &stagingBuffer);
 

@@ -363,8 +363,8 @@ void Engine::renderFrame(FrameData& frameData)
     auto lightingCtx = VkGfxRenderPassContext {
         .readAttachments       = lightingPassReadAttachments,
         .writeColorAttachments = lighingPassWriteAttachments,
-        .useDepth            = false,
-        .secondaryCmdBuffers = m_renderer->getSecondayCmdBuffers(frameData.frameIndex)
+        .useDepth              = false,
+        .secondaryCmdBuffers   = m_renderer->getSecondayCmdBuffers(frameData.frameIndex)
     };
 
     // albedo texture layout change
@@ -442,8 +442,8 @@ void Engine::renderFrame(FrameData& frameData)
     auto presentCtx = VkGfxRenderPassContext {
         .readAttachments       = presentReadAttachments,
         .writeColorAttachments = presentWriteAttachments,
-        .useDepth            = false,
-        .secondaryCmdBuffers = m_renderer->getSecondayCmdBuffers(frameData.frameIndex)
+        .useDepth              = false,
+        .secondaryCmdBuffers   = m_renderer->getSecondayCmdBuffers(frameData.frameIndex)
     };
 
     presentCtx.insertTransitionBarrier(
@@ -784,6 +784,18 @@ void Engine::prepareRenderGraphResources()
         (uint64_t)m_rgResources.lightingPipeline->get(),
         "lighting_pipeline");
 #endif // VK_RENDERER_DEBUG
+
+    std::string                     basePath       = STRING(DUSK_BUILD_PATH);
+    const DynamicArray<std::string> skyboxTextures = {
+        basePath + "/textures/skybox/px.png",
+        basePath + "/textures/skybox/nx.png",
+        basePath + "/textures/skybox/ny.png",
+        basePath + "/textures/skybox/py.png",
+        basePath + "/textures/skybox/pz.png",
+        basePath + "/textures/skybox/nz.png"
+    };
+
+    m_rgResources.skyTextureId = m_textureDB->createTextureAsync(skyboxTextures, TextureType::Cube);
 }
 
 void Engine::releaseRenderGraphResources()

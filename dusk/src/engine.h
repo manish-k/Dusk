@@ -57,6 +57,9 @@ struct RenderGraphResources
     uint32_t                    lightingRenderTextureId = {};
     Unique<VkGfxRenderPipeline> lightingPipeline        = nullptr;
     Unique<VkGfxPipelineLayout> lightingPipelineLayout  = nullptr;
+
+    // skybox pass
+    uint32_t skyTextureId = {};
 };
 
 const uint32_t GLOBAL_SET_INDEX   = 0;

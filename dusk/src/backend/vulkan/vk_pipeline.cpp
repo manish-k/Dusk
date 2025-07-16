@@ -220,6 +220,7 @@ VkGfxRenderPipeline::VkGfxRenderPipeline(VulkanContext& vkContext, VkGfxRenderPi
     pipelineInfo.pColorBlendState    = &colorBlendInfo;
     pipelineInfo.pDepthStencilState  = &depthStencilInfo;
     pipelineInfo.pDynamicState       = &dynamicStatesInfo;
+    pipelineInfo.pVertexInputState   = nullptr;
 
     if (!renderConfig.noInputState)
     {

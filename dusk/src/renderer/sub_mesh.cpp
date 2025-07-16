@@ -105,4 +105,71 @@ Error SubMesh::initGfxIndexBuffer(const DynamicArray<uint32_t>& indices)
     return Error::Ok;
 }
 
+Shared<SubMesh> SubMesh::createCubeMesh()
+{
+    auto cubeMesh = createShared<SubMesh>();
+
+    // load cube mesh
+    DynamicArray<Vertex> skyboxVertices = {
+        // positions
+        { glm::vec3(-1.0f, -1.0f, -1.0f) }, // 0
+        { glm::vec3(1.0f, -1.0f, -1.0f) },  // 1
+        { glm::vec3(1.0f, 1.0f, -1.0f) },   // 2
+        { glm::vec3(-1.0f, 1.0f, -1.0f) },  // 3
+        { glm::vec3(-1.0f, -1.0f, 1.0f) },  // 4
+        { glm::vec3(1.0f, -1.0f, 1.0f) },   // 5
+        { glm::vec3(1.0f, 1.0f, 1.0f) },    // 6
+        { glm::vec3(-1.0f, 1.0f, 1.0f) }    // 7
+    };
+
+    DynamicArray<uint32_t> skyboxIndices = {
+        // Back face
+        0,
+        1,
+        2,
+        2,
+        3,
+        0,
+        // Front face
+        4,
+        7,
+        6,
+        6,
+        5,
+        4,
+        // Left face
+        0,
+        3,
+        7,
+        7,
+        4,
+        0,
+        // Right face
+        1,
+        5,
+        6,
+        6,
+        2,
+        1,
+        // Top face
+        3,
+        2,
+        6,
+        6,
+        7,
+        3,
+        // Bottom face
+        0,
+        4,
+        5,
+        5,
+        1,
+        0
+    };
+
+    cubeMesh->init(skyboxVertices, skyboxIndices);
+
+    return cubeMesh;
+}
+
 } // namespace dusk

@@ -30,6 +30,18 @@ void recordLightingCmds(
     VkGfxRenderPassContext& ctx);
 
 //////////////////////////////////////////////////////
+// Skybox Pass
+struct SkyBoxPushConstant
+{
+    uint32_t frameIdx;
+    uint32_t skyColorTextureIdx;
+};
+
+void recordSkyBoxCmds(
+    FrameData&              frameData,
+    VkGfxRenderPassContext& ctx);
+
+//////////////////////////////////////////////////////
 // Presentation Pass
 
 struct PresentationPushConstant

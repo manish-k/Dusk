@@ -130,6 +130,7 @@ set(RENDERER_FILES
 	"${RENDERER_PASSES_DIR}/g_buffer_pass.cpp"
 	"${RENDERER_PASSES_DIR}/presentation_pass.cpp"
 	"${RENDERER_PASSES_DIR}/lighting_pass.cpp"
+	"${RENDERER_PASSES_DIR}/skybox_pass.cpp"
 )
 
 set(SCENE_DIR "${PROJECT_SOURCE_DIR}/src/scene")

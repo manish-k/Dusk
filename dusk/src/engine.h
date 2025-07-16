@@ -29,6 +29,7 @@ class LightsSystem;
 class TextureDB;
 class VulkanRenderer;
 class VkGfxDevice;
+class SubMesh;
 
 struct Material;
 struct VkGfxDescriptorPool;
@@ -39,7 +40,6 @@ constexpr uint32_t maxMaterialCount = 1000;
 
 struct RenderGraphResources
 {
-    // g-buffer resources
     DynamicArray<uint32_t>                   gbuffRenderTextureIds         = {};
     uint32_t                                 gbuffDepthTextureId           = {};
     Unique<VkGfxRenderPipeline>              gbuffPipeline                 = nullptr;
@@ -49,23 +49,18 @@ struct RenderGraphResources
     DynamicArray<Unique<VkGfxDescriptorSet>> gbuffModelDescriptorSet       = {};
     DynamicArray<GfxBuffer>                  gbuffModelsBuffer             = {};
 
-    // presentation pass resources
-    Unique<VkGfxRenderPipeline> presentPipeline       = nullptr;
-    Unique<VkGfxPipelineLayout> presentPipelineLayout = nullptr;
+    Unique<VkGfxRenderPipeline>              presentPipeline               = nullptr;
+    Unique<VkGfxPipelineLayout>              presentPipelineLayout         = nullptr;
 
-    // lighting pass resources
-    uint32_t                    lightingRenderTextureId = {};
-    Unique<VkGfxRenderPipeline> lightingPipeline        = nullptr;
-    Unique<VkGfxPipelineLayout> lightingPipelineLayout  = nullptr;
+    uint32_t                                 lightingRenderTextureId       = {};
+    Unique<VkGfxRenderPipeline>              lightingPipeline              = nullptr;
+    Unique<VkGfxPipelineLayout>              lightingPipelineLayout        = nullptr;
 
-    // skybox pass
-    uint32_t skyTextureId = {};
+    uint32_t                                 skyTextureId                  = {};
+    Shared<SubMesh>                          cubeMesh                      = nullptr;
+    Unique<VkGfxRenderPipeline>              skyBoxPipeline                = nullptr;
+    Unique<VkGfxPipelineLayout>              skyBoxPipelineLayout          = nullptr;
 };
-
-const uint32_t GLOBAL_SET_INDEX   = 0;
-const uint32_t MATERIAL_SET_INDEX = 1;
-const uint32_t LIGHTS_SET_INDEX   = 2;
-const uint32_t MODEL_SET_INDEX    = 3;
 
 class Engine final
 {

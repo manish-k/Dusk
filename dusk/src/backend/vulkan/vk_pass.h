@@ -100,8 +100,8 @@ struct VkGfxRenderPassContext
             VkRenderingAttachmentInfo colorAttachment { VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
             colorAttachment.imageView   = attachment.texture->imageView;
             colorAttachment.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
-            colorAttachment.loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR;
-            colorAttachment.storeOp     = VK_ATTACHMENT_STORE_OP_STORE;
+            colorAttachment.loadOp      = vulkan::getLoadOp(attachment.loadOp);
+            colorAttachment.storeOp     = vulkan::getStoreOp(attachment.storeOp);
             colorAttachment.clearValue  = attachment.clearValue;
             colorAttachmentInfos.push_back(colorAttachment);
 
@@ -118,9 +118,9 @@ struct VkGfxRenderPassContext
             depthAttachmentInfo             = { VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
             depthAttachmentInfo.imageView   = depthAttachment.texture->imageView;
             depthAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-            depthAttachmentInfo.loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR;
-            depthAttachmentInfo.storeOp     = VK_ATTACHMENT_STORE_OP_STORE;
-            depthAttachmentInfo.clearValue  = { 1.0f, 0 };
+            depthAttachmentInfo.loadOp      = vulkan::getLoadOp(depthAttachment.loadOp);
+            depthAttachmentInfo.storeOp     = vulkan::getStoreOp(depthAttachment.storeOp);
+            depthAttachmentInfo.clearValue  = depthAttachment.clearValue;
 
             VkImageMemoryBarrier depthBarrier { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
             depthBarrier.dstAccessMask    = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
@@ -129,17 +129,17 @@ struct VkGfxRenderPassContext
             depthBarrier.image            = depthAttachment.texture->getVkImage();
             depthBarrier.subresourceRange = { VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1 };
 
-            vkCmdPipelineBarrier(
-                cmdBuffer,
-                VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, // srcStageMask
-                VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, // dstStageMask
-                0,
-                0,
-                nullptr,
-                0,
-                nullptr,
-                1,
-                &depthBarrier);
+            //vkCmdPipelineBarrier(
+            //    cmdBuffer,
+            //    VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, // srcStageMask
+            //    VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, // dstStageMask
+            //    0,
+            //    0,
+            //    nullptr,
+            //    0,
+            //    nullptr,
+            //    1,
+            //    &depthBarrier);
         }
 
         renderingInfo                      = { VK_STRUCTURE_TYPE_RENDERING_INFO };

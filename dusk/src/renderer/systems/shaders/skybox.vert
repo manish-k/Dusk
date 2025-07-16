@@ -13,13 +13,21 @@ layout (set = 0, binding = 0) uniform GlobalUBO
 	mat4 projection;
 	mat4 view;
 	mat4 inverseView;
-	vec4 lightDirection;
-	vec4 ambientLightColor;
+		
+	uint directionalLightsCount;
+	uint pointLightsCount;     
+	uint spotLightsCount;      
+	uint padding;
+	
+	uvec4 directionalLightIndices[32];
+	uvec4 pointLightIndices[32];
+	uvec4 spotLightIndices[32];
 } globalubo[];
 
-layout(push_constant) uniform SkyboxData 
+layout(push_constant) uniform SkyBoxPushConstant 
 {
-	uint cameraBufferIdx;
+	uint frameIdx;
+    uint skyColorTextureIdx;
 } push;
 
 void main()
@@ -27,8 +35,8 @@ void main()
 	fragUVW = position;
 	fragUVW.xy *= -1.0f;
 
-	mat4 view = globalubo[nonuniformEXT(push.cameraBufferIdx)].view;
-	mat4 proj = globalubo[nonuniformEXT(push.cameraBufferIdx)].projection;
+	mat4 view = globalubo[nonuniformEXT(push.frameIdx)].view;
+	mat4 proj = globalubo[nonuniformEXT(push.frameIdx)].projection;
 
 	mat4 untranslatedView = mat4(mat3(view)); // remove translation
 	vec4 clipPos = proj * (untranslatedView * vec4(position, 1.0));

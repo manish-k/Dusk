@@ -19,6 +19,7 @@
 
 #include "renderer/material.h"
 #include "renderer/texture.h"
+#include "renderer/sub_mesh.h"
 #include "renderer/texture_db.h"
 #include "renderer/systems/basic_render_system.h"
 #include "renderer/systems/grid_render_system.h"
@@ -327,6 +328,17 @@ void Engine::renderFrame(FrameData& frameData)
             .dstStage  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
             .dstAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
         });
+    gbuffCtx.insertTransitionBarrier(
+        {
+            .image     = depthAttachment.texture->getVkImage(),
+            .usage     = vulkan::getTextureUsageFlagBits(depthAttachment.texture->usage),
+            .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+            .newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+            .srcStage  = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+            .srcAccess = 0,
+            .dstStage  = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+            .dstAccess = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT,
+        });
 
     renderGraph.setPassContext("gbuffer_pass", gbuffCtx);
     renderGraph.addPass("gbuffer_pass", recordGBufferCmds);
@@ -421,6 +433,44 @@ void Engine::renderFrame(FrameData& frameData)
 
     renderGraph.setPassContext("lighting_pass", lightingCtx);
     renderGraph.addPass("lighting_pass", recordLightingCmds);
+
+    // create skybox pass
+    auto skyBoxPassWriteAttachments = {
+        GfxRenderingAttachment {
+            .texture    = &m_textureDB->getTexture2D(m_rgResources.lightingRenderTextureId),
+            .clearValue = DEFAULT_COLOR_CLEAR_VALUE,
+            .loadOp     = GfxLoadOperation::Load,
+            .storeOp    = GfxStoreOperation::Store }
+    };
+    GfxRenderingAttachment skyDepthAttachment = GfxRenderingAttachment {
+        .texture    = &m_textureDB->getTexture2D(m_rgResources.gbuffDepthTextureId),
+        .clearValue = DEFAULT_DEPTH_STENCIL_VALUE,
+        .loadOp     = GfxLoadOperation::Load,
+        .storeOp    = GfxStoreOperation::Store
+    };
+
+    auto skyBoxCtx = VkGfxRenderPassContext {
+        .readAttachments       = {},
+        .writeColorAttachments = skyBoxPassWriteAttachments,
+        .depthAttachment       = skyDepthAttachment,
+        .useDepth              = true,
+        .secondaryCmdBuffers   = m_renderer->getSecondayCmdBuffers(frameData.frameIndex)
+    };
+
+    skyBoxCtx.insertTransitionBarrier(
+        {
+            .image     = skyDepthAttachment.texture->getVkImage(),
+            .usage     = vulkan::getTextureUsageFlagBits(skyDepthAttachment.texture->usage),
+            .oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            .newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+            .srcStage  = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            .srcAccess = 0,
+            .dstStage  = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+            .dstAccess = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT,
+        });
+
+    renderGraph.setPassContext("skybox_pass", skyBoxCtx);
+    renderGraph.addPass("skybox_pass", recordSkyBoxCmds);
 
     // create presentation pass
     auto presentReadAttachments = {
@@ -785,6 +835,7 @@ void Engine::prepareRenderGraphResources()
         "lighting_pipeline");
 #endif // VK_RENDERER_DEBUG
 
+    // skybox pass
     std::string                     basePath       = STRING(DUSK_BUILD_PATH);
     const DynamicArray<std::string> skyboxTextures = {
         basePath + "/textures/skybox/px.png",
@@ -795,7 +846,40 @@ void Engine::prepareRenderGraphResources()
         basePath + "/textures/skybox/nz.png"
     };
 
-    m_rgResources.skyTextureId = m_textureDB->createTextureAsync(skyboxTextures, TextureType::Cube);
+    m_rgResources.skyTextureId            = m_textureDB->createTextureAsync(skyboxTextures, TextureType::Cube);
+    m_rgResources.cubeMesh                = SubMesh::createCubeMesh();
+
+    m_rgResources.skyBoxPipelineLayout = VkGfxPipelineLayout::Builder(ctx)
+                                             .addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(SkyBoxPushConstant))
+                                             .addDescriptorSetLayout(m_globalDescriptorSetLayout->layout)
+                                             .addDescriptorSetLayout(m_textureDB->getTexturesDescriptorSetLayout().layout)
+                                             .build();
+
+#ifdef VK_RENDERER_DEBUG
+    vkdebug::setObjectName(
+        ctx.device,
+        VK_OBJECT_TYPE_PIPELINE_LAYOUT,
+        (uint64_t)m_rgResources.skyBoxPipelineLayout->get(),
+        "skybox_pipeline_layout");
+#endif // VK_RENDERER_DEBUG
+
+    auto skyBoxVertShaderCode    = FileSystem::readFileBinary(shaderPath / "skybox.vert.spv");
+
+    auto skyBoxFragShaderCode    = FileSystem::readFileBinary(shaderPath / "skybox.frag.spv");
+
+    m_rgResources.skyBoxPipeline = VkGfxRenderPipeline::Builder(ctx)
+                                       .setVertexShaderCode(skyBoxVertShaderCode)
+                                       .setFragmentShaderCode(skyBoxFragShaderCode)
+                                       .setPipelineLayout(*m_rgResources.skyBoxPipelineLayout)
+                                       .addColorAttachmentFormat(VK_FORMAT_R8G8B8A8_SRGB)
+                                       .build();
+#ifdef VK_RENDERER_DEBUG
+    vkdebug::setObjectName(
+        ctx.device,
+        VK_OBJECT_TYPE_PIPELINE,
+        (uint64_t)m_rgResources.skyBoxPipeline->get(),
+        "skybox_pipeline");
+#endif // VK_RENDERER_DEBUG
 }
 
 void Engine::releaseRenderGraphResources()
@@ -817,6 +901,11 @@ void Engine::releaseRenderGraphResources()
     // release lighting pass resources
     m_rgResources.lightingPipeline       = nullptr;
     m_rgResources.lightingPipelineLayout = nullptr;
+
+    // release skybox pass resources
+    m_rgResources.skyBoxPipeline       = nullptr;
+    m_rgResources.skyBoxPipelineLayout = nullptr;
+    m_rgResources.cubeMesh->free();
 }
 
 void Engine::setSkyboxVisibility(bool state)

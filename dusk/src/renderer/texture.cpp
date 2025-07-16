@@ -235,7 +235,6 @@ Error GfxTexture::initAndRecordUpload(
 
     uint32_t numImages  = texImages.size();
     size_t   layerSize  = width * height * numChannels;
-    size_t   bufferSize = layerSize * numImages;
 
     if (type == TextureType::Cube) DASSERT(numImages == 6);
 
@@ -254,7 +253,7 @@ Error GfxTexture::initAndRecordUpload(
     GfxBuffer stagingBuffer;
     GfxBuffer::createHostWriteBuffer(
         GfxBufferUsageFlags::TransferSource,
-        bufferSize,
+        layerSize,
         numImages,
         "staging_texture_2d_buffer",
         &stagingBuffer);

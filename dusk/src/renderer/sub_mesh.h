@@ -22,6 +22,9 @@ public:
     GfxBuffer& getIndexBuffer() { return m_indexBuffer; };
     uint32_t   getIndexCount() const { return m_indexCount; };
 
+public:
+    static Shared<SubMesh> createCubeMesh();
+
 private:
     Error initGfxVertexBuffer(const DynamicArray<Vertex>& vertices);
     Error initGfxIndexBuffer(const DynamicArray<uint32_t>& indices);
@@ -33,4 +36,5 @@ private:
     GfxBuffer m_indexBuffer {};
     uint32_t  m_indexCount = 0u;
 };
+
 } // namespace dusk

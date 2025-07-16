@@ -24,7 +24,6 @@ class EditorUI;
 class Scene;
 class BasicRenderSystem;
 class GridRenderSystem;
-class SkyboxRenderSystem;
 class LightsSystem;
 class TextureDB;
 class VulkanRenderer;
@@ -114,31 +113,27 @@ public:
 
     tf::Executor&         getTfExecutor() { return m_tfExecutor; }
 
-    // TODO:: should be part of config
-    void setSkyboxVisibility(bool state);
-
 private:
     Config                           m_config;
 
-    Unique<VkGfxDevice>              m_gfxDevice          = nullptr;
-    Unique<VulkanRenderer>           m_renderer           = nullptr;
+    Unique<VkGfxDevice>              m_gfxDevice         = nullptr;
+    Unique<VulkanRenderer>           m_renderer          = nullptr;
 
-    Shared<Window>                   m_window             = nullptr;
-    Shared<Application>              m_app                = nullptr;
+    Shared<Window>                   m_window            = nullptr;
+    Shared<Application>              m_app               = nullptr;
 
-    Unique<BasicRenderSystem>        m_basicRenderSystem  = nullptr;
-    Unique<GridRenderSystem>         m_gridRenderSystem   = nullptr;
-    Unique<SkyboxRenderSystem>       m_skyboxRenderSystem = nullptr;
-    Unique<LightsSystem>             m_lightsSystem       = nullptr;
+    Unique<BasicRenderSystem>        m_basicRenderSystem = nullptr;
+    Unique<GridRenderSystem>         m_gridRenderSystem  = nullptr;
+    Unique<LightsSystem>             m_lightsSystem      = nullptr;
 
-    Unique<TextureDB>                m_textureDB          = nullptr;
+    Unique<TextureDB>                m_textureDB         = nullptr;
 
-    Unique<EditorUI>                 m_editorUI           = nullptr;
+    Unique<EditorUI>                 m_editorUI          = nullptr;
 
-    bool                             m_running            = false;
-    bool                             m_paused             = false;
+    bool                             m_running           = false;
+    bool                             m_paused            = false;
 
-    Scene*                           m_currentScene       = nullptr;
+    Scene*                           m_currentScene      = nullptr;
 
     TimePoint                        m_lastFrameTime {};
     TimeStep                         m_deltaTime {};

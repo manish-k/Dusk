@@ -63,7 +63,6 @@ bool TestLights::start()
     m_testScene->addGameObject(std::move(spotLight), m_testScene->getRootId());
 
     Engine::get().loadScene(m_testScene.get());
-    Engine::get().setSkyboxVisibility(false);
 
     auto& cameraTransform       = m_testScene->getMainCameraTransform();
     auto& camera                = m_testScene->getMainCamera();

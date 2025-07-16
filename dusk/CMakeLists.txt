@@ -114,7 +114,6 @@ set(RENDERER_FILES
 	"${RENDERER_DIR}/gfx_types.h"
 	"${RENDERER_SYSTEMS_DIR}/basic_render_system.h"
 	"${RENDERER_SYSTEMS_DIR}/grid_render_system.h"
-	"${RENDERER_SYSTEMS_DIR}/skybox_render_system.h"
 	"${RENDERER_SYSTEMS_DIR}/lights_system.h"
 	"${RENDERER_PASSES_DIR}/render_passes.h"
 	# Source files
@@ -125,7 +124,6 @@ set(RENDERER_FILES
 	"${RENDERER_DIR}/texture_db.cpp"
 	"${RENDERER_SYSTEMS_DIR}/basic_render_system.cpp"
 	"${RENDERER_SYSTEMS_DIR}/grid_render_system.cpp"
-	"${RENDERER_SYSTEMS_DIR}/skybox_render_system.cpp"
 	"${RENDERER_SYSTEMS_DIR}/lights_system.cpp"
 	"${RENDERER_PASSES_DIR}/g_buffer_pass.cpp"
 	"${RENDERER_PASSES_DIR}/presentation_pass.cpp"

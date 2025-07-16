@@ -23,7 +23,6 @@
 #include "renderer/texture_db.h"
 #include "renderer/systems/basic_render_system.h"
 #include "renderer/systems/grid_render_system.h"
-#include "renderer/systems/skybox_render_system.h"
 #include "renderer/systems/lights_system.h"
 #include "renderer/render_graph.h"
 #include "renderer/passes/render_passes.h"
@@ -141,7 +140,6 @@ void Engine::shutdown()
 {
     m_basicRenderSystem  = nullptr;
     m_gridRenderSystem   = nullptr;
-    m_skyboxRenderSystem = nullptr;
 
     m_lightsSystem       = nullptr;
 
@@ -906,11 +904,6 @@ void Engine::releaseRenderGraphResources()
     m_rgResources.skyBoxPipeline       = nullptr;
     m_rgResources.skyBoxPipelineLayout = nullptr;
     m_rgResources.cubeMesh->free();
-}
-
-void Engine::setSkyboxVisibility(bool state)
-{
-    if (m_skyboxRenderSystem) m_skyboxRenderSystem->setVisble(state);
 }
 
 } // namespace dusk

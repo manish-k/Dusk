@@ -23,13 +23,15 @@ struct VkGfxRenderPipelineConfig
 
     DynamicArray<VkFormat>                            colorAttachmentFormats;
 
-    VkRenderPass                                      renderPass     = VK_NULL_HANDLE;
-    uint32_t                                          subpassIndex   = 0u;
+    VkRenderPass                                      renderPass        = VK_NULL_HANDLE;
+    uint32_t                                          subpassIndex      = 0u;
 
-    VkPipelineLayout                                  pipelineLayout = VK_NULL_HANDLE;
+    VkPipelineLayout                                  pipelineLayout    = VK_NULL_HANDLE;
 
-    VkCullModeFlagBits                                cullMode       = VK_CULL_MODE_NONE;
-    bool                                              noInputState   = false;
+    VkCullModeFlagBits                                cullMode          = VK_CULL_MODE_NONE;
+    bool                                              noInputState      = false;
+    bool                                              enableDepthTest   = true;
+    bool                                              enableDepthWrites = true;
 };
 
 class VkGfxRenderPipeline
@@ -48,6 +50,8 @@ public:
         Builder& setPipelineLayout(VkGfxPipelineLayout& pipelineLayout);
         Builder& addColorAttachmentFormat(VkFormat format);
         Builder& setCullMode(VkCullModeFlagBits flags);
+        Builder& setDepthTest(bool state);
+        Builder& setDepthWrite(bool state);
         Builder& removeVertexInputState();
 
         /**

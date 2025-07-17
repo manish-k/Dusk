@@ -749,6 +749,7 @@ void Engine::prepareRenderGraphResources()
                                        .setFragmentShaderCode(skyBoxFragShaderCode)
                                        .setPipelineLayout(*m_rgResources.skyBoxPipelineLayout)
                                        .addColorAttachmentFormat(VK_FORMAT_R8G8B8A8_SRGB)
+                                       .setDepthWrite(false)
                                        .build();
 #ifdef VK_RENDERER_DEBUG
     vkdebug::setObjectName(

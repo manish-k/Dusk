@@ -61,6 +61,18 @@ VkGfxRenderPipeline::Builder& VkGfxRenderPipeline::Builder::setCullMode(VkCullMo
     return *this;
 }
 
+VkGfxRenderPipeline::Builder& VkGfxRenderPipeline::Builder::setDepthTest(bool state)
+{
+    m_renderConfig.enableDepthTest = state;
+    return *this;
+}
+
+VkGfxRenderPipeline::Builder& VkGfxRenderPipeline::Builder::setDepthWrite(bool state)
+{
+    m_renderConfig.enableDepthWrites = state;
+    return *this;
+}
+
 VkGfxRenderPipeline::Builder& VkGfxRenderPipeline::Builder::removeVertexInputState()
 {
     m_renderConfig.noInputState = true;
@@ -199,8 +211,8 @@ VkGfxRenderPipeline::VkGfxRenderPipeline(VulkanContext& vkContext, VkGfxRenderPi
     // depth stencil info
     VkPipelineDepthStencilStateCreateInfo depthStencilInfo {};
     depthStencilInfo.sType                 = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-    depthStencilInfo.depthTestEnable       = VK_TRUE;
-    depthStencilInfo.depthWriteEnable      = VK_TRUE;
+    depthStencilInfo.depthTestEnable       = renderConfig.enableDepthTest;
+    depthStencilInfo.depthWriteEnable      = renderConfig.enableDepthWrites;
     depthStencilInfo.depthCompareOp        = VK_COMPARE_OP_LESS;
     depthStencilInfo.depthBoundsTestEnable = VK_FALSE;
     depthStencilInfo.minDepthBounds        = 0.0f;

@@ -34,60 +34,14 @@ struct VkGfxRenderPassContext
     DynamicArray<VkCommandBuffer>           secondaryCmdBuffers;
 
     /**
-     * @brief
-     * @param format
-     * @param oldLayout
-     * @param newLayout
-     * @param mipLevelCount
-     * @param layersCount
-     */
-    void insertTransitionBarrier(
-        VulkanImageBarier barrier)
-    {
-        preBarriers.push_back(barrier);
-    }
-
-    /**
      * @brief begin rendering of the pass
      */
     void begin()
     {
-        if (!preBarriers.empty())
+        for (const auto& attachment : readAttachments)
         {
-            for (const auto& barrierInfo : preBarriers)
-            {
-                VkImageAspectFlags imageAspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
-                if (barrierInfo.usage & DepthStencilTexture)
-                {
-                    imageAspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-                }
-
-                VkImageMemoryBarrier barrier { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
-                barrier.oldLayout                       = barrierInfo.oldLayout;
-                barrier.newLayout                       = barrierInfo.newLayout;
-                barrier.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
-                barrier.dstQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
-                barrier.image                           = barrierInfo.image;
-                barrier.subresourceRange.aspectMask     = imageAspectFlags;
-                barrier.subresourceRange.baseMipLevel   = 0;
-                barrier.subresourceRange.levelCount     = 1;
-                barrier.subresourceRange.baseArrayLayer = 0;
-                barrier.subresourceRange.layerCount     = 1;
-                barrier.srcAccessMask                   = barrierInfo.srcAccess;
-                barrier.dstAccessMask                   = barrierInfo.dstAccess;
-
-                vkCmdPipelineBarrier(
-                    cmdBuffer,
-                    barrierInfo.srcStage,
-                    barrierInfo.dstStage,
-                    0,
-                    0,
-                    nullptr,
-                    0,
-                    nullptr,
-                    1,
-                    &barrier);
-            }
+            // transition to shader read layout
+            attachment.texture->recordTransitionLayout(cmdBuffer, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
         }
 
         DynamicArray<VkFormat> colorFormats;
@@ -106,15 +60,13 @@ struct VkGfxRenderPassContext
             colorAttachmentInfos.push_back(colorAttachment);
 
             colorFormats.push_back(attachment.texture->format);
+
+            // transition to color out layout
+            attachment.texture->recordTransitionLayout(cmdBuffer, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
         }
 
         if (useDepth)
         {
-            for (uint32_t inAttachmentIdx = 0u; inAttachmentIdx < readAttachments.size(); ++inAttachmentIdx)
-            {
-                // DASSERT(inAttachments[inAttachmentIdx].texture.image.vkImage != depthAttachment.texture.image.vkImage);
-            }
-
             depthAttachmentInfo             = { VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
             depthAttachmentInfo.imageView   = depthAttachment.texture->imageView;
             depthAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
@@ -122,24 +74,7 @@ struct VkGfxRenderPassContext
             depthAttachmentInfo.storeOp     = vulkan::getStoreOp(depthAttachment.storeOp);
             depthAttachmentInfo.clearValue  = depthAttachment.clearValue;
 
-            VkImageMemoryBarrier depthBarrier { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
-            depthBarrier.dstAccessMask    = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-            depthBarrier.oldLayout        = VK_IMAGE_LAYOUT_UNDEFINED;
-            depthBarrier.newLayout        = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-            depthBarrier.image            = depthAttachment.texture->getVkImage();
-            depthBarrier.subresourceRange = { VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1 };
-
-            //vkCmdPipelineBarrier(
-            //    cmdBuffer,
-            //    VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, // srcStageMask
-            //    VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, // dstStageMask
-            //    0,
-            //    0,
-            //    nullptr,
-            //    0,
-            //    nullptr,
-            //    1,
-            //    &depthBarrier);
+            depthAttachment.texture->recordTransitionLayout(cmdBuffer, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
         }
 
         renderingInfo                      = { VK_STRUCTURE_TYPE_RENDERING_INFO };

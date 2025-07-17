@@ -156,6 +156,7 @@ Error GfxTexture::init(
     imageInfo.sharingMode   = VK_SHARING_MODE_EXCLUSIVE;
     imageInfo.flags         = 0;
 
+    this->currentLayout     = VK_IMAGE_LAYOUT_UNDEFINED;
     // create image
     VulkanResult result = vulkan::allocateGPUImage(
         vkContext.gpuAllocator,
@@ -224,17 +225,19 @@ Error GfxTexture::initAndRecordUpload(
 
     DASSERT(texImages.size() > 0);
 
-    auto& device        = Engine::get().getGfxDevice();
-    auto& vkContext     = device.getSharedVulkanContext();
+    auto&    device    = Engine::get().getGfxDevice();
+    auto&    vkContext = device.getSharedVulkanContext();
 
-    this->width         = texImages[0]->width;
-    this->height        = texImages[0]->height;
-    this->numChannels   = texImages[0]->channels;
-    this->usage         = usage;
-    this->format        = format;
+    uint32_t numImages = texImages.size();
 
-    uint32_t numImages  = texImages.size();
-    size_t   layerSize  = width * height * numChannels;
+    this->width        = texImages[0]->width;
+    this->height       = texImages[0]->height;
+    this->numChannels  = texImages[0]->channels;
+    this->usage        = usage;
+    this->format       = format;
+    this->layersCount  = numImages;
+
+    size_t layerSize   = width * height * numChannels;
 
     if (type == TextureType::Cube) DASSERT(numImages == 6);
 
@@ -455,6 +458,8 @@ Error GfxTexture::initAndRecordUpload(
 
     vkQueueSubmit(vkContext.graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
 
+    this->currentLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
     // wait for graphics queue operation to finish
     {
         DUSK_PROFILE_SECTION("graphics_queue_wait");
@@ -491,4 +496,114 @@ void GfxTexture::free()
 
     vulkan::freeGPUImage(vkContext.gpuAllocator, &image);
 }
+
+void GfxTexture::recordTransitionLayout(
+    VkCommandBuffer cmdbuff,
+    VkImageLayout   newLayout)
+{
+    DASSERT(newLayout != VK_IMAGE_LAYOUT_UNDEFINED);
+
+    if (currentLayout == newLayout) return;
+
+    VkImageAspectFlags imageAspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
+    if (vulkan::getTextureUsageFlagBits(usage) & DepthStencilTexture)
+    {
+        imageAspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+    }
+
+    VkImageMemoryBarrier barrier {};
+    barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.oldLayout                       = currentLayout;
+    barrier.newLayout                       = newLayout;
+    barrier.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image                           = image.vkImage;
+    barrier.subresourceRange.aspectMask     = imageAspectFlags;
+    barrier.subresourceRange.baseMipLevel   = 0;
+    barrier.subresourceRange.levelCount     = 1;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount     = layersCount;
+
+    VkPipelineStageFlags srcStage           = VK_PIPELINE_STAGE_FLAG_BITS_MAX_ENUM;
+    VkPipelineStageFlags dstStage           = VK_PIPELINE_STAGE_FLAG_BITS_MAX_ENUM;
+
+    switch (currentLayout)
+    {
+        case VK_IMAGE_LAYOUT_UNDEFINED:
+        {
+            srcStage              = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+            barrier.srcAccessMask = 0;
+            break;
+        }
+        case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+        {
+            srcStage              = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            break;
+        }
+        case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+        {
+            srcStage              = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+            barrier.srcAccessMask = 0;
+            break;
+        }
+        case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+        {
+            srcStage              = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+            barrier.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+            break;
+        }
+        default:
+        {
+            DUSK_ERROR("Unhandled current layout");
+        }
+    }
+
+    switch (newLayout)
+    {
+        case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+        {
+            dstStage              = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+            break;
+        }
+        case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+        {
+            dstStage              = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+            break;
+        }
+        case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+        {
+            dstStage              = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+            barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+            break;
+        }
+        default:
+        {
+            DUSK_ERROR("Unhandled new layout");
+        }
+    }
+
+    DASSERT(srcStage != VK_PIPELINE_STAGE_FLAG_BITS_MAX_ENUM);
+    DASSERT(dstStage != VK_PIPELINE_STAGE_FLAG_BITS_MAX_ENUM);
+
+    vkCmdPipelineBarrier(
+        cmdbuff,
+        srcStage,
+        dstStage,
+        0,
+        0,
+        nullptr,
+        0,
+        nullptr,
+        1,
+        &barrier);
+
+    // this layout is not transitioned ye. This is the next
+    // state of the layout and any further transition should respect
+    // this
+    currentLayout = newLayout;
+}
+
 } // namespace dusk

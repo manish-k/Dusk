@@ -31,17 +31,19 @@ enum class TextureType : uint32_t
 struct GfxTexture
 {
     uint32_t       id;
-    uint32_t       width       = 0;
-    uint32_t       height      = 0;
-    uint32_t       numChannels = 0;
-    std::string    name        = "";
-    uint32_t       usage       = 0u;
-    TextureType    type        = TextureType::Texture2D;
-    size_t         uploadHash  = {};
+    uint32_t       width         = 0u;
+    uint32_t       height        = 0u;
+    uint32_t       numChannels   = 0u;
+    uint32_t       layersCount   = 1u;
+    std::string    name          = "";
+    uint32_t       usage         = 0u;
+    TextureType    type          = TextureType::Texture2D;
+    size_t         uploadHash    = {}; // used for tracking ongoing uploads
 
-    VulkanGfxImage image       = {};
-    VkImageView    imageView   = {};
-    VkFormat       format      = {};
+    VulkanGfxImage image         = {};
+    VkImageView    imageView     = {};
+    VkFormat       format        = {};
+    VkImageLayout  currentLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     GfxTexture(uint32_t id) :
         id(id) { };
@@ -114,6 +116,15 @@ struct GfxTexture
      * @return VkImageView
      */
     VkImageView getVkImagView() const { return imageView; };
+
+    /**
+     * @brief record transition layout cmd in the cmdbuffer
+     * @param recording command buffer
+     * @param new layout for the image
+     */
+    void recordTransitionLayout(
+        VkCommandBuffer cmdbuff,
+        VkImageLayout   newLayout);
 };
 
 } // namespace dusk

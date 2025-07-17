@@ -304,40 +304,6 @@ void Engine::renderFrame(FrameData& frameData)
               .secondaryCmdBuffers = m_renderer->getSecondayCmdBuffers(frameData.frameIndex)
           };
 
-    gbuffCtx.insertTransitionBarrier(
-        {
-            .image     = gbuffCtx.writeColorAttachments[0].texture->getVkImage(),
-            .usage     = vulkan::getTextureUsageFlagBits(gbuffCtx.writeColorAttachments[0].texture->usage),
-            .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-            .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-            .srcStage  = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-            .srcAccess = 0,
-            .dstStage  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-            .dstAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-        });
-    gbuffCtx.insertTransitionBarrier(
-        {
-            .image     = gbuffCtx.writeColorAttachments[1].texture->getVkImage(),
-            .usage     = vulkan::getTextureUsageFlagBits(gbuffCtx.writeColorAttachments[1].texture->usage),
-            .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-            .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-            .srcStage  = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-            .srcAccess = 0,
-            .dstStage  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-            .dstAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-        });
-    gbuffCtx.insertTransitionBarrier(
-        {
-            .image     = depthAttachment.texture->getVkImage(),
-            .usage     = vulkan::getTextureUsageFlagBits(depthAttachment.texture->usage),
-            .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-            .newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-            .srcStage  = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-            .srcAccess = 0,
-            .dstStage  = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-            .dstAccess = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT,
-        });
-
     renderGraph.setPassContext("gbuffer_pass", gbuffCtx);
     renderGraph.addPass("gbuffer_pass", recordGBufferCmds);
 
@@ -377,58 +343,6 @@ void Engine::renderFrame(FrameData& frameData)
         .secondaryCmdBuffers   = m_renderer->getSecondayCmdBuffers(frameData.frameIndex)
     };
 
-    // albedo texture layout change
-    lightingCtx.insertTransitionBarrier(
-        {
-            .image     = lightingCtx.readAttachments[0].texture->getVkImage(),
-            .usage     = vulkan::getTextureUsageFlagBits(lightingCtx.readAttachments[0].texture->usage),
-            .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-            .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            .srcStage  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-            .srcAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-            .dstStage  = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-            .dstAccess = VK_ACCESS_SHADER_READ_BIT,
-        });
-
-    // normal texture layout change
-    lightingCtx.insertTransitionBarrier(
-        {
-            .image     = lightingCtx.readAttachments[1].texture->getVkImage(),
-            .usage     = vulkan::getTextureUsageFlagBits(lightingCtx.readAttachments[1].texture->usage),
-            .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-            .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            .srcStage  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-            .srcAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-            .dstStage  = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-            .dstAccess = VK_ACCESS_SHADER_READ_BIT,
-        });
-
-    // depth texture layout change
-    lightingCtx.insertTransitionBarrier(
-        {
-            .image     = lightingCtx.readAttachments[2].texture->getVkImage(),
-            .usage     = vulkan::getTextureUsageFlagBits(lightingCtx.readAttachments[2].texture->usage),
-            .oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-            .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            .srcStage  = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-            .srcAccess = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-            .dstStage  = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-            .dstAccess = VK_ACCESS_SHADER_READ_BIT,
-        });
-
-    // lighting result layout transition
-    lightingCtx.insertTransitionBarrier(
-        {
-            .image     = lightingCtx.writeColorAttachments[0].texture->getVkImage(),
-            .usage     = vulkan::getTextureUsageFlagBits(lightingCtx.writeColorAttachments[0].texture->usage),
-            .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-            .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-            .srcStage  = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-            .srcAccess = 0,
-            .dstStage  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-            .dstAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-        });
-
     renderGraph.setPassContext("lighting_pass", lightingCtx);
     renderGraph.addPass("lighting_pass", recordLightingCmds);
 
@@ -454,18 +368,6 @@ void Engine::renderFrame(FrameData& frameData)
         .useDepth              = true,
         .secondaryCmdBuffers   = m_renderer->getSecondayCmdBuffers(frameData.frameIndex)
     };
-
-    skyBoxCtx.insertTransitionBarrier(
-        {
-            .image     = skyDepthAttachment.texture->getVkImage(),
-            .usage     = vulkan::getTextureUsageFlagBits(skyDepthAttachment.texture->usage),
-            .oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            .newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-            .srcStage  = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-            .srcAccess = 0,
-            .dstStage  = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-            .dstAccess = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT,
-        });
 
     renderGraph.setPassContext("skybox_pass", skyBoxCtx);
     renderGraph.addPass("skybox_pass", recordSkyBoxCmds);
@@ -493,29 +395,6 @@ void Engine::renderFrame(FrameData& frameData)
         .useDepth              = false,
         .secondaryCmdBuffers   = m_renderer->getSecondayCmdBuffers(frameData.frameIndex)
     };
-
-    presentCtx.insertTransitionBarrier(
-        {
-            .image     = presentCtx.readAttachments[0].texture->getVkImage(),
-            .usage     = vulkan::getTextureUsageFlagBits(presentCtx.readAttachments[0].texture->usage),
-            .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-            .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            .srcStage  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-            .srcAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-            .dstStage  = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-            .dstAccess = VK_ACCESS_SHADER_READ_BIT,
-        });
-    presentCtx.insertTransitionBarrier(
-        {
-            .image     = swapImageTexture.getVkImage(),
-            .usage     = vulkan::getTextureUsageFlagBits(swapImageTexture.usage),
-            .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-            .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-            .srcStage  = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-            .srcAccess = 0,
-            .dstStage  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-            .dstAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-        });
 
     renderGraph.setPassContext("present_pass", presentCtx);
     renderGraph.addPass("present_pass", recordPresentationCmds);

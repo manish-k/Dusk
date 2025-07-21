@@ -30,8 +30,17 @@ layout (set = 1, binding = 0) buffer Material
 	int id;
 	int albedoTexId;
 	int normalTexId;
-	int pad0;
+	int metallicRoughnessTexId;
+	int aoTexId;          
+	int emissiveTexId;    
+	float aoStrength;       
+	float emissiveIntensity;
+	float normalScale;
+	float metal;
+	float rough;
+	float padding0;
 	vec4 albedoColor;
+	vec4 emissiveColor;
 
 } materials[];
 

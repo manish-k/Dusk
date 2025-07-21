@@ -32,6 +32,8 @@ private:
 
     std::filesystem::path getGltfTexturePath(aiMaterial* mat);
     std::filesystem::path getTexturePath(aiMaterial* mat, aiTextureType type);
+    std::filesystem::path getGltfMRTexturePath(aiMaterial* mat);
+    int32_t               read2DTexture(std::filesystem::path texPath) const;
 
 private:
     Assimp::Importer m_importer;

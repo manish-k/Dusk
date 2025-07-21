@@ -220,16 +220,47 @@ std::filesystem::path AssimpLoader::getTexturePath(aiMaterial* mat, aiTextureTyp
     return std::filesystem::path(path.C_Str());
 }
 
+std::filesystem::path AssimpLoader::getGltfMRTexturePath(aiMaterial* mat)
+{
+    aiString path;
+    aiReturn result = mat->GetTexture(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLICROUGHNESS_TEXTURE, &path);
+
+    if (result == aiReturn_FAILURE)
+        return "";
+
+    return std::filesystem::path(path.C_Str());
+}
+
+int32_t AssimpLoader::read2DTexture(std::filesystem::path texPath) const
+{
+    if (!texPath.empty())
+    {
+        auto texturePath = (m_sceneDir / texPath).make_preferred().string();
+        return TextureDB::cache()->createTextureAsync(DynamicArray<std::string> { texturePath }, TextureType::Texture2D);
+    }
+
+    return -1;
+}
+
 void AssimpLoader::parseMaterials(Scene& scene, const aiScene* aiScene)
 {
     DUSK_PROFILE_FUNCTION;
 
     for (uint32_t matIndex = 0; matIndex < aiScene->mNumMaterials; ++matIndex)
     {
-        aiMaterial*           aiMat                = aiScene->mMaterials[matIndex];
-        std::filesystem::path baseColorTexturePath = "";
-        uint32_t              diffuseTexId         = -1;
+        aiMaterial*           aiMat = aiScene->mMaterials[matIndex];
+        Material              newMaterial;
 
+        std::filesystem::path baseColorTexturePath = "";
+
+        /// textures indices
+        int32_t albedoTexId            = -1;
+        int32_t normalTexId            = -1;
+        int32_t metallicRoughnessTexId = -1;
+        int32_t aoTexId                = -1;
+        int32_t emissiveTexId          = -1;
+
+        // find albedo texture and color value
         if (m_isGltf)
         {
             baseColorTexturePath = getGltfTexturePath(aiMat);
@@ -247,16 +278,12 @@ void AssimpLoader::parseMaterials(Scene& scene, const aiScene* aiScene)
 
         if (!baseColorTexturePath.empty())
         {
-            auto texturePath = (m_sceneDir / baseColorTexturePath).make_preferred().string();
-            diffuseTexId     = TextureDB::cache()->createTextureAsync(DynamicArray<std::string> {texturePath}, TextureType::Texture2D);
+            albedoTexId = read2DTexture(baseColorTexturePath);
         }
         else
         {
-            diffuseTexId = TextureDB::cache()->getDefaultTexture2D().id;
+            albedoTexId = TextureDB::cache()->getDefaultTexture2D().id;
         }
-
-        aiColor3D diffuseColor { 1.0f };
-        aiMat->Get(AI_MATKEY_COLOR_DIFFUSE, diffuseColor);
 
         aiColor3D pbrBaseColor { 1.0f };
         aiMat->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_BASE_COLOR_FACTOR, pbrBaseColor);
@@ -264,13 +291,57 @@ void AssimpLoader::parseMaterials(Scene& scene, const aiScene* aiScene)
         float alpha = 1.f;
         aiMat->Get(AI_MATKEY_OPACITY, alpha);
 
-        Material mat;
+        newMaterial.albedoColor = glm::vec4(pbrBaseColor.r, pbrBaseColor.g, pbrBaseColor.b, alpha);
 
-        mat.albedoColor = glm::vec4(diffuseColor.r, diffuseColor.g, diffuseColor.b, alpha);
+        newMaterial.albedoTexId = albedoTexId;
 
-        mat.albedoTexId = diffuseTexId;
+        // find out normal map
+        std::filesystem::path normalTexPath = getTexturePath(aiMat, aiTextureType_NORMALS);
 
-        scene.addMaterial(mat);
+        if (!normalTexPath.empty())
+        {
+            newMaterial.normalTexId = read2DTexture(normalTexPath);
+
+            aiMat->Get("normalScale", 0, 0, newMaterial.normalScale);
+        }
+
+        // find out metallic-roughness combined texture
+        std::filesystem::path mrTexPath = getGltfMRTexturePath(aiMat);
+
+        if (!mrTexPath.empty())
+        {
+            newMaterial.metallicRoughnessTexId = read2DTexture(mrTexPath);
+
+            aiMat->Get(AI_MATKEY_METALLIC_FACTOR, newMaterial.metal);
+            aiMat->Get(AI_MATKEY_ROUGHNESS_FACTOR, newMaterial.rough);
+        }
+
+        // find out Ambient occlusion texture
+        std::filesystem::path aoTexPath = getTexturePath(aiMat, aiTextureType_LIGHTMAP);
+
+        if (!aoTexPath.empty())
+        {
+            newMaterial.aoTexId = read2DTexture(aoTexPath);
+
+            aiMat->Get(AI_MATKEY_REFLECTIVITY, newMaterial.aoStrength);
+        }
+
+        // find out Emissive texture
+        std::filesystem::path emissiveTexPath = getTexturePath(aiMat, aiTextureType_EMISSIVE);
+
+        if (!emissiveTexPath.empty())
+        {
+            newMaterial.emissiveTexId = read2DTexture(emissiveTexPath);
+
+            aiMat->Get("emissiveIntensity", 0, 0, newMaterial.emissiveIntensity);
+
+            if (aiMat->Get(AI_MATKEY_COLOR_EMISSIVE, newMaterial.emissiveColor) != AI_SUCCESS)
+            {
+                newMaterial.emissiveColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+            }
+        }
+
+        scene.addMaterial(newMaterial);
     }
 }
 

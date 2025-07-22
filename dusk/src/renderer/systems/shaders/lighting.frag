@@ -2,8 +2,8 @@
 #extension GL_EXT_nonuniform_qualifier : enable
 #extension GL_ARB_shading_language_include : enable
 
-#line 5
 #include "common.glsl"
+#include "brdf.glsl"
 
 layout(location = 0) in vec2 fragUV;
 

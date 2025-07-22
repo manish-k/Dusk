@@ -22,6 +22,7 @@ struct LightingPushConstant
     uint32_t frameIdx;
     uint32_t albedoTextureIdx;
     uint32_t normalTextureIdx;
+    uint32_t aoRoughMetalTextureIdx;
     uint32_t depthTextureIdx;
 };
 

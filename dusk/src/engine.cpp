@@ -138,10 +138,10 @@ void Engine::stop() { m_running = false; }
 
 void Engine::shutdown()
 {
-    m_basicRenderSystem  = nullptr;
-    m_gridRenderSystem   = nullptr;
+    m_basicRenderSystem = nullptr;
+    m_gridRenderSystem  = nullptr;
 
-    m_lightsSystem       = nullptr;
+    m_lightsSystem      = nullptr;
 
     m_editorUI->shutdown();
     m_editorUI = nullptr;
@@ -297,6 +297,11 @@ void Engine::renderFrame(FrameData& frameData)
                       .texture    = &m_textureDB->getTexture2D(m_rgResources.gbuffRenderTextureIds[1]),
                       .clearValue = DEFAULT_COLOR_CLEAR_VALUE,
                       .loadOp     = GfxLoadOperation::Clear,
+                      .storeOp    = GfxStoreOperation::Store },
+                  GfxRenderingAttachment {
+                      .texture    = &m_textureDB->getTexture2D(m_rgResources.gbuffRenderTextureIds[2]),
+                      .clearValue = DEFAULT_COLOR_CLEAR_VALUE,
+                      .loadOp     = GfxLoadOperation::Clear,
                       .storeOp    = GfxStoreOperation::Store } },
               .depthAttachment     = depthAttachment,
               .useDepth            = true,
@@ -318,6 +323,12 @@ void Engine::renderFrame(FrameData& frameData)
         // normal attachment
         GfxRenderingAttachment {
             .texture    = &m_textureDB->getTexture2D(m_rgResources.gbuffRenderTextureIds[1]),
+            .clearValue = DEFAULT_COLOR_CLEAR_VALUE,
+            .loadOp     = GfxLoadOperation::Clear,
+            .storeOp    = GfxStoreOperation::Store },
+        // ao-metallic-roughness attachment
+        GfxRenderingAttachment {
+            .texture    = &m_textureDB->getTexture2D(m_rgResources.gbuffRenderTextureIds[2]),
             .clearValue = DEFAULT_COLOR_CLEAR_VALUE,
             .loadOp     = GfxLoadOperation::Clear,
             .storeOp    = GfxStoreOperation::Store },
@@ -535,10 +546,17 @@ void Engine::prepareRenderGraphResources()
         "gbuffer_pass_albedo",
         extent.width,
         extent.height,
-        VK_FORMAT_R8G8B8A8_SRGB,
+        VK_FORMAT_R16G16B16A16_SFLOAT,
         { 0.f, 0.f, 0.f, 1.f }));
     m_rgResources.gbuffRenderTextureIds.push_back(m_textureDB->createColorTexture(
         "gbuffer_pass_normal",
+        extent.width,
+        extent.height,
+        VK_FORMAT_R16G16B16A16_UNORM,
+        { 0.f, 0.f, 0.f, 1.f }));
+
+    m_rgResources.gbuffRenderTextureIds.push_back(m_textureDB->createColorTexture(
+        "gbuffer_pass_occlu_rough_metal",
         extent.width,
         extent.height,
         VK_FORMAT_R16G16B16A16_SFLOAT,
@@ -624,8 +642,9 @@ void Engine::prepareRenderGraphResources()
                                       .setVertexShaderCode(vertShaderCode)
                                       .setFragmentShaderCode(fragShaderCode)
                                       .setPipelineLayout(*m_rgResources.gbuffPipelineLayout)
-                                      .addColorAttachmentFormat(VK_FORMAT_R8G8B8A8_SRGB)       // albedo
-                                      .addColorAttachmentFormat(VK_FORMAT_R16G16B16A16_SFLOAT) // normal
+                                      .addColorAttachmentFormat(VK_FORMAT_R16G16B16A16_SFLOAT) // albedo
+                                      .addColorAttachmentFormat(VK_FORMAT_R16G16B16A16_UNORM)  // normal
+                                      .addColorAttachmentFormat(VK_FORMAT_R16G16B16A16_SFLOAT) // ao-roughness-metallic
                                       .build();
 
 #ifdef VK_RENDERER_DEBUG
@@ -723,8 +742,8 @@ void Engine::prepareRenderGraphResources()
         basePath + "/textures/skybox/nz.png"
     };
 
-    m_rgResources.skyTextureId            = m_textureDB->createTextureAsync(skyboxTextures, TextureType::Cube);
-    m_rgResources.cubeMesh                = SubMesh::createCubeMesh();
+    m_rgResources.skyTextureId         = m_textureDB->createTextureAsync(skyboxTextures, TextureType::Cube);
+    m_rgResources.cubeMesh             = SubMesh::createCubeMesh();
 
     m_rgResources.skyBoxPipelineLayout = VkGfxPipelineLayout::Builder(ctx)
                                              .addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(SkyBoxPushConstant))

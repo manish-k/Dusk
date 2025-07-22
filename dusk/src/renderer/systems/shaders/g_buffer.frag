@@ -6,7 +6,8 @@ layout(location = 1) in vec2 fragUV;
 layout(location = 2) in vec3 fragNormal;
 
 layout (location = 0) out vec4 outColor;
-layout (location = 1) out vec4 outNormal;
+layout (location = 1) out vec4 outNormal; // TODO: explore octohedral representation for effecient packing
+layout (location = 2) out vec4 outAORoughMetal; // R: AO, G: Roughness, B: Metallic
 
 layout (set = 0, binding = 0) uniform GlobalUBO 
 {
@@ -55,17 +56,22 @@ layout(push_constant) uniform DrawData
 void main()
 {
 	uint guboIdx = nonuniformEXT(push.cameraIdx);
-
+	uint materialIdx = nonuniformEXT(push.materialIdx);
+	int textureIdx = nonuniformEXT(materials[materialIdx].albedoTexId);
+	int metalRoughTexIdx = nonuniformEXT(materials[materialIdx].metallicRoughnessTexId);
+	int aoTexIdx = nonuniformEXT(materials[materialIdx].aoTexId);
+	
 	vec3 surfaceNormal = normalize(fragNormal);
 	vec3 cameraPos = globalubo[guboIdx].inverseView[3].xyz;
 	vec3 viewDirection = normalize(cameraPos - fragWorldPos);
 
-	uint materialIdx = nonuniformEXT(push.materialIdx);
-	int textureIdx = materials[materialIdx].albedoTexId;
 	vec4 baseColor = materials[materialIdx].albedoColor;
-
-	vec3 lightColor = baseColor.xyz * texture(textures[nonuniformEXT(textureIdx)], fragUV).xyz;
+	vec3 lightColor = baseColor.xyz * texture(textures[textureIdx], fragUV).xyz;
 	
+	vec3 mrSampleValue = texture(textures[metalRoughTexIdx], fragUV).rgb;
+	float ao = texture(textures[aoTexIdx], fragUV).r;
+
 	outColor = vec4(lightColor.xyz, 1.f);
 	outNormal = vec4(surfaceNormal.xyz, 0.f);
+	outAORoughMetal = vec4(ao, mrSampleValue.g, mrSampleValue.b, 1.0f);
 }

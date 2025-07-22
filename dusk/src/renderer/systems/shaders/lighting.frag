@@ -72,6 +72,7 @@ layout(push_constant) uniform PushConstant
 	uint albedoTextureIdx;
     uint normalTextureIdx;
     uint depthTextureIdx;
+	uint aoRoughMetalTextureIdx;
 } push;
 
 vec3 computeDirectionalLight(uint lightIdx, vec3 viewDirection, vec3 normal)

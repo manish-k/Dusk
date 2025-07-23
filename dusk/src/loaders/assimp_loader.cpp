@@ -260,6 +260,8 @@ void AssimpLoader::parseMaterials(Scene& scene, const aiScene* aiScene)
         int32_t aoTexId                = -1;
         int32_t emissiveTexId          = -1;
 
+        int32_t defaultTexId           = TextureDB::cache()->getDefaultTexture2D().id;
+
         // find albedo texture and color value
         if (m_isGltf)
         {
@@ -282,7 +284,7 @@ void AssimpLoader::parseMaterials(Scene& scene, const aiScene* aiScene)
         }
         else
         {
-            albedoTexId = TextureDB::cache()->getDefaultTexture2D().id;
+            albedoTexId = defaultTexId;
         }
 
         aiColor3D pbrBaseColor { 1.0f };
@@ -311,10 +313,14 @@ void AssimpLoader::parseMaterials(Scene& scene, const aiScene* aiScene)
         if (!mrTexPath.empty())
         {
             newMaterial.metallicRoughnessTexId = read2DTexture(mrTexPath);
-
-            aiMat->Get(AI_MATKEY_METALLIC_FACTOR, newMaterial.metal);
-            aiMat->Get(AI_MATKEY_ROUGHNESS_FACTOR, newMaterial.rough);
         }
+        else
+        {
+            newMaterial.metallicRoughnessTexId = defaultTexId;
+        }
+
+        aiMat->Get(AI_MATKEY_METALLIC_FACTOR, newMaterial.metal);
+        aiMat->Get(AI_MATKEY_ROUGHNESS_FACTOR, newMaterial.rough);
 
         // find out Ambient occlusion texture
         std::filesystem::path aoTexPath = getTexturePath(aiMat, aiTextureType_LIGHTMAP);
@@ -322,9 +328,13 @@ void AssimpLoader::parseMaterials(Scene& scene, const aiScene* aiScene)
         if (!aoTexPath.empty())
         {
             newMaterial.aoTexId = read2DTexture(aoTexPath);
-
-            aiMat->Get(AI_MATKEY_REFLECTIVITY, newMaterial.aoStrength);
         }
+        else
+        {
+            newMaterial.metallicRoughnessTexId = defaultTexId;
+        }
+
+        aiMat->Get(AI_MATKEY_REFLECTIVITY, newMaterial.aoStrength);
 
         // find out Emissive texture
         std::filesystem::path emissiveTexPath = getTexturePath(aiMat, aiTextureType_EMISSIVE);

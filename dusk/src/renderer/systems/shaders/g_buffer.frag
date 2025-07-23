@@ -69,9 +69,12 @@ void main()
 	vec3 lightColor = baseColor.xyz * texture(textures[textureIdx], fragUV).xyz;
 	
 	vec3 mrSampleValue = texture(textures[metalRoughTexIdx], fragUV).rgb;
-	float ao = texture(textures[aoTexIdx], fragUV).r;
+	float ao = texture(textures[aoTexIdx], fragUV).r * materials[materialIdx].aoStrength;
+
+	float roughness = mrSampleValue.g * materials[materialIdx].rough;
+	float metallic = mrSampleValue.b * materials[materialIdx].metal;
 
 	outColor = vec4(lightColor.xyz, 1.f);
 	outNormal = vec4(surfaceNormal.xyz, 0.f);
-	outAORoughMetal = vec4(ao, mrSampleValue.g, mrSampleValue.b, 1.0f);
+	outAORoughMetal = vec4(ao, roughness, metallic, 1.0f);
 }

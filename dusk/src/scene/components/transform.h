@@ -44,24 +44,25 @@ struct TransformComponent
         return glm::mat4 {
             {
                 inverseScale.x * (1 - 2 * (rotation.y * rotation.y + rotation.z * rotation.z)),
-                inverseScale.x * (2 * (rotation.x * rotation.y - rotation.w * rotation.z)),
-                inverseScale.x * (2 * (rotation.x * rotation.z + rotation.w * rotation.y)),
+                inverseScale.x * (2 * (rotation.x * rotation.y + rotation.w * rotation.z)),
+                inverseScale.x * (2 * (rotation.x * rotation.z - rotation.w * rotation.y)),
                 0.0f,
             },
             {
-                inverseScale.y * (2 * (rotation.x * rotation.y + rotation.w * rotation.z)),
+                inverseScale.y * (2 * (rotation.x * rotation.y - rotation.w * rotation.z)),
                 inverseScale.y * (1 - 2 * (rotation.x * rotation.x + rotation.z * rotation.z)),
-                inverseScale.y * (2 * (rotation.y * rotation.z - rotation.w * rotation.x)),
+                inverseScale.y * (2 * (rotation.y * rotation.z + rotation.w * rotation.x)),
                 0.0f,
             },
             {
-                inverseScale.z * (2 * (rotation.x * rotation.z - rotation.w * rotation.y)),
-                inverseScale.z * (2 * (rotation.y * rotation.z + rotation.w * rotation.x)),
-                inverseScale.z * (1 - 2 * (rotation.y * rotation.y + rotation.x * rotation.x)),
+                inverseScale.z * (2 * (rotation.x * rotation.z + rotation.w * rotation.y)),
+                inverseScale.z * (2 * (rotation.y * rotation.z - rotation.w * rotation.x)),
+                inverseScale.z * (1 - 2 * (rotation.x * rotation.x + rotation.y * rotation.y)),
                 0.0f,
             },
             { 0.f, 0.f, 0.f, 0.f }
         };
+        //return glm::transpose(glm::inverse(glm::mat3(this->mat4())));
     }
 
     void setTranslation(const glm::vec3& newTranslation)

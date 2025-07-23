@@ -37,7 +37,12 @@ Unique<Scene> AssimpLoader::readScene(const std::filesystem::path& filePath)
 
     {
         DUSK_PROFILE_SECTION("read_scene_file");
-        assimpScene = m_importer.ReadFile(filePath.string(), aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_FlipUVs);
+        assimpScene = m_importer.ReadFile(
+            filePath.string(), 
+            aiProcess_Triangulate | 
+            aiProcess_GenNormals |
+            aiProcess_JoinIdenticalVertices | 
+            aiProcess_FlipUVs);
 
         if (!assimpScene || assimpScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !assimpScene->mRootNode)
         {

@@ -381,7 +381,7 @@ void Engine::renderFrame(FrameData& frameData)
     };
 
     renderGraph.setPassContext("skybox_pass", skyBoxCtx);
-    renderGraph.addPass("skybox_pass", recordSkyBoxCmds);
+    //renderGraph.addPass("skybox_pass", recordSkyBoxCmds);
 
     // create presentation pass
     auto presentReadAttachments = {
@@ -552,7 +552,7 @@ void Engine::prepareRenderGraphResources()
         "gbuffer_pass_normal",
         extent.width,
         extent.height,
-        VK_FORMAT_R16G16B16A16_UNORM,
+        VK_FORMAT_R16G16B16A16_SFLOAT,
         { 0.f, 0.f, 0.f, 1.f }));
 
     m_rgResources.gbuffRenderTextureIds.push_back(m_textureDB->createColorTexture(
@@ -643,7 +643,7 @@ void Engine::prepareRenderGraphResources()
                                       .setFragmentShaderCode(fragShaderCode)
                                       .setPipelineLayout(*m_rgResources.gbuffPipelineLayout)
                                       .addColorAttachmentFormat(VK_FORMAT_R16G16B16A16_SFLOAT) // albedo
-                                      .addColorAttachmentFormat(VK_FORMAT_R16G16B16A16_UNORM)  // normal
+                                      .addColorAttachmentFormat(VK_FORMAT_R16G16B16A16_SFLOAT) // normal
                                       .addColorAttachmentFormat(VK_FORMAT_R16G16B16A16_SFLOAT) // ao-roughness-metallic
                                       .build();
 

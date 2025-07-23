@@ -54,10 +54,12 @@ void recordLightingCmds(
 
     LightingPushConstant push {};
     push.frameIdx               = frameData.frameIndex;
+
+    // TODO: Need a better way to handle attachment indices
     push.albedoTextureIdx       = ctx.readAttachments[0].texture->id;
     push.normalTextureIdx       = ctx.readAttachments[1].texture->id;
     push.aoRoughMetalTextureIdx = ctx.readAttachments[2].texture->id;
-    push.depthTextureIdx        = ctx.readAttachments[2].texture->id;
+    push.depthTextureIdx        = ctx.readAttachments[3].texture->id;
 
     vkCmdPushConstants(
         ctx.cmdBuffer,

@@ -75,6 +75,6 @@ void main()
 	float metallic = mrSampleValue.b * materials[materialIdx].metal;
 
 	outColor = vec4(lightColor.xyz, 1.f);
-	outNormal = vec4(surfaceNormal.xyz, 0.f);
+	outNormal = vec4(surfaceNormal.xyz * 0.5 + 0.5, 0.f);
 	outAORoughMetal = vec4(ao, roughness, metallic, 1.0f);
 }

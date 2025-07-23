@@ -35,7 +35,7 @@ inline void drawGameObjectSubTree(Scene& scene, EntityId objectId)
         flags |= ImGuiTreeNodeFlags_Selected;
     }
 
-    bool nodeOpen = ImGui::TreeNodeEx(gObject.getCName(), flags);
+    bool nodeOpen = ImGui::TreeNodeEx((void*)gObject.getId(), flags, gObject.getCName());
 
     if (ImGui::IsItemClicked())
     {
@@ -95,6 +95,10 @@ inline void drawSceneGraphWidget(Scene& scene)
                 ImGui::ColorEdit4("Albedo Color", (float*)&mat.albedoColor);
                 ImGui::Text("Albedo Texture id: %d", mat.albedoTexId);
                 ImGui::Text("Normal Texture id: %d", mat.normalTexId);
+                ImGui::Text("Metal-Rough Texture id: %d", mat.metallicRoughnessTexId);
+
+                ImGui::SliderFloat("Roughness", &mat.rough, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_None);
+                ImGui::SliderFloat("Metallic", &mat.metal, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_None);
             }
         }
 

@@ -246,7 +246,7 @@ void main() {
 	uint depthTexIdx = nonuniformEXT(push.depthTextureIdx);
 	uint aoRMTexIdx = nonuniformEXT(push.aoRoughMetalTextureIdx);
 
-	vec3 surfaceNormal = normalize(texture(textures[normalTexIdx], fragUV).xyz);
+	vec3 surfaceNormal = normalize(texture(textures[normalTexIdx], fragUV).xyz * 2.0 - 1.0);
 	vec3 albedo = texture(textures[albedoTexIdx], fragUV).xyz;
 	float ndcDepth = texture(textures[depthTexIdx], fragUV).x;
 	vec3 cameraPos = globalubo[guboIdx].inverseView[3].xyz;

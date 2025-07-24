@@ -37,6 +37,14 @@ bool TestScene::start()
     aLight.color = glm::vec4(1.f, 1.f, 1.f, 0.8);
     m_testScene->addGameObject(std::move(ambientLight), m_testScene->getRootId());
 
+        // adding directional light
+    auto directionalLight = dusk::createUnique<GameObject>();
+    directionalLight->setName("directional_light_0");
+    auto& dLight     = directionalLight->addComponent<DirectionalLightComponent>();
+    dLight.direction = glm::vec3(4.f, -2.f, -6.f);
+    dLight.color     = glm::vec4(1.f, 1.f, 1.f, 0.2);
+    m_testScene->addGameObject(std::move(directionalLight), m_testScene->getRootId());
+
     // adding point light
     auto pointLight = dusk::createUnique<GameObject>();
     pointLight->setName("point_light_0");

@@ -3,7 +3,7 @@
 
 layout(location = 0) in vec3 fragWorldPos;
 layout(location = 1) in vec2 fragUV;
-layout(location = 2) in vec3 fragNormal;
+layout(location = 2) in mat3 TBNmatrix;
 
 layout (location = 0) out vec4 outColor;
 layout (location = 1) out vec4 outNormal; // TODO: explore octohedral representation for effecient packing
@@ -58,10 +58,10 @@ void main()
 	uint guboIdx = nonuniformEXT(push.cameraIdx);
 	uint materialIdx = nonuniformEXT(push.materialIdx);
 	int textureIdx = nonuniformEXT(materials[materialIdx].albedoTexId);
+	int normalTexIdx = nonuniformEXT(materials[materialIdx].normalTexId);
 	int metalRoughTexIdx = nonuniformEXT(materials[materialIdx].metallicRoughnessTexId);
 	int aoTexIdx = nonuniformEXT(materials[materialIdx].aoTexId);
 	
-	vec3 surfaceNormal = normalize(fragNormal);
 	vec3 cameraPos = globalubo[guboIdx].inverseView[3].xyz;
 	vec3 viewDirection = normalize(cameraPos - fragWorldPos);
 
@@ -73,6 +73,13 @@ void main()
 
 	float roughness = mrSampleValue.g * materials[materialIdx].rough;
 	float metallic = mrSampleValue.b * materials[materialIdx].metal;
+
+	vec3 surfaceNormal = normalize(TBNmatrix[2]);
+	if (normalTexIdx != -1)
+	{
+		surfaceNormal = texture(textures[normalTexIdx], fragUV).xyz * 2.0 - 1.0;
+		surfaceNormal = normalize(TBNmatrix * surfaceNormal);
+	}
 
 	outColor = vec4(lightColor.xyz, 1.f);
 	outNormal = vec4(surfaceNormal.xyz * 0.5 + 0.5, 0.f);

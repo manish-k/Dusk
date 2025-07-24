@@ -10,7 +10,7 @@ layout(location = 5) in vec2 uv;
 
 layout(location = 0) out vec3 fragWorldPos;
 layout(location = 1) out vec2 fragUV;
-layout(location = 2) out vec3 fragNormal;
+layout(location = 2) out mat3 TBNmatrix;
 
 layout (set = 0, binding = 0) uniform GlobalUBO 
 {
@@ -45,14 +45,24 @@ void main() {
 	uint globalIdx = nonuniformEXT(push.cameraIdx);
 	uint modelIdx = nonuniformEXT(push.modelIdx);
 
-	vec4 worldPos = modelubo[modelIdx].modelMatrix * vec4(position, 1.0);
-
+	mat4 model = modelubo[modelIdx].modelMatrix;
 	mat4 view = globalubo[globalIdx].view;
 	mat4 proj = globalubo[globalIdx].projection;
+	mat3 normalMat = mat3(modelubo[modelIdx].normalMatrix);
+
+	vec4 worldPos = model * vec4(position, 1.0);
+	
+	vec3 T = normalize(normalMat * tangent);
+	vec3 N = normalize(normalMat * normal);
+	
+	// Gram-Schmidt orthogonalize
+	T = normalize(T - dot(T, N) * N);
+	
+	vec3 B = cross(N, T);
 
 	fragUV = uv;
 	fragWorldPos = worldPos.xyz;
-	fragNormal = normalize(mat3(modelubo[modelIdx].normalMatrix) * normal);
-	
+	TBNmatrix = mat3(T, B, N);
+
 	gl_Position = proj * (view * worldPos); 
 }

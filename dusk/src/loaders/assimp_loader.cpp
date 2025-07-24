@@ -37,12 +37,12 @@ Unique<Scene> AssimpLoader::readScene(const std::filesystem::path& filePath)
 
     {
         DUSK_PROFILE_SECTION("read_scene_file");
+        
+        // TODO: handle tangent and bitangent calculations when normals
+        // are missing in file bcos assimp will not calculate for us
         assimpScene = m_importer.ReadFile(
-            filePath.string(), 
-            aiProcess_Triangulate | 
-            aiProcess_GenNormals |
-            aiProcess_JoinIdenticalVertices | 
-            aiProcess_FlipUVs);
+            filePath.string(),
+            aiProcess_Triangulate | aiProcess_GenNormals | aiProcess_CalcTangentSpace | aiProcess_JoinIdenticalVertices | aiProcess_FlipUVs);
 
         if (!assimpScene || assimpScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !assimpScene->mRootNode)
         {
@@ -182,6 +182,20 @@ void AssimpLoader::parseMeshes(Scene& scene, const aiScene* aiScene)
             if (mesh->HasNormals())
             {
                 v.normal = glm::vec3(mesh->mNormals[vertexIndex].x, mesh->mNormals[vertexIndex].y, mesh->mNormals[vertexIndex].z);
+            }
+            else
+            {
+                DUSK_ERROR("Missing normals in assimp file");
+            }
+
+            if (mesh->HasTangentsAndBitangents())
+            {
+                v.tangent = glm::vec3(mesh->mTangents[vertexIndex].x, mesh->mTangents[vertexIndex].y, mesh->mTangents[vertexIndex].z);
+                v.bitangent = glm::vec3(mesh->mBitangents[vertexIndex].x, mesh->mBitangents[vertexIndex].y, mesh->mBitangents[vertexIndex].z);
+            }
+            else
+            {
+                DUSK_ERROR("Missing tangents and bitangents in assimp file");
             }
 
             if (mesh->HasTextureCoords(0))

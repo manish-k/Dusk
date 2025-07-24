@@ -69,10 +69,10 @@ layout(set = 2, binding = 3) buffer SpotLight
 layout(push_constant) uniform PushConstant 
 {
 	uint frameIdx;
-	uint albedoTextureIdx;
-    uint normalTextureIdx;
-    uint depthTextureIdx;
-	uint aoRoughMetalTextureIdx;
+	int albedoTextureIdx;
+    int normalTextureIdx;
+    int depthTextureIdx;
+	int aoRoughMetalTextureIdx;
 } push;
 
 vec3 computeDirLightsPBR(uint lightIdx, vec3 viewDirection, vec3 normal)
@@ -241,10 +241,10 @@ vec3 computeSpotLight(
 
 void main() {
     uint guboIdx = nonuniformEXT(push.frameIdx);
-	uint albedoTexIdx = nonuniformEXT(push.albedoTextureIdx);
-	uint normalTexIdx = nonuniformEXT(push.normalTextureIdx);
-	uint depthTexIdx = nonuniformEXT(push.depthTextureIdx);
-	uint aoRMTexIdx = nonuniformEXT(push.aoRoughMetalTextureIdx);
+	int albedoTexIdx = nonuniformEXT(push.albedoTextureIdx);
+	int normalTexIdx = nonuniformEXT(push.normalTextureIdx);
+	int depthTexIdx = nonuniformEXT(push.depthTextureIdx);
+	int aoRMTexIdx = nonuniformEXT(push.aoRoughMetalTextureIdx);
 
 	vec3 surfaceNormal = normalize(texture(textures[normalTexIdx], fragUV).xyz * 2.0 - 1.0);
 	vec3 albedo = texture(textures[albedoTexIdx], fragUV).xyz;

@@ -10,13 +10,13 @@ layout (set = 1, binding = 0) uniform samplerCube  textures[];
 layout(push_constant) uniform SkyBoxPushConstant 
 {
 	uint frameIdx;
-    uint skyColorTextureIdx;
+    int skyColorTextureIdx;
 } push;
 
 
 void main()
 {
-    uint skyTexIdx = nonuniformEXT(push.skyColorTextureIdx);
+    int skyTexIdx = nonuniformEXT(push.skyColorTextureIdx);
     
     outColor    = texture(textures[skyTexIdx], fragUVW);
 }

@@ -9,11 +9,11 @@ layout (set = 0, binding = 0) uniform sampler2D textures[];
 
 layout(push_constant) uniform PushConstant 
 {
-	uint inputTextureIdx;
+	int inputTextureIdx;
 } push;
 
 void main() {
-    uint inputTextureIdx = nonuniformEXT(push.inputTextureIdx);
+    int inputTextureIdx = nonuniformEXT(push.inputTextureIdx);
 
     vec3 albedo = texture(textures[inputTextureIdx], fragUV).rgb;
 

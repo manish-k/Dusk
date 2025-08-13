@@ -15,7 +15,6 @@ public:
     ~ImageLoader() = default;
 
     static Unique<Image> readImage(const std::string& filepath);
-    static void          freeImage(Image& img);
 };
 
 } // namespace dusk

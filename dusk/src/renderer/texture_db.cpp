@@ -66,17 +66,15 @@ void TextureDB::freeAllResources()
 
 Error TextureDB::initDefaultTexture()
 {
-    glm::u8vec4 whiteColor { 255 };
-
-    Image       defaultTextureImg {};
+    Image defaultTextureImg {};
     defaultTextureImg.width    = 1;
     defaultTextureImg.height   = 1;
     defaultTextureImg.channels = 4;
     defaultTextureImg.size     = 4;
-    defaultTextureImg.data     = (unsigned char*)&whiteColor;
+    defaultTextureImg.data     = new glm::u8vec4(255, 255, 255, 255);
 
     GfxTexture default2dTexture { 0 };
-    Error     err = default2dTexture.init(
+    Error      err = default2dTexture.init(
         defaultTextureImg,
         VK_FORMAT_R8G8B8A8_SRGB,
         TransferDstTexture | SampledTexture,
@@ -171,7 +169,7 @@ uint32_t TextureDB::createTextureAsync(const DynamicArray<std::string>& paths, T
 
     GfxTexture& newTexture = m_textures[newId];
 
-    auto&      executor   = Engine::get().getTfExecutor();
+    auto&       executor   = Engine::get().getTfExecutor();
     executor.silent_async([&, newId, paths]()
                           {
         DUSK_PROFILE_SECTION("texture_file_read");
@@ -259,10 +257,17 @@ void TextureDB::onUpdate()
         {
             GfxTexture&  tex   = m_textures[key];
             ImagesBatch& batch = m_pendingImageBatches[key];
-            Error        err   = tex.initAndRecordUpload(
+
+            // deducing format for images in the batch under the
+            // assumption that all images are of same format
+            VkFormat format = VK_FORMAT_R8G8B8A8_SRGB;
+            if (batch[0]->isHDR)
+                format = VK_FORMAT_R16G16B16A16_SFLOAT;
+
+            Error err = tex.initAndRecordUpload(
                 batch,
                 tex.type,
-                VK_FORMAT_R8G8B8A8_SRGB,
+                format,
                 TransferDstTexture | SampledTexture,
                 gfxBuffer,
                 transferBuffer,
@@ -292,11 +297,6 @@ void TextureDB::onUpdate()
                 &texDescInfos);
 
             m_textureDescriptorSet->applyConfiguration();
-
-            for (auto& img : batch)
-            {
-                ImageLoader::freeImage(*img);
-            }
         }
 
         vkFreeCommandBuffers(vkContext.device, vkContext.transferCommandPool, 1, &transferBuffer);
@@ -316,7 +316,7 @@ uint32_t TextureDB::createColorTexture(
     std::lock_guard<std::mutex> updateLock(m_mutex);
 
     // initialize texture for render target
-    uint32_t  newId = m_textures.size();
+    uint32_t   newId = m_textures.size();
 
     GfxTexture newTex { newId };
     newTex.init(
@@ -354,7 +354,7 @@ uint32_t TextureDB::createDepthTexture(
     std::lock_guard<std::mutex> updateLock(m_mutex);
 
     // initialize texture for render target
-    uint32_t  newId = m_textures.size();
+    uint32_t   newId = m_textures.size();
 
     GfxTexture newTex { newId };
     newTex.init(

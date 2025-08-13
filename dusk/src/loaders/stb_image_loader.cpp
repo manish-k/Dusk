@@ -11,51 +11,32 @@ Unique<Image> ImageLoader::readImage(const std::string& filepath)
 
     stbi_set_flip_vertically_on_load(true);
 
-    Image img {};
+    const char* file = filepath.c_str();
+    auto        img  = createUnique<Image>();
 
-    auto  rawImgData = stbi_load(filepath.c_str(), &img.width, &img.height, &img.channels, 0);
-
-    if (!rawImgData)
+    if (stbi_is_hdr(file))
     {
-        return nullptr;
-    }
-
-    DASSERT(img.channels == 3 || img.channels == 4);
-
-    img.data = new unsigned char[img.width * img.height * 4];
-
-    if (img.channels == 3)
-    {
-        for (uint32_t i = 0u; i < img.width * img.height; ++i)
-        {
-            img.data[i * 4 + 0] = rawImgData[i * 3 + 0];
-            img.data[i * 4 + 1] = rawImgData[i * 3 + 1];
-            img.data[i * 4 + 2] = rawImgData[i * 3 + 2];
-            img.data[i * 4 + 3] = 255; // default opacity for rgb img
-        }
+        img->isHDR = true;
+        img->data  = stbi_loadf(
+            file,
+            &img->width,
+            &img->height,
+            &img->channels,
+            4); // default 4 channels RGBA
     }
     else
     {
-        // TODO:: extra copying might not be required
-        memcpy(img.data, rawImgData, img.width * img.height * 4);
+        img->data = stbi_load(
+            file,
+            &img->width,
+            &img->height,
+            &img->channels,
+            4); // default 4 channels RGBA
     }
 
-    stbi_image_free(rawImgData);
+    img->size = img->width * img->height * img->channels;
 
-    img.channels = 4;
-    img.size     = img.width * img.height * img.channels;
-
-    return createUnique<Image>(std::move(img));
-}
-
-void ImageLoader::freeImage(Image& img)
-{
-    img.width    = 0;
-    img.height   = 0;
-    img.channels = 0;
-    img.size     = 0;
-
-    delete[] img.data;
+    return img;
 }
 
 } // namespace dusk

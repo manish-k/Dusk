@@ -112,6 +112,8 @@ public:
     void                  releaseRenderGraphResources();
     RenderGraphResources& getRenderGraphResources() { return m_rgResources; };
 
+    Environment&          getEnvironment() { return *m_environment; };
+
     tf::Executor&         getTfExecutor() { return m_tfExecutor; }
 
 private:

@@ -7,6 +7,7 @@
 #include "debug/profiler.h"
 #include "ui/editor_ui.h"
 #include "backend/vulkan/vk_pass.h"
+#include "environment.h"
 
 namespace dusk
 {
@@ -20,14 +21,15 @@ void recordSkyBoxCmds(
     if (!frameData.scene) return;
 
     Scene& scene     = *frameData.scene;
-    auto&  resources = Engine::get().getRenderGraphResources();
+    //auto&  resources = Engine::get().getRenderGraphResources();
+    auto& environment = Engine::get().getEnvironment();
 
-    resources.skyBoxPipeline->bind(ctx.cmdBuffer);
+    environment.getPipeline().bind(ctx.cmdBuffer);
 
     vkCmdBindDescriptorSets(
         ctx.cmdBuffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
-        resources.skyBoxPipelineLayout->get(),
+        environment.getPipelineLayout().get(),
         0,
         1,
         &frameData.globalDescriptorSet,
@@ -37,7 +39,7 @@ void recordSkyBoxCmds(
     vkCmdBindDescriptorSets(
         ctx.cmdBuffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
-        resources.skyBoxPipelineLayout->get(),
+        environment.getPipelineLayout().get(),
         1,
         1,
         &frameData.textureDescriptorSet,
@@ -46,24 +48,24 @@ void recordSkyBoxCmds(
 
     SkyBoxPushConstant push {};
     push.frameIdx             = frameData.frameIndex;
-    push.skyColorTextureIdx   = resources.skyTextureId;
+    push.skyColorTextureIdx   = environment.getSkyTextureId();
 
     vkCmdPushConstants(
         ctx.cmdBuffer,
-        resources.skyBoxPipelineLayout->get(),
+        environment.getPipelineLayout().get(),
         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
         0,
         sizeof(SkyBoxPushConstant),
         &push);
 
-    VkBuffer     buffers[1] = { resources.cubeMesh->getVertexBuffer().vkBuffer.buffer };
+    VkBuffer     buffers[1] = { environment.getCubeMesh().getVertexBuffer().vkBuffer.buffer };
     VkDeviceSize offsets[1] = { 0 };
 
     vkCmdBindVertexBuffers(ctx.cmdBuffer, 0, 1, buffers, offsets);
 
-    vkCmdBindIndexBuffer(ctx.cmdBuffer, resources.cubeMesh->getIndexBuffer().vkBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+    vkCmdBindIndexBuffer(ctx.cmdBuffer, environment.getCubeMesh().getIndexBuffer().vkBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
 
-    vkCmdDrawIndexed(ctx.cmdBuffer, resources.cubeMesh->getIndexCount(), 1, 0, 0, 0);
+    vkCmdDrawIndexed(ctx.cmdBuffer, environment.getCubeMesh().getIndexCount(), 1, 0, 0, 0);
 }
 
 } // namespace dusk

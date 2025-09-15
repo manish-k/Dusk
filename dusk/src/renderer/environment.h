@@ -19,8 +19,13 @@ public:
         m_textureDB(db) { };
     ~Environment() = default;
 
-    bool init(VkGfxDescriptorSetLayout& globalDescSetLayout);
-    void cleanup();
+    bool                 init(VkGfxDescriptorSetLayout& globalDescSetLayout);
+    void                 cleanup();
+
+    VkGfxRenderPipeline& getPipeline() { return *m_skyBoxPipeline; }
+    VkGfxPipelineLayout& getPipelineLayout() { return *m_skyBoxPipelineLayout; }
+    SubMesh&             getCubeMesh() const { return *m_cubeMesh; };
+    uint32_t             getSkyTextureId() const { return m_skyTextureId; };
 
 private:
     TextureDB&                  m_textureDB;

@@ -741,54 +741,6 @@ void Engine::prepareRenderGraphResources()
         (uint64_t)m_rgResources.lightingPipeline->get(),
         "lighting_pipeline");
 #endif // VK_RENDERER_DEBUG
-
-    // skybox pass
-    std::string                     basePath       = STRING(DUSK_BUILD_PATH);
-    const DynamicArray<std::string> skyboxTextures = {
-        basePath + "/textures/skybox/px.png",
-        basePath + "/textures/skybox/nx.png",
-        basePath + "/textures/skybox/ny.png",
-        basePath + "/textures/skybox/py.png",
-        basePath + "/textures/skybox/pz.png",
-        basePath + "/textures/skybox/nz.png"
-    };
-
-    m_rgResources.skyTextureId         = m_textureDB->createTextureAsync(skyboxTextures, TextureType::Cube);
-    m_rgResources.cubeMesh             = SubMesh::createCubeMesh();
-
-    m_rgResources.skyBoxPipelineLayout = VkGfxPipelineLayout::Builder(ctx)
-                                             .addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(SkyBoxPushConstant))
-                                             .addDescriptorSetLayout(m_globalDescriptorSetLayout->layout)
-                                             .addDescriptorSetLayout(m_textureDB->getTexturesDescriptorSetLayout().layout)
-                                             .build();
-
-#ifdef VK_RENDERER_DEBUG
-    vkdebug::setObjectName(
-        ctx.device,
-        VK_OBJECT_TYPE_PIPELINE_LAYOUT,
-        (uint64_t)m_rgResources.skyBoxPipelineLayout->get(),
-        "skybox_pipeline_layout");
-#endif // VK_RENDERER_DEBUG
-
-    auto skyBoxVertShaderCode    = FileSystem::readFileBinary(shaderPath / "skybox.vert.spv");
-
-    auto skyBoxFragShaderCode    = FileSystem::readFileBinary(shaderPath / "skybox.frag.spv");
-
-    m_rgResources.skyBoxPipeline = VkGfxRenderPipeline::Builder(ctx)
-                                       .setVertexShaderCode(skyBoxVertShaderCode)
-                                       .setFragmentShaderCode(skyBoxFragShaderCode)
-                                       .setPipelineLayout(*m_rgResources.skyBoxPipelineLayout)
-                                       .addColorAttachmentFormat(VK_FORMAT_R8G8B8A8_SRGB)
-                                       .setDepthWrite(false)
-                                       .setCullMode(VK_CULL_MODE_FRONT_BIT)
-                                       .build();
-#ifdef VK_RENDERER_DEBUG
-    vkdebug::setObjectName(
-        ctx.device,
-        VK_OBJECT_TYPE_PIPELINE,
-        (uint64_t)m_rgResources.skyBoxPipeline->get(),
-        "skybox_pipeline");
-#endif // VK_RENDERER_DEBUG
 }
 
 void Engine::releaseRenderGraphResources()
@@ -810,11 +762,6 @@ void Engine::releaseRenderGraphResources()
     // release lighting pass resources
     m_rgResources.lightingPipeline       = nullptr;
     m_rgResources.lightingPipelineLayout = nullptr;
-
-    // release skybox pass resources
-    m_rgResources.skyBoxPipeline       = nullptr;
-    m_rgResources.skyBoxPipelineLayout = nullptr;
-    m_rgResources.cubeMesh->free();
 }
 
 } // namespace dusk

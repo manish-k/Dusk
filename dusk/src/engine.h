@@ -55,11 +55,6 @@ struct RenderGraphResources
     uint32_t                                 lightingRenderTextureId       = {};
     Unique<VkGfxRenderPipeline>              lightingPipeline              = nullptr;
     Unique<VkGfxPipelineLayout>              lightingPipelineLayout        = nullptr;
-
-    uint32_t                                 skyTextureId                  = {};
-    Shared<SubMesh>                          cubeMesh                      = nullptr;
-    Unique<VkGfxRenderPipeline>              skyBoxPipeline                = nullptr;
-    Unique<VkGfxPipelineLayout>              skyBoxPipelineLayout          = nullptr;
 };
 
 class Engine final

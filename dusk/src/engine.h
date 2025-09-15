@@ -22,6 +22,7 @@ class Window;
 class Event;
 class EditorUI;
 class Scene;
+class Environment;
 class BasicRenderSystem;
 class GridRenderSystem;
 class LightsSystem;
@@ -122,6 +123,7 @@ private:
     Shared<Window>                   m_window            = nullptr;
     Shared<Application>              m_app               = nullptr;
 
+    Unique<Environment>              m_environment       = nullptr;
     Unique<BasicRenderSystem>        m_basicRenderSystem = nullptr;
     Unique<GridRenderSystem>         m_gridRenderSystem  = nullptr;
     Unique<LightsSystem>             m_lightsSystem      = nullptr;

@@ -21,6 +21,7 @@
 #include "renderer/texture.h"
 #include "renderer/sub_mesh.h"
 #include "renderer/texture_db.h"
+#include "renderer/environment.h"
 #include "renderer/systems/basic_render_system.h"
 #include "renderer/systems/grid_render_system.h"
 #include "renderer/systems/lights_system.h"
@@ -106,6 +107,13 @@ bool Engine::start(Shared<Application> app)
         return false;
     }
 
+    m_environment = createUnique<Environment>(*m_textureDB);
+    if (!m_environment->init(*m_globalDescriptorSetLayout))
+    {
+        DUSK_ERROR("Unable to init environment");
+        return false;
+    }
+
     return true;
 }
 
@@ -142,6 +150,9 @@ void Engine::shutdown()
     m_gridRenderSystem  = nullptr;
 
     m_lightsSystem      = nullptr;
+
+    m_environment->cleanup();
+    m_environment = nullptr;
 
     m_editorUI->shutdown();
     m_editorUI = nullptr;

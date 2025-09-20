@@ -392,7 +392,7 @@ void Engine::renderFrame(FrameData& frameData)
     };
 
     renderGraph.setPassContext("skybox_pass", skyBoxCtx);
-    //renderGraph.addPass("skybox_pass", recordSkyBoxCmds);
+    renderGraph.addPass("skybox_pass", recordSkyBoxCmds);
 
     // create presentation pass
     auto presentReadAttachments = {

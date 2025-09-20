@@ -28,6 +28,16 @@ public:
     uint32_t             getSkyTextureId() const { return m_skyTextureId; };
 
 private:
+    void initCubeTextureResources(
+        std::string& shaderPath, 
+        std::string& resPath,
+        VkGfxDescriptorSetLayout& globalDescSetLayout);
+    void initSphereTextureResources(
+        std::string&              shaderPath,
+        std::string&              resPath,
+        VkGfxDescriptorSetLayout& globalDescSetLayout);
+
+private:
     TextureDB&                  m_textureDB;
 
     uint32_t                    m_skyTextureId         = {};

@@ -21,7 +21,6 @@ void recordSkyBoxCmds(
     if (!frameData.scene) return;
 
     Scene& scene     = *frameData.scene;
-    //auto&  resources = Engine::get().getRenderGraphResources();
     auto& environment = Engine::get().getEnvironment();
 
     environment.getPipeline().bind(ctx.cmdBuffer);

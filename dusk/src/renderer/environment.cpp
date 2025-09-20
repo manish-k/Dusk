@@ -17,18 +17,30 @@ namespace dusk
 
 bool Environment::init(VkGfxDescriptorSetLayout& globalDescSetLayout)
 {
-    auto&                           ctx            = VkGfxDevice::getSharedVulkanContext();
-    std::filesystem::path           buildPath      = STRING(DUSK_BUILD_PATH);
-    std::filesystem::path           shaderPath     = buildPath / "shaders/";
+    std::string basePath   = STRING(DUSK_BUILD_PATH);
 
-    std::string                     basePath       = STRING(DUSK_BUILD_PATH);
+    std::string shaderPath = basePath + "/shaders/";
+    std::string resPath    = basePath + "/textures/skybox/";
+    
+    initSphereTextureResources(shaderPath, resPath, globalDescSetLayout);
+
+    return true;
+}
+
+void Environment::initCubeTextureResources(
+    std::string&              shaderPath,
+    std::string&              resPath,
+    VkGfxDescriptorSetLayout& globalDescSetLayout)
+{
+    auto&                           ctx            = VkGfxDevice::getSharedVulkanContext();
+
     const DynamicArray<std::string> skyboxTextures = {
-        basePath + "/textures/skybox/px.png",
-        basePath + "/textures/skybox/nx.png",
-        basePath + "/textures/skybox/ny.png",
-        basePath + "/textures/skybox/py.png",
-        basePath + "/textures/skybox/pz.png",
-        basePath + "/textures/skybox/nz.png"
+        resPath + "px.png",
+        resPath + "nx.png",
+        resPath + "ny.png",
+        resPath + "py.png",
+        resPath + "pz.png",
+        resPath + "nz.png"
     };
 
     m_skyTextureId         = m_textureDB.createTextureAsync(skyboxTextures, TextureType::Cube);
@@ -48,18 +60,18 @@ bool Environment::init(VkGfxDescriptorSetLayout& globalDescSetLayout)
         "skybox_pipeline_layout");
 #endif // VK_RENDERER_DEBUG
 
-    auto skyBoxVertShaderCode    = FileSystem::readFileBinary(shaderPath / "skybox.vert.spv");
+    auto skyBoxVertShaderCode = FileSystem::readFileBinary(shaderPath + "/" + "skybox.vert.spv");
 
-    auto skyBoxFragShaderCode    = FileSystem::readFileBinary(shaderPath / "skybox.frag.spv");
+    auto skyBoxFragShaderCode = FileSystem::readFileBinary(shaderPath + "/" + "skybox.frag.spv");
 
-    m_skyBoxPipeline = VkGfxRenderPipeline::Builder(ctx)
-                                       .setVertexShaderCode(skyBoxVertShaderCode)
-                                       .setFragmentShaderCode(skyBoxFragShaderCode)
-                                       .setPipelineLayout(*m_skyBoxPipelineLayout)
-                                       .addColorAttachmentFormat(VK_FORMAT_R8G8B8A8_SRGB)
-                                       .setDepthWrite(false)
-                                       .setCullMode(VK_CULL_MODE_FRONT_BIT)
-                                       .build();
+    m_skyBoxPipeline          = VkGfxRenderPipeline::Builder(ctx)
+                           .setVertexShaderCode(skyBoxVertShaderCode)
+                           .setFragmentShaderCode(skyBoxFragShaderCode)
+                           .setPipelineLayout(*m_skyBoxPipelineLayout)
+                           .addColorAttachmentFormat(VK_FORMAT_R8G8B8A8_SRGB)
+                           .setDepthWrite(false)
+                           .setCullMode(VK_CULL_MODE_FRONT_BIT)
+                           .build();
 #ifdef VK_RENDERER_DEBUG
     vkdebug::setObjectName(
         ctx.device,
@@ -67,16 +79,63 @@ bool Environment::init(VkGfxDescriptorSetLayout& globalDescSetLayout)
         (uint64_t)m_skyBoxPipeline->get(),
         "skybox_pipeline");
 #endif // VK_RENDERER_DEBUG
+}
 
-    return true;
+void Environment::initSphereTextureResources(
+    std::string&              shaderPath,
+    std::string&              resPath,
+    VkGfxDescriptorSetLayout& globalDescSetLayout)
+{
+    auto& ctx = VkGfxDevice::getSharedVulkanContext();
+
+    const DynamicArray<std::string> skyboxTextures = {
+        resPath + "hdr_dusk_sky.hdr"
+    };
+
+
+    m_skyTextureId         = m_textureDB.createTextureAsync(skyboxTextures, TextureType::Texture2D);
+    m_cubeMesh             = SubMesh::createCubeMesh();
+
+    m_skyBoxPipelineLayout = VkGfxPipelineLayout::Builder(ctx)
+                                 .addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(SkyBoxPushConstant))
+                                 .addDescriptorSetLayout(globalDescSetLayout.layout)
+                                 .addDescriptorSetLayout(m_textureDB.getTexturesDescriptorSetLayout().layout)
+                                 .build();
+
+#ifdef VK_RENDERER_DEBUG
+    vkdebug::setObjectName(
+        ctx.device,
+        VK_OBJECT_TYPE_PIPELINE_LAYOUT,
+        (uint64_t)m_skyBoxPipelineLayout->get(),
+        "hdr_skybox_pipeline_layout");
+#endif // VK_RENDERER_DEBUG
+
+    auto skyBoxVertShaderCode = FileSystem::readFileBinary(shaderPath + "/" + "skybox.vert.spv");
+
+    auto skyBoxFragShaderCode = FileSystem::readFileBinary(shaderPath + "/" + "hdr_skybox.frag.spv");
+
+    m_skyBoxPipeline          = VkGfxRenderPipeline::Builder(ctx)
+                           .setVertexShaderCode(skyBoxVertShaderCode)
+                           .setFragmentShaderCode(skyBoxFragShaderCode)
+                           .setPipelineLayout(*m_skyBoxPipelineLayout)
+                           .addColorAttachmentFormat(VK_FORMAT_R8G8B8A8_SRGB)
+                           .setDepthWrite(false)
+                           .setCullMode(VK_CULL_MODE_FRONT_BIT)
+                           .build();
+#ifdef VK_RENDERER_DEBUG
+    vkdebug::setObjectName(
+        ctx.device,
+        VK_OBJECT_TYPE_PIPELINE,
+        (uint64_t)m_skyBoxPipeline->get(),
+        "hdr_skybox_pipeline");
+#endif // VK_RENDERER_DEBUG
 }
 
 void Environment::cleanup()
 {
-    m_skyBoxPipeline                   = nullptr;
+    m_skyBoxPipeline       = nullptr;
     m_skyBoxPipelineLayout = nullptr;
     m_cubeMesh->free();
 }
-
 
 } // namespace dusk

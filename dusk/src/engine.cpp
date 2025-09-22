@@ -557,7 +557,7 @@ void Engine::prepareRenderGraphResources()
         "gbuffer_pass_albedo",
         extent.width,
         extent.height,
-        VK_FORMAT_R16G16B16A16_SFLOAT,
+        VK_FORMAT_R32G32B32A32_SFLOAT,
         { 0.f, 0.f, 0.f, 1.f }));
     m_rgResources.gbuffRenderTextureIds.push_back(m_textureDB->createColorTexture(
         "gbuffer_pass_normal",
@@ -653,7 +653,7 @@ void Engine::prepareRenderGraphResources()
                                       .setVertexShaderCode(vertShaderCode)
                                       .setFragmentShaderCode(fragShaderCode)
                                       .setPipelineLayout(*m_rgResources.gbuffPipelineLayout)
-                                      .addColorAttachmentFormat(VK_FORMAT_R16G16B16A16_SFLOAT) // albedo
+                                      .addColorAttachmentFormat(VK_FORMAT_R32G32B32A32_SFLOAT) // albedo
                                       .addColorAttachmentFormat(VK_FORMAT_R16G16B16A16_SFLOAT) // normal
                                       .addColorAttachmentFormat(VK_FORMAT_R16G16B16A16_SFLOAT) // ao-roughness-metallic
                                       .build();
@@ -688,7 +688,7 @@ void Engine::prepareRenderGraphResources()
                                         .setVertexShaderCode(presentVertShaderCode)
                                         .setFragmentShaderCode(presentFragShaderCode)
                                         .setPipelineLayout(*m_rgResources.presentPipelineLayout)
-                                        .addColorAttachmentFormat(VK_FORMAT_R8G8B8A8_SRGB)
+                                        .addColorAttachmentFormat(VK_FORMAT_B8G8R8A8_SRGB)
                                         .removeVertexInputState()
                                         .build();
 

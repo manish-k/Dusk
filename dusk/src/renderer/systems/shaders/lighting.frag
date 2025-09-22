@@ -303,9 +303,6 @@ void main() {
 
 	// tone mapping
 	lightColor = lightColor / (lightColor + vec3(1.0));
-    
-	// gamma correction
-	//lightColor = pow(lightColor, vec3(1.0/2.2));  
    
 	outColor = vec4(lightColor.xyz, 1.0f);
 }

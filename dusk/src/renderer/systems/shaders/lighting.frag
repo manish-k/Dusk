@@ -301,8 +301,11 @@ void main() {
         if (4u*v + 3u < spotCount) lightColor = lightColor + computeSpotLight(idx4.w, albedo, f0, aoRM, worldPos, viewDirection, surfaceNormal);
     }
 
-	//lightColor = lightColor / (lightColor + vec3(1.0));
-    //lightColor = pow(lightColor, vec3(1.0/2.2));  
+	// tone mapping
+	lightColor = lightColor / (lightColor + vec3(1.0));
+    
+	// gamma correction
+	//lightColor = pow(lightColor, vec3(1.0/2.2));  
    
 	outColor = vec4(lightColor.xyz, 1.0f);
 }

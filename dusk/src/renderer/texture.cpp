@@ -237,7 +237,7 @@ Error GfxTexture::initAndRecordUpload(
     this->format       = format;
     this->layersCount  = numImages;
 
-    size_t layerSize   = width * height * numChannels;
+    size_t layerSize   = texImages[0]->size;
 
     if (type == TextureType::Cube) DASSERT(numImages == 6);
 

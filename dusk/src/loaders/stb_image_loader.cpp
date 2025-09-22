@@ -14,9 +14,12 @@ Unique<Image> ImageLoader::readImage(const std::string& filepath)
     const char* file = filepath.c_str();
     auto        img  = createUnique<Image>();
 
+    int         channelSizeInBytes = 1;
+
     if (stbi_is_hdr(file))
     {
         img->isHDR = true;
+        channelSizeInBytes = 4;
         img->data  = stbi_loadf(
             file,
             &img->width,
@@ -34,7 +37,10 @@ Unique<Image> ImageLoader::readImage(const std::string& filepath)
             4); // default 4 channels RGBA
     }
 
-    img->size = img->width * img->height * img->channels;
+    // we have already forced to read into 4 channels
+    img->channels = 4;
+
+    img->size     = img->width * img->height * img->channels * channelSizeInBytes;
 
     return img;
 }

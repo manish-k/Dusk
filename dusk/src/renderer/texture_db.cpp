@@ -262,7 +262,12 @@ void TextureDB::onUpdate()
             // assumption that all images are of same format
             VkFormat format = VK_FORMAT_R8G8B8A8_SRGB;
             if (batch[0]->isHDR)
-                format = VK_FORMAT_R16G16B16A16_SFLOAT;
+            {
+                // currently using 32  bit per channel for hdr files
+                // In case of 16 bit half format we need conversion 
+                // during loading hdr files
+                format = VK_FORMAT_R32G32B32A32_SFLOAT;
+            }
 
             Error err = tex.initAndRecordUpload(
                 batch,

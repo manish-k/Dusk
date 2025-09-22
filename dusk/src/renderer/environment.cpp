@@ -21,12 +21,14 @@ bool Environment::init(VkGfxDescriptorSetLayout& globalDescSetLayout)
 
     std::string shaderPath = basePath + "/shaders/";
     std::string resPath    = basePath + "/textures/skybox/";
-    
+
     initSphereTextureResources(shaderPath, resPath, globalDescSetLayout);
 
     return true;
 }
 
+// This function is quite simillar with initSphereTextureResources and can be refactored,
+// but leaving it unchanged for now so it can be used for testing non-hdr skyboxes
 void Environment::initCubeTextureResources(
     std::string&              shaderPath,
     std::string&              resPath,
@@ -86,14 +88,25 @@ void Environment::initSphereTextureResources(
     std::string&              resPath,
     VkGfxDescriptorSetLayout& globalDescSetLayout)
 {
-    auto& ctx = VkGfxDevice::getSharedVulkanContext();
+    auto&                           ctx            = VkGfxDevice::getSharedVulkanContext();
 
     const DynamicArray<std::string> skyboxTextures = {
         resPath + "hdr_dusk_sky.hdr"
     };
 
+    const DynamicArray<std::string> skyboxIrradianceTextures = {
+        resPath + "hdr_dusk_sky_irradiance.hdr"
+    };
 
-    m_skyTextureId         = m_textureDB.createTextureAsync(skyboxTextures, TextureType::Texture2D);
+    const DynamicArray<std::string> skyboxRadianceTextures = {
+        resPath + "hdr_dusk_sky_radiance.hdr"
+    };
+
+    m_skyTextureId       = m_textureDB.createTextureAsync(skyboxTextures, TextureType::Texture2D);
+    m_skyIrradianceTexId = m_textureDB.createTextureAsync(skyboxIrradianceTextures, TextureType::Texture2D);
+    m_skyRadianceTexId
+        = m_textureDB.createTextureAsync(skyboxRadianceTextures, TextureType::Texture2D);
+
     m_cubeMesh             = SubMesh::createCubeMesh();
 
     m_skyBoxPipelineLayout = VkGfxPipelineLayout::Builder(ctx)

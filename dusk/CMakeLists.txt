@@ -305,10 +305,11 @@ find_program(GLSL_VALIDATOR glslang HINTS
   $ENV{VULKAN_SDK}/Bin32/
 )
 
-# get all .vert and .frag files in shaders directory
+# get all .vert, .frag and .comp files in shaders directory
 file(GLOB_RECURSE DUSK_GLSL_SOURCE_FILES
   "${PROJECT_SOURCE_DIR}/src/renderer/systems/shaders/*.frag"
   "${PROJECT_SOURCE_DIR}/src/renderer/systems/shaders/*.vert"
+  "${PROJECT_SOURCE_DIR}/src/renderer/systems/shaders/*.comp"
 )
 
 foreach(GLSL ${DUSK_GLSL_SOURCE_FILES})

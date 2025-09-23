@@ -1,6 +1,6 @@
 #version 450
-#extension GL_EXT_nonuniform_qualifier : enable
 #extension GL_ARB_shading_language_include : enable
+#extension GL_EXT_nonuniform_qualifier : enable
 
 #include "common.glsl"
 #include "brdf.glsl"
@@ -114,7 +114,9 @@ vec3 computeDirectionalLight(
 	
 	// cook-torrance
 	float ndf = distributionGGX(normal, halfDirection, aoRM.g);
-	float g = geometrySmith(normal, viewDirection, halfDirection, aoRM.g);
+	float r = (aoRM.g + 1.0);
+    float k = (r*r) / 8.0;
+	float g = geometrySmith(normal, viewDirection, halfDirection, k);
 	vec3 f = fresnelSchlick(max(dot(halfDirection, viewDirection), 0.0), f0);
 
 	vec3 ks = f;
@@ -158,7 +160,9 @@ vec3 computePointLight(
     
 	// cook-torrance
 	float ndf = distributionGGX(normal, halfDirection, aoRM.g);
-	float g = geometrySmith(normal, viewDirection, halfDirection, aoRM.g);
+	float r = (aoRM.g + 1.0);
+    float k = (r*r) / 8.0;
+	float g = geometrySmith(normal, viewDirection, halfDirection, k);
 	vec3 f = fresnelSchlick(max(dot(halfDirection, viewDirection), 0.0), f0);
 
 	vec3 ks = f;
@@ -217,7 +221,9 @@ vec3 computeSpotLight(
     
 		// cook-torrance
 		float ndf = distributionGGX(normal, halfDirection, aoRM.g);
-		float g = geometrySmith(normal, viewDirection, halfDirection, aoRM.g);
+		float r = (aoRM.g + 1.0);
+		float k = (r*r) / 8.0;
+		float g = geometrySmith(normal, viewDirection, halfDirection, k);
 		vec3 f = fresnelSchlick(max(dot(halfDirection, viewDirection), 0.0), f0);
 
 		vec3 ks = f;

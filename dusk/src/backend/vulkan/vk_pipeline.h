@@ -34,6 +34,11 @@ struct VkGfxRenderPipelineConfig
     bool                                              enableDepthWrites = true;
 };
 
+bool createShaderModule(
+    VkDevice device, 
+    const DynamicArray<char>& shaderCode, 
+    VkShaderModule* pShaderModule);
+
 class VkGfxRenderPipeline
 {
 public:
@@ -76,13 +81,56 @@ public:
     VkPipeline get() const { return m_pipeline; }
 
 private:
-    void createShaderModule(const DynamicArray<char>& shaderCode, VkShaderModule* shaderModule) const;
-
-private:
     VkDevice       m_device               = VK_NULL_HANDLE;
     VkPipeline     m_pipeline             = VK_NULL_HANDLE;
 
     VkShaderModule m_vertexShaderModule   = VK_NULL_HANDLE;
     VkShaderModule m_fragmentShaderModule = VK_NULL_HANDLE;
+};
+
+struct VkGfxComputePipelineConfig
+{
+    DynamicArray<char> computeShaderCode; // TODO: avoid copying buffer
+
+    VkPipelineLayout   pipelineLayout = VK_NULL_HANDLE;
+};
+
+class VkGfxComputePipeline
+{
+public:
+    class Builder
+    {
+    public:
+        Builder(VulkanContext& vkContext);
+
+        Builder& setComputeShaderCode(DynamicArray<char>& shaderCode);
+        Builder& setPipelineLayout(VkGfxPipelineLayout& pipelineLayout);
+
+        /**
+         * @brief build VkGfxPipeline object with given compute config
+         * @return unique pointer to pipeline object
+         */
+        Unique<VkGfxComputePipeline> build();
+
+    private:
+        VkGfxComputePipelineConfig m_computeConfig {};
+        VulkanContext&             m_context;
+    };
+
+public:
+    VkGfxComputePipeline(VulkanContext& vkContext, VkGfxComputePipelineConfig& computeConfig);
+    ~VkGfxComputePipeline();
+
+    CLASS_UNCOPYABLE(VkGfxComputePipeline);
+
+    bool       isValid() const { return m_pipeline != VK_NULL_HANDLE; };
+    void       bind(VkCommandBuffer commandBuffer) const;
+    VkPipeline get() const { return m_pipeline; }
+
+private:
+    VkDevice       m_device              = VK_NULL_HANDLE;
+    VkPipeline     m_pipeline            = VK_NULL_HANDLE;
+
+    VkShaderModule m_computeShaderModule = VK_NULL_HANDLE;
 };
 } // namespace dusk

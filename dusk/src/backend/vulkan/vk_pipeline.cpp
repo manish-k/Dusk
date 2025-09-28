@@ -2,6 +2,23 @@
 
 namespace dusk
 {
+bool createShaderModule(VkDevice device, const DynamicArray<char>& shaderCode, VkShaderModule* pShaderModule)
+{
+    VkShaderModuleCreateInfo createInfo {};
+    createInfo.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    createInfo.codeSize = shaderCode.size();
+    createInfo.pCode    = reinterpret_cast<const uint32_t*>(shaderCode.data());
+
+    VulkanResult result = vkCreateShaderModule(device, &createInfo, nullptr, pShaderModule);
+
+    if (result.hasError())
+    {
+        return false;
+    }
+
+    return true;
+}
+
 VkGfxRenderPipeline::Builder::Builder(VulkanContext& vkContext) :
     m_context(vkContext)
 {
@@ -150,8 +167,20 @@ VkGfxRenderPipeline::VkGfxRenderPipeline(VulkanContext& vkContext, VkGfxRenderPi
     dynamicStatesInfo.dynamicStateCount = static_cast<uint32_t>(renderConfig.dynamicStates.size());
     dynamicStatesInfo.pDynamicStates    = renderConfig.dynamicStates.data();
 
-    createShaderModule(renderConfig.vertexShaderCode, &m_vertexShaderModule);
-    vkdebug::setObjectName(m_device, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)m_vertexShaderModule, "Vertex shader");
+    bool moduleResult                   = createShaderModule(
+        m_device,
+        renderConfig.vertexShaderCode,
+        &m_vertexShaderModule);
+    if (!moduleResult)
+    {
+        DUSK_ERROR("Unable to create vertex shader module");
+        return;
+    }
+    vkdebug::setObjectName(
+        m_device,
+        VK_OBJECT_TYPE_SHADER_MODULE,
+        (uint64_t)m_vertexShaderModule,
+        "Vertex shader");
 
     VkPipelineShaderStageCreateInfo vertShaderStageInfo {};
     vertShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -159,8 +188,21 @@ VkGfxRenderPipeline::VkGfxRenderPipeline(VulkanContext& vkContext, VkGfxRenderPi
     vertShaderStageInfo.module = m_vertexShaderModule;
     vertShaderStageInfo.pName  = "main";
 
-    createShaderModule(renderConfig.fragmentShaderCode, &m_fragmentShaderModule);
-    vkdebug::setObjectName(m_device, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)m_fragmentShaderModule, "Fragment shader");
+    moduleResult               = createShaderModule(
+        m_device,
+        renderConfig.fragmentShaderCode,
+        &m_fragmentShaderModule);
+    if (!moduleResult)
+    {
+        DUSK_ERROR("Unable to create fragment shader module");
+        return;
+    }
+    vkdebug::setObjectName(
+        m_device,
+        VK_OBJECT_TYPE_SHADER_MODULE,
+        (uint64_t)m_fragmentShaderModule,
+        "Fragment shader");
+
     VkPipelineShaderStageCreateInfo fragShaderStageInfo {};
     fragShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     fragShaderStageInfo.stage  = VK_SHADER_STAGE_FRAGMENT_BIT;
@@ -259,6 +301,7 @@ VkGfxRenderPipeline::VkGfxRenderPipeline(VulkanContext& vkContext, VkGfxRenderPi
     if (result.hasError())
     {
         DUSK_ERROR("Unable to create graphics pipeline {}", result.toString());
+        m_pipeline = VK_NULL_HANDLE;
     }
 }
 
@@ -285,19 +328,100 @@ void VkGfxRenderPipeline::bind(VkCommandBuffer commandBuffer) const
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
 }
 
-void dusk::VkGfxRenderPipeline::createShaderModule(const DynamicArray<char>& shaderCode, VkShaderModule* shaderModule) const
-{
-    VkShaderModuleCreateInfo createInfo {};
-    createInfo.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    createInfo.codeSize = shaderCode.size();
-    createInfo.pCode    = reinterpret_cast<const uint32_t*>(shaderCode.data());
+//======================Compute Pipeline================================
 
-    VulkanResult result = vkCreateShaderModule(m_device, &createInfo, nullptr, shaderModule);
+VkGfxComputePipeline::Builder::Builder(VulkanContext& vkContext) :
+    m_context(vkContext)
+{
+}
+
+VkGfxComputePipeline::Builder& VkGfxComputePipeline::Builder::setComputeShaderCode(DynamicArray<char>& shaderCode)
+{
+    m_computeConfig.computeShaderCode = shaderCode;
+    return *this;
+}
+
+VkGfxComputePipeline::Builder& VkGfxComputePipeline::Builder::setPipelineLayout(VkGfxPipelineLayout& pipelineLayout)
+{
+    m_computeConfig.pipelineLayout = pipelineLayout.get();
+    return *this;
+}
+
+Unique<VkGfxComputePipeline> VkGfxComputePipeline::Builder::build()
+{
+    DASSERT(m_computeConfig.pipelineLayout != VK_NULL_HANDLE, "pipeline layout is required for compute pipeline");
+
+    auto pipeline = createUnique<VkGfxComputePipeline>(m_context, m_computeConfig);
+
+    if (pipeline->isValid())
+    {
+        return std::move(pipeline);
+    }
+
+    return nullptr;
+}
+
+VkGfxComputePipeline::VkGfxComputePipeline(VulkanContext& vkContext, VkGfxComputePipelineConfig& computeConfig) :
+    m_device(vkContext.device)
+{
+    bool moduleResult = createShaderModule(
+        m_device,
+        computeConfig.computeShaderCode,
+        &m_computeShaderModule);
+    if (!moduleResult)
+    {
+        DUSK_ERROR("Unable to create compute shader");
+        return;
+    }
+    vkdebug::setObjectName(
+        m_device,
+        VK_OBJECT_TYPE_SHADER_MODULE,
+        (uint64_t)m_computeShaderModule,
+        "BRDF LUT Compute shader");
+
+    // Shader stage info
+    VkPipelineShaderStageCreateInfo computeShaderStageInfo { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
+    computeShaderStageInfo.stage  = VK_SHADER_STAGE_COMPUTE_BIT;
+    computeShaderStageInfo.module = m_computeShaderModule;
+    computeShaderStageInfo.pName  = "main";
+
+    // Compute pipeline
+    VkComputePipelineCreateInfo pipelineInfo {};
+    pipelineInfo.sType  = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+    pipelineInfo.layout = computeConfig.pipelineLayout;
+    pipelineInfo.stage  = computeShaderStageInfo;
+
+    VulkanResult result = vkCreateComputePipelines(
+        m_device,
+        VK_NULL_HANDLE,
+        1,
+        &pipelineInfo,
+        nullptr,
+        &m_pipeline);
 
     if (result.hasError())
     {
-        DUSK_ERROR("Unable to create shader module {}", result.toString());
+        DUSK_ERROR("Unable to create graphics pipeline {}", result.toString());
+        m_pipeline = VK_NULL_HANDLE;
     }
+}
+
+VkGfxComputePipeline::~VkGfxComputePipeline()
+{
+    if (m_computeShaderModule != VK_NULL_HANDLE)
+    {
+        vkDestroyShaderModule(m_device, m_computeShaderModule, nullptr);
+    }
+
+    if (m_pipeline != VK_NULL_HANDLE)
+    {
+        vkDestroyPipeline(m_device, m_pipeline, nullptr);
+    }
+}
+
+void VkGfxComputePipeline::bind(VkCommandBuffer commandBuffer) const
+{
+    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, m_pipeline);
 }
 
 } // namespace dusk

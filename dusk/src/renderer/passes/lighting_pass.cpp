@@ -60,6 +60,9 @@ void recordLightingCmds(
     push.normalTextureIdx       = ctx.readAttachments[1].texture->id;
     push.depthTextureIdx        = ctx.readAttachments[2].texture->id;
     push.aoRoughMetalTextureIdx = ctx.readAttachments[3].texture->id;
+    push.irradianceTextureIdx   = ctx.readAttachments[4].texture->id;
+    push.radianceTextureIdx     = ctx.readAttachments[5].texture->id;
+    push.brdfLUTIdx             = ctx.readAttachments[6].texture->id;
 
     vkCmdPushConstants(
         ctx.cmdBuffer,

@@ -98,6 +98,8 @@ void Environment::initSphereTextureResources(
         resPath + "hdr_dusk_sky_irradiance.hdr"
     };
 
+    // TODO:: currently loading radiance map at a fixed LOD, we should
+    // be generating all mip levels
     const DynamicArray<std::string> skyboxRadianceTextures = {
         resPath + "hdr_dusk_sky_radiance.hdr"
     };

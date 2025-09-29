@@ -349,6 +349,24 @@ void Engine::renderFrame(FrameData& frameData)
             .texture    = &m_textureDB->getTexture2D(m_rgResources.gbuffDepthTextureId),
             .clearValue = DEFAULT_DEPTH_STENCIL_VALUE,
             .loadOp     = GfxLoadOperation::Clear,
+            .storeOp    = GfxStoreOperation::Store },
+        // irradiance map
+        GfxRenderingAttachment {
+            .texture    = &m_textureDB->getTexture2D(m_environment->getSkyIrradianceTextureId()),
+            .clearValue = DEFAULT_COLOR_CLEAR_VALUE,
+            .loadOp     = GfxLoadOperation::Clear,
+            .storeOp    = GfxStoreOperation::Store },
+        // raidance map
+        GfxRenderingAttachment {
+            .texture    = &m_textureDB->getTexture2D(m_environment->getSkyRadianceTextureId()),
+            .clearValue = DEFAULT_COLOR_CLEAR_VALUE,
+            .loadOp     = GfxLoadOperation::Clear,
+            .storeOp    = GfxStoreOperation::Store },
+        // brdf lut map
+        GfxRenderingAttachment {
+            .texture    = &m_textureDB->getTexture2D(m_rgResources.brdfLUTextureId),
+            .clearValue = DEFAULT_COLOR_CLEAR_VALUE,
+            .loadOp     = GfxLoadOperation::Clear,
             .storeOp    = GfxStoreOperation::Store }
     };
     auto lighingPassWriteAttachments = {

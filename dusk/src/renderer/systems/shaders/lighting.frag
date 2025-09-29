@@ -73,7 +73,17 @@ layout(push_constant) uniform PushConstant
     int normalTextureIdx;
     int depthTextureIdx;
 	int aoRoughMetalTextureIdx;
+	int irradianceTextureIdx;
+	int radianceTextureIdx;
+    int brdfLUTIdx;
 } push;
+
+vec2 directionToEquirectangular(vec3 dir) {
+    vec2 uv;
+    uv.x = atan(dir.z, dir.x) / (2.0 * 3.14159265359) + 0.5;
+    uv.y = asin(dir.y) / 3.14159265359 + 0.5;
+    return uv;
+}
 
 vec3 computeDirLightsPBR(uint lightIdx, vec3 viewDirection, vec3 normal)
 {
@@ -251,6 +261,9 @@ void main() {
 	int normalTexIdx = nonuniformEXT(push.normalTextureIdx);
 	int depthTexIdx = nonuniformEXT(push.depthTextureIdx);
 	int aoRMTexIdx = nonuniformEXT(push.aoRoughMetalTextureIdx);
+	int irradianceTexIdx = nonuniformEXT(push.irradianceTextureIdx);
+	int radianceTexIdx = nonuniformEXT(push.radianceTextureIdx);
+	int brdfLUTIdx = nonuniformEXT(push.brdfLUTIdx);
 
 	vec3 surfaceNormal = normalize(texture(textures[normalTexIdx], fragUV).xyz * 2.0 - 1.0);
 	vec3 albedo = texture(textures[albedoTexIdx], fragUV).xyz;
@@ -258,15 +271,20 @@ void main() {
 	vec3 cameraPos = globalubo[guboIdx].inverseView[3].xyz;
 	vec3 worldPos = worldPosFromDepth(fragUV, ndcDepth, globalubo[guboIdx].inverseProjection, globalubo[guboIdx].inverseView);
 	vec3 viewDirection = normalize(cameraPos - worldPos);
+	vec3 reflectDirection = reflect(-viewDirection, surfaceNormal);
 	
 	vec3 ambientColor = ambientLight.color.xyz * ambientLight.color.w;
 	
 	vec3 aoRM = texture(textures[aoRMTexIdx], fragUV).rgb;
-	vec3 f0 = vec3(0.04); 
-    f0 = mix(f0, albedo, aoRM.b);
+	float metallic = aoRM.b;
+	float roughness = aoRM.g;
 	
-	// adding ambient
-	vec3 lightColor = vec3(0.03) * ambientColor * albedo;
+	vec3 f0 = vec3(0.04); 
+    f0 = mix(f0, albedo, metallic);
+	
+	// reflectance from direct light
+	//vec3 lightColor = vec3(0.03) * ambientColor * albedo; // non IBL ambience
+	vec3 lightColor = vec3(0.0); 
 
 	// compute contribution of all directional light
 	uint dirCount  = globalubo[guboIdx].directionalLightsCount;
@@ -307,8 +325,37 @@ void main() {
         if (4u*v + 3u < spotCount) lightColor = lightColor + computeSpotLight(idx4.w, albedo, f0, aoRM, worldPos, viewDirection, surfaceNormal);
     }
 
+	// IBL ambient lighting
+	vec3 f = fresnelSchlickRoughness(max(dot(surfaceNormal, viewDirection), 0.0), f0, roughness);
+    
+    vec3 kS = f;
+    vec3 kD = 1.0 - kS;
+    kD *= 1.0 - metallic;	
+
+	// IBL diffuse
+	vec2 irradianceUV = directionToEquirectangular(surfaceNormal);
+	vec3 irradiance = texture(textures[irradianceTexIdx], irradianceUV).rgb;
+	vec3 diffuse = irradiance * albedo;
+
+	// IBL specular
+	// TODO:: currently sampling a fixed LOD from a external hdr file, generate all mips
+	float NdotV = max(dot(surfaceNormal, viewDirection), 0.0);
+	vec2 radianceUV = directionToEquirectangular(reflectDirection);
+	vec3 prefilteredColor = texture(textures[radianceTexIdx], radianceUV).rgb;
+	vec2 brdf = texture(textures[brdfLUTIdx], vec2(NdotV, roughness)).rg;
+	
+	vec3 specular = prefilteredColor * (f * brdf.x + brdf.y);
+
+	vec3 ambient = (kD * diffuse + specular);
+
+	vec3 finalColor = ambient + lightColor;
+
 	// tone mapping
-	lightColor = lightColor / (lightColor + vec3(1.0));
+	finalColor = finalColor / (finalColor + vec3(1.0));
    
-	outColor = vec4(lightColor.xyz, 1.0f);
+	//outColor = vec4(finalColor.xyz, 1.0f);
+
+	//outColor = vec4(prefilteredColor.xyz, 1.0f);
+	vec3 a = f * brdf.x + brdf.y;
+	outColor = vec4(brdf.x, brdf.y, 0.0, 1.0);
 }

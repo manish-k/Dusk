@@ -20,10 +20,13 @@ void recordGBufferCmds(
 struct LightingPushConstant
 {
     uint32_t frameIdx;
-    int32_t albedoTextureIdx;
-    int32_t normalTextureIdx;
-    int32_t aoRoughMetalTextureIdx;
-    int32_t depthTextureIdx;
+    int32_t  albedoTextureIdx;
+    int32_t  normalTextureIdx;
+    int32_t  aoRoughMetalTextureIdx;
+    int32_t  depthTextureIdx;
+    int32_t  irradianceTextureIdx;
+    int32_t  radianceTextureIdx;
+    int32_t  brdfLUTIdx;
 };
 
 void recordLightingCmds(
@@ -35,7 +38,7 @@ void recordLightingCmds(
 struct SkyBoxPushConstant
 {
     uint32_t frameIdx;
-    int32_t skyColorTextureIdx;
+    int32_t  skyColorTextureIdx;
 };
 
 void recordSkyBoxCmds(

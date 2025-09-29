@@ -157,6 +157,7 @@ Error GfxTexture::init(
     imageInfo.flags         = 0;
 
     this->currentLayout     = VK_IMAGE_LAYOUT_UNDEFINED;
+    
     // create image
     VulkanResult result = vulkan::allocateGPUImage(
         vkContext.gpuAllocator,

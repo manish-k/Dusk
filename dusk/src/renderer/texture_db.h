@@ -8,7 +8,8 @@
 #include <taskflow/taskflow.hpp>
 #include <thread>
 
-#define COLOR_BINDING_INDEX 0
+#define COLOR_BINDING_INDEX   0
+#define STORAGE_BINDING_INDEX 0
 
 namespace dusk
 {
@@ -57,14 +58,24 @@ public:
     uint32_t createTextureAsync(const DynamicArray<std::string>& paths, TextureType type);
 
     /**
-     * @brief Get descriptor set for the textures
+     * @brief Get descriptor set for color textures
      */
     VkGfxDescriptorSet& getTexturesDescriptorSet() const { return *m_textureDescriptorSet; };
+
+    /**
+     * @brief Get descriptor set for storage textures
+     */
+    VkGfxDescriptorSet& getStorageTexturesDescriptorSet() const { return *m_storageTextureDescriptorSet; };
 
     /**
      * @brief Get descriptor set layout for texture set
      */
     VkGfxDescriptorSetLayout& getTexturesDescriptorSetLayout() const { return *m_textureDescriptorSetLayout; };
+
+    /**
+     * @brief Get descriptor set layout for storage texture set
+     */
+    VkGfxDescriptorSetLayout& getStorageTexturesDescriptorSetLayout() const { return *m_storageTextureDescriptorSetLayout; };
 
     /**
      * @brief Per frame update call to upload pending textures
@@ -77,15 +88,27 @@ public:
      * @param width of the render target
      * @param height of the render target
      * @param format of the render target
-     * @param clearValue of the render target
      * @return id of the texture
      */
     uint32_t createColorTexture(
         const std::string& name,
         uint32_t           width,
         uint32_t           height,
-        VkFormat           format,
-        VkClearValue       clearValue);
+        VkFormat           format);
+
+    /**
+     * @brief clear a storage texture for compute pipeline
+     * @param name of the texture
+     * @param width of the texture
+     * @param height of the texture
+     * @param format of the texture
+     * @return id of the texture
+     */
+    uint32_t createStorageTexture(
+        const std::string& name,
+        uint32_t           width,
+        uint32_t           height,
+        VkFormat           format);
 
     /**
      * @brief clear a render texture for depth attachment
@@ -93,15 +116,13 @@ public:
      * @param width of the render target
      * @param height of the render target
      * @param format of the render target
-     * @param clearValue of the render target
      * @return id of the texture
      */
     uint32_t createDepthTexture(
         const std::string& name,
         uint32_t           width,
         uint32_t           height,
-        VkFormat           format,
-        VkClearValue       clearValue);
+        VkFormat           format);
 
 public:
     /**
@@ -140,9 +161,11 @@ private:
     HashMap<uint32_t, ImagesBatch>   m_pendingImageBatches      = {};
 
     VkGfxDevice&                     m_gfxDevice;
-    Unique<VkGfxDescriptorPool>      m_textureDescriptorPool      = nullptr;
-    Unique<VkGfxDescriptorSetLayout> m_textureDescriptorSetLayout = nullptr;
-    Unique<VkGfxDescriptorSet>       m_textureDescriptorSet       = nullptr;
+    Unique<VkGfxDescriptorPool>      m_textureDescriptorPool             = nullptr;
+    Unique<VkGfxDescriptorSetLayout> m_textureDescriptorSetLayout        = nullptr;
+    Unique<VkGfxDescriptorSet>       m_textureDescriptorSet              = nullptr;
+    Unique<VkGfxDescriptorSetLayout> m_storageTextureDescriptorSetLayout = nullptr;
+    Unique<VkGfxDescriptorSet>       m_storageTextureDescriptorSet       = nullptr;
 
     VulkanSampler                    m_defaultSampler;
 

@@ -1,6 +1,7 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 #extension GL_ARB_shading_language_include : enable
+#extension GL_EXT_nonuniform_qualifier : enable
 
 #include "common.glsl"
 #include "brdf.glsl"
@@ -9,7 +10,12 @@
 layout (local_size_x = 16, local_size_y = 16) in;
 
 // output image (write-only), 32-bit float per component
-layout (binding = 0, rgba32f) writeonly uniform image2D brdfLUT;
+layout (binding = 0, rgba32f) writeonly uniform image2D brdfLUT[];
+
+layout(push_constant) uniform PushConstant 
+{
+	int lutTextureIdx;
+} push;
 
 // Importance sample GGX (normal = (0,0,1))
 vec3 importanceSampleGGX(vec2 Xi, float roughness)
@@ -90,8 +96,10 @@ vec2 integrateBRDF(float NdotV, float roughness)
 
 void main()
 {
+    int lutTexIdx = nonuniformEXT(push.lutTextureIdx);
+
     ivec2 pix = ivec2(gl_GlobalInvocationID.xy);
-    ivec2 size = imageSize(brdfLUT);
+    ivec2 size = imageSize(brdfLUT[lutTexIdx]);
 
     if (pix.x >= size.x || pix.y >= size.y)
         return;
@@ -105,5 +113,5 @@ void main()
     vec2 integrated = integrateBRDF(NdotV, roughness);
 
     // store to image (R=scale A, G=bias B)
-    imageStore(brdfLUT, pix, vec4(integrated.xy, 0.0, 0.0));
+    imageStore(brdfLUT[lutTexIdx], pix, vec4(integrated.xy, 0.0, 0.0));
 }

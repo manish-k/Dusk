@@ -116,8 +116,9 @@ bool TextureDB::setupDescriptors()
 
     m_textureDescriptorPool = VkGfxDescriptorPool::Builder(ctx)
                                   .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, maxAllowedTextures)
+                                  .addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, maxAllowedTextures)
                                   .setDebugName("texture_desc_pool")
-                                  .build(1, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
+                                  .build(2, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
     CHECK_AND_RETURN_FALSE(!m_textureDescriptorPool);
 
     m_textureDescriptorSetLayout = VkGfxDescriptorSetLayout::Builder(ctx)
@@ -133,6 +134,20 @@ bool TextureDB::setupDescriptors()
 
     m_textureDescriptorSet = m_textureDescriptorPool->allocateDescriptorSet(*m_textureDescriptorSetLayout, "texture_desc_set");
     CHECK_AND_RETURN_FALSE(!m_textureDescriptorSet);
+
+    m_storageTextureDescriptorSetLayout = VkGfxDescriptorSetLayout::Builder(ctx)
+                                              .addBinding(
+                                                  COLOR_BINDING_INDEX,
+                                                  VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                                                  VK_SHADER_STAGE_COMPUTE_BIT,
+                                                  maxAllowedTextures,
+                                                  true)
+                                              .setDebugName("texture_desc_set_layout")
+                                              .build();
+    CHECK_AND_RETURN_FALSE(!m_storageTextureDescriptorSetLayout);
+
+    m_storageTextureDescriptorSet = m_textureDescriptorPool->allocateDescriptorSet(*m_storageTextureDescriptorSetLayout, "storage_texture_desc_set");
+    CHECK_AND_RETURN_FALSE(!m_storageTextureDescriptorSet);
 }
 
 uint32_t TextureDB::createTextureAsync(const DynamicArray<std::string>& paths, TextureType type)
@@ -264,7 +279,7 @@ void TextureDB::onUpdate()
             if (batch[0]->isHDR)
             {
                 // currently using 32  bit per channel for hdr files
-                // In case of 16 bit half format we need conversion 
+                // In case of 16 bit half format we need conversion
                 // during loading hdr files
                 format = VK_FORMAT_R32G32B32A32_SFLOAT;
             }
@@ -315,8 +330,7 @@ uint32_t TextureDB::createColorTexture(
     const std::string& name,
     uint32_t           width,
     uint32_t           height,
-    VkFormat           format,
-    VkClearValue       clearValue)
+    VkFormat           format)
 {
     std::lock_guard<std::mutex> updateLock(m_mutex);
 
@@ -349,12 +363,62 @@ uint32_t TextureDB::createColorTexture(
     return newId;
 }
 
+uint32_t TextureDB::createStorageTexture(
+    const std::string& name,
+    uint32_t           width,
+    uint32_t           height,
+    VkFormat           format)
+{
+    std::lock_guard<std::mutex> updateLock(m_mutex);
+
+    // initialize texture for render target
+    uint32_t   newId = m_textures.size();
+
+    GfxTexture newTex { newId };
+    newTex.init(
+        width,
+        height,
+        format,
+        SampledTexture | ColorTexture | TransferDstTexture | StorageTexture,
+        name.c_str());
+    m_textures.push_back(newTex);
+
+    // update corrosponding image sampler descriptor with new image
+    // so that we can sample images used as storage.
+    VkDescriptorImageInfo texDescInfos {};
+    texDescInfos.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    texDescInfos.imageView   = newTex.imageView;
+    texDescInfos.sampler     = m_defaultSampler.sampler;
+
+    m_textureDescriptorSet->configureImage(
+        COLOR_BINDING_INDEX,
+        newTex.id,
+        1,
+        &texDescInfos);
+
+    m_textureDescriptorSet->applyConfiguration();
+
+    // update corrosponding storage descriptor with new image
+    VkDescriptorImageInfo storageTexDescInfos {};
+    storageTexDescInfos.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    storageTexDescInfos.imageView   = newTex.imageView;
+
+    m_storageTextureDescriptorSet->configureImage(
+        STORAGE_BINDING_INDEX,
+        newTex.id,
+        1,
+        &storageTexDescInfos);
+
+    m_storageTextureDescriptorSet->applyConfiguration();
+
+    return newId;
+}
+
 uint32_t TextureDB::createDepthTexture(
     const std::string& name,
     uint32_t           width,
     uint32_t           height,
-    VkFormat           format,
-    VkClearValue       clearValue)
+    VkFormat           format)
 {
     std::lock_guard<std::mutex> updateLock(m_mutex);
 

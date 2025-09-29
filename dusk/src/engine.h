@@ -55,6 +55,15 @@ struct RenderGraphResources
     uint32_t                                 lightingRenderTextureId       = {};
     Unique<VkGfxRenderPipeline>              lightingPipeline              = nullptr;
     Unique<VkGfxPipelineLayout>              lightingPipelineLayout        = nullptr;
+
+    uint32_t                                 brdfLUTextureId               = {};
+    Unique<VkGfxComputePipeline>              brdfLUTPipeline               = nullptr;
+    Unique<VkGfxPipelineLayout>              brdfLUTPipelineLayout         = nullptr;
+};
+
+struct BRDFLUTPushConstant
+{
+    uint32_t lutTextureIdx;
 };
 
 class Engine final
@@ -110,6 +119,8 @@ public:
     Environment&          getEnvironment() { return *m_environment; };
 
     tf::Executor&         getTfExecutor() { return m_tfExecutor; }
+
+    void                  executeBRDFLUTcomputePipeline();
 
 private:
     Config                           m_config;

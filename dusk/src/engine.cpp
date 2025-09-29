@@ -557,29 +557,25 @@ void Engine::prepareRenderGraphResources()
         "gbuffer_pass_albedo",
         extent.width,
         extent.height,
-        VK_FORMAT_R32G32B32A32_SFLOAT,
-        { 0.f, 0.f, 0.f, 1.f }));
+        VK_FORMAT_R32G32B32A32_SFLOAT));
     m_rgResources.gbuffRenderTextureIds.push_back(m_textureDB->createColorTexture(
         "gbuffer_pass_normal",
         extent.width,
         extent.height,
-        VK_FORMAT_R16G16B16A16_SFLOAT,
-        { 0.f, 0.f, 0.f, 1.f }));
+        VK_FORMAT_R16G16B16A16_SFLOAT));
 
     m_rgResources.gbuffRenderTextureIds.push_back(m_textureDB->createColorTexture(
         "gbuffer_pass_occlu_rough_metal",
         extent.width,
         extent.height,
-        VK_FORMAT_R16G16B16A16_SFLOAT,
-        { 0.f, 0.f, 0.f, 1.f }));
+        VK_FORMAT_R16G16B16A16_SFLOAT));
 
     // Allocate g-buffer depth texture
     m_rgResources.gbuffDepthTextureId = m_textureDB->createDepthTexture(
         "gbuffer_pass_depth",
         extent.width,
         extent.height,
-        VK_FORMAT_D32_SFLOAT_S8_UINT,
-        { 0.f, 0.f, 0.f, 1.f });
+        VK_FORMAT_D32_SFLOAT_S8_UINT);
 
     m_rgResources.gbuffModelDescriptorPool = VkGfxDescriptorPool::Builder(ctx)
                                                  .addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, maxFramesCount * maxRenderableMeshes)
@@ -705,8 +701,7 @@ void Engine::prepareRenderGraphResources()
         "light_pass_color",
         extent.width,
         extent.height,
-        VK_FORMAT_R8G8B8A8_SRGB,
-        { 0.f, 0.f, 0.f, 1.f });
+        VK_FORMAT_R8G8B8A8_SRGB);
 
     m_rgResources.lightingPipelineLayout = VkGfxPipelineLayout::Builder(ctx)
                                                .addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(LightingPushConstant))
@@ -741,6 +736,40 @@ void Engine::prepareRenderGraphResources()
         (uint64_t)m_rgResources.lightingPipeline->get(),
         "lighting_pipeline");
 #endif // VK_RENDERER_DEBUG
+
+    // brdf lut pipeline
+    m_rgResources.brdfLUTextureId = m_textureDB->createStorageTexture(
+        "brdf_lut_tex",
+        1024,
+        1024,
+        VK_FORMAT_R32G32B32A32_SFLOAT);
+
+    m_rgResources.brdfLUTPipelineLayout = VkGfxPipelineLayout::Builder(ctx)
+                                              .addPushConstantRange(VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(BRDFLUTPushConstant))
+                                              .addDescriptorSetLayout(m_textureDB->getStorageTexturesDescriptorSetLayout().layout)
+                                              .build();
+
+#ifdef VK_RENDERER_DEBUG
+    vkdebug::setObjectName(
+        ctx.device,
+        VK_OBJECT_TYPE_PIPELINE_LAYOUT,
+        (uint64_t)m_rgResources.brdfLUTPipelineLayout->get(),
+        "brdf_lut_pipeline_layout");
+#endif // VK_RENDERER_DEBUG
+
+    auto brdfLUTCompShader        = FileSystem::readFileBinary(shaderPath / "brdf_lut.comp.spv");
+
+    m_rgResources.brdfLUTPipeline = VkGfxComputePipeline::Builder(ctx)
+                                        .setComputeShaderCode(brdfLUTCompShader)
+                                        .setPipelineLayout(*m_rgResources.brdfLUTPipelineLayout)
+                                        .build();
+#ifdef VK_RENDERER_DEBUG
+    vkdebug::setObjectName(
+        ctx.device,
+        VK_OBJECT_TYPE_PIPELINE,
+        (uint64_t)m_rgResources.brdfLUTPipeline->get(),
+        "brdf_lut_pipeline");
+#endif // VK_RENDERER_DEBUG
 }
 
 void Engine::releaseRenderGraphResources()
@@ -762,6 +791,10 @@ void Engine::releaseRenderGraphResources()
     // release lighting pass resources
     m_rgResources.lightingPipeline       = nullptr;
     m_rgResources.lightingPipelineLayout = nullptr;
+
+    // release brdf lut pipeline resources
+    m_rgResources.brdfLUTPipeline       = nullptr;
+    m_rgResources.brdfLUTPipelineLayout = nullptr;
 }
 
 } // namespace dusk

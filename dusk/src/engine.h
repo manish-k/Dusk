@@ -57,8 +57,9 @@ struct RenderGraphResources
     Unique<VkGfxPipelineLayout>              lightingPipelineLayout        = nullptr;
 
     uint32_t                                 brdfLUTextureId               = {};
-    Unique<VkGfxComputePipeline>              brdfLUTPipeline               = nullptr;
+    Unique<VkGfxComputePipeline>             brdfLUTPipeline               = nullptr;
     Unique<VkGfxPipelineLayout>              brdfLUTPipelineLayout         = nullptr;
+    bool                                     brdfLUTGenerated              = false;
 };
 
 struct BRDFLUTPushConstant

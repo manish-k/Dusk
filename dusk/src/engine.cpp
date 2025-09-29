@@ -99,6 +99,7 @@ bool Engine::start(Shared<Application> app)
         m_lightsSystem->getLightsDescriptorSetLayout());
 
     prepareRenderGraphResources();
+    executeBRDFLUTcomputePipeline();
 
     m_editorUI = createUnique<EditorUI>();
     if (!m_editorUI->init(*m_window))
@@ -795,6 +796,71 @@ void Engine::releaseRenderGraphResources()
     // release brdf lut pipeline resources
     m_rgResources.brdfLUTPipeline       = nullptr;
     m_rgResources.brdfLUTPipelineLayout = nullptr;
+}
+
+void Engine::executeBRDFLUTcomputePipeline()
+{
+    VulkanContext               ctx = VkGfxDevice::getSharedVulkanContext();
+
+    VkCommandBufferAllocateInfo allocInfo {};
+    allocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandPool        = ctx.commandPool;
+    allocInfo.commandBufferCount = 1;
+
+    VkCommandBuffer commandBuffer;
+    vkAllocateCommandBuffers(ctx.device, &allocInfo, &commandBuffer);
+
+    VkCommandBufferBeginInfo beginInfo {};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+    auto& image = m_textureDB->getTexture2D(m_rgResources.brdfLUTextureId);
+    image.recordTransitionLayout(commandBuffer, VK_IMAGE_LAYOUT_GENERAL);
+
+    // Bind pipeline and descriptor sets
+    m_rgResources.brdfLUTPipeline->bind(commandBuffer);
+    vkCmdBindDescriptorSets(
+        commandBuffer,
+        VK_PIPELINE_BIND_POINT_COMPUTE,
+        m_rgResources.brdfLUTPipelineLayout->get(),
+        0,
+        1,
+        &m_textureDB->getStorageTexturesDescriptorSet().set,
+        0,
+        nullptr);
+
+    BRDFLUTPushConstant push {};
+    push.lutTextureIdx = m_rgResources.brdfLUTextureId;
+
+    vkCmdPushConstants(
+        commandBuffer,
+        m_rgResources.brdfLUTPipelineLayout->get(),
+        VK_SHADER_STAGE_COMPUTE_BIT,
+        0,
+        sizeof(BRDFLUTPushConstant),
+        &push);
+
+    // Dispatch compute work
+    vkCmdDispatch(commandBuffer, 32, 32, 1);
+
+    vkEndCommandBuffer(commandBuffer);
+
+    // Submit command buffer
+    VkSubmitInfo submitInfo {};
+    submitInfo.sType              = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers    = &commandBuffer;
+
+    // Currently submitting to graphics queue
+    // For exclusive compute queue usage we need compute queue specific
+    // command pool, command buffer and queue ownership transfer barriers
+    vkQueueSubmit(ctx.graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(ctx.graphicsQueue);
+
+    vkFreeCommandBuffers(ctx.device, ctx.commandPool, 1, &commandBuffer);
 }
 
 } // namespace dusk

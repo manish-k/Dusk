@@ -741,9 +741,9 @@ void Engine::prepareRenderGraphResources()
     // brdf lut pipeline
     m_rgResources.brdfLUTextureId = m_textureDB->createStorageTexture(
         "brdf_lut_tex",
-        1024,
-        1024,
-        VK_FORMAT_R32G32B32A32_SFLOAT);
+        512,
+        512,
+        VK_FORMAT_R32G32_SFLOAT);
 
     m_rgResources.brdfLUTPipelineLayout = VkGfxPipelineLayout::Builder(ctx)
                                               .addPushConstantRange(VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(BRDFLUTPushConstant))

@@ -326,7 +326,8 @@ void main() {
     }
 
 	// IBL ambient lighting
-	vec3 f = fresnelSchlickRoughness(max(dot(surfaceNormal, viewDirection), 0.0), f0, roughness);
+	float NdotV = max(dot(surfaceNormal, viewDirection), 0.0);
+	vec3 f = fresnelSchlickRoughness(NdotV, f0, roughness);
     
     vec3 kS = f;
     vec3 kD = 1.0 - kS;
@@ -339,7 +340,6 @@ void main() {
 
 	// IBL specular
 	// TODO:: currently sampling a fixed LOD from a external hdr file, generate all mips
-	float NdotV = max(dot(surfaceNormal, viewDirection), 0.0);
 	vec2 radianceUV = directionToEquirectangular(reflectDirection);
 	vec3 prefilteredColor = texture(textures[radianceTexIdx], radianceUV).rgb;
 	vec2 brdf = texture(textures[brdfLUTIdx], vec2(NdotV, roughness)).rg;
@@ -353,9 +353,5 @@ void main() {
 	// tone mapping
 	finalColor = finalColor / (finalColor + vec3(1.0));
    
-	//outColor = vec4(finalColor.xyz, 1.0f);
-
-	//outColor = vec4(prefilteredColor.xyz, 1.0f);
-	vec3 a = f * brdf.x + brdf.y;
-	outColor = vec4(brdf.x, brdf.y, 0.0, 1.0);
+	outColor = vec4(finalColor.xyz, 1.0f);
 }

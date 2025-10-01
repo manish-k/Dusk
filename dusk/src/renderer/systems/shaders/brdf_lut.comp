@@ -114,8 +114,12 @@ void main()
         return;
 
     // map pixel coords -> NdotV, roughness
+    // Note: Beware of the sampling of this texture. If address mode is repeat
+    // then x = 1.0 will be sampled for values where x is near 0 as x max of 
+    // the generated texture is somewhere around 0.98. This will create artifacts
+    // which will match colors at edges of the object
     float NdotV = (float(pix.x) + 0.5) / float(size.x); // [0,1]
-    float roughness = (float(pix.y) + 0.5) / float(size.y); // [0,1]
+    float roughness = 1 - (float(pix.y) + 0.5) / float(size.y); // [0,1]
 
     vec2 integrated = integrateBRDF(NdotV, roughness);
 

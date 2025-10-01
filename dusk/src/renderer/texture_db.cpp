@@ -46,6 +46,12 @@ void TextureDB::freeAllResources()
 {
     m_gfxDevice.freeImageSampler(&m_defaultSampler);
 
+    for (auto& sampler : m_extraSamplers)
+    {
+        VulkanSampler vksam = {sampler};
+        m_gfxDevice.freeImageSampler(&vksam); //TODO: not very clean way
+    }
+
     m_textureDescriptorPool->resetPool();
     m_textureDescriptorSetLayout = nullptr;
     m_textureDescriptorPool      = nullptr;
@@ -383,8 +389,8 @@ uint32_t TextureDB::createStorageTexture(
         name.c_str());
     m_textures.push_back(newTex);
 
-    // update corrosponding image sampler descriptor with new image
-    // so that we can sample images used as storage.
+    // update corrosponding combined image sampler descriptor with new 
+    // image so that we can sample images used as storage.
     VkDescriptorImageInfo texDescInfos {};
     texDescInfos.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     texDescInfos.imageView   = newTex.imageView;
@@ -449,6 +455,26 @@ uint32_t TextureDB::createDepthTexture(
     m_textureDescriptorSet->applyConfiguration();
 
     return newId;
+}
+
+void TextureDB::updateTextureSampler(uint32_t textureId, VkSampler sampler)
+{
+    GfxTexture&           tex = m_textures[textureId];
+
+    VkDescriptorImageInfo texDescInfos {};
+    texDescInfos.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    texDescInfos.imageView   = tex.imageView;
+    texDescInfos.sampler     = sampler;
+
+    m_textureDescriptorSet->configureImage(
+        COLOR_BINDING_INDEX,
+        tex.id,
+        1,
+        &texDescInfos);
+
+    m_textureDescriptorSet->applyConfiguration();
+
+    m_extraSamplers.push_back(sampler);
 }
 
 } // namespace dusk

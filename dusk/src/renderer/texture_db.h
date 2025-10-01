@@ -124,6 +124,13 @@ public:
         uint32_t           height,
         VkFormat           format);
 
+    /**
+     * @brief Update the sampler of the texture with a new one
+     * @param textureId of the texture for update
+     * @param new sampler
+     */
+    void updateTextureSampler(uint32_t textureId, VkSampler sampler);
+
 public:
     /**
      * @brief Static method to get texture db cache instance
@@ -168,6 +175,7 @@ private:
     Unique<VkGfxDescriptorSet>       m_storageTextureDescriptorSet       = nullptr;
 
     VulkanSampler                    m_defaultSampler;
+    DynamicArray<VkSampler>          m_extraSamplers; //TODO:: need uniqueness check
 
 private:
     static TextureDB* s_db;

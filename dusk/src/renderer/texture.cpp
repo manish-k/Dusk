@@ -157,7 +157,7 @@ Error GfxTexture::init(
     imageInfo.flags         = 0;
 
     this->currentLayout     = VK_IMAGE_LAYOUT_UNDEFINED;
-    
+
     // create image
     VulkanResult result = vulkan::allocateGPUImage(
         vkContext.gpuAllocator,
@@ -238,7 +238,9 @@ Error GfxTexture::initAndRecordUpload(
     this->format       = format;
     this->layersCount  = numImages;
 
-    size_t layerSize   = texImages[0]->size;
+    size_t   layerSize = texImages[0]->size;
+
+    uint32_t mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
 
     if (type == TextureType::Cube) DASSERT(numImages == 6);
 
@@ -290,12 +292,12 @@ Error GfxTexture::initAndRecordUpload(
     imageInfo.extent.width  = width;
     imageInfo.extent.height = height;
     imageInfo.extent.depth  = 1;
-    imageInfo.mipLevels     = 1;
+    imageInfo.mipLevels     = mipLevels;
     imageInfo.arrayLayers   = numImages;
     imageInfo.format        = format;
     imageInfo.tiling        = VK_IMAGE_TILING_OPTIMAL;
     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    imageInfo.usage         = vulkan::getTextureUsageFlagBits(usage);
+    imageInfo.usage         = vulkan::getTextureUsageFlagBits(usage) | VK_IMAGE_USAGE_TRANSFER_SRC_BIT; // transfer src for vkCmdBlitImage
     imageInfo.samples       = VK_SAMPLE_COUNT_1_BIT;
     imageInfo.sharingMode   = VK_SHARING_MODE_EXCLUSIVE;
 
@@ -404,7 +406,7 @@ Error GfxTexture::initAndRecordUpload(
     VkSemaphore uploadFinishedSemaphore;
     vkCreateSemaphore(vkContext.device, &semInfo, nullptr, &uploadFinishedSemaphore);
 
-    // submit
+    // submit transfer work
     VkSubmitInfo submitInfo {};
     submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount   = 1;
@@ -420,7 +422,7 @@ Error GfxTexture::initAndRecordUpload(
     barrier                                 = {};
     barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     barrier.oldLayout                       = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    barrier.newLayout                       = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    barrier.newLayout                       = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     barrier.srcQueueFamilyIndex             = vkContext.transferQueueFamilyIndex;
     barrier.dstQueueFamilyIndex             = vkContext.graphicsQueueFamilyIndex;
     barrier.image                           = image.vkImage;
@@ -430,6 +432,132 @@ Error GfxTexture::initAndRecordUpload(
     barrier.subresourceRange.baseArrayLayer = 0;
     barrier.subresourceRange.layerCount     = numImages;
     barrier.dstAccessMask                   = VK_ACCESS_SHADER_READ_BIT;
+
+    vkCmdPipelineBarrier(
+        graphicsBuffer,
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
+        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+        0,
+        0,
+        nullptr,
+        0,
+        nullptr,
+        1,
+        &barrier);
+
+    // start mip genration
+    // Initialize remaining mip levels to TRANSFER_DST_OPTIMAL
+    barrier                                 = {};
+    barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.oldLayout                       = VK_IMAGE_LAYOUT_UNDEFINED;
+    barrier.newLayout                       = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    barrier.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image                           = image.vkImage;
+    barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.baseMipLevel   = 1; // 0 level already transitioned
+    barrier.subresourceRange.levelCount     = mipLevels - 1;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount     = numImages;
+    barrier.srcAccessMask                   = 0;
+    barrier.dstAccessMask                   = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+    vkCmdPipelineBarrier(
+        graphicsBuffer,
+        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
+        0,
+        0,
+        nullptr,
+        0,
+        nullptr,
+        1,
+        &barrier);
+
+    // Generate mipmaps from level 1
+    barrier.subresourceRange.levelCount = 1;
+
+    int32_t mipWidth                    = width;
+    int32_t mipHeight                   = height;
+
+    for (uint32_t i = 1; i < mipLevels; i++)
+    {
+        // Transition previous mip level to TRANSFER_SRC_OPTIMAL
+        barrier.subresourceRange.baseMipLevel = i - 1;
+        barrier.oldLayout                     = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.newLayout                     = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        barrier.srcAccessMask                 = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.dstAccessMask                 = VK_ACCESS_TRANSFER_READ_BIT;
+
+        vkCmdPipelineBarrier(
+            graphicsBuffer,
+            VK_PIPELINE_STAGE_TRANSFER_BIT,
+            VK_PIPELINE_STAGE_TRANSFER_BIT,
+            0,
+            0,
+            nullptr,
+            0,
+            nullptr,
+            1,
+            &barrier);
+
+        // Blit from previous level to current level
+        VkImageBlit blit {};
+        blit.srcOffsets[0]                 = { 0, 0, 0 };
+        blit.srcOffsets[1]                 = { mipWidth, mipHeight, 1 };
+        blit.srcSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+        blit.srcSubresource.mipLevel       = i - 1;
+        blit.srcSubresource.baseArrayLayer = 0;
+        blit.srcSubresource.layerCount     = numImages;
+        blit.dstOffsets[0]                 = { 0, 0, 0 };
+        blit.dstOffsets[1]                 = {
+            mipWidth > 1 ? mipWidth / 2 : 1,
+            mipHeight > 1 ? mipHeight / 2 : 1,
+            1
+        };
+        blit.dstSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+        blit.dstSubresource.mipLevel       = i;
+        blit.dstSubresource.baseArrayLayer = 0;
+        blit.dstSubresource.layerCount     = numImages;
+
+        vkCmdBlitImage(
+            graphicsBuffer,
+            image.vkImage,
+            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            image.vkImage,
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            1,
+            &blit,
+            VK_FILTER_LINEAR);
+
+        // Transition previous mip to SHADER_READ_ONLY_OPTIMAL
+        barrier.oldLayout     = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        barrier.newLayout     = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+        vkCmdPipelineBarrier(
+            graphicsBuffer,
+            VK_PIPELINE_STAGE_TRANSFER_BIT,
+            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            0,
+            0,
+            nullptr,
+            0,
+            nullptr,
+            1,
+            &barrier);
+
+        if (mipWidth > 1) mipWidth /= 2;
+        if (mipHeight > 1) mipHeight /= 2;
+    }
+
+    // Transition last mip level to SHADER_READ_ONLY_OPTIMAL
+    barrier.subresourceRange.baseMipLevel = mipLevels - 1;
+    barrier.oldLayout                     = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    barrier.newLayout                     = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    barrier.srcAccessMask                 = VK_ACCESS_TRANSFER_WRITE_BIT;
+    barrier.dstAccessMask                 = VK_ACCESS_SHADER_READ_BIT;
 
     vkCmdPipelineBarrier(
         graphicsBuffer,
@@ -476,7 +604,7 @@ Error GfxTexture::initAndRecordUpload(
         vulkan::getImageViewType(type),
         format,
         imageAspectFlags,
-        1,
+        mipLevels,
         numImages,
         &imageView);
 
@@ -588,7 +716,7 @@ void GfxTexture::recordTransitionLayout(
         }
         case VK_IMAGE_LAYOUT_GENERAL:
         {
-            dstStage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+            dstStage              = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
             barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
             break;
         }

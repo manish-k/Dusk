@@ -33,7 +33,6 @@ layout(push_constant) uniform SkyBoxPushConstant
 void main()
 {	
 	fragUVW = position;
-	fragUVW.xy *= -1.0f;
 
 	mat4 view = globalubo[nonuniformEXT(push.frameIdx)].view;
 	mat4 proj = globalubo[nonuniformEXT(push.frameIdx)].projection;

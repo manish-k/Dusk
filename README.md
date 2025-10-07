@@ -4,6 +4,8 @@
 
 ## Gallery
 
+![](docs/test-pbr.png)
+
 ![](docs/sample.png)
 
 ![](docs/sponza-sample.png)

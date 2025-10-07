@@ -75,13 +75,14 @@ layout(push_constant) uniform PushConstant
 	int aoRoughMetalTextureIdx;
 	int irradianceTextureIdx;
 	int radianceTextureIdx;
+	int maxRadianceLODs;
     int brdfLUTIdx;
 } push;
 
 vec2 directionToEquirectangular(vec3 dir) {
     vec2 uv;
-    uv.x = atan(dir.z, dir.x) / (2.0 * 3.14159265359) + 0.5;
-    uv.y = asin(dir.y) / 3.14159265359 + 0.5;
+    uv.x = atan(dir.z, dir.x) / (2.0 * PI) + 0.5;
+    uv.y = asin(dir.y) / PI + 0.5;
     return uv;
 }
 
@@ -339,9 +340,8 @@ void main() {
 	vec3 diffuse = irradiance * albedo;
 
 	// IBL specular
-	// TODO:: currently sampling a fixed LOD from a external hdr file, generate all mips
 	vec2 radianceUV = directionToEquirectangular(reflectDirection);
-	vec3 prefilteredColor = texture(textures[radianceTexIdx], radianceUV).rgb;
+	vec3 prefilteredColor = textureLod(textures[radianceTexIdx], radianceUV, roughness * (push.maxRadianceLODs - 1)).rgb;
 	vec2 brdf = texture(textures[brdfLUTIdx], vec2(NdotV, roughness)).rg;
 	
 	vec3 specular = prefilteredColor * (f * brdf.x + brdf.y);

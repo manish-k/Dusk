@@ -91,17 +91,15 @@ void Environment::initSphereTextureResources(
     auto&                           ctx            = VkGfxDevice::getSharedVulkanContext();
 
     const DynamicArray<std::string> skyboxTextures = {
-        resPath + "hdr_dusk_sky.hdr"
+        resPath + "room.hdr"
     };
 
     const DynamicArray<std::string> skyboxIrradianceTextures = {
-        resPath + "hdr_dusk_sky_irradiance.hdr"
+        resPath + "room_irradiance.hdr"
     };
 
-    // TODO:: currently loading radiance map at a fixed LOD, we should
-    // be generating all mip levels
     const DynamicArray<std::string> skyboxRadianceTextures = {
-        resPath + "hdr_dusk_sky_radiance.hdr"
+        resPath + "room_radiance.hdr"
     };
 
     m_skyTextureId       = m_textureDB.createTextureAsync(skyboxTextures, TextureType::Texture2D);

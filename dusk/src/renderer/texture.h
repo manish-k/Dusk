@@ -38,6 +38,7 @@ struct GfxTexture
     std::string    name          = "";
     uint32_t       usage         = 0u;
     TextureType    type          = TextureType::Texture2D;
+    uint32_t       maxMipLevels  = 1u;
     size_t         uploadHash    = {}; // used for tracking ongoing uploads
 
     VulkanGfxImage image         = {};

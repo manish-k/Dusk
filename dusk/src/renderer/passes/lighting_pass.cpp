@@ -62,6 +62,7 @@ void recordLightingCmds(
     push.aoRoughMetalTextureIdx = ctx.readAttachments[3].texture->id;
     push.irradianceTextureIdx   = ctx.readAttachments[4].texture->id;
     push.radianceTextureIdx     = ctx.readAttachments[5].texture->id;
+    push.maxRadianceLODs        = ctx.readAttachments[5].texture->maxMipLevels;
     push.brdfLUTIdx             = ctx.readAttachments[6].texture->id;
 
     vkCmdPushConstants(

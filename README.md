@@ -6,6 +6,6 @@
 
 ![](docs/test-pbr.png)
 
-![](docs/sample.png)
+![](docs/helmet-sample.png)
 
 ![](docs/sponza-sample.png)

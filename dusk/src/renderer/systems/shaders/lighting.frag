@@ -71,8 +71,9 @@ layout(push_constant) uniform PushConstant
 	uint frameIdx;
 	int albedoTextureIdx;
     int normalTextureIdx;
-    int depthTextureIdx;
 	int aoRoughMetalTextureIdx;
+	int emissiveTextureIdx;
+	int depthTextureIdx;
 	int irradianceTextureIdx;
 	int radianceTextureIdx;
 	int maxRadianceLODs;
@@ -265,6 +266,7 @@ void main() {
 	int irradianceTexIdx = nonuniformEXT(push.irradianceTextureIdx);
 	int radianceTexIdx = nonuniformEXT(push.radianceTextureIdx);
 	int brdfLUTIdx = nonuniformEXT(push.brdfLUTIdx);
+	int emissiveTexIdx = nonuniformEXT(push.emissiveTextureIdx);
 
 	vec3 surfaceNormal = normalize(texture(textures[normalTexIdx], fragUV).xyz * 2.0 - 1.0);
 	vec3 albedo = texture(textures[albedoTexIdx], fragUV).xyz;
@@ -344,11 +346,14 @@ void main() {
 	vec3 prefilteredColor = textureLod(textures[radianceTexIdx], radianceUV, roughness * (push.maxRadianceLODs - 1)).rgb;
 	vec2 brdf = texture(textures[brdfLUTIdx], vec2(NdotV, roughness)).rg;
 	
+	// emissive color
+	vec3 emissiveColor = texture(textures[emissiveTexIdx], fragUV).rgb;
+
 	vec3 specular = prefilteredColor * (f * brdf.x + brdf.y);
 
-	vec3 ambient = (kD * diffuse + specular);
+	vec3 ambient = (kD * diffuse + specular) * aoRM.r;
 
-	vec3 finalColor = ambient + lightColor;
+	vec3 finalColor = ambient + lightColor + emissiveColor;
 
 	// tone mapping
 	finalColor = finalColor / (finalColor + vec3(1.0));

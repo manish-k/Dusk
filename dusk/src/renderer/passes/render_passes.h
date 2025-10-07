@@ -23,6 +23,7 @@ struct LightingPushConstant
     int32_t  albedoTextureIdx       = -1;
     int32_t  normalTextureIdx       = -1;
     int32_t  aoRoughMetalTextureIdx = -1;
+    int32_t  emissiveTextureIdx     = -1;
     int32_t  depthTextureIdx        = -1;
     int32_t  irradianceTextureIdx   = -1;
     int32_t  radianceTextureIdx     = -1;

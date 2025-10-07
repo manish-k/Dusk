@@ -8,6 +8,7 @@ layout(location = 2) in mat3 TBNmatrix;
 layout (location = 0) out vec4 outColor;
 layout (location = 1) out vec4 outNormal; // TODO: explore octohedral representation for effecient packing
 layout (location = 2) out vec4 outAORoughMetal; // R: AO, G: Roughness, B: Metallic
+layout (location = 3) out vec4 outEmissiveColor;
 
 layout (set = 0, binding = 0) uniform GlobalUBO 
 {
@@ -61,6 +62,7 @@ void main()
 	int normalTexIdx = nonuniformEXT(materials[materialIdx].normalTexId);
 	int metalRoughTexIdx = nonuniformEXT(materials[materialIdx].metallicRoughnessTexId);
 	int aoTexIdx = nonuniformEXT(materials[materialIdx].aoTexId);
+	int emissiveTexIdx = nonuniformEXT(materials[materialIdx].emissiveTexId);
 	
 	vec3 cameraPos = globalubo[guboIdx].inverseView[3].xyz;
 	vec3 viewDirection = normalize(cameraPos - fragWorldPos);
@@ -70,6 +72,7 @@ void main()
 	
 	vec3 mrSampleValue = texture(textures[metalRoughTexIdx], fragUV).rgb;
 	float ao = texture(textures[aoTexIdx], fragUV).r * materials[materialIdx].aoStrength;
+	if (ao <= 0) ao = 1;
 
 	float roughness = mrSampleValue.g * materials[materialIdx].rough;
 	float metallic = mrSampleValue.b * materials[materialIdx].metal;
@@ -81,7 +84,10 @@ void main()
 		surfaceNormal = normalize(TBNmatrix * surfaceNormal);
 	}
 
-	outColor = vec4(lightColor.xyz, 1.f);
+	vec3 emissiveColor = texture(textures[emissiveTexIdx], fragUV).rgb;
+
+	outColor = vec4(lightColor.rgb, 1.f);
 	outNormal = vec4(surfaceNormal.xyz * 0.5 + 0.5, 0.f);
 	outAORoughMetal = vec4(ao, roughness, metallic, 1.0f);
+	outEmissiveColor = vec4(emissiveColor.rgb, 1.0f);
 }

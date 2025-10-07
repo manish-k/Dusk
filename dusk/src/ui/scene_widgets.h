@@ -95,6 +95,7 @@ inline void drawSceneGraphWidget(Scene& scene)
                 ImGui::ColorEdit4("Albedo Color", (float*)&mat.albedoColor);
                 ImGui::Text("Albedo Texture id: %d", mat.albedoTexId);
                 ImGui::Text("Normal Texture id: %d", mat.normalTexId);
+                ImGui::Text("Emissive Texture id: %d", mat.emissiveTexId);
                 ImGui::Text("Metal-Rough Texture id: %d", mat.metallicRoughnessTexId);
 
                 ImGui::SliderFloat("Roughness", &mat.rough, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_None);

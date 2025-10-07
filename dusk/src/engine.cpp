@@ -314,6 +314,11 @@ void Engine::renderFrame(FrameData& frameData)
                       .texture    = &m_textureDB->getTexture2D(m_rgResources.gbuffRenderTextureIds[2]),
                       .clearValue = DEFAULT_COLOR_CLEAR_VALUE,
                       .loadOp     = GfxLoadOperation::Clear,
+                      .storeOp    = GfxStoreOperation::Store },
+                  GfxRenderingAttachment {
+                      .texture    = &m_textureDB->getTexture2D(m_rgResources.gbuffRenderTextureIds[3]),
+                      .clearValue = DEFAULT_COLOR_CLEAR_VALUE,
+                      .loadOp     = GfxLoadOperation::Clear,
                       .storeOp    = GfxStoreOperation::Store } },
               .depthAttachment     = depthAttachment,
               .useDepth            = true,
@@ -341,6 +346,12 @@ void Engine::renderFrame(FrameData& frameData)
         // ao-metallic-roughness attachment
         GfxRenderingAttachment {
             .texture    = &m_textureDB->getTexture2D(m_rgResources.gbuffRenderTextureIds[2]),
+            .clearValue = DEFAULT_COLOR_CLEAR_VALUE,
+            .loadOp     = GfxLoadOperation::Clear,
+            .storeOp    = GfxStoreOperation::Store },
+        // emissive color
+        GfxRenderingAttachment {
+            .texture    = &m_textureDB->getTexture2D(m_rgResources.gbuffRenderTextureIds[3]),
             .clearValue = DEFAULT_COLOR_CLEAR_VALUE,
             .loadOp     = GfxLoadOperation::Clear,
             .storeOp    = GfxStoreOperation::Store },
@@ -589,6 +600,12 @@ void Engine::prepareRenderGraphResources()
         extent.height,
         VK_FORMAT_R16G16B16A16_SFLOAT));
 
+    m_rgResources.gbuffRenderTextureIds.push_back(m_textureDB->createColorTexture(
+        "gbuffer_pass_emissive_color",
+        extent.width,
+        extent.height,
+        VK_FORMAT_R16G16B16A16_SFLOAT));
+
     // Allocate g-buffer depth texture
     m_rgResources.gbuffDepthTextureId = m_textureDB->createDepthTexture(
         "gbuffer_pass_depth",
@@ -671,6 +688,7 @@ void Engine::prepareRenderGraphResources()
                                       .addColorAttachmentFormat(VK_FORMAT_R32G32B32A32_SFLOAT) // albedo
                                       .addColorAttachmentFormat(VK_FORMAT_R16G16B16A16_SFLOAT) // normal
                                       .addColorAttachmentFormat(VK_FORMAT_R16G16B16A16_SFLOAT) // ao-roughness-metallic
+                                      .addColorAttachmentFormat(VK_FORMAT_R16G16B16A16_SFLOAT) // emissive color
                                       .build();
 
 #ifdef VK_RENDERER_DEBUG

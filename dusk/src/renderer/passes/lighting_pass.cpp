@@ -58,12 +58,13 @@ void recordLightingCmds(
     // TODO: Need a better way to handle attachment indices
     push.albedoTextureIdx       = ctx.readAttachments[0].texture->id;
     push.normalTextureIdx       = ctx.readAttachments[1].texture->id;
-    push.depthTextureIdx        = ctx.readAttachments[2].texture->id;
-    push.aoRoughMetalTextureIdx = ctx.readAttachments[3].texture->id;
-    push.irradianceTextureIdx   = ctx.readAttachments[4].texture->id;
-    push.radianceTextureIdx     = ctx.readAttachments[5].texture->id;
-    push.maxRadianceLODs        = ctx.readAttachments[5].texture->maxMipLevels;
-    push.brdfLUTIdx             = ctx.readAttachments[6].texture->id;
+    push.aoRoughMetalTextureIdx = ctx.readAttachments[2].texture->id;
+    push.emissiveTextureIdx     = ctx.readAttachments[3].texture->id;
+    push.depthTextureIdx        = ctx.readAttachments[4].texture->id;
+    push.irradianceTextureIdx   = ctx.readAttachments[5].texture->id;
+    push.radianceTextureIdx     = ctx.readAttachments[6].texture->id;
+    push.maxRadianceLODs        = ctx.readAttachments[6].texture->maxMipLevels;
+    push.brdfLUTIdx             = ctx.readAttachments[7].texture->id;
 
     vkCmdPushConstants(
         ctx.cmdBuffer,

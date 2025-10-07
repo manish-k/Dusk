@@ -91,15 +91,15 @@ void Environment::initSphereTextureResources(
     auto&                           ctx            = VkGfxDevice::getSharedVulkanContext();
 
     const DynamicArray<std::string> skyboxTextures = {
-        resPath + "room.hdr"
+        resPath + "autumn_sky.hdr"
     };
 
     const DynamicArray<std::string> skyboxIrradianceTextures = {
-        resPath + "room_irradiance.hdr"
+        resPath + "autumn_sky_irradiance.hdr"
     };
 
     const DynamicArray<std::string> skyboxRadianceTextures = {
-        resPath + "room_radiance.hdr"
+        resPath + "autumn_sky_radiance.hdr"
     };
 
     m_skyTextureId       = m_textureDB.createTextureAsync(skyboxTextures, TextureType::Texture2D);

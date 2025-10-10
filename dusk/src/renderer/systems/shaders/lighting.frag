@@ -338,7 +338,7 @@ void main() {
 
 	// IBL diffuse
 	vec2 irradianceUV = directionToEquirectangular(surfaceNormal);
-	vec3 irradiance = texture(textures[irradianceTexIdx], irradianceUV).rgb;
+	vec3 irradiance = textureLod(textures[irradianceTexIdx], irradianceUV, 0).rgb;
 	vec3 diffuse = irradiance * albedo;
 
 	// IBL specular

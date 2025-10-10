@@ -48,8 +48,8 @@ void TextureDB::freeAllResources()
 
     for (auto& sampler : m_extraSamplers)
     {
-        VulkanSampler vksam = {sampler};
-        m_gfxDevice.freeImageSampler(&vksam); //TODO: not very clean way
+        VulkanSampler vksam = { sampler };
+        m_gfxDevice.freeImageSampler(&vksam); // TODO: not very clean way
     }
 
     m_textureDescriptorPool->resetPool();
@@ -86,6 +86,7 @@ Error TextureDB::initDefaultTexture()
         TransferDstTexture | SampledTexture,
         "default_tex_2d");
 
+    default2dTexture.sampler = m_defaultSampler.sampler;
     m_textures.push_back(default2dTexture);
 
     // update corrosponding descriptor with new image
@@ -112,6 +113,15 @@ Error TextureDB::initDefaultSampler()
     {
         return Error::InitializationFailed;
     }
+
+    auto& ctx = m_gfxDevice.getSharedVulkanContext();
+#ifdef VK_RENDERER_DEBUG
+    vkdebug::setObjectName(
+        ctx.device,
+        VK_OBJECT_TYPE_SAMPLER,
+        (uint64_t)m_defaultSampler.sampler,
+        "default_sampler");
+#endif // VK_RENDERER_DEBUG
 
     return Error::Ok;
 }
@@ -211,11 +221,13 @@ uint32_t TextureDB::createTextureAsync(const DynamicArray<std::string>& paths, T
             m_pendingImageBatches.emplace(newId, batch);
         } });
 
+    newTexture.sampler = m_defaultSampler.sampler;
+
     // update corrosponding descriptor to use default image
     VkDescriptorImageInfo texDescInfos {};
     texDescInfos.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     texDescInfos.imageView   = newTexture.imageView;
-    texDescInfos.sampler     = m_defaultSampler.sampler;
+    texDescInfos.sampler     = newTexture.sampler;
 
     m_textureDescriptorSet->configureImage(
         COLOR_BINDING_INDEX,
@@ -314,7 +326,7 @@ void TextureDB::onUpdate()
             VkDescriptorImageInfo texDescInfos {};
             texDescInfos.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             texDescInfos.imageView   = tex.imageView;
-            texDescInfos.sampler     = m_defaultSampler.sampler;
+            texDescInfos.sampler     = tex.sampler;
 
             m_textureDescriptorSet->configureImage(
                 COLOR_BINDING_INDEX,
@@ -350,13 +362,16 @@ uint32_t TextureDB::createColorTexture(
         format,
         SampledTexture | ColorTexture | TransferDstTexture,
         name.c_str());
+
+    newTex.sampler = m_defaultSampler.sampler;
+
     m_textures.push_back(newTex);
 
     // update corrosponding descriptor with new image
     VkDescriptorImageInfo texDescInfos {};
     texDescInfos.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     texDescInfos.imageView   = newTex.imageView;
-    texDescInfos.sampler     = m_defaultSampler.sampler;
+    texDescInfos.sampler     = newTex.sampler;
 
     m_textureDescriptorSet->configureImage(
         COLOR_BINDING_INDEX,
@@ -387,14 +402,17 @@ uint32_t TextureDB::createStorageTexture(
         format,
         SampledTexture | ColorTexture | TransferDstTexture | StorageTexture,
         name.c_str());
+
+    newTex.sampler = m_defaultSampler.sampler;
+
     m_textures.push_back(newTex);
 
-    // update corrosponding combined image sampler descriptor with new 
+    // update corrosponding combined image sampler descriptor with new
     // image so that we can sample images used as storage.
     VkDescriptorImageInfo texDescInfos {};
     texDescInfos.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     texDescInfos.imageView   = newTex.imageView;
-    texDescInfos.sampler     = m_defaultSampler.sampler;
+    texDescInfos.sampler     = newTex.sampler;
 
     m_textureDescriptorSet->configureImage(
         COLOR_BINDING_INDEX,
@@ -438,13 +456,16 @@ uint32_t TextureDB::createDepthTexture(
         format,
         DepthStencilTexture | SampledTexture,
         name.c_str());
+
+    newTex.sampler = m_defaultSampler.sampler;
+
     m_textures.push_back(newTex);
 
     // update corrosponding descriptor with new image
     VkDescriptorImageInfo texDescInfos {};
     texDescInfos.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     texDescInfos.imageView   = newTex.imageView;
-    texDescInfos.sampler     = m_defaultSampler.sampler;
+    texDescInfos.sampler     = newTex.sampler;
 
     m_textureDescriptorSet->configureImage(
         COLOR_BINDING_INDEX,
@@ -459,12 +480,13 @@ uint32_t TextureDB::createDepthTexture(
 
 void TextureDB::updateTextureSampler(uint32_t textureId, VkSampler sampler)
 {
-    GfxTexture&           tex = m_textures[textureId];
+    GfxTexture& tex = m_textures[textureId];
+    tex.sampler     = sampler;
 
     VkDescriptorImageInfo texDescInfos {};
     texDescInfos.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     texDescInfos.imageView   = tex.imageView;
-    texDescInfos.sampler     = sampler;
+    texDescInfos.sampler     = tex.sampler;
 
     m_textureDescriptorSet->configureImage(
         COLOR_BINDING_INDEX,

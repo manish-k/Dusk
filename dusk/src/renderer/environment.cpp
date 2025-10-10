@@ -88,24 +88,53 @@ void Environment::initSphereTextureResources(
     std::string&              resPath,
     VkGfxDescriptorSetLayout& globalDescSetLayout)
 {
-    auto&                           ctx            = VkGfxDevice::getSharedVulkanContext();
+    auto&               ctx = VkGfxDevice::getSharedVulkanContext();
+
+    VkSampler           skyboxSampler;
+    VkSampler           radianceSampler;
+    VkSampler           irradianceSampler;
+
+    VkSamplerCreateInfo samplerInfo {};
+    samplerInfo.sType                   = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerInfo.magFilter               = VK_FILTER_LINEAR;
+    samplerInfo.minFilter               = VK_FILTER_LINEAR;
+    samplerInfo.addressModeU            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeV            = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    samplerInfo.anisotropyEnable        = VK_FALSE;
+    samplerInfo.maxAnisotropy           = ctx.physicalDeviceProperties.limits.maxSamplerAnisotropy;
+    samplerInfo.borderColor             = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    samplerInfo.unnormalizedCoordinates = VK_FALSE;
+    samplerInfo.compareEnable           = VK_FALSE;
+    samplerInfo.compareOp               = VK_COMPARE_OP_ALWAYS;
+    samplerInfo.mipmapMode              = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    samplerInfo.minLod                  = 0;
+    samplerInfo.maxLod                  = VK_LOD_CLAMP_NONE;
+
+    vkCreateSampler(ctx.device, &samplerInfo, nullptr, &skyboxSampler);
+    vkCreateSampler(ctx.device, &samplerInfo, nullptr, &radianceSampler);
+    vkCreateSampler(ctx.device, &samplerInfo, nullptr, &irradianceSampler);
 
     const DynamicArray<std::string> skyboxTextures = {
-        resPath + "autumn_sky.hdr"
+        resPath + "room.hdr"
     };
 
     const DynamicArray<std::string> skyboxIrradianceTextures = {
-        resPath + "autumn_sky_irradiance.hdr"
+        resPath + "room_irradiance.hdr"
     };
 
     const DynamicArray<std::string> skyboxRadianceTextures = {
-        resPath + "autumn_sky_radiance.hdr"
+        resPath + "room_radiance.hdr"
     };
 
-    m_skyTextureId       = m_textureDB.createTextureAsync(skyboxTextures, TextureType::Texture2D);
+    m_skyTextureId = m_textureDB.createTextureAsync(skyboxTextures, TextureType::Texture2D);
+    m_textureDB.updateTextureSampler(m_skyTextureId, skyboxSampler);
+
     m_skyIrradianceTexId = m_textureDB.createTextureAsync(skyboxIrradianceTextures, TextureType::Texture2D);
+    m_textureDB.updateTextureSampler(m_skyIrradianceTexId, irradianceSampler);
+
     m_skyRadianceTexId
         = m_textureDB.createTextureAsync(skyboxRadianceTextures, TextureType::Texture2D);
+    m_textureDB.updateTextureSampler(m_skyRadianceTexId, radianceSampler);
 
     m_cubeMesh             = SubMesh::createCubeMesh();
 

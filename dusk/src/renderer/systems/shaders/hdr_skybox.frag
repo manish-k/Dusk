@@ -28,7 +28,7 @@ void main()
     vec3 direction = normalize(fragUVW);
     vec2 uv = directionToEquirectangular(direction);
 
-    vec3 skyColor    = texture(textures[skyTexIdx], uv).xyz;
+    vec3 skyColor    = textureLod(textures[skyTexIdx], uv, 0).xyz;
 
     // tone mapping
 	skyColor = skyColor / (skyColor + vec3(1.0));

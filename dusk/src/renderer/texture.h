@@ -45,6 +45,7 @@ struct GfxTexture
     VkImageView    imageView     = {};
     VkFormat       format        = {};
     VkImageLayout  currentLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    VkSampler      sampler       = {};
 
     GfxTexture(uint32_t id) :
         id(id) { };

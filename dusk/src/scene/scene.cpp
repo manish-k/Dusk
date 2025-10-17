@@ -5,7 +5,6 @@
 #include "events/event.h"
 
 #include "loaders/assimp_loader.h"
-#include "loaders/stb_image_loader.h"
 
 #include "renderer/vertex.h"
 

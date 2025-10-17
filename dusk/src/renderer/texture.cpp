@@ -12,7 +12,7 @@ namespace dusk
 {
 
 Error GfxTexture::init(
-    Image&      texImage,
+    ImageData&      texImage,
     VkFormat    format,
     uint32_t    usage,
     const char* debugName)
@@ -24,7 +24,6 @@ Error GfxTexture::init(
 
     this->width       = texImage.width;
     this->height      = texImage.height;
-    this->numChannels = texImage.channels;
     this->format      = format;
 
     // staging buffer for transfer
@@ -233,20 +232,19 @@ Error GfxTexture::initAndRecordUpload(
 
     this->width        = texImages[0]->width;
     this->height       = texImages[0]->height;
-    this->numChannels  = texImages[0]->channels;
     this->usage        = usage;
     this->format       = format;
-    this->layersCount  = numImages;
+    this->numLayers    = numImages;
 
     size_t   layerSize = texImages[0]->size;
 
-    this->maxMipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
+    this->numMipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
 
     if (type == TextureType::Cube) DASSERT(numImages == 6);
 
     for (auto& img : texImages)
     {
-        DASSERT(img->width == width && img->height == height && this->numChannels == numChannels);
+        DASSERT(img->width == width && img->height == height);
     }
 
     auto imageAspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -292,7 +290,7 @@ Error GfxTexture::initAndRecordUpload(
     imageInfo.extent.width  = width;
     imageInfo.extent.height = height;
     imageInfo.extent.depth  = 1;
-    imageInfo.mipLevels     = maxMipLevels;
+    imageInfo.mipLevels     = numMipLevels;
     imageInfo.arrayLayers   = numImages;
     imageInfo.format        = format;
     imageInfo.tiling        = VK_IMAGE_TILING_OPTIMAL;
@@ -456,7 +454,7 @@ Error GfxTexture::initAndRecordUpload(
     barrier.image                           = image.vkImage;
     barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
     barrier.subresourceRange.baseMipLevel   = 1; // 0 level already transitioned
-    barrier.subresourceRange.levelCount     = maxMipLevels - 1;
+    barrier.subresourceRange.levelCount     = numMipLevels - 1;
     barrier.subresourceRange.baseArrayLayer = 0;
     barrier.subresourceRange.layerCount     = numImages;
     barrier.srcAccessMask                   = 0;
@@ -480,7 +478,7 @@ Error GfxTexture::initAndRecordUpload(
     int32_t mipWidth                    = width;
     int32_t mipHeight                   = height;
 
-    for (uint32_t i = 1; i < maxMipLevels; i++)
+    for (uint32_t i = 1; i < numMipLevels; i++)
     {
         // Transition previous mip level to TRANSFER_SRC_OPTIMAL
         barrier.subresourceRange.baseMipLevel = i - 1;
@@ -553,7 +551,7 @@ Error GfxTexture::initAndRecordUpload(
     }
 
     // Transition last mip level to SHADER_READ_ONLY_OPTIMAL
-    barrier.subresourceRange.baseMipLevel = maxMipLevels - 1;
+    barrier.subresourceRange.baseMipLevel = numMipLevels - 1;
     barrier.oldLayout                     = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     barrier.newLayout                     = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     barrier.srcAccessMask                 = VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -604,7 +602,7 @@ Error GfxTexture::initAndRecordUpload(
         vulkan::getImageViewType(type),
         format,
         imageAspectFlags,
-        maxMipLevels,
+        numMipLevels,
         numImages,
         &imageView);
 
@@ -651,7 +649,7 @@ void GfxTexture::recordTransitionLayout(
     barrier.subresourceRange.baseMipLevel   = 0;
     barrier.subresourceRange.levelCount     = 1;
     barrier.subresourceRange.baseArrayLayer = 0;
-    barrier.subresourceRange.layerCount     = layersCount;
+    barrier.subresourceRange.layerCount     = numLayers;
 
     VkPipelineStageFlags srcStage           = VK_PIPELINE_STAGE_FLAG_BITS_MAX_ENUM;
     VkPipelineStageFlags dstStage           = VK_PIPELINE_STAGE_FLAG_BITS_MAX_ENUM;

@@ -5,9 +5,9 @@
 
 namespace dusk
 {
-class Image;
+class ImageData;
 
-using ImagesBatch = DynamicArray<Shared<Image>>;
+using ImagesBatch = DynamicArray<Shared<ImageData>>;
 
 enum TextureUsageFlags : uint32_t
 {
@@ -33,12 +33,11 @@ struct GfxTexture
     uint32_t       id;
     uint32_t       width         = 0u;
     uint32_t       height        = 0u;
-    uint32_t       numChannels   = 0u;
-    uint32_t       layersCount   = 1u;
+    uint32_t       numLayers     = 1u;
+    uint32_t       numMipLevels  = 1u;
     std::string    name          = "";
     uint32_t       usage         = 0u;
     TextureType    type          = TextureType::Texture2D;
-    uint32_t       maxMipLevels  = 1u;
     size_t         uploadHash    = {}; // used for tracking ongoing uploads
 
     VulkanGfxImage image         = {};
@@ -61,7 +60,7 @@ struct GfxTexture
      * @return Error status for the complete operation
      */
     Error init(
-        Image&      texImage,
+        ImageData&  texImage,
         VkFormat    format,
         uint32_t    usage,
         const char* name = nullptr);

@@ -4,6 +4,7 @@
 
 #include <string>
 #include <numeric>
+#include <filesystem>
 
 #define DUSK_STRING_DELEMITER ";"
 
@@ -31,6 +32,13 @@ inline std::string combineStrings(const DynamicArray<std::string>& stringList)
         {
             return a + DUSK_STRING_DELEMITER + b;
         });
+}
+
+inline std::string getFileExtension(const std::string& filePath)
+{
+    std::filesystem::path path(filePath);
+
+   return path.extension().string();
 }
 
 } // namespace dusk

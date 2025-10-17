@@ -4,7 +4,7 @@
 #include "engine.h"
 
 #include "debug/profiler.h"
-#include "loaders/stb_image_loader.h"
+#include "loaders/image_loader.h"
 #include "utils/utils.h"
 
 #include "backend/vulkan/vk_device.h"
@@ -72,10 +72,9 @@ void TextureDB::freeAllResources()
 
 Error TextureDB::initDefaultTexture()
 {
-    Image defaultTextureImg {};
+    ImageData defaultTextureImg {};
     defaultTextureImg.width    = 1;
     defaultTextureImg.height   = 1;
-    defaultTextureImg.channels = 4;
     defaultTextureImg.size     = 4;
     defaultTextureImg.data     = new glm::u8vec4(255, 255, 255, 255);
 
@@ -208,7 +207,7 @@ uint32_t TextureDB::createTextureAsync(const DynamicArray<std::string>& paths, T
         for (auto& path : paths)
         {
             DASSERT(!path.empty());
-            Shared<Image> img = ImageLoader::readImage(path);
+            Shared<ImageData> img = ImageLoader::load(path);
             if (img)
                 batch.push_back(img);
         }
@@ -293,14 +292,9 @@ void TextureDB::onUpdate()
 
             // deducing format for images in the batch under the
             // assumption that all images are of same format
-            VkFormat format = VK_FORMAT_R8G8B8A8_SRGB;
-            if (batch[0]->isHDR)
-            {
-                // currently using 32  bit per channel for hdr files
-                // In case of 16 bit half format we need conversion
-                // during loading hdr files
-                format = VK_FORMAT_R32G32B32A32_SFLOAT;
-            }
+            VkFormat format = vulkan::getPixelVkFormat(batch[0]->format);
+
+            DASSERT(format != VK_FORMAT_UNDEFINED);
 
             Error err = tex.initAndRecordUpload(
                 batch,

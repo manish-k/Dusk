@@ -61,6 +61,9 @@ VkImageViewType     getImageViewType(TextureType type);
 
 VkAttachmentLoadOp  getLoadOp(GfxLoadOperation loadOp);
 VkAttachmentStoreOp getStoreOp(GfxStoreOperation storeOp);
+
+VkFormat            getPixelVkFormat(PixelFormat format);
+PixelFormat         getPixelFormat(VkFormat format);
 } // namespace vulkan
 
 } // namespace dusk

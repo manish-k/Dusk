@@ -74,10 +74,10 @@ set(LOADERS_DIR "${PROJECT_SOURCE_DIR}/src/loaders")
 set(LOADERS_FILES
 	# Header files
 	"${LOADERS_DIR}/assimp_loader.h"
-	"${LOADERS_DIR}/stb_image_loader.h"
+	"${LOADERS_DIR}/image_loader.h"
 	# Source files
 	"${LOADERS_DIR}/assimp_loader.cpp"
-	"${LOADERS_DIR}/stb_image_loader.cpp"
+	"${LOADERS_DIR}/image_loader.cpp"
 )
 
 set(PLATFORM_DIR "${PROJECT_SOURCE_DIR}/src/platform")

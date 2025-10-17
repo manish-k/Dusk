@@ -253,6 +253,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
 	assimp
 	TracyClient
 	taskflow
+	ktx
 )
 
 if(CLANG_FORMAT_EXE)

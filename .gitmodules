@@ -41,3 +41,6 @@
 [submodule "dusk/vendor/taskflow"]
 	path = dusk/vendor/taskflow
 	url = https://github.com/taskflow/taskflow.git
+[submodule "dusk/vendor/ktx"]
+	path = dusk/vendor/ktx
+	url = https://github.com/KhronosGroup/KTX-Software

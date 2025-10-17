@@ -105,3 +105,11 @@ target_include_directories(stb INTERFACE ${STB_DIR})
 add_library(taskflow INTERFACE)
 set(TASKFLOW_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/taskflow/)
 target_include_directories(taskflow INTERFACE ${TASKFLOW_INCLUDE_DIR})
+
+# ktx
+option(KTX_FEATURE_LOADTEST_APPS "Build KTX load test apps" OFF)
+option(KTX_FEATURE_TOOLS "Build KTX tools like ktx2check" OFF)
+option(KTX_FEATURE_DOC "Build documentation" OFF)
+option(KTX_FEATURE_TESTS "Build tests" OFF)
+option(KTX_FEATURE_WRITE "Enable writing KTX files" OFF)
+add_subdirectory(ktx)

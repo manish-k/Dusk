@@ -64,6 +64,7 @@ VkAttachmentStoreOp getStoreOp(GfxStoreOperation storeOp);
 
 VkFormat            getPixelVkFormat(PixelFormat format);
 PixelFormat         getPixelFormat(VkFormat format);
+size_t              getBytesPerPixel(VkFormat format);
 } // namespace vulkan
 
 } // namespace dusk

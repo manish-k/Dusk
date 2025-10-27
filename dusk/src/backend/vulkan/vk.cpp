@@ -671,4 +671,42 @@ PixelFormat vulkan::getPixelFormat(VkFormat format)
     }
 }
 
+size_t vulkan::getBytesPerPixel(VkFormat format)
+{
+    switch (format)
+    {
+        case VK_FORMAT_R8_UNORM:
+        case VK_FORMAT_R8_SRGB:
+            return 1;
+
+        case VK_FORMAT_R8G8_UNORM:
+        case VK_FORMAT_R8G8_SRGB:
+        case VK_FORMAT_R16_SFLOAT:
+            return 2;
+
+        case VK_FORMAT_R8G8B8_UNORM:
+        case VK_FORMAT_R8G8B8_SRGB:
+            return 3;
+
+        case VK_FORMAT_R8G8B8A8_UNORM:
+        case VK_FORMAT_R8G8B8A8_SRGB:
+        case VK_FORMAT_B8G8R8A8_UNORM:
+        case VK_FORMAT_B8G8R8A8_SRGB:
+        case VK_FORMAT_R16G16_SFLOAT:
+        case VK_FORMAT_R32_SFLOAT:
+            return 4;
+
+        case VK_FORMAT_R16G16B16A16_SFLOAT:
+        case VK_FORMAT_R32G32_SFLOAT:
+            return 8;
+
+        case VK_FORMAT_R32G32B32A32_SFLOAT:
+            return 16;
+
+        // Add more formats as needed
+        default:
+            return 4; // Default to 4 bytes
+    }
+}
+
 } // namespace dusk

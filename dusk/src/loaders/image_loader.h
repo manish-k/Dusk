@@ -7,15 +7,49 @@
 namespace dusk
 {
 class ImageData;
+class GfxTexture;
 
 class ImageLoader
 {
 public:
+    /**
+     * @brief load an image file
+     * @param path to file 
+     * @return true for success else false
+     */
     static Shared<ImageData> load(const std::string& filePath);
+    
+    /**
+     * @brief load an image file with stb loader
+     * @param path to file 
+     * @return true for success else false
+     */
     static Shared<ImageData> loadSTB(const std::string& filePath);
+    
+    /**
+     * @brief load a ktx2 image file
+     * @param path to file 
+     * @return true for success else false
+     */
     static Shared<ImageData> loadKTX2(const std::string& filePath);
 
-    static bool              savePNG(const std::string& filePath);
-    static bool              saveKTX2(const std::string& filePath);
+    /**
+     * @brief Save the texture as png file on disk
+     * @param path to file
+     * @param texture
+     * @return true for success else false
+     */
+    static bool savePNG(
+        const std::string& filePath,
+        GfxTexture&        texture);
+    /**
+     * @brief Save the texture as ktx2 file on disk
+     * @param path to file
+     * @param texture
+     * @return true for success else false
+     */
+    static bool saveKTX2(
+        const std::string& filePath,
+        GfxTexture&        texture);
 };
 } // namespace dusk

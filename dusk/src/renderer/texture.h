@@ -46,6 +46,13 @@ struct GfxTexture
     VkImageLayout  currentLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     VkSampler      sampler       = {};
 
+    // Pixel data will be stored in mip-major order
+    // [Mip 0, Face 0] [Mip 0, Face 1] ... [Mip 0, Face 5]
+    // [Mip 1, Face 0] [Mip 1, Face 1] ... [Mip 1, Face 5]
+    // ...
+    void*                      pixelData  = nullptr;
+    DynamicArray<VkDeviceSize> mipOffsets = {};
+
     GfxTexture(uint32_t id) :
         id(id) { };
     GfxTexture()  = default;

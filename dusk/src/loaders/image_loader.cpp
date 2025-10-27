@@ -1,13 +1,15 @@
 #include "image_loader.h"
 
 #include "renderer/image.h"
+#include "renderer/texture.h"
 #include "utils/utils.h"
 #include "backend/vulkan/vk.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <stb_image_write.h>
 #include <ktx.h>
-#include <ktxvulkan.h>
 
 namespace dusk
 {
@@ -25,18 +27,18 @@ Shared<ImageData> ImageLoader::load(const std::string& filePath)
 
 Shared<ImageData> ImageLoader::loadSTB(const std::string& filePath)
 {
-    DUSK_DEBUG("Reading texture file - {}", filePath);
+    DUSK_DEBUG("Reading texture file with stb - {}", filePath);
 
     stbi_set_flip_vertically_on_load(true);
 
-    const char* file               = filePath.c_str();
-    auto        img                = createShared<ImageData>();
-    int         channelSizeInBytes = 1;
-    const int   defaultNumChannels = 4;
+    const char*    file               = filePath.c_str();
+    auto           img                = createShared<ImageData>();
+    uint32_t       channelSizeInBytes = 1u;
+    const uint32_t defaultNumChannels = 4u;
 
     if (stbi_is_hdr(file))
     {
-        channelSizeInBytes = 4; // floats
+        channelSizeInBytes = 4u; // floats
         img->data          = stbi_loadf(
             file,
             &img->width,
@@ -70,6 +72,8 @@ Shared<ImageData> ImageLoader::loadSTB(const std::string& filePath)
 
 Shared<ImageData> ImageLoader::loadKTX2(const std::string& filePath)
 {
+    DUSK_DEBUG("Reading ktx texture file - {}", filePath);
+
     ktxTexture2*   ktxTex;
     KTX_error_code result = ktxTexture2_CreateFromNamedFile(
         filePath.c_str(),
@@ -93,8 +97,8 @@ Shared<ImageData> ImageLoader::loadKTX2(const std::string& filePath)
     img->numLayers    = ktxTex->numLayers;
     img->format       = vulkan::getPixelFormat((VkFormat)ktxTex->vkFormat);
 
-    // we have taken ownership of pixel data in our struct,
-    // removing ownership from ktx so data won't be freed
+    // we have taken ownership of pixel data in ImageData struct,
+    // removing ownership from ktx so that pixel data won't be freed
     ktxTex->pData = nullptr;
 
     // destroy metadata
@@ -102,4 +106,87 @@ Shared<ImageData> ImageLoader::loadKTX2(const std::string& filePath)
 
     return img;
 }
+
+bool ImageLoader::savePNG(
+    const std::string& filePath,
+    GfxTexture&        texture)
+{
+    DUSK_DEBUG("Saving texture file as png - {}", filePath);
+
+    DASSERT(texture.pixelData, "Pixel data not present");
+
+    bool result = stbi_write_png(
+        filePath.c_str(),
+        texture.width,
+        texture.height,
+        4,
+        texture.pixelData,
+        0);
+
+    return result; // 1 -> success, 0 -> failure
+}
+
+bool ImageLoader::saveKTX2(
+    const std::string& filePath,
+    GfxTexture&        texture)
+{
+    DUSK_DEBUG("Saving texture file as ktx2 - {}", filePath);
+
+    DASSERT(texture.pixelData, "Pixel data not present");
+
+    ktxTextureCreateInfo createInfo = {};
+    createInfo.vkFormat             = texture.format;
+    createInfo.baseWidth            = texture.width;
+    createInfo.baseHeight           = texture.height;
+    createInfo.baseDepth            = 1;
+    createInfo.numDimensions        = 2;
+    createInfo.numLevels            = texture.numMipLevels;
+    createInfo.numFaces             = texture.numLayers; // ktx defintion of layers is different from vulkan
+    createInfo.isArray              = KTX_FALSE;
+    createInfo.generateMipmaps      = KTX_FALSE;
+
+    // ktx2 tex
+    ktxTexture2*   ktxTex = nullptr;
+    KTX_error_code result = ktxTexture2_Create(
+        &createInfo,
+        KTX_TEXTURE_CREATE_ALLOC_STORAGE,
+        &ktxTex);
+    if (result != KTX_SUCCESS)
+    {
+        DUSK_ERROR("Unable to create ktx texture for saving {}", filePath);
+        return false;
+    }
+
+    // copy mip levels and faces
+    for (uint32_t mip = 0u; mip < texture.numMipLevels; ++mip)
+    {
+        uint32_t     mipWidth  = std::max(1u, texture.width >> mip);
+        uint32_t     mipHeight = std::max(1u, texture.height >> mip);
+        VkDeviceSize faceSize  = mipWidth * mipHeight * vulkan::getBytesPerPixel(texture.format);
+
+        for (uint32_t face = 0u; face < texture.numLayers; face++)
+        {
+            uint8_t* mipData = (uint8_t*)texture.pixelData + texture.mipOffsets[mip] + face * faceSize;
+
+            // save face
+            result = ktxTexture_SetImageFromMemory(
+                ktxTexture(ktxTex),
+                mip,
+                0, // ktx layer, not same as vulkan layer
+                face,
+                mipData,
+                faceSize);
+
+            if (result != KTX_SUCCESS)
+            {
+                DUSK_ERROR("Unable to save mip {} face {}for {}", mip, face, filePath);
+                return false;
+            }
+        }
+    }
+
+    ktxTexture_WriteToNamedFile(ktxTexture(ktxTex), filePath.c_str());
+    ktxTexture_Destroy(ktxTexture(ktxTex));
+}
+
 } // namespace dusk

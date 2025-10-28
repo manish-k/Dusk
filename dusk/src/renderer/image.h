@@ -8,7 +8,7 @@ namespace dusk
 enum class PixelFormat
 {
     None,
-    
+
     R8_unorm,
     R8_snorm,
     R8_uscaled,
@@ -83,18 +83,20 @@ enum class PixelFormat
 
 struct ImageData
 {
-    int         width        = 0;
-    int         height       = 0;
-    int         numMipLevels = 1;
-    int         numFaces     = 1;
-    int         numLayers    = 1;
-    size_t      size         = 0;
-    void*       data         = nullptr;
-    PixelFormat format       = PixelFormat::R8G8B8A8_uint;
+    int                    width        = 0;
+    int                    height       = 0;
+    int                    numMipLevels = 1;
+    int                    numFaces     = 1;
+    int                    numLayers    = 1;
+    size_t                 size         = 0;
+    void*                  data         = nullptr;
+    DynamicArray<uint64_t> mipOffsets   = { 0 };
+    PixelFormat            format       = PixelFormat::R8G8B8A8_uint;
 
-    ImageData()              = default;
+    ImageData()                         = default;
     ~ImageData()
     {
+        DUSK_DEBUG("Releasing image's pixel data");
         if (data) delete[] data;
     }
 };

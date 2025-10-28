@@ -10,6 +10,7 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image_write.h>
 #include <ktx.h>
+#include <ktxvulkan.h>
 
 namespace dusk
 {
@@ -17,9 +18,9 @@ Shared<ImageData> ImageLoader::load(const std::string& filePath)
 {
     const std::string fileEXT = getFileExtension(filePath);
 
-    if (fileEXT == ".ktx")
+    if (fileEXT == ".ktx" || fileEXT == ".ktx2")
     {
-        return loadKTX2(filePath);
+        return loadKTX(filePath);
     }
 
     return loadSTB(filePath);
@@ -60,7 +61,7 @@ Shared<ImageData> ImageLoader::loadSTB(const std::string& filePath)
             nullptr,
             defaultNumChannels); // forcing 4 channels RGBA
 
-        img->format = PixelFormat::R8G8B8A8_uint;
+        img->format = PixelFormat::R8G8B8A8_srgb;
     }
 
     img->numMipLevels = 1; // base mip
@@ -70,12 +71,12 @@ Shared<ImageData> ImageLoader::loadSTB(const std::string& filePath)
     return img;
 }
 
-Shared<ImageData> ImageLoader::loadKTX2(const std::string& filePath)
+Shared<ImageData> ImageLoader::loadKTX(const std::string& filePath)
 {
     DUSK_DEBUG("Reading ktx texture file - {}", filePath);
 
-    ktxTexture2*   ktxTex;
-    KTX_error_code result = ktxTexture2_CreateFromNamedFile(
+    ktxTexture*   ktxTex;
+    KTX_error_code result = ktxTexture_CreateFromNamedFile(
         filePath.c_str(),
         KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT,
         &ktxTex);
@@ -95,7 +96,13 @@ Shared<ImageData> ImageLoader::loadKTX2(const std::string& filePath)
     img->numMipLevels = ktxTex->numLevels;
     img->numFaces     = ktxTex->numFaces; // 6 for cubemap else 1
     img->numLayers    = ktxTex->numLayers;
-    img->format       = vulkan::getPixelFormat((VkFormat)ktxTex->vkFormat);
+    img->format       = vulkan::getPixelFormat(ktxTexture_GetVkFormat(ktxTex));
+
+    img->mipOffsets.resize(ktxTex->numLevels);
+    for (uint32_t mipLevel = 0u; mipLevel < ktxTex->numLevels; ++mipLevel)
+    {
+        ktxTexture_GetImageOffset(ktxTex, mipLevel, 0, 0, &img->mipOffsets[mipLevel]);
+    }
 
     // we have taken ownership of pixel data in ImageData struct,
     // removing ownership from ktx so that pixel data won't be freed
@@ -187,6 +194,8 @@ bool ImageLoader::saveKTX2(
 
     ktxTexture_WriteToNamedFile(ktxTexture(ktxTex), filePath.c_str());
     ktxTexture_Destroy(ktxTexture(ktxTex));
+
+    return true;
 }
 
 } // namespace dusk

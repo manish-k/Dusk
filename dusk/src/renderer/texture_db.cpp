@@ -163,6 +163,8 @@ bool TextureDB::setupDescriptors()
 
     m_storageTextureDescriptorSet = m_textureDescriptorPool->allocateDescriptorSet(*m_storageTextureDescriptorSetLayout, "storage_texture_desc_set");
     CHECK_AND_RETURN_FALSE(!m_storageTextureDescriptorSet);
+
+    return true;
 }
 
 uint32_t TextureDB::createTextureAsync(const DynamicArray<std::string>& paths, TextureType type)
@@ -296,13 +298,14 @@ void TextureDB::onUpdate()
 
             DASSERT(format != VK_FORMAT_UNDEFINED);
 
-            Error err = tex.initAndRecordUpload(
-                batch,
+            Error err = tex.init(
+                *batch[0],
                 tex.type,
                 format,
                 TransferDstTexture | SampledTexture,
                 gfxBuffer,
                 transferBuffer,
+                false,
                 tex.name.c_str());
 
             if (err != Error::Ok)

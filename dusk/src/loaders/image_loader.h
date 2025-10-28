@@ -15,23 +15,23 @@ public:
     /**
      * @brief load an image file
      * @param path to file 
-     * @return true for success else false
+     * @return shared ptr for image data object
      */
     static Shared<ImageData> load(const std::string& filePath);
     
     /**
      * @brief load an image file with stb loader
      * @param path to file 
-     * @return true for success else false
+     * @return shared ptr for image data object
      */
     static Shared<ImageData> loadSTB(const std::string& filePath);
     
     /**
-     * @brief load a ktx2 image file
+     * @brief load ktx and ktx2 image files
      * @param path to file 
-     * @return true for success else false
+     * @return shared ptr for image data object
      */
-    static Shared<ImageData> loadKTX2(const std::string& filePath);
+    static Shared<ImageData> loadKTX(const std::string& filePath);
 
     /**
      * @brief Save the texture as png file on disk

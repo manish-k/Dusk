@@ -19,5 +19,6 @@ public:
     void onEvent(dusk::Event& ev) override;
 
 private:
-    Unique<Scene>   m_testScene;
+    Unique<Scene> m_testScene;
+    GfxTexture    m_tex;
 };

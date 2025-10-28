@@ -89,23 +89,24 @@ struct GfxTexture
         const char* name = nullptr);
 
     /**
-     * @brief Initialize texture and record upload commands into the given
-     * buffers. It will use texture queue to upload and then transfer ownership
+     * @brief Initialize texture and use given command buffers for upload.
+     * It will use texture queue to upload and then transfer ownership
      * to graphics queue for usage.
-     * @param texImage Image object
+     * @param Image data
      * @param usage flags
      * @param graphicsBuffer command buffer corresponding to graphics queue
      * @param transferBuffer command buffer corresponding to transfer queue
      * @param name Optional name for the texture resources
      * @return Error status for the complete operation
      */
-    Error initAndRecordUpload(
-        ImagesBatch&    texImages,
+    Error init(
+        ImageData&      texImage,
         TextureType     type,
         VkFormat        format,
         uint32_t        usage,
         VkCommandBuffer graphicsBuffer,
         VkCommandBuffer transferBuffer,
+        bool            generateMips,
         const char*     name = nullptr);
 
     /**

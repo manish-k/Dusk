@@ -1,11 +1,10 @@
 #include "test_scene.h"
 
 #include "core/entrypoint.h"
-#include "loaders/stb_image_loader.h"
 #include "scene/components/lights.h"
 #include "scene/components/transform.h"
-
-#include <spdlog/fmt/bundled/printf.h>
+#include "renderer/texture_db.h"
+#include "loaders/image_loader.h"
 
 TestScene::TestScene()
 {
@@ -26,8 +25,8 @@ bool TestScene::start()
 {
     // std::string scenePath = "assets/scenes/EnvironmentTest.gltf";
     std::string scenePath = "assets/scenes/Scene.gltf";
-    // std::string scenePath
-    //     = "assets/scenes/tea_cup/DiffuseTransmissionTeacup.gltf";
+    //std::string scenePath
+    //    = "assets/scenes/tea_cup/DiffuseTransmissionTeacup.gltf";
     m_testScene = Scene::createSceneFromGLTF(scenePath);
 
     // adding directional light
@@ -49,11 +48,14 @@ bool TestScene::start()
 
     Engine::get().loadScene(m_testScene.get());
 
+     TextureDB::cache()->createTextureAsync(DynamicArray<std::string> { "assets/scenes/test_ktx.ktx2" }, TextureType::Texture2D);
+
     return true;
 }
 
 void TestScene::shutdown()
 {
+    m_tex.free();
     m_testScene = nullptr;
 }
 

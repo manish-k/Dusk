@@ -73,10 +73,10 @@ void TextureDB::freeAllResources()
 Error TextureDB::initDefaultTexture()
 {
     ImageData defaultTextureImg {};
-    defaultTextureImg.width    = 1;
-    defaultTextureImg.height   = 1;
-    defaultTextureImg.size     = 4;
-    defaultTextureImg.data     = new glm::u8vec4(255, 255, 255, 255);
+    defaultTextureImg.width  = 1;
+    defaultTextureImg.height = 1;
+    defaultTextureImg.size   = 4;
+    defaultTextureImg.data   = new glm::u8vec4(255, 255, 255, 255);
 
     GfxTexture default2dTexture { 0 };
     Error      err = default2dTexture.init(
@@ -202,25 +202,27 @@ uint32_t TextureDB::createTextureAsync(const DynamicArray<std::string>& paths, T
     GfxTexture& newTexture = m_textures[newId];
 
     auto&       executor   = Engine::get().getTfExecutor();
-    executor.silent_async([&, newId, paths]()
-                          {
-        DUSK_PROFILE_SECTION("texture_file_read");
-        ImagesBatch batch;
-        for (auto& path : paths)
+    executor.silent_async(
+        [&, newId, paths]()
         {
-            DASSERT(!path.empty());
-            Shared<ImageData> img = ImageLoader::load(path);
-            if (img)
-                batch.push_back(img);
-        }
+            DUSK_PROFILE_SECTION("texture_file_read");
+            ImagesBatch batch;
+            for (auto& path : paths)
+            {
+                DASSERT(!path.empty());
+                Shared<ImageData> img = ImageLoader::load(path);
+                if (img)
+                    batch.push_back(img);
+            }
 
-        DASSERT(batch.size() == paths.size());
+            DASSERT(batch.size() == paths.size());
 
-        {
-            std::lock_guard<std::mutex> updateLock(m_mutex);
-            DUSK_DEBUG("Queuing texture {} for gpu upload", newId);
-            m_pendingImageBatches.emplace(newId, batch);
-        } });
+            {
+                std::lock_guard<std::mutex> updateLock(m_mutex);
+                DUSK_DEBUG("Queuing texture {} for gpu upload", newId);
+                m_pendingImageBatches.emplace(newId, batch);
+            }
+        });
 
     newTexture.sampler = m_defaultSampler.sampler;
 
@@ -494,6 +496,24 @@ void TextureDB::updateTextureSampler(uint32_t textureId, VkSampler sampler)
     m_textureDescriptorSet->applyConfiguration();
 
     m_extraSamplers.push_back(sampler);
+}
+
+void TextureDB::saveTextureAsKTX(
+    uint32_t           textureId,
+    const std::string& filePath)
+{
+    DASSERT(m_loadedTextures.has(textureId), "Texture has not been available yet");
+
+    GfxTexture& tex = m_textures[textureId];
+    tex.downloadPixelData();
+
+    auto& executor = Engine::get().getTfExecutor();
+    executor.silent_async(
+        [&, filePath]()
+        {
+            GfxTexture& texture = m_textures[textureId];
+            texture.writePixelDataAsKTX(filePath);
+        });
 }
 
 } // namespace dusk

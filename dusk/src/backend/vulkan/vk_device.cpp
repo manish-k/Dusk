@@ -674,7 +674,7 @@ bool VkGfxDevice::hasInstanceExtension(const char* pExtensionName)
     return m_instanceExtensionsSet.has(hash(pExtensionName));
 }
 
-VkCommandBuffer VkGfxDevice::beginSingleTimeCommands()
+VkCommandBuffer VkGfxDevice::beginSingleTimeCommands() const
 {
     VkCommandBufferAllocateInfo allocInfo {};
     allocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -694,7 +694,7 @@ VkCommandBuffer VkGfxDevice::beginSingleTimeCommands()
     return commandBuffer;
 }
 
-void VkGfxDevice::endSingleTimeCommands(VkCommandBuffer commandBuffer)
+void VkGfxDevice::endSingleTimeCommands(VkCommandBuffer commandBuffer) const
 {
     vkEndCommandBuffer(commandBuffer);
 
@@ -707,6 +707,41 @@ void VkGfxDevice::endSingleTimeCommands(VkCommandBuffer commandBuffer)
     vkQueueWaitIdle(m_graphicsQueue);
 
     vkFreeCommandBuffers(m_device, m_commandPool, 1, &commandBuffer);
+}
+
+VkCommandBuffer VkGfxDevice::beginSingleTimeTransferCommands() const
+{
+    VkCommandBufferAllocateInfo allocInfo {};
+    allocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandPool        = m_transferCommandPool;
+    allocInfo.commandBufferCount = 1;
+
+    VkCommandBuffer commandBuffer;
+    vkAllocateCommandBuffers(m_device, &allocInfo, &commandBuffer);
+
+    VkCommandBufferBeginInfo beginInfo {};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+    return commandBuffer;
+}
+
+void VkGfxDevice::endSingleTimeTransferCommands(VkCommandBuffer commandBuffer) const
+{
+    vkEndCommandBuffer(commandBuffer);
+
+    VkSubmitInfo submitInfo {};
+    submitInfo.sType              = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers    = &commandBuffer;
+
+    vkQueueSubmit(m_transferQueue, 1, &submitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(m_transferQueue);
+
+    vkFreeCommandBuffers(m_device, m_transferCommandPool, 1, &commandBuffer);
 }
 
 VulkanResult VkGfxDevice::createBuffer(const GfxBufferParams& params, VulkanGfxBuffer* pOutBuffer)

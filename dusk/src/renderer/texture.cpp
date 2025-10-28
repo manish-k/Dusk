@@ -3,6 +3,7 @@
 #include "engine.h"
 #include "image.h"
 #include "debug/profiler.h"
+#include "loaders/image_loader.h"
 #include "backend/vulkan/vk_allocator.h"
 #include "backend/vulkan/vk_types.h"
 #include "backend/vulkan/vk_descriptors.h"
@@ -119,7 +120,7 @@ Error GfxTexture::init(
         return Error::InitializationFailed;
     }
 
-    #ifdef VK_RENDERER_DEBUG
+#ifdef VK_RENDERER_DEBUG
     if (debugName)
     {
         vkdebug::setObjectName(
@@ -629,6 +630,101 @@ void GfxTexture::free()
     device.freeImageView(&imageView);
 
     vulkan::freeGPUImage(vkContext.gpuAllocator, &image);
+
+    if (pixelData) pixelData->free();
+    pixelData = nullptr;
+}
+
+void GfxTexture::downloadPixelData()
+{
+    // TODO:: ensure thread safety
+    // TODO:: consider using temp staging buffer to download and 
+    // then save file followed by free of staging buffer. This will
+    // not keep pixel data for entirity of GfxImage life.
+
+    auto& device = Engine::get().getGfxDevice();
+
+    // TODO: consider using separte queues for copying.
+    // -> graphics ownership transfer with layout transition
+    // -> transfer acquire ownership
+    // -> copy operation
+    // -> return ownership to graphics queue
+
+    VkCommandBuffer cmdBuf = device.beginSingleTimeCommands();
+
+    // Calculate total size
+    VkDeviceSize totalSize = 0;
+    mipOffsets.resize(numMipLevels);
+
+    // copy should take care of our assumption that pixel data will
+    // be stored in mip-major order
+    // [Mip 0, Face 0] [Mip 0, Face 1] ... [Mip 0, Face 5]
+    // [Mip 1, Face 0] [Mip 1, Face 1] ... [Mip 1, Face 5]
+    DynamicArray<VkBufferImageCopy> imageCopyRegions(numMipLevels);
+
+    for (uint32_t mipLevel = 0u; mipLevel < numMipLevels; mipLevel++)
+    {
+        uint32_t     mipWidth  = std::max(1u, width >> mipLevel);
+        uint32_t     mipHeight = std::max(1u, height >> mipLevel);
+        VkDeviceSize levelSize = mipWidth * mipHeight * vulkan::getBytesPerPixel(format) * numLayers;
+        mipOffsets[mipLevel]   = totalSize;
+        totalSize += levelSize;
+
+        // prepare copy regions
+        VkBufferImageCopy& region              = imageCopyRegions[mipLevel];
+        region.bufferOffset                    = mipOffsets[mipLevel];
+        region.imageSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+        region.imageSubresource.mipLevel       = mipLevel;
+        region.imageSubresource.baseArrayLayer = 0;
+        region.imageSubresource.layerCount     = numLayers;
+        region.imageExtent.width               = mipWidth;
+        region.imageExtent.height              = mipHeight;
+        region.imageExtent.depth               = 1;
+    }
+
+    // staging buffer for transfer
+    if (!pixelData) pixelData->free();
+    pixelData = createShared<GfxBuffer>(); // TODO:: shared ptr looks ugly
+
+    GfxBuffer::createHostReadWriteBuffer(
+        GfxBufferUsageFlags::TransferTarget,
+        totalSize,
+        1,
+        "staging_mip_download_buffer",
+        pixelData.get());
+
+    if (!pixelData->isAllocated())
+    {
+        DUSK_ERROR("Failed to download pixel data for texture {}", id);
+        return;
+    }
+
+    VkImageLayout oldLayout = currentLayout;
+    recordTransitionLayout(cmdBuf, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+
+    vkCmdCopyImageToBuffer(
+        cmdBuf,
+        image.vkImage,
+        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        pixelData->vkBuffer.buffer,
+        imageCopyRegions.size(),
+        imageCopyRegions.data());
+
+    recordTransitionLayout(cmdBuf, oldLayout);
+
+    device.endSingleTimeCommands(cmdBuf);
+}
+
+void GfxTexture::writePixelDataAsKTX(const std::string& filePath)
+{
+    // TODO:: ensure thread safety
+    ImageLoader::saveKTX2(filePath, *this);
+}
+
+void GfxTexture::writePixelDataAsPNG(const std::string& filePath)
+{
+    // TODO:: ensure thread safety
+    ImageLoader::savePNG(filePath, *this);
 }
 
 void GfxTexture::recordTransitionLayout(

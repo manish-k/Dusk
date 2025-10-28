@@ -75,7 +75,7 @@ Shared<ImageData> ImageLoader::loadKTX(const std::string& filePath)
 {
     DUSK_DEBUG("Reading ktx texture file - {}", filePath);
 
-    ktxTexture*   ktxTex;
+    ktxTexture*    ktxTex;
     KTX_error_code result = ktxTexture_CreateFromNamedFile(
         filePath.c_str(),
         KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT,
@@ -120,15 +120,17 @@ bool ImageLoader::savePNG(
 {
     DUSK_DEBUG("Saving texture file as png - {}", filePath);
 
-    DASSERT(texture.pixelData, "Pixel data not present");
+    DASSERT(texture.pixelData->isAllocated(), "Pixel data not present");
 
+    texture.pixelData->map();
     bool result = stbi_write_png(
         filePath.c_str(),
         texture.width,
         texture.height,
-        4,
-        texture.pixelData,
+        4, // forcing 4(RGBA) channels
+        texture.pixelData->vkBuffer.mappedMemory,
         0);
+    texture.pixelData->unmap();
 
     return result; // 1 -> success, 0 -> failure
 }
@@ -139,7 +141,7 @@ bool ImageLoader::saveKTX2(
 {
     DUSK_DEBUG("Saving texture file as ktx2 - {}", filePath);
 
-    DASSERT(texture.pixelData, "Pixel data not present");
+    DASSERT(texture.pixelData->isAllocated(), "Pixel data not present");
 
     ktxTextureCreateInfo createInfo = {};
     createInfo.vkFormat             = texture.format;
@@ -164,6 +166,8 @@ bool ImageLoader::saveKTX2(
         return false;
     }
 
+    texture.pixelData->map();
+
     // copy mip levels and faces
     for (uint32_t mip = 0u; mip < texture.numMipLevels; ++mip)
     {
@@ -173,7 +177,7 @@ bool ImageLoader::saveKTX2(
 
         for (uint32_t face = 0u; face < texture.numLayers; face++)
         {
-            uint8_t* mipData = (uint8_t*)texture.pixelData + texture.mipOffsets[mip] + face * faceSize;
+            uint8_t* mipData = (uint8_t*)texture.pixelData->vkBuffer.mappedMemory + texture.mipOffsets[mip] + face * faceSize;
 
             // save face
             result = ktxTexture_SetImageFromMemory(
@@ -194,6 +198,8 @@ bool ImageLoader::saveKTX2(
 
     ktxTexture_WriteToNamedFile(ktxTexture(ktxTex), filePath.c_str());
     ktxTexture_Destroy(ktxTexture(ktxTex));
+
+    texture.pixelData->unmap();
 
     return true;
 }

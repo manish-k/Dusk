@@ -1,7 +1,10 @@
 #pragma once
 
 #include "dusk.h"
+#include "gfx_buffer.h"
 #include "backend/vulkan/vk_types.h"
+
+#include <thread>
 
 namespace dusk
 {
@@ -50,8 +53,8 @@ struct GfxTexture
     // [Mip 0, Face 0] [Mip 0, Face 1] ... [Mip 0, Face 5]
     // [Mip 1, Face 0] [Mip 1, Face 1] ... [Mip 1, Face 5]
     // ...
-    void*                      pixelData  = nullptr;
-    DynamicArray<VkDeviceSize> mipOffsets = {};
+    Shared<GfxBuffer>          pixelData      = nullptr;
+    DynamicArray<VkDeviceSize> mipOffsets     = {};
 
     GfxTexture(uint32_t id) :
         id(id) { };
@@ -113,6 +116,23 @@ struct GfxTexture
      * @brief free the allocated Image and ImageView for the texture
      */
     void free();
+
+    /**
+     * @brief Download pixel data into a host visible buffer
+     */
+    void downloadPixelData();
+
+    /**
+     * @brief Write host visible pixel data in a png file
+     * @param filePath 
+     */
+    void writePixelDataAsPNG(const std::string& filePath);
+
+    /**
+     * @brief Write host visible pixel data in a ktx2 file
+     * @param filePath 
+     */
+    void writePixelDataAsKTX(const std::string& filePath);
 
     /**
      * @brief get vulkan image

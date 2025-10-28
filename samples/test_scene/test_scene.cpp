@@ -48,8 +48,6 @@ bool TestScene::start()
 
     Engine::get().loadScene(m_testScene.get());
 
-     TextureDB::cache()->createTextureAsync(DynamicArray<std::string> { "assets/scenes/test_ktx.ktx2" }, TextureType::Texture2D);
-
     return true;
 }
 

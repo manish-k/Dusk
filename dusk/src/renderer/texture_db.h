@@ -131,6 +131,14 @@ public:
      */
     void updateTextureSampler(uint32_t textureId, VkSampler sampler);
 
+    /**
+     * @brief Save texture in a ktx file. Different thread will be used to
+     * save file
+     * @param textureId 
+     * @param filePath 
+     */
+    void saveTextureAsKTX(uint32_t textureId, const std::string& filePath);
+
 public:
     /**
      * @brief Static method to get texture db cache instance

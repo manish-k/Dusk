@@ -40,8 +40,11 @@ public:
     bool            hasLayer(const char* pLayerName);
     bool            hasInstanceExtension(const char* pExtensionName);
 
-    VkCommandBuffer beginSingleTimeCommands();
-    void            endSingleTimeCommands(VkCommandBuffer commandBuffer);
+    VkCommandBuffer beginSingleTimeCommands() const;
+    void            endSingleTimeCommands(VkCommandBuffer commandBuffer) const;
+
+    VkCommandBuffer beginSingleTimeTransferCommands() const;
+    void            endSingleTimeTransferCommands(VkCommandBuffer commandBuffer) const;
 
     VulkanResult    createBuffer(const GfxBufferParams& params, VulkanGfxBuffer* pOutBuffer);
     void            freeBuffer(VulkanGfxBuffer* buffer);

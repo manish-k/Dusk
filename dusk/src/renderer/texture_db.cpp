@@ -167,12 +167,13 @@ bool TextureDB::setupDescriptors()
     return true;
 }
 
-uint32_t TextureDB::createTextureAsync(const DynamicArray<std::string>& paths, TextureType type)
+uint32_t TextureDB::createTextureAsync(
+    const std::string& path,
+    TextureType        type)
 {
-    DASSERT(paths.size() != 0);
+    DASSERT(!path.empty());
 
-    std::string combinedPaths = combineStrings(paths);
-    auto        uploadHash    = hash(combinedPaths.c_str());
+    auto uploadHash = hash(path.c_str());
 
     if (m_currentlyLoadingTextures.has(uploadHash)) return m_currentlyLoadingTextures[uploadHash];
 
@@ -186,7 +187,7 @@ uint32_t TextureDB::createTextureAsync(const DynamicArray<std::string>& paths, T
 
         GfxTexture newTex { newId };
         newTex.uploadHash = uploadHash;
-        newTex.name       = combinedPaths;
+        newTex.name       = path;
         newTex.type       = type;
 
         // default texture image till actual tex is uploaded
@@ -203,24 +204,16 @@ uint32_t TextureDB::createTextureAsync(const DynamicArray<std::string>& paths, T
 
     auto&       executor   = Engine::get().getTfExecutor();
     executor.silent_async(
-        [&, newId, paths]()
+        [&, newId, path]()
         {
             DUSK_PROFILE_SECTION("texture_file_read");
-            ImagesBatch batch;
-            for (auto& path : paths)
-            {
-                DASSERT(!path.empty());
-                Shared<ImageData> img = ImageLoader::load(path);
-                if (img)
-                    batch.push_back(img);
-            }
 
-            DASSERT(batch.size() == paths.size());
+            Shared<ImageData> img = ImageLoader::load(path);
 
             {
                 std::lock_guard<std::mutex> updateLock(m_mutex);
                 DUSK_DEBUG("Queuing texture {} for gpu upload", newId);
-                m_pendingImageBatches.emplace(newId, batch);
+                m_pendingImages.emplace(newId, img);
             }
         });
 
@@ -247,9 +240,9 @@ void TextureDB::onUpdate()
 {
     DUSK_PROFILE_FUNCTION;
 
-    if (m_pendingImageBatches.size() > 0)
+    if (m_pendingImages.size() > 0)
     {
-        DUSK_DEBUG("pending texture to upload {}", m_pendingImageBatches.size());
+        DUSK_DEBUG("pending texture to upload {}", m_pendingImages.size());
 
         std::lock_guard<std::mutex> updateLock(m_mutex);
 
@@ -289,19 +282,17 @@ void TextureDB::onUpdate()
             texGraphicBufferName);
 #endif // VK_RENDERER_DEBUG
 
-        for (uint32_t key : m_pendingImageBatches.keys())
+        for (uint32_t key : m_pendingImages.keys())
         {
-            GfxTexture&  tex   = m_textures[key];
-            ImagesBatch& batch = m_pendingImageBatches[key];
+            GfxTexture& tex    = m_textures[key];
+            auto&       img    = m_pendingImages[key];
 
-            // deducing format for images in the batch under the
-            // assumption that all images are of same format
-            VkFormat format = vulkan::getPixelVkFormat(batch[0]->format);
+            VkFormat    format = vulkan::getPixelVkFormat(img->format);
 
             DASSERT(format != VK_FORMAT_UNDEFINED);
 
             Error err = tex.init(
-                *batch[0],
+                *img,
                 tex.type,
                 format,
                 TransferDstTexture | SampledTexture,
@@ -339,7 +330,7 @@ void TextureDB::onUpdate()
         vkFreeCommandBuffers(vkContext.device, vkContext.transferCommandPool, 1, &transferBuffer);
         vkFreeCommandBuffers(vkContext.device, vkContext.commandPool, 1, &gfxBuffer);
 
-        m_pendingImageBatches.clear();
+        m_pendingImages.clear();
     }
 }
 

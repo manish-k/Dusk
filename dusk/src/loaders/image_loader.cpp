@@ -1,7 +1,5 @@
 #include "image_loader.h"
 
-#include "renderer/image.h"
-#include "renderer/texture.h"
 #include "utils/utils.h"
 #include "backend/vulkan/vk.h"
 

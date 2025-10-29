@@ -91,7 +91,7 @@ struct ImageData
     size_t                 size         = 0;
     void*                  data         = nullptr;
     DynamicArray<uint64_t> mipOffsets   = { 0 };
-    PixelFormat            format       = PixelFormat::R8G8B8A8_uint;
+    PixelFormat            format       = PixelFormat::R8G8B8A8_srgb;
 
     ImageData()                         = default;
     ~ImageData()

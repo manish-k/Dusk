@@ -2,8 +2,12 @@
 
 #include "engine.h"
 #include "image.h"
+#include "gfx_buffer.h"
+
 #include "debug/profiler.h"
+
 #include "loaders/image_loader.h"
+
 #include "backend/vulkan/vk_allocator.h"
 #include "backend/vulkan/vk_types.h"
 #include "backend/vulkan/vk_descriptors.h"

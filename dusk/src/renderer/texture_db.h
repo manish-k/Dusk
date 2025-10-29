@@ -49,13 +49,15 @@ public:
     GfxTexture& getDefaultTexture2D() { return m_textures[0]; };
 
     /**
-     * @brief Creates a new texture asynchronously from one or mulitple images
+     * @brief Creates a new texture asynchronously for an image
      * and returns its identifier.
      * @params Paths of all images
      * @params type of the texture
      * @return The unique identifier of the loaded texture.
      */
-    uint32_t createTextureAsync(const DynamicArray<std::string>& paths, TextureType type);
+    uint32_t createTextureAsync(
+        const std::string& path,
+        TextureType        type);
 
     /**
      * @brief Get descriptor set for color textures
@@ -134,8 +136,8 @@ public:
     /**
      * @brief Save texture in a ktx file. Different thread will be used to
      * save file
-     * @param textureId 
-     * @param filePath 
+     * @param textureId
+     * @param filePath
      */
     void saveTextureAsKTX(uint32_t textureId, const std::string& filePath);
 
@@ -167,23 +169,23 @@ private:
     void freeAllResources();
 
 private:
-    uint32_t                         m_idCounter = 0;
-    std::mutex                       m_mutex;
+    uint32_t                             m_idCounter = 0;
+    std::mutex                           m_mutex;
 
-    DynamicArray<GfxTexture>         m_textures                 = {};
-    HashMap<size_t, uint32_t>        m_loadedTextures           = {};
-    HashMap<size_t, uint32_t>        m_currentlyLoadingTextures = {};
-    HashMap<uint32_t, ImagesBatch>   m_pendingImageBatches      = {};
+    DynamicArray<GfxTexture>             m_textures                 = {};
+    HashMap<size_t, uint32_t>            m_loadedTextures           = {};
+    HashMap<size_t, uint32_t>            m_currentlyLoadingTextures = {};
+    HashMap<uint32_t, Shared<ImageData>> m_pendingImages            = {};
 
-    VkGfxDevice&                     m_gfxDevice;
-    Unique<VkGfxDescriptorPool>      m_textureDescriptorPool             = nullptr;
-    Unique<VkGfxDescriptorSetLayout> m_textureDescriptorSetLayout        = nullptr;
-    Unique<VkGfxDescriptorSet>       m_textureDescriptorSet              = nullptr;
-    Unique<VkGfxDescriptorSetLayout> m_storageTextureDescriptorSetLayout = nullptr;
-    Unique<VkGfxDescriptorSet>       m_storageTextureDescriptorSet       = nullptr;
+    VkGfxDevice&                         m_gfxDevice;
+    Unique<VkGfxDescriptorPool>          m_textureDescriptorPool             = nullptr;
+    Unique<VkGfxDescriptorSetLayout>     m_textureDescriptorSetLayout        = nullptr;
+    Unique<VkGfxDescriptorSet>           m_textureDescriptorSet              = nullptr;
+    Unique<VkGfxDescriptorSetLayout>     m_storageTextureDescriptorSetLayout = nullptr;
+    Unique<VkGfxDescriptorSet>           m_storageTextureDescriptorSet       = nullptr;
 
-    VulkanSampler                    m_defaultSampler;
-    DynamicArray<VkSampler>          m_extraSamplers; //TODO:: need uniqueness check
+    VulkanSampler                        m_defaultSampler;
+    DynamicArray<VkSampler>              m_extraSamplers; // TODO:: need uniqueness check
 
 private:
     static TextureDB* s_db;

@@ -1,16 +1,14 @@
 #pragma once
 
 #include "dusk.h"
-#include "gfx_buffer.h"
 #include "backend/vulkan/vk_types.h"
 
 #include <thread>
 
 namespace dusk
 {
-class ImageData;
-
-using ImagesBatch = DynamicArray<Shared<ImageData>>;
+struct ImageData;
+class GfxBuffer;
 
 enum TextureUsageFlags : uint32_t
 {

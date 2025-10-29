@@ -6,8 +6,9 @@
 
 namespace dusk
 {
-class ImageData;
 class GfxTexture;
+
+struct ImageData;
 
 class ImageLoader
 {

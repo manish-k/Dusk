@@ -255,7 +255,7 @@ int32_t AssimpLoader::read2DTexture(std::filesystem::path texPath) const
     if (!texPath.empty())
     {
         auto texturePath = (m_sceneDir / texPath).make_preferred().string();
-        return TextureDB::cache()->createTextureAsync(DynamicArray<std::string> { texturePath }, TextureType::Texture2D);
+        return TextureDB::cache()->createTextureAsync(texturePath, TextureType::Texture2D);
     }
 
     return -1;

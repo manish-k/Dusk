@@ -45,7 +45,8 @@ void Environment::initCubeTextureResources(
         resPath + "nz.png"
     };
 
-    m_skyTextureId         = m_textureDB.createTextureAsync(skyboxTextures, TextureType::Cube);
+    // TODO: need to switch to ktx texture for skybox images
+    m_skyTextureId         = m_textureDB.createTextureAsync(skyboxTextures[0], TextureType::Cube);
     m_cubeMesh             = SubMesh::createCubeMesh();
 
     m_skyBoxPipelineLayout = VkGfxPipelineLayout::Builder(ctx)
@@ -126,14 +127,14 @@ void Environment::initSphereTextureResources(
         resPath + "room_radiance.hdr"
     };
 
-    m_skyTextureId = m_textureDB.createTextureAsync(skyboxTextures, TextureType::Texture2D);
+    m_skyTextureId = m_textureDB.createTextureAsync(skyboxTextures[0], TextureType::Texture2D);
     m_textureDB.updateTextureSampler(m_skyTextureId, skyboxSampler);
 
-    m_skyIrradianceTexId = m_textureDB.createTextureAsync(skyboxIrradianceTextures, TextureType::Texture2D);
+    m_skyIrradianceTexId = m_textureDB.createTextureAsync(skyboxIrradianceTextures[0], TextureType::Texture2D);
     m_textureDB.updateTextureSampler(m_skyIrradianceTexId, irradianceSampler);
 
     m_skyRadianceTexId
-        = m_textureDB.createTextureAsync(skyboxRadianceTextures, TextureType::Texture2D);
+        = m_textureDB.createTextureAsync(skyboxRadianceTextures[0], TextureType::Texture2D);
     m_textureDB.updateTextureSampler(m_skyRadianceTexId, radianceSampler);
 
     m_cubeMesh             = SubMesh::createCubeMesh();

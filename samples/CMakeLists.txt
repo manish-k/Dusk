@@ -8,3 +8,5 @@ add_subdirectory(test_scene)
 add_subdirectory(test_lights)
 add_subdirectory(test_sponza)
 add_subdirectory(test_pbr)
+
+add_subdirectory(ibl_generator)

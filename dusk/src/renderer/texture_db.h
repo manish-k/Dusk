@@ -85,7 +85,7 @@ public:
     void onUpdate();
 
     /**
-     * @brief clear a render texture for color attachment
+     * @brief Create a render texture for color attachment
      * @param name of the render target
      * @param width of the render target
      * @param height of the render target
@@ -99,7 +99,21 @@ public:
         VkFormat           format);
 
     /**
-     * @brief clear a storage texture for compute pipeline
+     * @brief Create a cube texture for color attachment
+     * @param name of the render target
+     * @param width of the render target 
+     * @param height of the render target 
+     * @param format of the render target 
+     * @return id of the texture
+     */
+    uint32_t createCubeColorTexture(
+        const std::string& name,
+        uint32_t           width,
+        uint32_t           height,
+        VkFormat           format);
+
+    /**
+     * @brief Create a storage texture for compute pipeline
      * @param name of the texture
      * @param width of the texture
      * @param height of the texture
@@ -113,7 +127,7 @@ public:
         VkFormat           format);
 
     /**
-     * @brief clear a render texture for depth attachment
+     * @brief Create a render texture for depth attachment
      * @param name of the render target
      * @param width of the render target
      * @param height of the render target
@@ -183,6 +197,8 @@ private:
     Unique<VkGfxDescriptorSet>           m_textureDescriptorSet              = nullptr;
     Unique<VkGfxDescriptorSetLayout>     m_storageTextureDescriptorSetLayout = nullptr;
     Unique<VkGfxDescriptorSet>           m_storageTextureDescriptorSet       = nullptr;
+    Unique<VkGfxDescriptorSetLayout>     m_cubeTextureDescriptorSetLayout    = nullptr;
+    Unique<VkGfxDescriptorSet>           m_cubeTextureDescriptorSet          = nullptr;
 
     VulkanSampler                        m_defaultSampler;
     DynamicArray<VkSampler>              m_extraSamplers; // TODO:: need uniqueness check

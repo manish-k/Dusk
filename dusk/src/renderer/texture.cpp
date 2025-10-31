@@ -139,8 +139,10 @@ Error GfxTexture::init(
 }
 
 Error GfxTexture::init(
+    TextureType type,
     uint32_t    width,
     uint32_t    height,
+    uint32_t    layers,
     VkFormat    format,
     uint32_t    usage,
     const char* name)
@@ -162,7 +164,7 @@ Error GfxTexture::init(
     imageInfo.extent.height = height;
     imageInfo.extent.depth  = 1;
     imageInfo.mipLevels     = 1;
-    imageInfo.arrayLayers   = 1;
+    imageInfo.arrayLayers   = layers;
     imageInfo.format        = format;
     imageInfo.tiling        = VK_IMAGE_TILING_OPTIMAL;
     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -171,7 +173,13 @@ Error GfxTexture::init(
     imageInfo.sharingMode   = VK_SHARING_MODE_EXCLUSIVE;
     imageInfo.flags         = 0;
 
-    this->currentLayout     = VK_IMAGE_LAYOUT_UNDEFINED;
+    if (type == TextureType::Cube)
+    {
+        DASSERT(layers == 6, "cube has 6 faces dumdum");
+        imageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+    }
+
+    this->currentLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     // create image
     VulkanResult result = vulkan::allocateGPUImage(
@@ -642,7 +650,7 @@ void GfxTexture::free()
 void GfxTexture::downloadPixelData()
 {
     // TODO:: ensure thread safety
-    // TODO:: consider using temp staging buffer to download and 
+    // TODO:: consider using temp staging buffer to download and
     // then save file followed by free of staging buffer. This will
     // not keep pixel data for entirity of GfxImage life.
 

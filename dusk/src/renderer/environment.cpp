@@ -115,26 +115,18 @@ void Environment::initSphereTextureResources(
     vkCreateSampler(ctx.device, &samplerInfo, nullptr, &radianceSampler);
     vkCreateSampler(ctx.device, &samplerInfo, nullptr, &irradianceSampler);
 
-    const DynamicArray<std::string> skyboxTextures = {
-        resPath + "room.hdr"
-    };
+    const std::string skyboxTexturePath           = resPath + "room.hdr";
+    const std::string skyboxIrradianceTexturePath = resPath + "room_irradiance.hdr";
+    const std::string skyboxRadianceTexturePath   = resPath + "room_radiance.hdr";
 
-    const DynamicArray<std::string> skyboxIrradianceTextures = {
-        resPath + "room_irradiance.hdr"
-    };
-
-    const DynamicArray<std::string> skyboxRadianceTextures = {
-        resPath + "room_radiance.hdr"
-    };
-
-    m_skyTextureId = m_textureDB.createTextureAsync(skyboxTextures[0], TextureType::Texture2D);
+    m_skyTextureId                                = m_textureDB.createTextureAsync(skyboxTexturePath, TextureType::Texture2D);
     m_textureDB.updateTextureSampler(m_skyTextureId, skyboxSampler);
 
-    m_skyIrradianceTexId = m_textureDB.createTextureAsync(skyboxIrradianceTextures[0], TextureType::Texture2D);
+    m_skyIrradianceTexId = m_textureDB.createTextureAsync(skyboxIrradianceTexturePath, TextureType::Texture2D);
     m_textureDB.updateTextureSampler(m_skyIrradianceTexId, irradianceSampler);
 
     m_skyRadianceTexId
-        = m_textureDB.createTextureAsync(skyboxRadianceTextures[0], TextureType::Texture2D);
+        = m_textureDB.createTextureAsync(skyboxRadianceTexturePath, TextureType::Texture2D);
     m_textureDB.updateTextureSampler(m_skyRadianceTexId, radianceSampler);
 
     m_cubeMesh             = SubMesh::createCubeMesh();

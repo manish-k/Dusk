@@ -156,7 +156,7 @@ Unique<VkGfxDescriptorSet> VkGfxDescriptorPool::allocateDescriptorSet(
 
     if (result.hasError())
     {
-        DUSK_ERROR("Unable to create descriptor set. {}", result.toString());
+        DUSK_ERROR("Unable to create descriptor set {}. {}", pDebugName, result.toString());
         return nullptr;
     }
 

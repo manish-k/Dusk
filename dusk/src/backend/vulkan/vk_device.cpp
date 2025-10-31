@@ -345,6 +345,9 @@ Error VkGfxDevice::createDevice()
         pDeviceInfo->dynamicRenderingFeature.dynamicRendering = VK_TRUE;
         pDeviceInfo->activeDeviceExtensions.push_back(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
 
+        // Enabling multiview feature
+        pDeviceInfo->deviceFeaturesVk11.multiview = VK_TRUE;
+
         // check samplerAnisotropy
         if (!deviceFeatures.samplerAnisotropy)
         {

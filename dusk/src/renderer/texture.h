@@ -43,6 +43,9 @@ struct GfxTexture
 
     VulkanGfxImage image         = {};
     VkImageView    imageView     = {};
+    // special image view for sampling cubemaps as their
+    // color image view type is different from view that samples the image
+    VkImageView    cubeImageView = {};
     VkFormat       format        = {};
     VkImageLayout  currentLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     VkSampler      sampler       = {};
@@ -51,8 +54,8 @@ struct GfxTexture
     // [Mip 0, Face 0] [Mip 0, Face 1] ... [Mip 0, Face 5]
     // [Mip 1, Face 0] [Mip 1, Face 1] ... [Mip 1, Face 5]
     // ...
-    Shared<GfxBuffer>          pixelData      = nullptr;
-    DynamicArray<VkDeviceSize> mipOffsets     = {};
+    Shared<GfxBuffer>          pixelData  = nullptr;
+    DynamicArray<VkDeviceSize> mipOffsets = {};
 
     GfxTexture(uint32_t id) :
         id(id) { };
@@ -75,16 +78,20 @@ struct GfxTexture
 
     /**
      * @brief Initialize an empty texture
+     * @param type of texture
      * @param width of the texture
      * @param height of the texture
+     * @param number of layers in the texture
      * @param format of the texture
      * @param usage  flags of the texture
      * @param name  of the texture
      * @return Error value of the creation call
      */
     Error init(
+        TextureType type,
         uint32_t    width,
         uint32_t    height,
+        uint32_t    layers,
         VkFormat    format,
         uint32_t    usage,
         const char* name = nullptr);
@@ -94,6 +101,7 @@ struct GfxTexture
      * It will use texture queue to upload and then transfer ownership
      * to graphics queue for usage.
      * @param Image data
+     * @param type of texture
      * @param usage flags
      * @param graphicsBuffer command buffer corresponding to graphics queue
      * @param transferBuffer command buffer corresponding to transfer queue
@@ -122,13 +130,13 @@ struct GfxTexture
 
     /**
      * @brief Write host visible pixel data in a png file
-     * @param filePath 
+     * @param filePath
      */
     void writePixelDataAsPNG(const std::string& filePath);
 
     /**
      * @brief Write host visible pixel data in a ktx2 file
-     * @param filePath 
+     * @param filePath
      */
     void writePixelDataAsKTX(const std::string& filePath);
 

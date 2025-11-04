@@ -182,8 +182,14 @@ private:
      */
     void freeAllResources();
 
+    /**
+     * @brief Check whether the texture has been uploaded to GPU
+     * @param id of the texture
+     * @return true if uploaded else false
+     */
+    bool isTextureUploaded(uint32_t id);
+
 private:
-    uint32_t                             m_idCounter = 0;
     std::mutex                           m_mutex;
 
     DynamicArray<GfxTexture>             m_textures                 = {};

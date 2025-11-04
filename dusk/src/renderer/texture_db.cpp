@@ -70,6 +70,15 @@ void TextureDB::freeAllResources()
     m_loadedTextures.clear();
 }
 
+bool TextureDB::isTextureUploaded(uint32_t id)
+{
+    if (id >= m_textures.size()) return false;
+
+    const GfxTexture& tex = m_textures[id];
+    if (m_loadedTextures.has(tex.uploadHash)) return true;
+    return false;
+}
+
 Error TextureDB::initDefaultTexture()
 {
     ImageData defaultTextureImg {};

@@ -348,6 +348,17 @@ Error VulkanRenderer::createCommandBuffers()
         return result.getErrorId();
     }
 
+    for (uint32_t i = 0; i < m_commandBuffers.size(); ++i)
+    {
+#ifdef VK_RENDERER_DEBUG
+        vkdebug::setObjectName(
+            context.device,
+            VK_OBJECT_TYPE_COMMAND_BUFFER,
+            (uint64_t)m_commandBuffers[i],
+            "renderer_cmd_buff");
+#endif // VK_RENDERER_DEBUG
+    }
+
     DUSK_INFO("Command buffers created = {}", m_commandBuffers.size());
 
     Error err = createSecondaryCmdPoolsAndBuffers();

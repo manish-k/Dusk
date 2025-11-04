@@ -694,6 +694,14 @@ VkCommandBuffer VkGfxDevice::beginSingleTimeCommands() const
 
     vkBeginCommandBuffer(commandBuffer, &beginInfo);
 
+#ifdef VK_RENDERER_DEBUG
+    vkdebug::setObjectName(
+        m_device,
+        VK_OBJECT_TYPE_COMMAND_BUFFER,
+        (uint64_t)commandBuffer,
+        "single_time_cmd_buff");
+#endif // VK_RENDERER_DEBUG
+
     return commandBuffer;
 }
 
@@ -728,6 +736,14 @@ VkCommandBuffer VkGfxDevice::beginSingleTimeTransferCommands() const
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
     vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+#ifdef VK_RENDERER_DEBUG
+    vkdebug::setObjectName(
+        m_device,
+        VK_OBJECT_TYPE_COMMAND_BUFFER,
+        (uint64_t)commandBuffer,
+        "single_time_transfer_cmd_buff");
+#endif // VK_RENDERER_DEBUG
 
     return commandBuffer;
 }

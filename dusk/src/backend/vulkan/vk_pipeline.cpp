@@ -96,6 +96,12 @@ VkGfxRenderPipeline::Builder& VkGfxRenderPipeline::Builder::removeVertexInputSta
     return *this;
 }
 
+VkGfxRenderPipeline::Builder& VkGfxRenderPipeline::Builder::setViewMask(int mask)
+{
+    m_renderConfig.viewMask = mask;
+    return *this;
+}
+
 Unique<VkGfxRenderPipeline> VkGfxRenderPipeline::Builder::build()
 {
     // DASSERT(m_renderConfig.renderPass != VK_NULL_HANDLE, "render pass is required for rendering");
@@ -290,7 +296,7 @@ VkGfxRenderPipeline::VkGfxRenderPipeline(VulkanContext& vkContext, VkGfxRenderPi
     renderingCreateInfo.colorAttachmentCount    = static_cast<size_t>(renderConfig.colorAttachmentFormats.size());
     renderingCreateInfo.pColorAttachmentFormats = renderConfig.colorAttachmentFormats.data();
     renderingCreateInfo.depthAttachmentFormat   = VK_FORMAT_D32_SFLOAT_S8_UINT;
-    // renderingCreateInfo.stencilAttachmentFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
+    renderingCreateInfo.viewMask                = renderConfig.viewMask;
 
     pipelineInfo.pNext = &renderingCreateInfo;
 

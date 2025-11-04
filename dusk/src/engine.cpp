@@ -137,9 +137,9 @@ void Engine::run()
 
         m_textureDB->onUpdate();
 
-        onUpdate(m_deltaTime);
-
         m_app->onUpdate(m_deltaTime);
+
+        onUpdate(m_deltaTime);
     }
 }
 
@@ -865,6 +865,14 @@ void Engine::executeBRDFLUTcomputePipeline()
 
     VkCommandBuffer commandBuffer;
     vkAllocateCommandBuffers(ctx.device, &allocInfo, &commandBuffer);
+
+    #ifdef VK_RENDERER_DEBUG
+    vkdebug::setObjectName(
+        ctx.device,
+        VK_OBJECT_TYPE_COMMAND_BUFFER,
+        (uint64_t)commandBuffer,
+        "brdf_lut_cmd_buff");
+#endif // VK_RENDERER_DEBUG
 
     VkCommandBufferBeginInfo beginInfo {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;

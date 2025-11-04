@@ -148,7 +148,7 @@ struct GfxBuffer
     /**
      * @brief Create buffer to be used by host to write to
      * @param usage type of the buffer
-     * @param size of a particular instance
+     * @param size of a single instance
      * @param total instances to allocate
      * @param debugName
      * @param pointer to the buffer to allocate
@@ -163,7 +163,7 @@ struct GfxBuffer
     /**
      * @brief Create buffer to be used by host to read from and write to
      * @param usage type of the buffer
-     * @param size of a particular instance
+     * @param size of a single instance
      * @param total instances to allocate
      * @param debugName
      * @param pointer to the buffer to allocate
@@ -178,7 +178,7 @@ struct GfxBuffer
     /**
      * @brief Create buffer to be used exclusively by the device only
      * @param usage type of the buffer
-     * @param size of a particular instance
+     * @param size of a single instance
      * @param total instances to allocate
      * @param debugName
      * @param pointer to the buffer to allocate
@@ -194,7 +194,7 @@ struct GfxBuffer
 /**
  * @brief Calculate alignment for each instances as per vulkan limits
  * @param usage type of the buffer
- * @param size of a particular instance
+ * @param size of a single instance
  * @return alignmentsize of the instance
  */
 uint32_t getBufferOffsetAlignment(uint32_t usage, size_t instanceSize);

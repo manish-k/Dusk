@@ -19,10 +19,6 @@ target_include_directories(
 
 target_link_libraries(${PROJECT_NAME} PUBLIC dusk)
 
-## TODO: Try with symlink approach
-set (ASSETS_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/assets")
-set (ASSETS_DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/assets")
-
 ## https://github.com/vblanco20-1/vulkan-guide/blob/all-chapters/CMakeLists.txt
 find_program(GLSL_VALIDATOR glslang HINTS 
   ${Vulkan_GLSLANG_VALIDATOR_EXECUTABLE} 
@@ -33,6 +29,9 @@ find_program(GLSL_VALIDATOR glslang HINTS
   $ENV{VULKAN_SDK}/Bin/ 
   $ENV{VULKAN_SDK}/Bin32/
 )
+
+set (ASSETS_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/assets")
+set (ASSETS_DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/assets")
 
 # get all .vert and .frag files in shaders directory
 file(GLOB_RECURSE GLSL_SOURCE_FILES

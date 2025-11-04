@@ -32,6 +32,8 @@ struct VkGfxRenderPipelineConfig
     bool                                              noInputState      = false;
     bool                                              enableDepthTest   = true;
     bool                                              enableDepthWrites = true;
+
+    int                                               viewMask          = 1;
 };
 
 bool createShaderModule(
@@ -58,6 +60,7 @@ public:
         Builder& setDepthTest(bool state);
         Builder& setDepthWrite(bool state);
         Builder& removeVertexInputState();
+        Builder& setViewMask(int mask);
 
         /**
          * @brief build VkGfxPipeline object with given config

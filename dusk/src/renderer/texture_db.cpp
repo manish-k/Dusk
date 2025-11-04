@@ -75,8 +75,8 @@ bool TextureDB::isTextureUploaded(uint32_t id)
     if (id >= m_textures.size()) return false;
 
     const GfxTexture& tex = m_textures[id];
-    if (m_loadedTextures.has(tex.uploadHash)) return true;
-    return false;
+    if (m_currentlyLoadingTextures.has(tex.uploadHash)) return false;
+    return true;
 }
 
 Error TextureDB::initDefaultTexture()
@@ -314,6 +314,8 @@ void TextureDB::onUpdate()
 
             DASSERT(format != VK_FORMAT_UNDEFINED);
 
+            DUSK_INFO("Uploading {}({}) to gpu", tex.name, tex.id);
+
             Error err = tex.init(
                 *img,
                 tex.type,
@@ -415,14 +417,12 @@ uint32_t TextureDB::createCubeColorTexture(
         TextureType::Cube,
         width,
         height,
-        1,
+        6,
         format,
         SampledTexture | ColorTexture | TransferDstTexture | TransferSrcTexture,
         name.c_str());
 
     newTex.sampler = m_defaultSampler.sampler;
-
-    m_textures.push_back(newTex);
 
     // update corrosponding descriptor with new image
     VkDescriptorImageInfo texDescInfos {};
@@ -446,6 +446,8 @@ uint32_t TextureDB::createCubeColorTexture(
         newTex.numMipLevels,
         newTex.numLayers,
         &newTex.cubeImageView);
+
+    m_textures.push_back(newTex);
 
     // update cube texture desc set
     texDescInfos.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;

@@ -101,9 +101,9 @@ public:
     /**
      * @brief Create a cube texture for color attachment
      * @param name of the render target
-     * @param width of the render target 
-     * @param height of the render target 
-     * @param format of the render target 
+     * @param width of the render target
+     * @param height of the render target
+     * @param format of the render target
      * @return id of the texture
      */
     uint32_t createCubeColorTexture(
@@ -155,6 +155,13 @@ public:
      */
     void saveTextureAsKTX(uint32_t textureId, const std::string& filePath);
 
+    /**
+     * @brief Check whether the texture has been uploaded to GPU
+     * @param id of the texture
+     * @return true if uploaded else false
+     */
+    bool isTextureUploaded(uint32_t id);
+
 public:
     /**
      * @brief Static method to get texture db cache instance
@@ -181,13 +188,6 @@ private:
      * @brief Free up all the allocated resources
      */
     void freeAllResources();
-
-    /**
-     * @brief Check whether the texture has been uploaded to GPU
-     * @param id of the texture
-     * @return true if uploaded else false
-     */
-    bool isTextureUploaded(uint32_t id);
 
 private:
     std::mutex                           m_mutex;

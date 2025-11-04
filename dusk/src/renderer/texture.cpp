@@ -154,6 +154,7 @@ Error GfxTexture::init(
     this->usage                 = usage;
     this->name                  = name;
     this->format                = format;
+    this->numLayers             = layers;
 
     auto&             device    = Engine::get().getGfxDevice();
     auto&             vkContext = VkGfxDevice::getSharedVulkanContext();
@@ -212,11 +213,11 @@ Error GfxTexture::init(
 
     result = device.createImageView(
         &image,
-        VK_IMAGE_VIEW_TYPE_2D,
+        vulkan::getImageViewType(type),
         format,
         imageAspectFlags,
         1,
-        1,
+        numLayers,
         &imageView);
 
     if (result.hasError())
@@ -631,6 +632,14 @@ Error GfxTexture::init(
         return Error::InitializationFailed;
     }
 
+#ifdef VK_RENDERER_DEBUG
+    vkdebug::setObjectName(
+        vkContext.device,
+        VK_OBJECT_TYPE_IMAGE_VIEW,
+        (uint64_t)imageView,
+        debugName);
+#endif // VK_RENDERER_DEBUG
+
     return Error::Ok;
 }
 
@@ -640,6 +649,8 @@ void GfxTexture::free()
     auto& vkContext = device.getSharedVulkanContext();
 
     device.freeImageView(&imageView);
+    if (imageView != cubeImageView)
+        device.freeImageView(&cubeImageView);
 
     vulkan::freeGPUImage(vkContext.gpuAllocator, &image);
 

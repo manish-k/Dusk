@@ -38,6 +38,7 @@ bool TestTriangle::start()
                            .setFragmentShaderCode(m_fragShaderCode)
                            .setPipelineLayout(*m_pipelineLayout)
                            .addColorAttachmentFormat(swapChain.getImageFormat())
+                           .setDebugName("test_triangle_pipeline")
                            .build();
 
     return true;

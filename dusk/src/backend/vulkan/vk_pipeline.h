@@ -32,14 +32,15 @@ struct VkGfxRenderPipelineConfig
     bool                                              noInputState      = false;
     bool                                              enableDepthTest   = true;
     bool                                              enableDepthWrites = true;
-
     int                                               viewMask          = 1;
+
+    std::string                                       debugName         = "";
 };
 
 bool createShaderModule(
-    VkDevice device, 
-    const DynamicArray<char>& shaderCode, 
-    VkShaderModule* pShaderModule);
+    VkDevice                  device,
+    const DynamicArray<char>& shaderCode,
+    VkShaderModule*           pShaderModule);
 
 class VkGfxRenderPipeline
 {
@@ -52,7 +53,6 @@ public:
         Builder& addDynamicState(VkDynamicState state);
         Builder& setVertexShaderCode(DynamicArray<char>& shaderCode);
         Builder& setFragmentShaderCode(DynamicArray<char>& shaderCode);
-        // Builder& setRenderPass(VkRenderPass renderPass);
         Builder& setSubPassIndex(uint32_t index);
         Builder& setPipelineLayout(VkGfxPipelineLayout& pipelineLayout);
         Builder& addColorAttachmentFormat(VkFormat format);
@@ -61,6 +61,7 @@ public:
         Builder& setDepthWrite(bool state);
         Builder& removeVertexInputState();
         Builder& setViewMask(int mask);
+        Builder& setDebugName(const std::string& name);
 
         /**
          * @brief build VkGfxPipeline object with given config
@@ -94,8 +95,8 @@ private:
 struct VkGfxComputePipelineConfig
 {
     DynamicArray<char> computeShaderCode; // TODO: avoid copying buffer
-
     VkPipelineLayout   pipelineLayout = VK_NULL_HANDLE;
+    std::string        debugName      = "";
 };
 
 class VkGfxComputePipeline
@@ -108,6 +109,7 @@ public:
 
         Builder& setComputeShaderCode(DynamicArray<char>& shaderCode);
         Builder& setPipelineLayout(VkGfxPipelineLayout& pipelineLayout);
+        Builder& setDebugName(const std::string& name);
 
         /**
          * @brief build VkGfxPipeline object with given compute config

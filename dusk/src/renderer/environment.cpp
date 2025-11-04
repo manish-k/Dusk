@@ -74,6 +74,7 @@ void Environment::initCubeTextureResources(
                            .addColorAttachmentFormat(VK_FORMAT_R8G8B8A8_SRGB)
                            .setDepthWrite(false)
                            .setCullMode(VK_CULL_MODE_FRONT_BIT)
+                           .setDebugName("skybox_pipeline")
                            .build();
 #ifdef VK_RENDERER_DEBUG
     vkdebug::setObjectName(
@@ -156,6 +157,7 @@ void Environment::initSphereTextureResources(
                            .addColorAttachmentFormat(VK_FORMAT_R8G8B8A8_SRGB)
                            .setDepthWrite(false)
                            .setCullMode(VK_CULL_MODE_FRONT_BIT)
+                           .setDebugName("skybox_pipeline")
                            .build();
 #ifdef VK_RENDERER_DEBUG
     vkdebug::setObjectName(

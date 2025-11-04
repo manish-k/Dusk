@@ -102,6 +102,12 @@ VkGfxRenderPipeline::Builder& VkGfxRenderPipeline::Builder::setViewMask(int mask
     return *this;
 }
 
+VkGfxRenderPipeline::Builder& VkGfxRenderPipeline::Builder::setDebugName(const std::string& name)
+{
+    m_renderConfig.debugName = name;
+    return *this;
+}
+
 Unique<VkGfxRenderPipeline> VkGfxRenderPipeline::Builder::build()
 {
     // DASSERT(m_renderConfig.renderPass != VK_NULL_HANDLE, "render pass is required for rendering");
@@ -298,7 +304,7 @@ VkGfxRenderPipeline::VkGfxRenderPipeline(VulkanContext& vkContext, VkGfxRenderPi
     renderingCreateInfo.depthAttachmentFormat   = VK_FORMAT_D32_SFLOAT_S8_UINT;
     renderingCreateInfo.viewMask                = renderConfig.viewMask;
 
-    pipelineInfo.pNext = &renderingCreateInfo;
+    pipelineInfo.pNext                          = &renderingCreateInfo;
 
     // create pipeline
     VulkanResult result = vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_pipeline);
@@ -309,6 +315,14 @@ VkGfxRenderPipeline::VkGfxRenderPipeline(VulkanContext& vkContext, VkGfxRenderPi
         DUSK_ERROR("Unable to create graphics pipeline {}", result.toString());
         m_pipeline = VK_NULL_HANDLE;
     }
+
+#ifdef VK_RENDERER_DEBUG
+    vkdebug::setObjectName(
+        m_device,
+        VK_OBJECT_TYPE_PIPELINE,
+        (uint64_t)m_pipeline,
+        renderConfig.debugName.c_str());
+#endif // VK_RENDERER_DEBUG
 }
 
 VkGfxRenderPipeline::~VkGfxRenderPipeline()
@@ -350,6 +364,12 @@ VkGfxComputePipeline::Builder& VkGfxComputePipeline::Builder::setComputeShaderCo
 VkGfxComputePipeline::Builder& VkGfxComputePipeline::Builder::setPipelineLayout(VkGfxPipelineLayout& pipelineLayout)
 {
     m_computeConfig.pipelineLayout = pipelineLayout.get();
+    return *this;
+}
+
+VkGfxComputePipeline::Builder& VkGfxComputePipeline::Builder::setDebugName(const std::string& name)
+{
+    m_computeConfig.debugName = name;
     return *this;
 }
 
@@ -410,6 +430,14 @@ VkGfxComputePipeline::VkGfxComputePipeline(VulkanContext& vkContext, VkGfxComput
         DUSK_ERROR("Unable to create graphics pipeline {}", result.toString());
         m_pipeline = VK_NULL_HANDLE;
     }
+
+#ifdef VK_RENDERER_DEBUG
+    vkdebug::setObjectName(
+        m_device,
+        VK_OBJECT_TYPE_PIPELINE,
+        (uint64_t)m_pipeline,
+        computeConfig.debugName.c_str());
+#endif // VK_RENDERER_DEBUG
 }
 
 VkGfxComputePipeline::~VkGfxComputePipeline()

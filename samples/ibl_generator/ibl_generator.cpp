@@ -258,5 +258,6 @@ void IBLGenerator::setupHDRToCubeMapPipeline()
                                  .addColorAttachmentFormat(VK_FORMAT_R32G32B32A32_SFLOAT) // cube color attachment
                                  .setViewMask(0x3F)
                                  .removeVertexInputState()
+                                 .setDebugName("cubemap_pipeline")
                                  .build();
 }

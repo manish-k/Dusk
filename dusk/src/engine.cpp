@@ -689,6 +689,7 @@ void Engine::prepareRenderGraphResources()
                                       .addColorAttachmentFormat(VK_FORMAT_R16G16B16A16_SFLOAT) // normal
                                       .addColorAttachmentFormat(VK_FORMAT_R16G16B16A16_SFLOAT) // ao-roughness-metallic
                                       .addColorAttachmentFormat(VK_FORMAT_R16G16B16A16_SFLOAT) // emissive color
+                                      .setDebugName("gbuff_pipeline")
                                       .build();
 
 #ifdef VK_RENDERER_DEBUG
@@ -723,6 +724,7 @@ void Engine::prepareRenderGraphResources()
                                         .setPipelineLayout(*m_rgResources.presentPipelineLayout)
                                         .addColorAttachmentFormat(VK_FORMAT_B8G8R8A8_SRGB)
                                         .removeVertexInputState()
+                                        .setDebugName("present_pipeline")
                                         .build();
 
 #ifdef VK_RENDERER_DEBUG
@@ -765,6 +767,7 @@ void Engine::prepareRenderGraphResources()
                                          .setPipelineLayout(*m_rgResources.lightingPipelineLayout)
                                          .addColorAttachmentFormat(VK_FORMAT_R8G8B8A8_SRGB)
                                          .removeVertexInputState()
+                                         .setDebugName("lighting_pipeline")
                                          .build();
 #ifdef VK_RENDERER_DEBUG
     vkdebug::setObjectName(
@@ -818,6 +821,7 @@ void Engine::prepareRenderGraphResources()
     m_rgResources.brdfLUTPipeline = VkGfxComputePipeline::Builder(ctx)
                                         .setComputeShaderCode(brdfLUTCompShader)
                                         .setPipelineLayout(*m_rgResources.brdfLUTPipelineLayout)
+                                        .setDebugName("brdf_lut_pipeline")
                                         .build();
 #ifdef VK_RENDERER_DEBUG
     vkdebug::setObjectName(

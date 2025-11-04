@@ -79,6 +79,7 @@ struct VkGfxRenderPassContext
 
         renderingInfo                      = { VK_STRUCTURE_TYPE_RENDERING_INFO };
         renderingInfo.renderArea           = { { 0, 0 }, extent };
+        renderingInfo.viewMask             = 1;
         renderingInfo.layerCount           = 1;
         renderingInfo.colorAttachmentCount = static_cast<uint32_t>(colorAttachmentInfos.size());
         renderingInfo.pColorAttachments    = colorAttachmentInfos.data();

@@ -61,27 +61,29 @@ void IBLGenerator::onUpdate(TimeStep dt)
     if (TextureDB::cache()->isTextureUploaded(m_hdrEnvTextureId)
         && !m_executedOnce)
     {
-        // executePipelines();
+        auto&           vkCtx     = VkGfxDevice::getSharedVulkanContext();
+        VkGfxDevice     device    = Engine::get().getGfxDevice();
+        VkCommandBuffer cmdBuffer = device.beginSingleTimeCommands();
+
+        executeHDRToCubeMapPipeline(cmdBuffer);
+        executeIrradiancePipeline(cmdBuffer);
+        executePrefilteredPipeline(cmdBuffer);
+
+        device.endSingleTimeCommands(cmdBuffer);
 
         m_executedOnce = true;
     }
-    executePipelines();
 }
 
 void IBLGenerator::onEvent(dusk::Event& ev)
 {
 }
 
-void IBLGenerator::executePipelines()
+void IBLGenerator::executeHDRToCubeMapPipeline(VkCommandBuffer cmdBuffer)
 {
-    auto&           vkCtx     = VkGfxDevice::getSharedVulkanContext();
-    VkGfxDevice     device    = Engine::get().getGfxDevice();
-    VkCommandBuffer cmdBuffer = device.beginSingleTimeCommands();
-
     // hdr to cubemap pipeline
     auto& cubeMapAttachment = TextureDB::cache()->getTexture2D(m_hdrCubeMapTextureId);
 
-    // APP_DEBUG("starting cube gen pipeline");
     vkdebug::cmdBeginLabel(cmdBuffer, "gen_cubemap", glm::vec4(0.7f, 0.7f, 0.f, 0.f));
 
     cubeMapAttachment.recordTransitionLayout(cmdBuffer, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
@@ -191,8 +193,21 @@ void IBLGenerator::executePipelines()
     vkCmdEndRendering(cmdBuffer);
 
     vkdebug::cmdEndLabel(cmdBuffer);
+}
 
-    device.endSingleTimeCommands(cmdBuffer);
+void IBLGenerator::executeIrradiancePipeline(VkCommandBuffer cmdBuffer)
+{
+    vkdebug::cmdBeginLabel(cmdBuffer, "gen_irradiance", glm::vec4(0.7f, 0.7f, 0.f, 0.f));
+    
+
+    vkdebug::cmdEndLabel(cmdBuffer);
+}
+
+void IBLGenerator::executePrefilteredPipeline(VkCommandBuffer cmdBuffer)
+{
+    vkdebug::cmdBeginLabel(cmdBuffer, "gen_prefileterd", glm::vec4(0.7f, 0.7f, 0.f, 0.f));
+
+    vkdebug::cmdEndLabel(cmdBuffer);
 }
 
 void IBLGenerator::setupHDRToCubeMapPipeline()
@@ -260,4 +275,12 @@ void IBLGenerator::setupHDRToCubeMapPipeline()
                                  .removeVertexInputState()
                                  .setDebugName("cubemap_pipeline")
                                  .build();
+}
+
+void IBLGenerator::setupIrradiancePipeline()
+{
+}
+
+void IBLGenerator::setupPrefilteredPipeline()
+{
 }

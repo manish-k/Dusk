@@ -37,11 +37,13 @@ public:
     void onEvent(dusk::Event& ev) override;
 
 private:
+    void executeHDRToCubeMapPipeline(VkCommandBuffer cmdBuffer);
+    void executeIrradiancePipeline(VkCommandBuffer cmdBuffer);
+    void executePrefilteredPipeline(VkCommandBuffer cmdBuffer);
+
     void setupHDRToCubeMapPipeline();
     void setupIrradiancePipeline();
     void setupPrefilteredPipeline();
-
-    void executePipelines();
 
 private:
     uint32_t m_hdrEnvTextureId = {};

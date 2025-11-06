@@ -13,6 +13,7 @@ struct RendererUIState
 struct SceneUIState
 {
     EntityId selectedGameObjectId = NULL_ENTITY;
+    int      selectedMeshId       = -1;
 };
 
 struct UIState

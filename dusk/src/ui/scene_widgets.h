@@ -15,8 +15,9 @@
 
 namespace dusk
 {
+const std::string defaultMeshName = "mesh";
 
-inline void drawGameObjectSubTree(Scene& scene, EntityId objectId)
+inline void       drawGameObjectSubTree(Scene& scene, EntityId objectId)
 {
     ImGuiTreeNodeFlags flags      = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanFullWidth;
 
@@ -40,6 +41,7 @@ inline void drawGameObjectSubTree(Scene& scene, EntityId objectId)
     if (ImGui::IsItemClicked())
     {
         sceneState.selectedGameObjectId = gObject.getId();
+        sceneState.selectedMeshId       = -1;
     }
 
     if (nodeOpen)
@@ -49,6 +51,30 @@ inline void drawGameObjectSubTree(Scene& scene, EntityId objectId)
         {
             drawGameObjectSubTree(scene, childId);
         }
+
+        if (gObject.hasComponent<MeshComponent>())
+        {
+            MeshComponent& mesh = gObject.getComponent<MeshComponent>();
+
+            for (uint32_t index = 0u; index < mesh.meshes.size(); ++index)
+            {
+                //TODO: manage string allocation
+                std::string id   = gObject.getName() + "_" + std::to_string(index);
+                std::string name = defaultMeshName + "_" + std::to_string(index);
+
+                if (ImGui::TreeNodeEx(id.c_str(), ImGuiTreeNodeFlags_Leaf, name.c_str()))
+                {
+                    if (ImGui::IsItemClicked())
+                    {
+                        sceneState.selectedGameObjectId = gObject.getId();
+                        sceneState.selectedMeshId = index;
+                    }
+
+                    ImGui::TreePop();
+                }
+            }
+        }
+
         ImGui::TreePop();
     }
 }
@@ -83,24 +109,22 @@ inline void drawSceneGraphWidget(Scene& scene)
             transform.setRotation(glm::quat(eulerRotation));
         }
 
-        if (selectedGameObject.hasComponent<MeshComponent>())
+        if (sceneState.selectedMeshId >= 0)
         {
             MeshComponent& mesh = selectedGameObject.getComponent<MeshComponent>();
 
             ImGui::SeparatorText("Material");
 
-            for (uint32_t index = 0u; index < mesh.materials.size(); ++index)
-            {
-                Material& mat = scene.getMaterial(mesh.materials[index]);
-                ImGui::ColorEdit4("Albedo Color", (float*)&mat.albedoColor);
-                ImGui::Text("Albedo Texture id: %d", mat.albedoTexId);
-                ImGui::Text("Normal Texture id: %d", mat.normalTexId);
-                ImGui::Text("Emissive Texture id: %d", mat.emissiveTexId);
-                ImGui::Text("Metal-Rough Texture id: %d", mat.metallicRoughnessTexId);
+            Material& mat = scene.getMaterial(mesh.materials[sceneState.selectedMeshId]);
+            ImGui::Text("Mesh id: %d", mesh.materials[sceneState.selectedMeshId]);
+            ImGui::ColorEdit4("Albedo Color", (float*)&mat.albedoColor);
+            ImGui::Text("Albedo Texture id: %d", mat.albedoTexId);
+            ImGui::Text("Normal Texture id: %d", mat.normalTexId);
+            ImGui::Text("Emissive Texture id: %d", mat.emissiveTexId);
+            ImGui::Text("Metal-Rough Texture id: %d", mat.metallicRoughnessTexId);
 
-                ImGui::SliderFloat("Roughness", &mat.rough, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_None);
-                ImGui::SliderFloat("Metallic", &mat.metal, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_None);
-            }
+            ImGui::SliderFloat("Roughness", &mat.rough, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_None);
+            ImGui::SliderFloat("Metallic", &mat.metal, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_None);
         }
 
         if (selectedGameObject.hasComponent<CameraComponent>())
@@ -165,7 +189,7 @@ inline void drawSceneGraphWidget(Scene& scene)
         {
             ImGui::SeparatorText("Spot Light");
 
-            SpotLightComponent& light = selectedGameObject.getComponent<SpotLightComponent>();
+            SpotLightComponent& light      = selectedGameObject.getComponent<SpotLightComponent>();
 
             float               innerAngle = glm::degrees(glm::acos(light.innerCutOff));
             float               outerAngle = glm::degrees(glm::acos(light.outerCutOff));

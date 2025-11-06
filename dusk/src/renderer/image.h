@@ -96,7 +96,6 @@ struct ImageData
     ImageData()                         = default;
     ~ImageData()
     {
-        DUSK_DEBUG("Releasing image's pixel data");
         if (data) delete[] data;
     }
 };

@@ -116,9 +116,9 @@ void Environment::initSphereTextureResources(
     vkCreateSampler(ctx.device, &samplerInfo, nullptr, &radianceSampler);
     vkCreateSampler(ctx.device, &samplerInfo, nullptr, &irradianceSampler);
 
-    const std::string skyboxTexturePath           = resPath + "room.hdr";
-    const std::string skyboxIrradianceTexturePath = resPath + "room_irradiance.hdr";
-    const std::string skyboxRadianceTexturePath   = resPath + "room_radiance.hdr";
+    const std::string skyboxTexturePath           = resPath + "autumn_sky.hdr";
+    const std::string skyboxIrradianceTexturePath = resPath + "autumn_sky_irradiance.hdr";
+    const std::string skyboxRadianceTexturePath   = resPath + "autumn_sky_radiance.hdr";
 
     m_skyTextureId                                = m_textureDB.createTextureAsync(skyboxTexturePath, TextureType::Texture2D);
     m_textureDB.updateTextureSampler(m_skyTextureId, skyboxSampler);

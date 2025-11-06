@@ -344,19 +344,23 @@ void main() {
 	// IBL specular
 	vec2 radianceUV = directionToEquirectangular(reflectDirection);
 	vec3 prefilteredColor = textureLod(textures[radianceTexIdx], radianceUV, roughness * (push.maxRadianceLODs - 1)).rgb;
-	vec2 brdf = texture(textures[brdfLUTIdx], vec2(NdotV, roughness)).rg;
+	vec2 brdf = texture(textures[brdfLUTIdx], vec2(NdotV, 1.0 - roughness)).rg;
 	
-	// emissive color
-	vec3 emissiveColor = texture(textures[emissiveTexIdx], fragUV).rgb;
-
 	vec3 specular = prefilteredColor * (f * brdf.x + brdf.y);
 
 	vec3 ambient = (kD * diffuse + specular) * aoRM.r;
 
-	vec3 finalColor = ambient + lightColor + emissiveColor;
+	vec3 finalColor = ambient + lightColor;
+	
+	// emissive color
+	if (emissiveTexIdx > 0)
+	{
+		finalColor += texture(textures[emissiveTexIdx], fragUV).rgb;
+	}
 
 	// tone mapping
 	finalColor = finalColor / (finalColor + vec3(1.0));
    
-	outColor = vec4(finalColor.xyz, 1.0f);
+	//outColor = vec4(brdf.x, brdf.y, 0.0, 1.0f);
+	outColor = vec4(finalColor.rgb, 1.0);
 }

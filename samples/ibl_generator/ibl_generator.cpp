@@ -198,7 +198,6 @@ void IBLGenerator::executeHDRToCubeMapPipeline(VkCommandBuffer cmdBuffer)
 void IBLGenerator::executeIrradiancePipeline(VkCommandBuffer cmdBuffer)
 {
     vkdebug::cmdBeginLabel(cmdBuffer, "gen_irradiance", glm::vec4(0.7f, 0.7f, 0.f, 0.f));
-    
 
     vkdebug::cmdEndLabel(cmdBuffer);
 }

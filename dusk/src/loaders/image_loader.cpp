@@ -26,8 +26,6 @@ Shared<ImageData> ImageLoader::load(const std::string& filePath)
 
 Shared<ImageData> ImageLoader::loadSTB(const std::string& filePath)
 {
-    DUSK_DEBUG("Reading texture file with stb - {}", filePath);
-
     stbi_set_flip_vertically_on_load(true);
 
     const char*    file               = filePath.c_str();
@@ -71,8 +69,6 @@ Shared<ImageData> ImageLoader::loadSTB(const std::string& filePath)
 
 Shared<ImageData> ImageLoader::loadKTX(const std::string& filePath)
 {
-    DUSK_DEBUG("Reading ktx texture file - {}", filePath);
-
     ktxTexture*    ktxTex;
     KTX_error_code result = ktxTexture_CreateFromNamedFile(
         filePath.c_str(),
@@ -116,8 +112,6 @@ bool ImageLoader::savePNG(
     const std::string& filePath,
     GfxTexture&        texture)
 {
-    DUSK_DEBUG("Saving texture file as png - {}", filePath);
-
     DASSERT(texture.pixelData->isAllocated(), "Pixel data not present");
 
     texture.pixelData->map();
@@ -137,8 +131,6 @@ bool ImageLoader::saveKTX2(
     const std::string& filePath,
     GfxTexture&        texture)
 {
-    DUSK_DEBUG("Saving texture file as ktx2 - {}", filePath);
-
     DASSERT(texture.pixelData->isAllocated(), "Pixel data not present");
 
     ktxTextureCreateInfo createInfo = {};

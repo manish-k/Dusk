@@ -350,7 +350,7 @@ void AssimpLoader::parseMaterials(Scene& scene, const aiScene* aiScene)
         }
         else
         {
-            newMaterial.metallicRoughnessTexId = defaultTexId;
+            newMaterial.aoTexId = defaultTexId;
         }
 
         aiMat->Get(AI_MATKEY_REFLECTIVITY, newMaterial.aoStrength);

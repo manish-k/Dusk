@@ -235,7 +235,6 @@ uint32_t TextureDB::createTextureAsync(
 
             {
                 std::lock_guard<std::mutex> updateLock(m_mutex);
-                DUSK_DEBUG("Queuing texture {} for gpu upload", newId);
                 m_pendingImages.emplace(newId, img);
             }
         });
@@ -265,8 +264,6 @@ void TextureDB::onUpdate()
 
     if (m_pendingImages.size() > 0)
     {
-        DUSK_DEBUG("pending texture to upload {}", m_pendingImages.size());
-
         std::lock_guard<std::mutex> updateLock(m_mutex);
 
         auto&                       vkContext = m_gfxDevice.getSharedVulkanContext();
@@ -314,7 +311,6 @@ void TextureDB::onUpdate()
 
             DASSERT(format != VK_FORMAT_UNDEFINED);
 
-            DUSK_INFO("Uploading {}({}) to gpu", tex.name, tex.id);
 
             Error err = tex.init(
                 *img,
@@ -335,7 +331,7 @@ void TextureDB::onUpdate()
             m_currentlyLoadingTextures.erase(tex.uploadHash);
             m_loadedTextures.emplace(tex.uploadHash, tex.id);
 
-            DUSK_DEBUG("Texture {} loaded to gpu", tex.name);
+            DUSK_DEBUG("Texture {} (id={}) loaded to gpu", tex.name, tex.id);
 
             // update corrosponding descriptor with new image
             VkDescriptorImageInfo texDescInfos {};

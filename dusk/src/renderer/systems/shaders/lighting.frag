@@ -281,6 +281,7 @@ void main() {
 	vec3 aoRM = texture(textures[aoRMTexIdx], fragUV).rgb;
 	float metallic = aoRM.b;
 	float roughness = aoRM.g;
+	float ao = aoRM.g;
 	
 	vec3 f0 = vec3(0.04); 
     f0 = mix(f0, albedo, metallic);
@@ -348,7 +349,7 @@ void main() {
 	
 	vec3 specular = prefilteredColor * (f * brdf.x + brdf.y);
 
-	vec3 ambient = (kD * diffuse + specular) * aoRM.r;
+	vec3 ambient = (kD * diffuse + specular) * ao;
 
 	vec3 finalColor = ambient + lightColor;
 	
@@ -362,5 +363,5 @@ void main() {
 	finalColor = finalColor / (finalColor + vec3(1.0));
    
 	//outColor = vec4(brdf.x, brdf.y, 0.0, 1.0f);
-	outColor = vec4(finalColor.rgb, 1.0);
+	outColor = vec4((prefilteredColor ).rgb, 1.0);
 }

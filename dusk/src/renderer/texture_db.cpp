@@ -319,7 +319,7 @@ void TextureDB::onUpdate()
                 TransferDstTexture | SampledTexture,
                 gfxBuffer,
                 transferBuffer,
-                false,
+                true,
                 tex.name.c_str());
 
             if (err != Error::Ok)

@@ -60,6 +60,8 @@ add_custom_target(
 	COMMAND ${CMAKE_COMMAND} -E echo "Copying assets"
 	COMMAND ${CMAKE_COMMAND} -E remove_directory ${ASSETS_DEST_DIR}
 	COMMAND ${CMAKE_COMMAND} -E copy_directory ${ASSETS_SOURCE_DIR} ${ASSETS_DEST_DIR}
+
+	DEPENDS IBL_Generator_Shaders
 )
 
 add_dependencies(${PROJECT_NAME} IBL_Generator_Assets)

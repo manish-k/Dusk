@@ -43,9 +43,9 @@ struct GfxTexture
 
     VulkanGfxImage image         = {};
     VkImageView    imageView     = {};
-    // special image view for sampling cubemaps as their
-    // color image view type is different from view that samples 
-    // the image. Following is for using as an output attachment
+    // special image view for using cubemaps as output attachments because
+    // image view type is different from view that samples the image. 
+    // Following view will be used for output attachments
     VkImageView    cubeImageView = {};
     VkFormat       format        = {};
     VkImageLayout  currentLayout = VK_IMAGE_LAYOUT_UNDEFINED;

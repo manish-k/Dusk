@@ -20,6 +20,11 @@ struct CubeMapPushConstant
     uint32_t equiRectTextureId = 0;
 };
 
+struct IrradiancePushConstant
+{
+    uint32_t envCubeMapTextureId = 0;
+};
+
 struct CubeProjView
 {
     glm::mat4 projView;
@@ -59,6 +64,10 @@ private:
     Unique<VkGfxRenderPipeline>      m_hdrToCubeMapPipeline       = nullptr;
     Unique<VkGfxPipelineLayout>      m_hdrToCubeMapPipelineLayout = nullptr;
     uint32_t                         m_hdrCubeMapTextureId        = {};
+
+    Unique<VkGfxRenderPipeline>      m_irradiancePipeline         = nullptr;
+    Unique<VkGfxPipelineLayout>      m_irradiancePipelineLayout   = nullptr;
+    uint32_t                         m_irradianceTextureId        = {};
 
     dusk::Array<glm::mat4, 6>        m_cubeProjView               = {};
 };

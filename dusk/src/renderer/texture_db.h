@@ -80,6 +80,12 @@ public:
     VkGfxDescriptorSetLayout& getStorageTexturesDescriptorSetLayout() const { return *m_storageTextureDescriptorSetLayout; };
 
     /**
+     * @brief Get descriptor set layout for cubemap(color attachment)
+     * texture descriptor set layout
+     */
+    VkGfxDescriptorSetLayout& getCubeTexturesDescriptorSetLayout() const { return *m_cubeTextureDescriptorSetLayout; };
+
+    /**
      * @brief Per frame update call to upload pending textures
      */
     void onUpdate();

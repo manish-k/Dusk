@@ -13,13 +13,16 @@ Pielines required:
     #3 Prefiltered map
 
 TODO:
-    * Create a render graph for generation
+    * Create a render graph for all cubemaps generation
     * UI options to select environment hdr file, generate and
       save environment's cubemap and ibl assets (prefiltered and irradiance maps).
+    * Explore compute based irradiance and prefiltered map generation
 */
 
-const int                 RENDER_WIDTH  = 1024;
-const int                 RENDER_HEIGHT = 1024;
+const int                 ENV_RENDER_WIDTH         = 1024;
+const int                 ENV_RENDER_HEIGHT        = 1024;
+const int                 IRRADIANCE_RENDER_WIDTH  = 64;
+const int                 IRRADIANCE_RENDER_HEIGHT = 64;
 
 Unique<dusk::Application> dusk::createApplication(int argc, char** argv)
 {
@@ -40,6 +43,7 @@ bool IBLGenerator::start()
 
     setupCubeProjViewBuffer();
     setupHDRToCubeMapPipeline();
+    setupIrradiancePipeline();
 
     return true;
 }
@@ -53,6 +57,9 @@ void IBLGenerator::shutdown()
 
     m_hdrToCubeMapPipeline       = nullptr;
     m_hdrToCubeMapPipelineLayout = nullptr;
+
+    m_irradiancePipeline         = nullptr;
+    m_irradiancePipelineLayout   = nullptr;
 }
 
 void IBLGenerator::onUpdate(TimeStep dt)
@@ -80,7 +87,6 @@ void IBLGenerator::onEvent(dusk::Event& ev)
 
 void IBLGenerator::executeHDRToCubeMapPipeline(VkCommandBuffer cmdBuffer)
 {
-    // hdr to cubemap pipeline
     auto& cubeMapAttachment = TextureDB::cache()->getTexture2D(m_hdrCubeMapTextureId);
 
     vkdebug::cmdBeginLabel(cmdBuffer, "gen_cubemap", glm::vec4(0.7f, 0.7f, 0.f, 0.f));
@@ -95,7 +101,7 @@ void IBLGenerator::executeHDRToCubeMapPipeline(VkCommandBuffer cmdBuffer)
     attachmentInfo.clearValue                = { 0.f, 0.f, 0.f, 1.f };
 
     VkRenderingInfo renderingInfo            = { VK_STRUCTURE_TYPE_RENDERING_INFO };
-    renderingInfo.renderArea                 = { { 0, 0 }, { RENDER_WIDTH, RENDER_HEIGHT } };
+    renderingInfo.renderArea                 = { { 0, 0 }, { ENV_RENDER_WIDTH, ENV_RENDER_HEIGHT } };
     renderingInfo.layerCount                 = 1;    // multiview
     renderingInfo.viewMask                   = 0x3F; // multiview
     renderingInfo.colorAttachmentCount       = 1;
@@ -108,15 +114,15 @@ void IBLGenerator::executeHDRToCubeMapPipeline(VkCommandBuffer cmdBuffer)
     VkViewport viewport {};
     viewport.x        = 0.0f;
     viewport.y        = 0.0f;
-    viewport.width    = static_cast<float>(RENDER_WIDTH);
-    viewport.height   = static_cast<float>(RENDER_HEIGHT);
+    viewport.width    = static_cast<float>(ENV_RENDER_WIDTH);
+    viewport.height   = static_cast<float>(ENV_RENDER_HEIGHT);
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
     vkCmdSetViewport(cmdBuffer, 0, 1, &viewport);
 
     VkRect2D scissor {};
     scissor.offset = { 0, 0 };
-    scissor.extent = { RENDER_WIDTH, RENDER_HEIGHT };
+    scissor.extent = { ENV_RENDER_WIDTH, ENV_RENDER_HEIGHT };
     vkCmdSetScissor(cmdBuffer, 0, 1, &scissor);
 
     m_hdrToCubeMapPipeline->bind(cmdBuffer);
@@ -161,7 +167,82 @@ void IBLGenerator::executeHDRToCubeMapPipeline(VkCommandBuffer cmdBuffer)
 
 void IBLGenerator::executeIrradiancePipeline(VkCommandBuffer cmdBuffer)
 {
+    auto& cubeMapAttachment    = TextureDB::cache()->getTexture2D(m_hdrCubeMapTextureId);
+    auto& irradianceAttachment = TextureDB::cache()->getTexture2D(m_irradianceTextureId);
+
     vkdebug::cmdBeginLabel(cmdBuffer, "gen_irradiance", glm::vec4(0.7f, 0.7f, 0.f, 0.f));
+
+    cubeMapAttachment.recordTransitionLayout(cmdBuffer, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    irradianceAttachment.recordTransitionLayout(cmdBuffer, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+    VkRenderingAttachmentInfo attachmentInfo = { VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
+    attachmentInfo.imageLayout               = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    attachmentInfo.imageView                 = irradianceAttachment.cubeImageView;
+    attachmentInfo.loadOp                    = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachmentInfo.storeOp                   = VK_ATTACHMENT_STORE_OP_STORE;
+    attachmentInfo.clearValue                = { 0.f, 0.f, 0.f, 1.f };
+
+    VkRenderingInfo renderingInfo            = { VK_STRUCTURE_TYPE_RENDERING_INFO };
+    renderingInfo.renderArea                 = { { 0, 0 }, { IRRADIANCE_RENDER_WIDTH, IRRADIANCE_RENDER_HEIGHT } };
+    renderingInfo.layerCount                 = 1;    // multiview
+    renderingInfo.viewMask                   = 0x3F; // multiview
+    renderingInfo.colorAttachmentCount       = 1;
+    renderingInfo.pColorAttachments          = &attachmentInfo;
+    renderingInfo.pDepthAttachment           = nullptr;
+    renderingInfo.flags                      = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT;
+
+    vkCmdBeginRendering(cmdBuffer, &renderingInfo);
+
+    VkViewport viewport {};
+    viewport.x        = 0.0f;
+    viewport.y        = 0.0f;
+    viewport.width    = static_cast<float>(IRRADIANCE_RENDER_WIDTH);
+    viewport.height   = static_cast<float>(IRRADIANCE_RENDER_HEIGHT);
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+    vkCmdSetViewport(cmdBuffer, 0, 1, &viewport);
+
+    VkRect2D scissor {};
+    scissor.offset = { 0, 0 };
+    scissor.extent = { IRRADIANCE_RENDER_WIDTH, IRRADIANCE_RENDER_HEIGHT };
+    vkCmdSetScissor(cmdBuffer, 0, 1, &scissor);
+
+    m_irradiancePipeline->bind(cmdBuffer);
+
+    vkCmdBindDescriptorSets(
+        cmdBuffer,
+        VK_PIPELINE_BIND_POINT_GRAPHICS,
+        m_irradiancePipelineLayout->get(),
+        0,
+        1,
+        &TextureDB::cache()->getTexturesDescriptorSet().set,
+        0,
+        nullptr);
+
+    vkCmdBindDescriptorSets(
+        cmdBuffer,
+        VK_PIPELINE_BIND_POINT_GRAPHICS,
+        m_irradiancePipelineLayout->get(),
+        1,
+        1,
+        &m_cubeProjViewDescSet->set,
+        0,
+        nullptr);
+
+    IrradiancePushConstant push;
+    push.envCubeMapTextureId = m_hdrCubeMapTextureId;
+
+    vkCmdPushConstants(
+        cmdBuffer,
+        m_irradiancePipelineLayout->get(),
+        VK_SHADER_STAGE_FRAGMENT_BIT,
+        0,
+        sizeof(IrradiancePushConstant),
+        &push);
+
+    vkCmdDraw(cmdBuffer, 36, 1, 0, 0);
+
+    vkCmdEndRendering(cmdBuffer);
 
     vkdebug::cmdEndLabel(cmdBuffer);
 }
@@ -255,8 +336,8 @@ void IBLGenerator::setupHDRToCubeMapPipeline()
 
     m_hdrCubeMapTextureId = TextureDB::cache()->createCubeColorTexture(
         "environment_cubemap",
-        1024,
-        1024,
+        ENV_RENDER_WIDTH,
+        ENV_RENDER_HEIGHT,
         VK_FORMAT_R32G32B32A32_SFLOAT);
 
     auto vertShaderCode          = FileSystem::readFileBinary("assets/shaders/cubemap.vert.spv");
@@ -282,6 +363,33 @@ void IBLGenerator::setupHDRToCubeMapPipeline()
 
 void IBLGenerator::setupIrradiancePipeline()
 {
+    auto& vkCtx           = VkGfxDevice::getSharedVulkanContext();
+
+    m_irradianceTextureId = TextureDB::cache()->createCubeColorTexture(
+        "irradiance_cubemap",
+        IRRADIANCE_RENDER_WIDTH,
+        IRRADIANCE_RENDER_HEIGHT,
+        VK_FORMAT_R32G32B32A32_SFLOAT);
+
+    auto vertShaderCode        = FileSystem::readFileBinary("assets/shaders/irradiance.vert.spv");
+
+    auto fragShaderCode        = FileSystem::readFileBinary("assets/shaders/irradiance.frag.spv");
+
+    m_irradiancePipelineLayout = VkGfxPipelineLayout::Builder(vkCtx)
+                                     .addPushConstantRange(VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(CubeMapPushConstant))
+                                     .addDescriptorSetLayout(TextureDB::cache()->getTexturesDescriptorSetLayout().layout)
+                                     .addDescriptorSetLayout(m_cubeProjViewDescLayout->layout)
+                                     .build();
+
+    m_irradiancePipeline = VkGfxRenderPipeline::Builder(vkCtx)
+                               .setVertexShaderCode(vertShaderCode)
+                               .setFragmentShaderCode(fragShaderCode)
+                               .setPipelineLayout(*m_irradiancePipelineLayout)
+                               .addColorAttachmentFormat(VK_FORMAT_R32G32B32A32_SFLOAT) // cube color attachment
+                               .setViewMask(0x3F)
+                               .removeVertexInputState()
+                               .setDebugName("irradiance_pipeline")
+                               .build();
 }
 
 void IBLGenerator::setupPrefilteredPipeline()

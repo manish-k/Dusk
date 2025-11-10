@@ -36,10 +36,9 @@ IBLGenerator::~IBLGenerator()
 
 bool IBLGenerator::start()
 {
-    auto& ctx         = VkGfxDevice::getSharedVulkanContext();
-
     m_hdrEnvTextureId = TextureDB::cache()->createTextureAsync("assets/textures/env.hdr", TextureType::Texture2D);
 
+    setupCubeProjViewBuffer();
     setupHDRToCubeMapPipeline();
 
     return true;
@@ -142,41 +141,6 @@ void IBLGenerator::executeHDRToCubeMapPipeline(VkCommandBuffer cmdBuffer)
         0,
         nullptr);
 
-    glm::mat4 projection = glm::perspective(
-        glm::radians(90.0f), // fov
-        1.0f,                // aspect ratio
-        0.1f,                // near plane
-        10.0f);              // far plane
-
-    dusk::Array<glm::mat4, 6> projView = {
-        // Right face +X
-        projection * glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f),   // Camera at origin
-                                 glm::vec3(1.0f, 0.0f, 0.0f),   // Look towards +X
-                                 glm::vec3(0.0f, -1.0f, 0.0f)), // Up is -Y
-        // Left face -X
-        projection * glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f),   // Camera at origin
-                                 glm::vec3(-1.0f, 0.0f, 0.0f),  // Look towards -X
-                                 glm::vec3(0.0f, -1.0f, 0.0f)), // Up is -Y
-                                                                // Top face +Y
-        projection * glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f),   // Camera at origin
-                                 glm::vec3(0.0f, 1.0f, 0.0f),   // Look towards +Y
-                                 glm::vec3(0.0f, 0.0f, 1.0f)),  // Up is +Z
-        // Bottom face -Y
-        projection * glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f),   // Camera at origin
-                                 glm::vec3(0.0f, -1.0f, 0.0f),  // Look towards -Y
-                                 glm::vec3(0.0f, 0.0f, -1.0f)), // Up is -Z
-        // Front face +Z
-        projection * glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f),   // Camera at origin
-                                 glm::vec3(0.0f, 0.0f, 1.0f),   // Look towards +Z
-                                 glm::vec3(0.0f, -1.0f, 0.0f)), // Up is -Y
-        // Back Face -Z
-        projection * glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f),   // Camera at origin
-                                 glm::vec3(0.0f, 0.0f, -1.0f),  // Look towards -Z
-                                 glm::vec3(0.0f, -1.0f, 0.0f)), // Up is -Y
-    };
-
-    m_cubeProjViewBuffer.writeAndFlush(0, projView.data(), sizeof(CubeProjView) * 6);
-
     CubeMapPushConstant push;
     push.equiRectTextureId = m_hdrEnvTextureId;
 
@@ -209,15 +173,9 @@ void IBLGenerator::executePrefilteredPipeline(VkCommandBuffer cmdBuffer)
     vkdebug::cmdEndLabel(cmdBuffer);
 }
 
-void IBLGenerator::setupHDRToCubeMapPipeline()
+void IBLGenerator::setupCubeProjViewBuffer()
 {
-    auto& vkCtx           = VkGfxDevice::getSharedVulkanContext();
-
-    m_hdrCubeMapTextureId = TextureDB::cache()->createCubeColorTexture(
-        "environment_cubemap",
-        1024,
-        1024,
-        VK_FORMAT_R32G32B32A32_SFLOAT);
+    auto& vkCtx            = VkGfxDevice::getSharedVulkanContext();
 
     m_cubeProjViewDescPool = VkGfxDescriptorPool::Builder(vkCtx)
                                  .addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 6) // 6 proj view matrices
@@ -254,6 +212,52 @@ void IBLGenerator::setupHDRToCubeMapPipeline()
         pvBufferInfo.data());
 
     m_cubeProjViewDescSet->applyConfiguration();
+
+    glm::mat4 projection = glm::perspective(
+        glm::radians(90.0f), // fov
+        1.0f,                // aspect ratio
+        0.1f,                // near plane
+        10.0f);              // far plane
+
+    m_cubeProjView = {
+        // Right face +X
+        projection * glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f),   // Camera at origin
+                                 glm::vec3(1.0f, 0.0f, 0.0f),   // Look towards +X
+                                 glm::vec3(0.0f, -1.0f, 0.0f)), // Up is -Y
+        // Left face -X
+        projection * glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f),   // Camera at origin
+                                 glm::vec3(-1.0f, 0.0f, 0.0f),  // Look towards -X
+                                 glm::vec3(0.0f, -1.0f, 0.0f)), // Up is -Y
+                                                                // Top face +Y
+        projection * glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f),   // Camera at origin
+                                 glm::vec3(0.0f, 1.0f, 0.0f),   // Look towards +Y
+                                 glm::vec3(0.0f, 0.0f, 1.0f)),  // Up is +Z
+        // Bottom face -Y
+        projection * glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f),   // Camera at origin
+                                 glm::vec3(0.0f, -1.0f, 0.0f),  // Look towards -Y
+                                 glm::vec3(0.0f, 0.0f, -1.0f)), // Up is -Z
+        // Front face +Z
+        projection * glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f),   // Camera at origin
+                                 glm::vec3(0.0f, 0.0f, 1.0f),   // Look towards +Z
+                                 glm::vec3(0.0f, -1.0f, 0.0f)), // Up is -Y
+        // Back Face -Z
+        projection * glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f),   // Camera at origin
+                                 glm::vec3(0.0f, 0.0f, -1.0f),  // Look towards -Z
+                                 glm::vec3(0.0f, -1.0f, 0.0f)), // Up is -Y
+    };
+
+    m_cubeProjViewBuffer.writeAndFlush(0, m_cubeProjView.data(), sizeof(CubeProjView) * 6);
+}
+
+void IBLGenerator::setupHDRToCubeMapPipeline()
+{
+    auto& vkCtx           = VkGfxDevice::getSharedVulkanContext();
+
+    m_hdrCubeMapTextureId = TextureDB::cache()->createCubeColorTexture(
+        "environment_cubemap",
+        1024,
+        1024,
+        VK_FORMAT_R32G32B32A32_SFLOAT);
 
     auto vertShaderCode          = FileSystem::readFileBinary("assets/shaders/cubemap.vert.spv");
 

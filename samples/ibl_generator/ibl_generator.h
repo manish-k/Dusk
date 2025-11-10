@@ -41,6 +41,7 @@ private:
     void executeIrradiancePipeline(VkCommandBuffer cmdBuffer);
     void executePrefilteredPipeline(VkCommandBuffer cmdBuffer);
 
+    void setupCubeProjViewBuffer();
     void setupHDRToCubeMapPipeline();
     void setupIrradiancePipeline();
     void setupPrefilteredPipeline();
@@ -58,4 +59,6 @@ private:
     Unique<VkGfxRenderPipeline>      m_hdrToCubeMapPipeline       = nullptr;
     Unique<VkGfxPipelineLayout>      m_hdrToCubeMapPipelineLayout = nullptr;
     uint32_t                         m_hdrCubeMapTextureId        = {};
+
+    dusk::Array<glm::mat4, 6>        m_cubeProjView               = {};
 };

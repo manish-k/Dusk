@@ -956,7 +956,9 @@ VulkanResult VkGfxDevice::createImageView(
     VkImageViewType    type,
     VkFormat           format,
     VkImageAspectFlags aspectMaskFlags,
+    uint32_t           baseMipLevel,
     uint32_t           mipLevelCount,
+    uint32_t           baseLayer,
     uint32_t           layersCount,
     VkImageView*       pImageView) const
 {
@@ -966,9 +968,9 @@ VulkanResult VkGfxDevice::createImageView(
     viewInfo.viewType                        = type;
     viewInfo.format                          = format;
     viewInfo.subresourceRange.aspectMask     = aspectMaskFlags;
-    viewInfo.subresourceRange.baseMipLevel   = 0;
+    viewInfo.subresourceRange.baseMipLevel   = baseMipLevel;
     viewInfo.subresourceRange.levelCount     = mipLevelCount;
-    viewInfo.subresourceRange.baseArrayLayer = 0;
+    viewInfo.subresourceRange.baseArrayLayer = baseLayer;
     viewInfo.subresourceRange.layerCount     = layersCount;
 
     VulkanResult result                      = vkCreateImageView(m_device, &viewInfo, nullptr, pImageView);

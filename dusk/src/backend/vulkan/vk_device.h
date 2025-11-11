@@ -90,7 +90,9 @@ public:
         VkImageViewType    type,
         VkFormat           format,
         VkImageAspectFlags aspectMaskFlags,
+        uint32_t           baseMipLevel,
         uint32_t           mipLevelCount,
+        uint32_t           baseLayer,
         uint32_t           layersCount,
         VkImageView*       pImageView) const;
     void                  freeImageView(VkImageView* pImageView) const;

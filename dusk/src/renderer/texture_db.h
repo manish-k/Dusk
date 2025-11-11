@@ -80,12 +80,6 @@ public:
     VkGfxDescriptorSetLayout& getStorageTexturesDescriptorSetLayout() const { return *m_storageTextureDescriptorSetLayout; };
 
     /**
-     * @brief Get descriptor set layout for cubemap(color attachment)
-     * texture descriptor set layout
-     */
-    VkGfxDescriptorSetLayout& getCubeTexturesDescriptorSetLayout() const { return *m_cubeTextureDescriptorSetLayout; };
-
-    /**
      * @brief Per frame update call to upload pending textures
      */
     void onUpdate();
@@ -109,6 +103,7 @@ public:
      * @param name of the render target
      * @param width of the render target
      * @param height of the render target
+     * @param total miplevels for the texture
      * @param format of the render target
      * @return id of the texture
      */
@@ -116,6 +111,7 @@ public:
         const std::string& name,
         uint32_t           width,
         uint32_t           height,
+        uint32_t           mipLevels,
         VkFormat           format);
 
     /**
@@ -209,8 +205,6 @@ private:
     Unique<VkGfxDescriptorSet>           m_textureDescriptorSet              = nullptr;
     Unique<VkGfxDescriptorSetLayout>     m_storageTextureDescriptorSetLayout = nullptr;
     Unique<VkGfxDescriptorSet>           m_storageTextureDescriptorSet       = nullptr;
-    Unique<VkGfxDescriptorSetLayout>     m_cubeTextureDescriptorSetLayout    = nullptr;
-    Unique<VkGfxDescriptorSet>           m_cubeTextureDescriptorSet          = nullptr;
 
     VulkanSampler                        m_defaultSampler;
     DynamicArray<VkSampler>              m_extraSamplers; // TODO:: need uniqueness check

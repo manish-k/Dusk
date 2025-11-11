@@ -115,7 +115,9 @@ Error GfxTexture::init(
         VK_IMAGE_VIEW_TYPE_2D,
         format,
         VK_IMAGE_ASPECT_COLOR_BIT,
+        0,
         1,
+        0,
         1,
         &imageView);
 
@@ -142,6 +144,7 @@ Error GfxTexture::init(
     TextureType type,
     uint32_t    width,
     uint32_t    height,
+    uint32_t    mipLevels,
     uint32_t    layers,
     VkFormat    format,
     uint32_t    usage,
@@ -154,6 +157,7 @@ Error GfxTexture::init(
     this->usage                 = usage;
     this->name                  = name;
     this->format                = format;
+    this->numMipLevels          = mipLevels;
     this->numLayers             = layers;
 
     auto&             device    = Engine::get().getGfxDevice();
@@ -164,8 +168,8 @@ Error GfxTexture::init(
     imageInfo.extent.width  = width;
     imageInfo.extent.height = height;
     imageInfo.extent.depth  = 1;
-    imageInfo.mipLevels     = 1;
-    imageInfo.arrayLayers   = layers;
+    imageInfo.mipLevels     = numMipLevels;
+    imageInfo.arrayLayers   = numLayers;
     imageInfo.format        = format;
     imageInfo.tiling        = VK_IMAGE_TILING_OPTIMAL;
     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -216,7 +220,9 @@ Error GfxTexture::init(
         vulkan::getImageViewType(type),
         format,
         imageAspectFlags,
-        1,
+        0,
+        numMipLevels,
+        0,
         numLayers,
         &imageView);
 
@@ -623,7 +629,9 @@ Error GfxTexture::init(
         vulkan::getImageViewType(type),
         format,
         imageAspectFlags,
+        0,
         numMipLevels,
+        0,
         numLayers,
         &imageView);
 
@@ -649,8 +657,13 @@ void GfxTexture::free()
     auto& vkContext = device.getSharedVulkanContext();
 
     device.freeImageView(&imageView);
-    if (imageView != cubeImageView)
-        device.freeImageView(&cubeImageView);
+
+    if (type == TextureType::Cube)
+    {
+        for (uint32_t level = 0u; level < numMipLevels; ++level)
+            device.freeImageView(&cubeMipImageViews[level]);
+    }
+    cubeMipImageViews.clear();
 
     vulkan::freeGPUImage(vkContext.gpuAllocator, &image);
 
@@ -773,7 +786,7 @@ void GfxTexture::recordTransitionLayout(
     barrier.image                           = image.vkImage;
     barrier.subresourceRange.aspectMask     = imageAspectFlags;
     barrier.subresourceRange.baseMipLevel   = 0;
-    barrier.subresourceRange.levelCount     = 1;
+    barrier.subresourceRange.levelCount     = numMipLevels;
     barrier.subresourceRange.baseArrayLayer = 0;
     barrier.subresourceRange.layerCount     = numLayers;
 
@@ -865,7 +878,7 @@ void GfxTexture::recordTransitionLayout(
         1,
         &barrier);
 
-    // this layout is not transitioned ye. This is the next
+    // this layout is not transitioned yet. This is the next
     // state of the layout and any further transition should respect
     // this
     currentLayout = newLayout;

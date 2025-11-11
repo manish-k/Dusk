@@ -173,20 +173,6 @@ bool TextureDB::setupDescriptors()
     m_storageTextureDescriptorSet = m_textureDescriptorPool->allocateDescriptorSet(*m_storageTextureDescriptorSetLayout, "storage_texture_desc_set");
     CHECK_AND_RETURN_FALSE(!m_storageTextureDescriptorSet);
 
-    m_cubeTextureDescriptorSetLayout = VkGfxDescriptorSetLayout::Builder(ctx)
-                                           .addBinding(
-                                               COLOR_BINDING_INDEX,
-                                               VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                               VK_SHADER_STAGE_FRAGMENT_BIT,
-                                               maxAllowedTextures,
-                                               true)
-                                           .setDebugName("cube_texture_desc_set_layout")
-                                           .build();
-    CHECK_AND_RETURN_FALSE(!m_cubeTextureDescriptorSetLayout);
-
-    m_cubeTextureDescriptorSet = m_textureDescriptorPool->allocateDescriptorSet(*m_cubeTextureDescriptorSetLayout, "cube_texture_desc_set");
-    CHECK_AND_RETURN_FALSE(!m_cubeTextureDescriptorSet);
-
     return true;
 }
 
@@ -311,7 +297,6 @@ void TextureDB::onUpdate()
 
             DASSERT(format != VK_FORMAT_UNDEFINED);
 
-
             Error err = tex.init(
                 *img,
                 tex.type,
@@ -372,6 +357,7 @@ uint32_t TextureDB::createColorTexture(
         width,
         height,
         1,
+        1,
         format,
         SampledTexture | ColorTexture | TransferDstTexture,
         name.c_str());
@@ -401,6 +387,7 @@ uint32_t TextureDB::createCubeColorTexture(
     const std::string& name,
     uint32_t           width,
     uint32_t           height,
+    uint32_t           mipLevels,
     VkFormat           format)
 {
     std::lock_guard<std::mutex> updateLock(m_mutex);
@@ -413,6 +400,7 @@ uint32_t TextureDB::createCubeColorTexture(
         TextureType::Cube,
         width,
         height,
+        mipLevels,
         6,
         format,
         SampledTexture | ColorTexture | TransferDstTexture | TransferSrcTexture,
@@ -434,29 +422,24 @@ uint32_t TextureDB::createCubeColorTexture(
 
     m_textureDescriptorSet->applyConfiguration();
 
-    m_gfxDevice.createImageView(
-        &newTex.image,
-        VK_IMAGE_VIEW_TYPE_2D_ARRAY,
-        format,
-        VK_IMAGE_ASPECT_COLOR_BIT,
-        newTex.numMipLevels,
-        newTex.numLayers,
-        &newTex.cubeImageView);
+    // generate per mip image view for all faces
+    // TODO: can be moved inside init function
+    newTex.cubeMipImageViews.resize(mipLevels);
+    for (uint32_t level = 0u; level < mipLevels; ++level)
+    {
+        m_gfxDevice.createImageView(
+            &newTex.image,
+            VK_IMAGE_VIEW_TYPE_2D_ARRAY,
+            format,
+            VK_IMAGE_ASPECT_COLOR_BIT,
+            level,
+            1,
+            0,
+            newTex.numLayers,
+            &newTex.cubeMipImageViews[level]);
+    }
 
     m_textures.push_back(newTex);
-
-    // update cube texture desc set
-    texDescInfos.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    texDescInfos.imageView   = newTex.cubeImageView;
-    texDescInfos.sampler     = newTex.sampler;
-
-    m_cubeTextureDescriptorSet->configureImage(
-        COLOR_BINDING_INDEX,
-        newTex.id,
-        1,
-        &texDescInfos);
-
-    m_cubeTextureDescriptorSet->applyConfiguration();
 
     return newId;
 }
@@ -477,6 +460,7 @@ uint32_t TextureDB::createStorageTexture(
         TextureType::Texture2D,
         width,
         height,
+        1,
         1,
         format,
         SampledTexture | ColorTexture | TransferDstTexture | StorageTexture,
@@ -533,6 +517,7 @@ uint32_t TextureDB::createDepthTexture(
         TextureType::Texture2D,
         width,
         height,
+        1,
         1,
         format,
         DepthStencilTexture | SampledTexture,

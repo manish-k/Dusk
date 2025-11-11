@@ -26,7 +26,7 @@ float radicalInverse_VdC(uint bits)
      bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
      return float(bits) * 2.3283064365386963e-10; // / 0x100000000
 }
-// ----------------------------------------------------------------------------
+
 vec2 hammersley(uint i, uint N)
 {
 	return vec2(float(i)/float(N), radicalInverse_VdC(i));

@@ -43,13 +43,14 @@ struct GfxTexture
 
     VulkanGfxImage image         = {};
     VkImageView    imageView     = {};
-    // special image view for using cubemaps as output attachments because
-    // image view type is different from view that samples the image. 
-    // Following view will be used for output attachments
-    VkImageView    cubeImageView = {};
     VkFormat       format        = {};
     VkImageLayout  currentLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     VkSampler      sampler       = {};
+
+    // special image view for using cubemaps as output attachments because
+    // image view type is different from view that samples the image.
+    // We are going to store per mip image views of all faces
+    DynamicArray<VkImageView> cubeMipImageViews = {};
 
     // Pixel data will be stored in mip-major order
     // [Mip 0, Face 0] [Mip 0, Face 1] ... [Mip 0, Face 5]
@@ -82,6 +83,7 @@ struct GfxTexture
      * @param type of texture
      * @param width of the texture
      * @param height of the texture
+     * @param number of mip levels in the texture
      * @param number of layers in the texture
      * @param format of the texture
      * @param usage  flags of the texture
@@ -92,6 +94,7 @@ struct GfxTexture
         TextureType type,
         uint32_t    width,
         uint32_t    height,
+        uint32_t    mipLevels,
         uint32_t    layers,
         VkFormat    format,
         uint32_t    usage,

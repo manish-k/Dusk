@@ -17,7 +17,7 @@ namespace dusk
 class CameraController
 {
 public:
-    CameraController(GameObject& camera, float width, float height);
+    CameraController(GameObject& camera, uint32_t width, uint32_t height);
     ~CameraController() = default;
 
     void onEvent(Event& ev);

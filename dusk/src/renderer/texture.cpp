@@ -152,6 +152,7 @@ Error GfxTexture::init(
 {
     DUSK_PROFILE_FUNCTION;
 
+    this->type                  = type;
     this->width                 = width;
     this->height                = height;
     this->usage                 = usage;
@@ -351,14 +352,12 @@ Error GfxTexture::init(
     }
 #endif // VK_RENDERER_DEBUG
 
-    VkCommandBufferBeginInfo beginInfo {};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    VkCommandBufferBeginInfo beginInfo { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
     vkBeginCommandBuffer(transferBuffer, &beginInfo);
 
-    VkImageMemoryBarrier barrier {};
-    barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    VkImageMemoryBarrier barrier { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
     barrier.oldLayout                       = VK_IMAGE_LAYOUT_UNDEFINED;
     barrier.newLayout                       = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     barrier.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
@@ -393,8 +392,7 @@ Error GfxTexture::init(
         bufferCopyRegions.data());
 
     // release ownership from transfer queue
-    barrier                                 = {};
-    barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier                                 = { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
     barrier.oldLayout                       = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     barrier.newLayout                       = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     barrier.srcQueueFamilyIndex             = vkContext.transferQueueFamilyIndex;
@@ -421,16 +419,13 @@ Error GfxTexture::init(
 
     vkEndCommandBuffer(transferBuffer);
 
-    VkSemaphoreCreateInfo semInfo {
-        .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
-    };
+    VkSemaphoreCreateInfo semInfo { VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
 
-    VkSemaphore uploadFinishedSemaphore;
+    VkSemaphore           uploadFinishedSemaphore;
     vkCreateSemaphore(vkContext.device, &semInfo, nullptr, &uploadFinishedSemaphore);
 
     // submit transfer work
-    VkSubmitInfo submitInfo {};
-    submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    VkSubmitInfo submitInfo { VK_STRUCTURE_TYPE_SUBMIT_INFO };
     submitInfo.commandBufferCount   = 1;
     submitInfo.pCommandBuffers      = &transferBuffer;
     submitInfo.signalSemaphoreCount = 1;
@@ -441,8 +436,7 @@ Error GfxTexture::init(
     vkBeginCommandBuffer(graphicsBuffer, &beginInfo);
 
     // graphics queue will require ownership
-    barrier                                 = {};
-    barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier                                 = { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
     barrier.oldLayout                       = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     barrier.newLayout                       = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     barrier.srcQueueFamilyIndex             = vkContext.transferQueueFamilyIndex;
@@ -467,134 +461,15 @@ Error GfxTexture::init(
         1,
         &barrier);
 
+    this->currentLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+
     // start mip genration
     if (generateMips)
     {
-        // Initialize remaining mip levels to TRANSFER_DST_OPTIMAL
-        barrier                                 = {};
-        barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        barrier.oldLayout                       = VK_IMAGE_LAYOUT_UNDEFINED;
-        barrier.newLayout                       = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        barrier.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
-        barrier.dstQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
-        barrier.image                           = image.vkImage;
-        barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
-        barrier.subresourceRange.baseMipLevel   = 1; // 0 level already transitioned
-        barrier.subresourceRange.levelCount     = numMipLevels - 1;
-        barrier.subresourceRange.baseArrayLayer = 0;
-        barrier.subresourceRange.layerCount     = numLayers;
-        barrier.srcAccessMask                   = 0;
-        barrier.dstAccessMask                   = VK_ACCESS_TRANSFER_WRITE_BIT;
-
-        vkCmdPipelineBarrier(
-            graphicsBuffer,
-            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-            VK_PIPELINE_STAGE_TRANSFER_BIT,
-            0,
-            0,
-            nullptr,
-            0,
-            nullptr,
-            1,
-            &barrier);
-
-        // Generate mipmaps from level 1
-        barrier.subresourceRange.levelCount = 1;
-
-        int32_t mipWidth                    = width;
-        int32_t mipHeight                   = height;
-
-        for (uint32_t i = 1; i < numMipLevels; i++)
-        {
-            // Transition previous mip level to TRANSFER_SRC_OPTIMAL
-            barrier.subresourceRange.baseMipLevel = i - 1;
-            barrier.oldLayout                     = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-            barrier.newLayout                     = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-            barrier.srcAccessMask                 = VK_ACCESS_TRANSFER_WRITE_BIT;
-            barrier.dstAccessMask                 = VK_ACCESS_TRANSFER_READ_BIT;
-
-            vkCmdPipelineBarrier(
-                graphicsBuffer,
-                VK_PIPELINE_STAGE_TRANSFER_BIT,
-                VK_PIPELINE_STAGE_TRANSFER_BIT,
-                0,
-                0,
-                nullptr,
-                0,
-                nullptr,
-                1,
-                &barrier);
-
-            // Blit from previous level to current level
-            VkImageBlit blit {};
-            blit.srcOffsets[0]                 = { 0, 0, 0 };
-            blit.srcOffsets[1]                 = { mipWidth, mipHeight, 1 };
-            blit.srcSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
-            blit.srcSubresource.mipLevel       = i - 1;
-            blit.srcSubresource.baseArrayLayer = 0;
-            blit.srcSubresource.layerCount     = numLayers;
-            blit.dstOffsets[0]                 = { 0, 0, 0 };
-            blit.dstOffsets[1]                 = {
-                mipWidth > 1 ? mipWidth / 2 : 1,
-                mipHeight > 1 ? mipHeight / 2 : 1,
-                1
-            };
-            blit.dstSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
-            blit.dstSubresource.mipLevel       = i;
-            blit.dstSubresource.baseArrayLayer = 0;
-            blit.dstSubresource.layerCount     = numLayers;
-
-            vkCmdBlitImage(
-                graphicsBuffer,
-                image.vkImage,
-                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                image.vkImage,
-                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                1,
-                &blit,
-                VK_FILTER_LINEAR);
-
-            // Transition previous mip to SHADER_READ_ONLY_OPTIMAL
-            barrier.oldLayout     = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-            barrier.newLayout     = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-            vkCmdPipelineBarrier(
-                graphicsBuffer,
-                VK_PIPELINE_STAGE_TRANSFER_BIT,
-                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                0,
-                0,
-                nullptr,
-                0,
-                nullptr,
-                1,
-                &barrier);
-
-            if (mipWidth > 1) mipWidth /= 2;
-            if (mipHeight > 1) mipHeight /= 2;
-        }
-
-        // Transition last mip level to SHADER_READ_ONLY_OPTIMAL
-        barrier.subresourceRange.baseMipLevel = numMipLevels - 1;
-        barrier.oldLayout                     = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        barrier.newLayout                     = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        barrier.srcAccessMask                 = VK_ACCESS_TRANSFER_WRITE_BIT;
-        barrier.dstAccessMask                 = VK_ACCESS_SHADER_READ_BIT;
-
-        vkCmdPipelineBarrier(
-            graphicsBuffer,
-            VK_PIPELINE_STAGE_TRANSFER_BIT,
-            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-            0,
-            0,
-            nullptr,
-            0,
-            nullptr,
-            1,
-            &barrier);
+        recordMipGenerationCmds(graphicsBuffer);
     }
+
+    recordTransitionLayout(graphicsBuffer, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     vkEndCommandBuffer(graphicsBuffer);
 
@@ -602,8 +477,7 @@ Error GfxTexture::init(
         VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
     };
 
-    submitInfo                    = {};
-    submitInfo.sType              = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo                    = { VK_STRUCTURE_TYPE_SUBMIT_INFO };
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers    = &graphicsBuffer;
     submitInfo.waitSemaphoreCount = 1;
@@ -611,8 +485,6 @@ Error GfxTexture::init(
     submitInfo.pWaitDstStageMask  = waitStages;
 
     vkQueueSubmit(vkContext.graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-
-    this->currentLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
     // wait for graphics queue operation to finish
     {
@@ -649,6 +521,141 @@ Error GfxTexture::init(
 #endif // VK_RENDERER_DEBUG
 
     return Error::Ok;
+}
+
+void GfxTexture::recordMipGenerationCmds(VkCommandBuffer cmdBuff)
+{
+    VkImageMemoryBarrier barrier            = { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
+    barrier.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image                           = image.vkImage;
+    barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.baseMipLevel   = 0;
+    barrier.subresourceRange.levelCount     = numMipLevels;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount     = numLayers;
+
+    // Transition all mip levels to TRANSFER_DST_OPTIMAL
+    if (currentLayout != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+    {
+        barrier.oldLayout     = currentLayout;
+        barrier.newLayout     = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+
+        barrier.srcAccessMask = 0;
+        barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+        vkCmdPipelineBarrier(
+            cmdBuff,
+            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+            VK_PIPELINE_STAGE_TRANSFER_BIT,
+            0,
+            0,
+            nullptr,
+            0,
+            nullptr,
+            1,
+            &barrier);
+    }
+
+    int32_t mipWidth  = width;
+    int32_t mipHeight = height;
+
+    // Generate mipmaps from level 1
+    for (uint32_t i = 1; i < numMipLevels; i++)
+    {
+        // Transition previous mip level to TRANSFER_SRC_OPTIMAL
+        barrier.subresourceRange.baseMipLevel = i - 1;
+        barrier.subresourceRange.levelCount   = 1;
+        barrier.oldLayout                     = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.newLayout                     = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        barrier.srcAccessMask                 = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.dstAccessMask                 = VK_ACCESS_TRANSFER_READ_BIT;
+
+        vkCmdPipelineBarrier(
+            cmdBuff,
+            VK_PIPELINE_STAGE_TRANSFER_BIT,
+            VK_PIPELINE_STAGE_TRANSFER_BIT,
+            0,
+            0,
+            nullptr,
+            0,
+            nullptr,
+            1,
+            &barrier);
+
+        // Blit from previous level to current level
+        VkImageBlit blit {};
+        blit.srcOffsets[0]                 = { 0, 0, 0 };
+        blit.srcOffsets[1]                 = { mipWidth, mipHeight, 1 };
+        blit.srcSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+        blit.srcSubresource.mipLevel       = i - 1;
+        blit.srcSubresource.baseArrayLayer = 0;
+        blit.srcSubresource.layerCount     = numLayers;
+        blit.dstOffsets[0]                 = { 0, 0, 0 };
+        blit.dstOffsets[1]                 = {
+            mipWidth > 1 ? mipWidth / 2 : 1,
+            mipHeight > 1 ? mipHeight / 2 : 1,
+            1
+        };
+        blit.dstSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+        blit.dstSubresource.mipLevel       = i;
+        blit.dstSubresource.baseArrayLayer = 0;
+        blit.dstSubresource.layerCount     = numLayers;
+
+        vkCmdBlitImage(
+            cmdBuff,
+            image.vkImage,
+            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            image.vkImage,
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            1,
+            &blit,
+            VK_FILTER_LINEAR);
+
+        // Transition previous mip to SHADER_READ_ONLY_OPTIMAL
+        barrier.oldLayout     = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        barrier.newLayout     = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+        vkCmdPipelineBarrier(
+            cmdBuff,
+            VK_PIPELINE_STAGE_TRANSFER_BIT,
+            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            0,
+            0,
+            nullptr,
+            0,
+            nullptr,
+            1,
+            &barrier);
+
+        if (mipWidth > 1) mipWidth /= 2;
+        if (mipHeight > 1) mipHeight /= 2;
+    }
+
+    // Transition last mip level to SHADER_READ_ONLY_OPTIMAL
+    barrier.subresourceRange.baseMipLevel = numMipLevels - 1;
+    barrier.subresourceRange.levelCount   = 1;
+    barrier.oldLayout                     = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    barrier.newLayout                     = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    barrier.srcAccessMask                 = VK_ACCESS_TRANSFER_WRITE_BIT;
+    barrier.dstAccessMask                 = VK_ACCESS_SHADER_READ_BIT;
+
+    vkCmdPipelineBarrier(
+        cmdBuff,
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
+        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+        0,
+        0,
+        nullptr,
+        0,
+        nullptr,
+        1,
+        &barrier);
+
+    // all mips are transitioned for shader read
+    currentLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 }
 
 void GfxTexture::free()
@@ -777,8 +784,7 @@ void GfxTexture::recordTransitionLayout(
         imageAspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
     }
 
-    VkImageMemoryBarrier barrier {};
-    barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    VkImageMemoryBarrier barrier { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
     barrier.oldLayout                       = currentLayout;
     barrier.newLayout                       = newLayout;
     barrier.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;

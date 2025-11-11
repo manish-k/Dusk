@@ -123,6 +123,12 @@ struct GfxTexture
         const char*     name = nullptr);
 
     /**
+     * @brief Record cmds for generating mip maps
+     * @param cmdBuff 
+     */
+    void recordMipGenerationCmds(VkCommandBuffer cmdBuff);
+
+    /**
      * @brief free the allocated Image and ImageView for the texture
      */
     void free();

@@ -7,7 +7,7 @@
 
 namespace dusk
 {
-CameraController::CameraController(GameObject& camera, float width, float height) :
+CameraController::CameraController(GameObject& camera, uint32_t width, uint32_t height) :
     m_cameraTransform(camera.getComponent<TransformComponent>()), m_cameraComponent(camera.getComponent<CameraComponent>()),
     m_width(width), m_height(height)
 {

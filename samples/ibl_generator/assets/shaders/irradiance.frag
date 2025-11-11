@@ -15,6 +15,7 @@ layout(push_constant) uniform IBLPushConstant {
     uint envCubeMapTexId;
     uint sampleCount;
     float roughness;
+    uint resolution;
 } push;
 
 void main()

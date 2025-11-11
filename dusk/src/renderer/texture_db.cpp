@@ -422,33 +422,6 @@ uint32_t TextureDB::createCubeColorTexture(
 
     m_textureDescriptorSet->applyConfiguration();
 
-    // generate per mip image view for all faces
-    // TODO: can be moved inside init function
-    newTex.cubeMipImageViews.resize(mipLevels);
-    auto& ctx = m_gfxDevice.getSharedVulkanContext();
-
-    for (uint32_t level = 0u; level < mipLevels; ++level)
-    {
-        m_gfxDevice.createImageView(
-            &newTex.image,
-            VK_IMAGE_VIEW_TYPE_2D_ARRAY,
-            format,
-            VK_IMAGE_ASPECT_COLOR_BIT,
-            level,
-            1,
-            0,
-            newTex.numLayers,
-            &newTex.cubeMipImageViews[level]);
-
-#ifdef VK_RENDERER_DEBUG
-        vkdebug::setObjectName(
-            ctx.device,
-            VK_OBJECT_TYPE_IMAGE_VIEW,
-            (uint64_t)newTex.cubeMipImageViews[level],
-            "cube_image_view");
-#endif // VK_RENDERER_DEBUG
-    }
-
     m_textures.push_back(newTex);
 
     return newId;

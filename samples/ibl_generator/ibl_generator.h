@@ -17,14 +17,15 @@ irradiance and pre-filtered maps for diffuse and specular ibl.
 
 struct CubeMapPushConstant
 {
-    uint32_t equiRectTextureId = 0;
+    uint32_t equiRectTextureId = 0u;
 };
 
 struct IBLPushConstant
 {
-    uint32_t envCubeMapTextureId = 0;
-    uint32_t sampleCount         = 0;
+    uint32_t envCubeMapTextureId = 0u;
+    uint32_t sampleCount         = 0u;
     float    roughness           = 0.0f;
+    uint32_t resolution          = 0u;
 };
 
 struct CubeProjView

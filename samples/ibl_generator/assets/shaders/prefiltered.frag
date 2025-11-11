@@ -13,6 +13,7 @@ layout(push_constant) uniform IBLPushConstant {
     uint envCubeMapTexId;
     uint sampleCount;
     float roughness;
+    uint resolution;
 } push;
 
 const float PI = 3.14159265359;
@@ -101,8 +102,7 @@ void main()
             float HdotV = max(dot(H, V), 0.0);
             float pdf = D * NdotH / (4.0 * HdotV) + 0.0001; 
 
-            float resolution = 512.0; // resolution of source cubemap (per face)
-            float saTexel  = 4.0 * PI / (6.0 * resolution * resolution);
+            float saTexel  = 4.0 * PI / (6.0 * push.resolution * push.resolution);
             float saSample = 1.0 / (float(push.sampleCount) * pdf + 0.0001);
 
             float mipLevel = roughness == 0.0 ? 0.0 : 0.5 * log2(saSample / saTexel); 

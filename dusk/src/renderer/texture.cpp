@@ -233,6 +233,34 @@ Error GfxTexture::init(
         return Error::InitializationFailed;
     }
 
+    if (type == TextureType::Cube)
+    {
+        // generate per mip image view for all faces
+        cubeMipImageViews.resize(mipLevels);
+
+        for (uint32_t level = 0u; level < mipLevels; ++level)
+        {
+            device.createImageView(
+                &image,
+                VK_IMAGE_VIEW_TYPE_2D_ARRAY,
+                format,
+                VK_IMAGE_ASPECT_COLOR_BIT,
+                level,
+                1,
+                0,
+                numLayers,
+                &cubeMipImageViews[level]);
+
+#ifdef VK_RENDERER_DEBUG
+            vkdebug::setObjectName(
+                vkContext.device,
+                VK_OBJECT_TYPE_IMAGE_VIEW,
+                (uint64_t)cubeMipImageViews[level],
+                "cube_image_view");
+#endif // VK_RENDERER_DEBUG
+        }
+    }
+
 #ifdef VK_RENDERER_DEBUG
     vkdebug::setObjectName(
         vkContext.device,

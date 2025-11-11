@@ -336,6 +336,7 @@ void IBLGenerator::executePrefilteredPipeline(VkCommandBuffer cmdBuffer)
         push.envCubeMapTextureId = m_hdrCubeMapTextureId;
         push.roughness           = roughness;
         push.sampleCount         = 1024u;
+        push.resolution          = std::max(PREFILTERED_RENDER_WIDTH, PREFILTERED_RENDER_HEIGHT);
 
         vkCmdPushConstants(
             cmdBuffer,

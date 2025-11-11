@@ -11,8 +11,10 @@ layout (set = 0, binding = 0) uniform samplerCube textures[];
 
 const float PI = 3.14159265359;
 
-layout(push_constant) uniform IrradiancePushConstant {
+layout(push_constant) uniform IBLPushConstant {
     uint envCubeMapTexId;
+    uint sampleCount;
+    float roughness;
 } push;
 
 void main()

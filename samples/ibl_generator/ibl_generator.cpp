@@ -41,12 +41,20 @@ IBLGenerator::~IBLGenerator()
 
 bool IBLGenerator::start()
 {
-    m_hdrEnvTextureId = TextureDB::cache()->createTextureAsync("assets/textures/env.hdr", TextureType::Texture2D);
+    m_hdrEnvTextureId              = TextureDB::cache()->createTextureAsync("assets/textures/env.hdr", TextureType::Texture2D);
+
+    auto cubemapVertShaderCode     = FileSystem::readFileBinary("assets/shaders/cubemap.vert.spv");
+
+    auto cubemapFragShaderCode     = FileSystem::readFileBinary("assets/shaders/cubemap.frag.spv");
+
+    auto irradianceFragShaderCode  = FileSystem::readFileBinary("assets/shaders/irradiance.frag.spv");
+
+    auto prefilteredFragShaderCode = FileSystem::readFileBinary("assets/shaders/prefiltered.frag.spv");
 
     setupCubeProjViewBuffer();
-    setupHDRToCubeMapPipeline();
-    setupIrradiancePipeline();
-    setupPrefilteredPipeline();
+    setupHDRToCubeMapPipeline(cubemapVertShaderCode, cubemapFragShaderCode);
+    setupIrradiancePipeline(cubemapVertShaderCode, irradianceFragShaderCode);
+    setupPrefilteredPipeline(cubemapVertShaderCode, prefilteredFragShaderCode);
 
     return true;
 }
@@ -167,6 +175,8 @@ void IBLGenerator::executeHDRToCubeMapPipeline(VkCommandBuffer cmdBuffer)
     vkCmdDraw(cmdBuffer, 36, 1, 0, 0);
 
     vkCmdEndRendering(cmdBuffer);
+
+    cubeMapAttachment.recordMipGenerationCmds(cmdBuffer);
 
     vkdebug::cmdEndLabel(cmdBuffer);
 }
@@ -432,20 +442,25 @@ void IBLGenerator::setupCubeProjViewBuffer()
     m_cubeProjViewBuffer.writeAndFlush(0, m_cubeProjView.data(), sizeof(CubeProjView) * 6);
 }
 
-void IBLGenerator::setupHDRToCubeMapPipeline()
+void IBLGenerator::setupHDRToCubeMapPipeline(
+    DynamicArray<char>& vertShaderCode,
+    DynamicArray<char>& fragShaderCode)
 {
-    auto& vkCtx           = VkGfxDevice::getSharedVulkanContext();
+    auto&    vkCtx        = VkGfxDevice::getSharedVulkanContext();
+
+    uint32_t numMipLevels = static_cast<uint32_t>(
+                                std::floor(std::log2(
+                                    std::max(
+                                        ENV_RENDER_WIDTH,
+                                        ENV_RENDER_HEIGHT))))
+        + 1;
 
     m_hdrCubeMapTextureId = TextureDB::cache()->createCubeColorTexture(
         "environment_cubemap",
         ENV_RENDER_WIDTH,
         ENV_RENDER_HEIGHT,
-        1,
+        numMipLevels,
         VK_FORMAT_R32G32B32A32_SFLOAT);
-
-    auto vertShaderCode          = FileSystem::readFileBinary("assets/shaders/cubemap.vert.spv");
-
-    auto fragShaderCode          = FileSystem::readFileBinary("assets/shaders/cubemap.frag.spv");
 
     m_hdrToCubeMapPipelineLayout = VkGfxPipelineLayout::Builder(vkCtx)
                                        .addPushConstantRange(VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(CubeMapPushConstant))
@@ -464,7 +479,9 @@ void IBLGenerator::setupHDRToCubeMapPipeline()
                                  .build();
 }
 
-void IBLGenerator::setupIrradiancePipeline()
+void IBLGenerator::setupIrradiancePipeline(
+    DynamicArray<char>& vertShaderCode,
+    DynamicArray<char>& fragShaderCode)
 {
     auto& vkCtx           = VkGfxDevice::getSharedVulkanContext();
 
@@ -474,10 +491,6 @@ void IBLGenerator::setupIrradiancePipeline()
         IRRADIANCE_RENDER_HEIGHT,
         1,
         VK_FORMAT_R32G32B32A32_SFLOAT);
-
-    auto vertShaderCode        = FileSystem::readFileBinary("assets/shaders/cubemap.vert.spv");
-
-    auto fragShaderCode        = FileSystem::readFileBinary("assets/shaders/irradiance.frag.spv");
 
     m_irradiancePipelineLayout = VkGfxPipelineLayout::Builder(vkCtx)
                                      .addPushConstantRange(VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(IBLPushConstant))
@@ -496,7 +509,9 @@ void IBLGenerator::setupIrradiancePipeline()
                                .build();
 }
 
-void IBLGenerator::setupPrefilteredPipeline()
+void IBLGenerator::setupPrefilteredPipeline(
+    DynamicArray<char>& vertShaderCode,
+    DynamicArray<char>& fragShaderCode)
 {
     auto&    vkCtx        = VkGfxDevice::getSharedVulkanContext();
 
@@ -513,10 +528,6 @@ void IBLGenerator::setupPrefilteredPipeline()
         PREFILTERED_RENDER_HEIGHT,
         numMipLevels,
         VK_FORMAT_R32G32B32A32_SFLOAT);
-
-    auto vertShaderCode         = FileSystem::readFileBinary("assets/shaders/cubemap.vert.spv");
-
-    auto fragShaderCode         = FileSystem::readFileBinary("assets/shaders/prefiltered.frag.spv");
 
     m_prefilteredPipelineLayout = VkGfxPipelineLayout::Builder(vkCtx)
                                       .addPushConstantRange(VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(IBLPushConstant))

@@ -50,9 +50,15 @@ private:
     void executePrefilteredPipeline(VkCommandBuffer cmdBuffer);
 
     void setupCubeProjViewBuffer();
-    void setupHDRToCubeMapPipeline();
-    void setupIrradiancePipeline();
-    void setupPrefilteredPipeline();
+    void setupHDRToCubeMapPipeline(
+        DynamicArray<char>& vertShaderCode,
+        DynamicArray<char>& fragShaderCode);
+    void setupIrradiancePipeline(
+        DynamicArray<char>& vertShaderCode,
+        DynamicArray<char>& fragShaderCode);
+    void setupPrefilteredPipeline(
+        DynamicArray<char>& vertShaderCode,
+        DynamicArray<char>& fragShaderCode);
 
 private:
     uint32_t m_hdrEnvTextureId = {};

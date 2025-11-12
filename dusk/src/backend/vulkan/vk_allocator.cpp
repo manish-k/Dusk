@@ -120,14 +120,16 @@ void vulkan::freeGPUBuffer(
 VulkanResult vulkan::mapGPUMemory(
     VulkanGPUAllocator& gpuAllocator,
     VmaAllocation       allocation,
-    void*               pMappedBlock)
+    void**              ppMappedBlock)
 {
-    VulkanResult result = vmaMapMemory(gpuAllocator.vmaAllocator, allocation, &pMappedBlock);
+    void*        mappedData;
+    VulkanResult result = vmaMapMemory(gpuAllocator.vmaAllocator, allocation, &mappedData);
     if (result.hasError())
     {
-        pMappedBlock = nullptr;
+        *ppMappedBlock = nullptr;
     }
 
+    *ppMappedBlock = mappedData;
     return result;
 }
 

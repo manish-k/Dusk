@@ -29,7 +29,7 @@ void freeGPUBuffer(
 VulkanResult mapGPUMemory(
     VulkanGPUAllocator& gpuAllocator,
     VmaAllocation       allocation,
-    void*               pMappedBlock);
+    void**              ppMappedBlock);
 void unmapGPUMemory(
     VulkanGPUAllocator& gpuAllocator,
     VmaAllocation       allocation);
@@ -67,7 +67,7 @@ VulkanResult writeToAllocation(
 void setAllocationName(
     VulkanGPUAllocator& gpuAllocator,
     VmaAllocation       dstAllocation,
-    const std::string&        name);
+    const std::string&  name);
 
 } // namespace vulkan
 } // namespace dusk

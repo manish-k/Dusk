@@ -810,7 +810,7 @@ void VkGfxDevice::copyBuffer(const VulkanGfxBuffer& srcBuffer, VulkanGfxBuffer& 
 
 void VkGfxDevice::mapBuffer(VulkanGfxBuffer* buffer)
 {
-    vulkan::mapGPUMemory(m_gpuAllocator, buffer->allocation, buffer->mappedMemory);
+    vulkan::mapGPUMemory(m_gpuAllocator, buffer->allocation, &buffer->mappedMemory);
 }
 
 void VkGfxDevice::unmapBuffer(VulkanGfxBuffer* buffer)

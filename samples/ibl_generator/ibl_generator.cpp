@@ -41,7 +41,29 @@ IBLGenerator::~IBLGenerator()
 
 bool IBLGenerator::start()
 {
-    m_hdrEnvTextureId              = TextureDB::cache()->createTextureAsync("assets/textures/env.hdr", TextureType::Texture2D);
+    m_hdrEnvTextureId         = TextureDB::cache()->createTextureAsync("assets/textures/env.hdr", TextureType::Texture2D);
+
+    auto&               vkCtx = VkGfxDevice::getSharedVulkanContext();
+
+    VkSampler           hdrEnvSampler;
+    VkSamplerCreateInfo samplerInfo {};
+    samplerInfo.sType                   = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerInfo.magFilter               = VK_FILTER_LINEAR;
+    samplerInfo.minFilter               = VK_FILTER_LINEAR;
+    samplerInfo.addressModeU            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeV            = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    samplerInfo.anisotropyEnable        = VK_TRUE;
+    samplerInfo.maxAnisotropy           = vkCtx.physicalDeviceProperties.limits.maxSamplerAnisotropy;
+    samplerInfo.borderColor             = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    samplerInfo.unnormalizedCoordinates = VK_FALSE;
+    samplerInfo.compareEnable           = VK_FALSE;
+    samplerInfo.compareOp               = VK_COMPARE_OP_ALWAYS;
+    samplerInfo.mipmapMode              = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    samplerInfo.minLod                  = 0;
+    samplerInfo.maxLod                  = VK_LOD_CLAMP_NONE;
+
+    vkCreateSampler(vkCtx.device, &samplerInfo, nullptr, &hdrEnvSampler);
+    TextureDB::cache()->updateTextureSampler(m_hdrEnvTextureId, hdrEnvSampler);
 
     auto cubemapVertShaderCode     = FileSystem::readFileBinary("assets/shaders/cubemap.vert.spv");
 
@@ -90,6 +112,10 @@ void IBLGenerator::onUpdate(TimeStep dt)
         executePrefilteredPipeline(cmdBuffer);
 
         device.endSingleTimeCommands(cmdBuffer);
+
+        TextureDB::cache()->saveTextureAsKTX(m_hdrCubeMapTextureId, "env.ktx2");
+        TextureDB::cache()->saveTextureAsKTX(m_irradianceTextureId, "irradiance_env.ktx2");
+        TextureDB::cache()->saveTextureAsKTX(m_prefilteredTextureId, "prefiltered_env.ktx2");
 
         m_executedOnce = true;
     }

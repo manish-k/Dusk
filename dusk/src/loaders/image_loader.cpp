@@ -141,6 +141,7 @@ bool ImageLoader::saveKTX2(
     createInfo.numDimensions        = 2;
     createInfo.numLevels            = texture.numMipLevels;
     createInfo.numFaces             = texture.numLayers; // ktx defintion of layers is different from vulkan
+    createInfo.numLayers            = 1;
     createInfo.isArray              = KTX_FALSE;
     createInfo.generateMipmaps      = KTX_FALSE;
 

@@ -466,7 +466,7 @@ Error GfxTexture::init(
     // graphics queue will require ownership
     barrier                                 = { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
     barrier.oldLayout                       = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    barrier.newLayout                       = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    barrier.newLayout                       = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     barrier.srcQueueFamilyIndex             = vkContext.transferQueueFamilyIndex;
     barrier.dstQueueFamilyIndex             = vkContext.graphicsQueueFamilyIndex;
     barrier.image                           = image.vkImage;
@@ -489,15 +489,13 @@ Error GfxTexture::init(
         1,
         &barrier);
 
-    this->currentLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    this->currentLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
     // start mip genration
     if (generateMips)
     {
         recordMipGenerationCmds(graphicsBuffer);
     }
-
-    recordTransitionLayout(graphicsBuffer, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     vkEndCommandBuffer(graphicsBuffer);
 
@@ -702,7 +700,8 @@ void GfxTexture::free()
 
     vulkan::freeGPUImage(vkContext.gpuAllocator, &image);
 
-    if (pixelData) pixelData->free();
+    if (pixelData != nullptr && pixelData->isAllocated()) 
+pixelData->free();
     pixelData = nullptr;
 }
 
@@ -754,7 +753,7 @@ void GfxTexture::downloadPixelData()
     }
 
     // staging buffer for transfer
-    if (!pixelData) pixelData->free();
+    if (pixelData != nullptr && pixelData->isAllocated()) pixelData->free();
     pixelData = createShared<GfxBuffer>(); // TODO:: shared ptr looks ugly
 
     GfxBuffer::createHostReadWriteBuffer(
@@ -859,6 +858,18 @@ void GfxTexture::recordTransitionLayout(
             barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
             break;
         }
+        case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+        {
+            srcStage              = VK_PIPELINE_STAGE_TRANSFER_BIT;
+            barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+            break;
+        }
+        case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+        {
+            srcStage              = VK_PIPELINE_STAGE_TRANSFER_BIT;
+            barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            break;
+        }
         default:
         {
             DUSK_ERROR("Unhandled current layout");
@@ -889,6 +900,18 @@ void GfxTexture::recordTransitionLayout(
         {
             dstStage              = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
             barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+            break;
+        }
+        case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+        {
+            dstStage              = VK_PIPELINE_STAGE_TRANSFER_BIT;
+            barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+            break;
+        }
+        case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+        {
+            dstStage              = VK_PIPELINE_STAGE_TRANSFER_BIT;
+            barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
             break;
         }
         default:

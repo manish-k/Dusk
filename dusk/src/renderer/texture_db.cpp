@@ -552,14 +552,14 @@ void TextureDB::saveTextureAsKTX(
     uint32_t           textureId,
     const std::string& filePath)
 {
-    DASSERT(m_loadedTextures.has(textureId), "Texture has not been available yet");
+    DASSERT(!m_loadedTextures.has(textureId), "Texture has not been available yet");
 
     GfxTexture& tex = m_textures[textureId];
     tex.downloadPixelData();
 
     auto& executor = Engine::get().getTfExecutor();
     executor.silent_async(
-        [&, filePath]()
+        [&, textureId, filePath]()
         {
             GfxTexture& texture = m_textures[textureId];
             texture.writePixelDataAsKTX(filePath);

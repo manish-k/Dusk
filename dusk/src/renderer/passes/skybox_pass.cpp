@@ -20,8 +20,8 @@ void recordSkyBoxCmds(
 
     if (!frameData.scene) return;
 
-    Scene& scene     = *frameData.scene;
-    auto& environment = Engine::get().getEnvironment();
+    Scene& scene       = *frameData.scene;
+    auto&  environment = Engine::get().getEnvironment();
 
     environment.getPipeline().bind(ctx.cmdBuffer);
 
@@ -46,8 +46,8 @@ void recordSkyBoxCmds(
         nullptr);
 
     SkyBoxPushConstant push {};
-    push.frameIdx             = frameData.frameIndex;
-    push.skyColorTextureIdx   = environment.getSkyTextureId();
+    push.frameIdx           = frameData.frameIndex;
+    push.skyColorTextureIdx = environment.getSkyTextureId();
 
     vkCmdPushConstants(
         ctx.cmdBuffer,

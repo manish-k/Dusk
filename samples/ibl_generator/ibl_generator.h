@@ -48,6 +48,7 @@ private:
     void executeHDRToCubeMapPipeline(VkCommandBuffer cmdBuffer);
     void executeIrradiancePipeline(VkCommandBuffer cmdBuffer);
     void executePrefilteredPipeline(VkCommandBuffer cmdBuffer);
+    void executeBRDFPipeline(VkCommandBuffer cmdBuffer);
 
     void setupCubeProjViewBuffer();
     void setupHDRToCubeMapPipeline(
@@ -57,6 +58,9 @@ private:
         DynamicArray<char>& vertShaderCode,
         DynamicArray<char>& fragShaderCode);
     void setupPrefilteredPipeline(
+        DynamicArray<char>& vertShaderCode,
+        DynamicArray<char>& fragShaderCode);
+    void setupBRDFPipeline(
         DynamicArray<char>& vertShaderCode,
         DynamicArray<char>& fragShaderCode);
 
@@ -81,6 +85,10 @@ private:
     Unique<VkGfxRenderPipeline>      m_prefilteredPipeline        = nullptr;
     Unique<VkGfxPipelineLayout>      m_prefilteredPipelineLayout  = nullptr;
     uint32_t                         m_prefilteredTextureId       = {};
+
+    Unique<VkGfxRenderPipeline>      m_brdfLUTPipeline            = nullptr;
+    Unique<VkGfxPipelineLayout>      m_brdfLUTPipelineLayout      = nullptr;
+    uint32_t                         m_brdfLUTTextureId           = {};
 
     dusk::Array<glm::mat4, 6>        m_cubeProjView               = {};
 };

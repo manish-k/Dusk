@@ -1,6 +1,7 @@
 #pragma once
 
 #include "dusk.h"
+#include "renderer/image.h"
 
 #include <string>
 
@@ -18,21 +19,21 @@ public:
      * @param path to file 
      * @return shared ptr for image data object
      */
-    static Shared<ImageData> load(const std::string& filePath);
+    static Shared<ImageData> load(const std::string& filePath, PixelFormat format);
     
     /**
      * @brief load an image file with stb loader
      * @param path to file 
      * @return shared ptr for image data object
      */
-    static Shared<ImageData> loadSTB(const std::string& filePath);
+    static Shared<ImageData> loadSTB(const std::string& filePath, PixelFormat format);
     
     /**
      * @brief load ktx and ktx2 image files
      * @param path to file 
      * @return shared ptr for image data object
      */
-    static Shared<ImageData> loadKTX(const std::string& filePath);
+    static Shared<ImageData> loadKTX(const std::string& filePath, PixelFormat format);
 
     /**
      * @brief Save the texture as png file on disk

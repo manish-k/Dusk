@@ -62,8 +62,8 @@ void recordLightingCmds(
     push.emissiveTextureIdx     = ctx.readAttachments[3].texture->id;
     push.depthTextureIdx        = ctx.readAttachments[4].texture->id;
     push.irradianceTextureIdx   = ctx.readAttachments[5].texture->id;
-    push.radianceTextureIdx     = ctx.readAttachments[6].texture->id;
-    push.maxRadianceLODs        = ctx.readAttachments[6].texture->numMipLevels;
+    push.prefilteredTextureIdx  = ctx.readAttachments[6].texture->id;
+    push.maxPrefilteredLODs     = ctx.readAttachments[6].texture->numMipLevels;
     push.brdfLUTIdx             = ctx.readAttachments[7].texture->id;
 
     vkCmdPushConstants(

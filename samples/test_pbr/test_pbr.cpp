@@ -26,12 +26,12 @@ bool TestPBR::start()
     m_testPBR             = Scene::createSceneFromGLTF(scenePath);
 
     // adding directional light
-    auto directionalLight = dusk::createUnique<GameObject>();
+    /*auto directionalLight = dusk::createUnique<GameObject>();
     directionalLight->setName("directional_light_0");
     auto& dLight     = directionalLight->addComponent<DirectionalLightComponent>();
     dLight.direction = glm::vec3(-2.f, -2.f, -6.f);
     dLight.color     = glm::vec4(1.f, 1.f, 1.f, 0.8);
-    m_testPBR->addGameObject(std::move(directionalLight), m_testPBR->getRootId());
+    m_testPBR->addGameObject(std::move(directionalLight), m_testPBR->getRootId());*/
 
     // adding point light
     auto pointLight = dusk::createUnique<GameObject>();

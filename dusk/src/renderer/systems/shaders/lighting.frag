@@ -27,6 +27,7 @@ layout (set = 0, binding = 0) uniform GlobalUBO
 } globalubo[];
 
 layout (set = 1, binding = 0) uniform sampler2D textures[];
+layout (set = 1, binding = 0) uniform samplerCube cubeTextures[];
 
 layout(set = 2, binding = 0) buffer AmbientLight
 {
@@ -75,8 +76,8 @@ layout(push_constant) uniform PushConstant
 	int emissiveTextureIdx;
 	int depthTextureIdx;
 	int irradianceTextureIdx;
-	int radianceTextureIdx;
-	int maxRadianceLODs;
+	int prefilteredTextureIdx;
+	int maxPrefilteredLODs;
     int brdfLUTIdx;
 } push;
 
@@ -264,7 +265,7 @@ void main() {
 	int depthTexIdx = nonuniformEXT(push.depthTextureIdx);
 	int aoRMTexIdx = nonuniformEXT(push.aoRoughMetalTextureIdx);
 	int irradianceTexIdx = nonuniformEXT(push.irradianceTextureIdx);
-	int radianceTexIdx = nonuniformEXT(push.radianceTextureIdx);
+	int prefilteredTexIdx = nonuniformEXT(push.prefilteredTextureIdx);
 	int brdfLUTIdx = nonuniformEXT(push.brdfLUTIdx);
 	int emissiveTexIdx = nonuniformEXT(push.emissiveTextureIdx);
 
@@ -274,14 +275,14 @@ void main() {
 	vec3 cameraPos = globalubo[guboIdx].inverseView[3].xyz;
 	vec3 worldPos = worldPosFromDepth(fragUV, ndcDepth, globalubo[guboIdx].inverseProjection, globalubo[guboIdx].inverseView);
 	vec3 viewDirection = normalize(cameraPos - worldPos);
-	vec3 reflectDirection = reflect(-viewDirection, surfaceNormal);
+	vec3 reflectDirection = normalize(reflect(-viewDirection, surfaceNormal));
 	
 	vec3 ambientColor = ambientLight.color.xyz * ambientLight.color.w;
 	
 	vec3 aoRM = texture(textures[aoRMTexIdx], fragUV).rgb;
 	float metallic = aoRM.b;
 	float roughness = aoRM.g;
-	float ao = aoRM.g;
+	float ao = aoRM.r;
 	
 	vec3 f0 = vec3(0.04); 
     f0 = mix(f0, albedo, metallic);
@@ -332,20 +333,19 @@ void main() {
 	// IBL ambient lighting
 	float NdotV = max(dot(surfaceNormal, viewDirection), 0.0);
 	vec3 f = fresnelSchlickRoughness(NdotV, f0, roughness);
+	//vec3 f = fresnelSchlick(NdotV, f0);
     
     vec3 kS = f;
     vec3 kD = 1.0 - kS;
     kD *= 1.0 - metallic;	
 
 	// IBL diffuse
-	vec2 irradianceUV = directionToEquirectangular(surfaceNormal);
-	vec3 irradiance = textureLod(textures[irradianceTexIdx], irradianceUV, 0).rgb;
+	vec3 irradiance = texture(cubeTextures[irradianceTexIdx], surfaceNormal).rgb;
 	vec3 diffuse = irradiance * albedo;
 
 	// IBL specular
-	vec2 radianceUV = directionToEquirectangular(reflectDirection);
-	vec3 prefilteredColor = textureLod(textures[radianceTexIdx], radianceUV, roughness * (push.maxRadianceLODs - 1)).rgb;
-	vec2 brdf = texture(textures[brdfLUTIdx], vec2(NdotV, 1.0 - roughness)).rg;
+	vec3 prefilteredColor = textureLod(cubeTextures[prefilteredTexIdx], reflectDirection, roughness * (push.maxPrefilteredLODs - 1)).rgb;
+	vec2 brdf = texture(textures[brdfLUTIdx], vec2(NdotV, roughness)).xy;
 	
 	vec3 specular = prefilteredColor * (f * brdf.x + brdf.y);
 
@@ -361,7 +361,6 @@ void main() {
 
 	// tone mapping
 	finalColor = finalColor / (finalColor + vec3(1.0));
-   
-	//outColor = vec4(brdf.x, brdf.y, 0.0, 1.0f);
-	outColor = vec4((prefilteredColor ).rgb, 1.0);
+
+	outColor = vec4(finalColor.rgb, 1.0);
 }

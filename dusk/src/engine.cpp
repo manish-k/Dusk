@@ -51,7 +51,7 @@ bool Engine::start(Shared<Application> app)
 
     // create window
     auto windowProps = Window::Properties::defaultWindowProperties();
-    windowProps.mode = Window::Mode::Maximized;
+    windowProps.mode = Window::Mode::Fullscreen;
     m_window         = std::move(Window::createWindow(windowProps));
 
     if (!m_window)
@@ -99,7 +99,7 @@ bool Engine::start(Shared<Application> app)
         m_lightsSystem->getLightsDescriptorSetLayout());
 
     prepareRenderGraphResources();
-    executeBRDFLUTcomputePipeline();
+    // executeBRDFLUTcomputePipeline();
 
     m_editorUI = createUnique<EditorUI>();
     if (!m_editorUI->init(*m_window))
@@ -204,7 +204,7 @@ void Engine::onUpdate(TimeStep dt)
             GlobalUbo ubo {};
             ubo.view              = camera.viewMatrix;
             ubo.prjoection        = camera.projectionMatrix;
-            ubo.inverseView       = camera.inverseViewMatrix;
+            ubo.inverseView       = glm::inverse(camera.viewMatrix);
             ubo.inverseProjection = camera.inverseProjectionMatrix;
 
             m_lightsSystem->updateLights(*m_currentScene, ubo);
@@ -369,7 +369,7 @@ void Engine::renderFrame(FrameData& frameData)
             .storeOp    = GfxStoreOperation::Store },
         // raidance map
         GfxRenderingAttachment {
-            .texture    = &m_textureDB->getTexture2D(m_environment->getSkyRadianceTextureId()),
+            .texture    = &m_textureDB->getTexture2D(m_environment->getSkyPrefilteredTextureId()),
             .clearValue = DEFAULT_COLOR_CLEAR_VALUE,
             .loadOp     = GfxLoadOperation::Clear,
             .storeOp    = GfxStoreOperation::Store },
@@ -778,11 +778,13 @@ void Engine::prepareRenderGraphResources()
 #endif // VK_RENDERER_DEBUG
 
     // brdf lut pipeline
-    m_rgResources.brdfLUTextureId = m_textureDB->createStorageTexture(
+    /*m_rgResources.brdfLUTextureId = m_textureDB->createStorageTexture(
         "brdf_lut_tex",
         512,
         512,
-        VK_FORMAT_R32G32_SFLOAT);
+        VK_FORMAT_R32G32_SFLOAT);*/
+    std::filesystem::path brdfTexturePath = buildPath / "textures/brdf.ktx2";
+    m_rgResources.brdfLUTextureId         = m_textureDB->createTextureAsync(brdfTexturePath.string(), TextureType::Texture2D, PixelFormat::R16G16_sfloat);
 
     VkSampler           brdfSampler;
     VkSamplerCreateInfo samplerInfo {};
@@ -792,7 +794,7 @@ void Engine::prepareRenderGraphResources()
     samplerInfo.addressModeU            = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
     samplerInfo.addressModeV            = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
     samplerInfo.addressModeW            = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    samplerInfo.anisotropyEnable        = VK_FALSE;
+    samplerInfo.anisotropyEnable        = VK_TRUE;
     samplerInfo.maxAnisotropy           = ctx.physicalDeviceProperties.limits.maxSamplerAnisotropy;
     samplerInfo.borderColor             = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
     samplerInfo.unnormalizedCoordinates = VK_FALSE;
@@ -870,7 +872,7 @@ void Engine::executeBRDFLUTcomputePipeline()
     VkCommandBuffer commandBuffer;
     vkAllocateCommandBuffers(ctx.device, &allocInfo, &commandBuffer);
 
-    #ifdef VK_RENDERER_DEBUG
+#ifdef VK_RENDERER_DEBUG
     vkdebug::setObjectName(
         ctx.device,
         VK_OBJECT_TYPE_COMMAND_BUFFER,

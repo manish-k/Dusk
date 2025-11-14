@@ -12,19 +12,19 @@
 
 namespace dusk
 {
-Shared<ImageData> ImageLoader::load(const std::string& filePath)
+Shared<ImageData> ImageLoader::load(const std::string& filePath, PixelFormat format)
 {
     const std::string fileEXT = getFileExtension(filePath);
 
     if (fileEXT == ".ktx" || fileEXT == ".ktx2")
     {
-        return loadKTX(filePath);
+        return loadKTX(filePath, format);
     }
 
-    return loadSTB(filePath);
+    return loadSTB(filePath, format);
 }
 
-Shared<ImageData> ImageLoader::loadSTB(const std::string& filePath)
+Shared<ImageData> ImageLoader::loadSTB(const std::string& filePath, PixelFormat format)
 {
     stbi_set_flip_vertically_on_load(true);
 
@@ -57,7 +57,7 @@ Shared<ImageData> ImageLoader::loadSTB(const std::string& filePath)
             nullptr,
             defaultNumChannels); // forcing 4 channels RGBA
 
-        img->format = PixelFormat::R8G8B8A8_srgb;
+        img->format = format;
     }
 
     img->numMipLevels = 1; // base mip
@@ -67,7 +67,7 @@ Shared<ImageData> ImageLoader::loadSTB(const std::string& filePath)
     return img;
 }
 
-Shared<ImageData> ImageLoader::loadKTX(const std::string& filePath)
+Shared<ImageData> ImageLoader::loadKTX(const std::string& filePath, PixelFormat format)
 {
     ktxTexture*    ktxTex;
     KTX_error_code result = ktxTexture_CreateFromNamedFile(

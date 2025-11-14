@@ -19,19 +19,19 @@ float distributionGGX(vec3 N, vec3 H, float roughness)
     float NdotH  = max(dot(N, H), 0.0);
     float NdotH2 = NdotH*NdotH;
 	
-    float num   = a2;
+    float nom   = a2;
     float denom = (NdotH2 * (a2 - 1.0) + 1.0);
     denom = PI * denom * denom;
 	
-    return num / denom;
+    return nom / denom;
 }
 
 float geometrySchlickGGX(float NdotV, float k)
 {
-    float num   = NdotV;
+    float nom   = NdotV;
     float denom = NdotV * (1.0 - k) + k;
 	
-    return num / denom;
+    return nom / denom;
 }
 
 float geometrySmith(vec3 N, vec3 V, vec3 L, float k)

@@ -18,5 +18,10 @@ void main()
 {
     int skyTexIdx = nonuniformEXT(push.skyColorTextureIdx);
     
-    outColor    = texture(textures[skyTexIdx], fragUVW);
+    vec3 skyColor    = textureLod(textures[skyTexIdx], fragUVW, 0).rgb;
+
+    // tone mapping
+	skyColor = skyColor / (skyColor + vec3(1.0));
+
+    outColor = vec4(skyColor, 1.0);
 }

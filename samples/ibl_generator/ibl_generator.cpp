@@ -7,11 +7,6 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 /*
-Pielines required:
-    #1 HDR to cubemap
-    #2 Irradiance map
-    #3 Prefiltered map
-
 TODO:
     * Create a render graph for all cubemaps generation
     * UI options to select environment hdr file, generate and
@@ -25,6 +20,8 @@ const int                 IRRADIANCE_RENDER_WIDTH   = 64;
 const int                 IRRADIANCE_RENDER_HEIGHT  = 64;
 const int                 PREFILTERED_RENDER_WIDTH  = 512;
 const int                 PREFILTERED_RENDER_HEIGHT = 512;
+const int                 BRDF_LUT_RENDER_WIDTH     = 512;
+const int                 BRDF_LUT_RENDER_HEIGHT    = 512;
 
 Unique<dusk::Application> dusk::createApplication(int argc, char** argv)
 {
@@ -41,7 +38,7 @@ IBLGenerator::~IBLGenerator()
 
 bool IBLGenerator::start()
 {
-    m_hdrEnvTextureId         = TextureDB::cache()->createTextureAsync("assets/textures/env.hdr", TextureType::Texture2D);
+    m_hdrEnvTextureId         = TextureDB::cache()->createTextureAsync("assets/textures/room_env.hdr", TextureType::Texture2D, PixelFormat::R32G32B32A32_sfloat);
 
     auto&               vkCtx = VkGfxDevice::getSharedVulkanContext();
 
@@ -73,10 +70,15 @@ bool IBLGenerator::start()
 
     auto prefilteredFragShaderCode = FileSystem::readFileBinary("assets/shaders/prefiltered.frag.spv");
 
+    auto brdfVertShaderCode        = FileSystem::readFileBinary("assets/shaders/brdf.vert.spv");
+
+    auto brdfFragShaderCode        = FileSystem::readFileBinary("assets/shaders/brdf.frag.spv");
+
     setupCubeProjViewBuffer();
     setupHDRToCubeMapPipeline(cubemapVertShaderCode, cubemapFragShaderCode);
     setupIrradiancePipeline(cubemapVertShaderCode, irradianceFragShaderCode);
     setupPrefilteredPipeline(cubemapVertShaderCode, prefilteredFragShaderCode);
+    setupBRDFPipeline(brdfVertShaderCode, brdfFragShaderCode);
 
     return true;
 }
@@ -96,6 +98,9 @@ void IBLGenerator::shutdown()
 
     m_prefilteredPipeline        = nullptr;
     m_prefilteredPipelineLayout  = nullptr;
+
+    m_brdfLUTPipeline            = nullptr;
+    m_brdfLUTPipelineLayout      = nullptr;
 }
 
 void IBLGenerator::onUpdate(TimeStep dt)
@@ -110,12 +115,14 @@ void IBLGenerator::onUpdate(TimeStep dt)
         executeHDRToCubeMapPipeline(cmdBuffer);
         executeIrradiancePipeline(cmdBuffer);
         executePrefilteredPipeline(cmdBuffer);
+        executeBRDFPipeline(cmdBuffer);
 
         device.endSingleTimeCommands(cmdBuffer);
 
-        TextureDB::cache()->saveTextureAsKTX(m_hdrCubeMapTextureId, "env.ktx2");
-        TextureDB::cache()->saveTextureAsKTX(m_irradianceTextureId, "irradiance_env.ktx2");
-        TextureDB::cache()->saveTextureAsKTX(m_prefilteredTextureId, "prefiltered_env.ktx2");
+        TextureDB::cache()->saveTextureAsKTX(m_hdrCubeMapTextureId, "room_env.ktx2");
+        TextureDB::cache()->saveTextureAsKTX(m_irradianceTextureId, "room_env_irradiance.ktx2");
+        TextureDB::cache()->saveTextureAsKTX(m_prefilteredTextureId, "room_env_prefiltered.ktx2");
+        TextureDB::cache()->saveTextureAsKTX(m_brdfLUTTextureId, "brdf.ktx2");
 
         m_executedOnce = true;
     }
@@ -127,7 +134,29 @@ void IBLGenerator::onEvent(dusk::Event& ev)
 
 void IBLGenerator::executeHDRToCubeMapPipeline(VkCommandBuffer cmdBuffer)
 {
-    auto& cubeMapAttachment = TextureDB::cache()->getTexture2D(m_hdrCubeMapTextureId);
+    auto&               vkCtx             = VkGfxDevice::getSharedVulkanContext();
+
+    auto&               cubeMapAttachment = TextureDB::cache()->getTexture2D(m_hdrCubeMapTextureId);
+
+    VkSampler           envCubeMapSampler;
+    VkSamplerCreateInfo samplerInfo {};
+    samplerInfo.sType                   = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerInfo.magFilter               = VK_FILTER_LINEAR;
+    samplerInfo.minFilter               = VK_FILTER_LINEAR;
+    samplerInfo.addressModeU            = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    samplerInfo.addressModeV            = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    samplerInfo.addressModeW            = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    samplerInfo.anisotropyEnable        = VK_TRUE;
+    samplerInfo.maxAnisotropy           = vkCtx.physicalDeviceProperties.limits.maxSamplerAnisotropy;
+    samplerInfo.borderColor             = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    samplerInfo.unnormalizedCoordinates = VK_FALSE;
+    samplerInfo.compareEnable           = VK_FALSE;
+    samplerInfo.compareOp               = VK_COMPARE_OP_ALWAYS;
+    samplerInfo.mipmapMode              = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    samplerInfo.minLod                  = 0;
+    samplerInfo.maxLod                  = VK_LOD_CLAMP_NONE;
+    vkCreateSampler(vkCtx.device, &samplerInfo, nullptr, &envCubeMapSampler);
+    TextureDB::cache()->updateTextureSampler(m_hdrCubeMapTextureId, envCubeMapSampler);
 
     vkdebug::cmdBeginLabel(cmdBuffer, "gen_cubemap", glm::vec4(0.7f, 0.7f, 0.f, 0.f));
 
@@ -392,6 +421,54 @@ void IBLGenerator::executePrefilteredPipeline(VkCommandBuffer cmdBuffer)
     vkdebug::cmdEndLabel(cmdBuffer);
 }
 
+void IBLGenerator::executeBRDFPipeline(VkCommandBuffer cmdBuffer)
+{
+    auto& brdfAttachment = TextureDB::cache()->getTexture2D(m_brdfLUTTextureId);
+
+    vkdebug::cmdBeginLabel(cmdBuffer, "gen_brdf_lut", glm::vec4(0.7f, 0.7f, 0.f, 0.f));
+
+    brdfAttachment.recordTransitionLayout(cmdBuffer, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+    VkRenderingAttachmentInfo attachmentInfo = { VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
+    attachmentInfo.imageLayout               = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    attachmentInfo.imageView                 = brdfAttachment.imageView;
+    attachmentInfo.loadOp                    = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachmentInfo.storeOp                   = VK_ATTACHMENT_STORE_OP_STORE;
+    attachmentInfo.clearValue                = { 0.f, 0.f, 0.f, 1.f };
+
+    VkRenderingInfo renderingInfo            = { VK_STRUCTURE_TYPE_RENDERING_INFO };
+    renderingInfo.renderArea                 = { { 0, 0 }, { BRDF_LUT_RENDER_WIDTH, BRDF_LUT_RENDER_HEIGHT } };
+    renderingInfo.layerCount                 = 1;
+    renderingInfo.colorAttachmentCount       = 1;
+    renderingInfo.pColorAttachments          = &attachmentInfo;
+    renderingInfo.pDepthAttachment           = nullptr;
+    renderingInfo.flags                      = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT;
+
+    vkCmdBeginRendering(cmdBuffer, &renderingInfo);
+
+    VkViewport viewport {};
+    viewport.x        = 0.0f;
+    viewport.y        = 0.0f;
+    viewport.width    = static_cast<float>(BRDF_LUT_RENDER_WIDTH);
+    viewport.height   = static_cast<float>(BRDF_LUT_RENDER_HEIGHT);
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+    vkCmdSetViewport(cmdBuffer, 0, 1, &viewport);
+
+    VkRect2D scissor {};
+    scissor.offset = { 0, 0 };
+    scissor.extent = { BRDF_LUT_RENDER_WIDTH, BRDF_LUT_RENDER_HEIGHT };
+    vkCmdSetScissor(cmdBuffer, 0, 1, &scissor);
+
+    m_brdfLUTPipeline->bind(cmdBuffer);
+
+    vkCmdDraw(cmdBuffer, 3, 1, 0, 0);
+
+    vkCmdEndRendering(cmdBuffer);
+
+    vkdebug::cmdEndLabel(cmdBuffer);
+}
+
 void IBLGenerator::setupCubeProjViewBuffer()
 {
     auto& vkCtx            = VkGfxDevice::getSharedVulkanContext();
@@ -570,4 +647,63 @@ void IBLGenerator::setupPrefilteredPipeline(
                                 .removeVertexInputState()
                                 .setDebugName("prefiltered_pipeline")
                                 .build();
+}
+
+void ::IBLGenerator::setupBRDFPipeline(
+    DynamicArray<char>& vertShaderCode,
+    DynamicArray<char>& fragShaderCode)
+{
+    auto& vkCtx        = VkGfxDevice::getSharedVulkanContext();
+    m_brdfLUTTextureId = TextureDB::cache()->createColorTexture(
+        "brdf_lut_tex",
+        512,
+        512,
+        VK_FORMAT_R32G32_SFLOAT);
+
+    VkSampler           brdfSampler;
+    VkSamplerCreateInfo samplerInfo {};
+    samplerInfo.sType                   = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerInfo.magFilter               = VK_FILTER_LINEAR;
+    samplerInfo.minFilter               = VK_FILTER_LINEAR;
+    samplerInfo.addressModeU            = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    samplerInfo.addressModeV            = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    samplerInfo.addressModeW            = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    samplerInfo.anisotropyEnable        = VK_TRUE;
+    samplerInfo.maxAnisotropy           = vkCtx.physicalDeviceProperties.limits.maxSamplerAnisotropy;
+    samplerInfo.borderColor             = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    samplerInfo.unnormalizedCoordinates = VK_FALSE;
+    samplerInfo.compareEnable           = VK_FALSE;
+    samplerInfo.compareOp               = VK_COMPARE_OP_ALWAYS;
+    samplerInfo.mipmapMode              = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+
+    vkCreateSampler(vkCtx.device, &samplerInfo, nullptr, &brdfSampler);
+    TextureDB::cache()->updateTextureSampler(m_brdfLUTTextureId, brdfSampler);
+
+    m_brdfLUTPipelineLayout = VkGfxPipelineLayout::Builder(vkCtx)
+                                  .build();
+
+#ifdef VK_RENDERER_DEBUG
+    vkdebug::setObjectName(
+        vkCtx.device,
+        VK_OBJECT_TYPE_PIPELINE_LAYOUT,
+        (uint64_t)m_brdfLUTPipelineLayout->get(),
+        "brdf_lut_pipeline_layout");
+#endif // VK_RENDERER_DEBUG
+
+    m_brdfLUTPipeline = VkGfxRenderPipeline::Builder(vkCtx)
+                            .setVertexShaderCode(vertShaderCode)
+                            .setFragmentShaderCode(fragShaderCode)
+                            .setPipelineLayout(*m_brdfLUTPipelineLayout)
+                            .addColorAttachmentFormat(VK_FORMAT_R32G32_SFLOAT)
+                            .removeVertexInputState()
+                            .setDebugName("brdf_lut_pipeline")
+                            .build();
+
+#ifdef VK_RENDERER_DEBUG
+    vkdebug::setObjectName(
+        vkCtx.device,
+        VK_OBJECT_TYPE_PIPELINE,
+        (uint64_t)m_brdfLUTPipeline->get(),
+        "brdf_lut_pipeline");
+#endif // VK_RENDERER_DEBUG
 }

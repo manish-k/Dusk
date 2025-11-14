@@ -26,7 +26,7 @@ public:
     VkGfxPipelineLayout& getPipelineLayout() { return *m_skyBoxPipelineLayout; }
     SubMesh&             getCubeMesh() const { return *m_cubeMesh; };
     uint32_t             getSkyTextureId() const { return m_skyTextureId; };
-    uint32_t             getSkyRadianceTextureId() const { return m_skyRadianceTexId; };
+    uint32_t             getSkyPrefilteredTextureId() const { return m_skyPrefilteredTexId; };
     uint32_t             getSkyIrradianceTextureId() const { return m_skyIrradianceTexId; };
 
 private:
@@ -34,18 +34,13 @@ private:
         std::string& shaderPath, 
         std::string& resPath,
         VkGfxDescriptorSetLayout& globalDescSetLayout);
-    
-    void initSphereTextureResources(
-        std::string&              shaderPath,
-        std::string&              resPath,
-        VkGfxDescriptorSetLayout& globalDescSetLayout);
 
 private:
     TextureDB&                  m_textureDB;
 
     uint32_t                    m_skyTextureId         = {};
     uint32_t                    m_skyIrradianceTexId   = {};
-    uint32_t                    m_skyRadianceTexId     = {};
+    uint32_t                    m_skyPrefilteredTexId     = {};
 
     Shared<SubMesh>             m_cubeMesh             = nullptr;
 

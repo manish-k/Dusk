@@ -119,7 +119,7 @@ void main()
     // the generated texture is somewhere around 0.98. This will create artifacts
     // which will match colors at edges of the object
     float NdotV = (float(pix.x) + 0.5) / float(size.x); // [0,1]
-    float roughness = 1 - (float(pix.y) + 0.5) / float(size.y); // [0,1]
+    float roughness = (float(pix.y) + 0.5) / float(size.y); // [0,1]
 
     vec2 integrated = integrateBRDF(NdotV, roughness);
 

@@ -57,7 +57,8 @@ public:
      */
     uint32_t createTextureAsync(
         const std::string& path,
-        TextureType        type);
+        TextureType        type,
+        PixelFormat        format);
 
     /**
      * @brief Get descriptor set for color textures

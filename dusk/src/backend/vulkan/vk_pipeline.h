@@ -32,7 +32,7 @@ struct VkGfxRenderPipelineConfig
     bool                                              noInputState      = false;
     bool                                              enableDepthTest   = true;
     bool                                              enableDepthWrites = true;
-    int                                               viewMask          = 1;
+    int                                               viewMask          = 0;
 
     std::string                                       debugName         = "";
 };

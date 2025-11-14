@@ -693,8 +693,8 @@ void GfxTexture::free()
 
     if (type == TextureType::Cube)
     {
-        for (uint32_t level = 0u; level < numMipLevels; ++level)
-            device.freeImageView(&cubeMipImageViews[level]);
+        for (uint32_t idx = 0u; idx < cubeMipImageViews.size(); ++idx)
+            device.freeImageView(&cubeMipImageViews[idx]);
     }
     cubeMipImageViews.clear();
 

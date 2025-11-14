@@ -3,7 +3,8 @@
 
 layout(location = 0) in vec3 fragWorldPos;
 layout(location = 1) in vec2 fragUV;
-layout(location = 2) in mat3 TBNmatrix;
+layout(location = 2) in vec3 fragTangent;
+layout(location = 3) in vec3 fragNormal;
 
 layout (location = 0) out vec4 outColor;
 layout (location = 1) out vec4 outNormal; // TODO: explore octohedral representation for effecient packing
@@ -77,11 +78,19 @@ void main()
 	float roughness = mrSampleValue.g * materials[materialIdx].rough;
 	float metallic = mrSampleValue.b * materials[materialIdx].metal;
 
-	vec3 surfaceNormal = normalize(TBNmatrix[2]);
+	vec3 surfaceNormal = normalize(fragNormal);
 	if (normalTexIdx != -1)
 	{
-		surfaceNormal = texture(textures[normalTexIdx], fragUV).xyz * 2.0 - 1.0;
-		surfaceNormal = normalize(TBNmatrix * surfaceNormal);
+		vec3 tangent = normalize(fragTangent);
+	
+		// Gram-Schmidt orthogonalize
+		tangent = normalize(tangent - dot(tangent, surfaceNormal) * surfaceNormal);
+		vec3 bitangent = cross(surfaceNormal, tangent);
+
+		mat3 TBN = mat3(tangent, bitangent, surfaceNormal);
+
+		vec3 texNormal = texture(textures[normalTexIdx], fragUV).xyz * 2.0 - 1.0;
+		surfaceNormal = normalize(TBN * normalize(texNormal));
 	}
 
 	vec3 emissiveColor = texture(textures[emissiveTexIdx], fragUV).rgb;

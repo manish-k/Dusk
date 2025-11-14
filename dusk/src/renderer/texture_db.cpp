@@ -178,7 +178,8 @@ bool TextureDB::setupDescriptors()
 
 uint32_t TextureDB::createTextureAsync(
     const std::string& path,
-    TextureType        type)
+    TextureType        type,
+    PixelFormat        format)
 {
     DASSERT(!path.empty());
 
@@ -213,11 +214,11 @@ uint32_t TextureDB::createTextureAsync(
 
     auto&       executor   = Engine::get().getTfExecutor();
     executor.silent_async(
-        [&, newId, path]()
+        [&, newId, path, format]()
         {
             DUSK_PROFILE_SECTION("texture_file_read");
 
-            Shared<ImageData> img = ImageLoader::load(path);
+            Shared<ImageData> img = ImageLoader::load(path, format);
 
             {
                 std::lock_guard<std::mutex> updateLock(m_mutex);
@@ -297,6 +298,12 @@ void TextureDB::onUpdate()
 
             DASSERT(format != VK_FORMAT_UNDEFINED);
 
+            bool generateMipMaps = true;
+            if (img->numMipLevels > 1)
+            {
+                generateMipMaps = false;
+            }
+
             Error err = tex.init(
                 *img,
                 tex.type,
@@ -304,7 +311,7 @@ void TextureDB::onUpdate()
                 TransferDstTexture | SampledTexture,
                 gfxBuffer,
                 transferBuffer,
-                true,
+                generateMipMaps,
                 tex.name.c_str());
 
             if (err != Error::Ok)
@@ -359,7 +366,7 @@ uint32_t TextureDB::createColorTexture(
         1,
         1,
         format,
-        SampledTexture | ColorTexture | TransferDstTexture,
+        SampledTexture | ColorTexture | TransferDstTexture | TransferSrcTexture,
         name.c_str());
 
     newTex.sampler = m_defaultSampler.sampler;

@@ -263,7 +263,7 @@ void VulkanRenderer::beginRendering(VkCommandBuffer commandBuffer)
     VkRenderingInfo renderingInfo { VK_STRUCTURE_TYPE_RENDERING_INFO };
     renderingInfo.renderArea.offset    = { 0u, 0u };
     renderingInfo.renderArea.extent    = currentExtent;
-    renderingInfo.viewMask             = 1u;
+    renderingInfo.viewMask             = 0u;
     renderingInfo.layerCount           = 1u;
     renderingInfo.colorAttachmentCount = 1u;
     renderingInfo.pColorAttachments    = &colorAttachmentInfo;

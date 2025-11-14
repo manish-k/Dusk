@@ -26,8 +26,8 @@ struct LightingPushConstant
     int32_t  emissiveTextureIdx     = -1;
     int32_t  depthTextureIdx        = -1;
     int32_t  irradianceTextureIdx   = -1;
-    int32_t  radianceTextureIdx     = -1;
-    int32_t  maxRadianceLODs        = -1;
+    int32_t  prefilteredTextureIdx  = -1;
+    int32_t  maxPrefilteredLODs     = -1;
     int32_t  brdfLUTIdx             = -1;
 };
 

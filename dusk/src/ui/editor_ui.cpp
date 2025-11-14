@@ -49,7 +49,7 @@ bool           EditorUI::init(Window& window)
     VkPipelineRenderingCreateInfo renderingCreateInfo { VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO };
     renderingCreateInfo.colorAttachmentCount    = static_cast<size_t>(colorAttachmentFormats.size());
     renderingCreateInfo.pColorAttachmentFormats = colorAttachmentFormats.data();
-    renderingCreateInfo.viewMask                = 1u;
+    renderingCreateInfo.viewMask                = 0u;
 
     // setup imgui with our backend
     ImGui_ImplVulkan_InitInfo initInfo   = {};

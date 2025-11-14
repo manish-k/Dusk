@@ -37,12 +37,12 @@ Unique<Scene> AssimpLoader::readScene(const std::filesystem::path& filePath)
 
     {
         DUSK_PROFILE_SECTION("read_scene_file");
-        
+
         // TODO: handle tangent and bitangent calculations when normals
         // are missing in file bcos assimp will not calculate for us
         assimpScene = m_importer.ReadFile(
             filePath.string(),
-            aiProcess_Triangulate | aiProcess_GenNormals | aiProcess_CalcTangentSpace | aiProcess_JoinIdenticalVertices | aiProcess_FlipUVs);
+            aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace | aiProcess_JoinIdenticalVertices | aiProcess_FlipUVs);
 
         if (!assimpScene || assimpScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !assimpScene->mRootNode)
         {
@@ -190,8 +190,13 @@ void AssimpLoader::parseMeshes(Scene& scene, const aiScene* aiScene)
 
             if (mesh->HasTangentsAndBitangents())
             {
-                v.tangent = glm::vec3(mesh->mTangents[vertexIndex].x, mesh->mTangents[vertexIndex].y, mesh->mTangents[vertexIndex].z);
+                v.tangent   = glm::vec3(mesh->mTangents[vertexIndex].x, mesh->mTangents[vertexIndex].y, mesh->mTangents[vertexIndex].z);
+
                 v.bitangent = glm::vec3(mesh->mBitangents[vertexIndex].x, mesh->mBitangents[vertexIndex].y, mesh->mBitangents[vertexIndex].z);
+
+                // flip if not right handed
+                if (glm::dot(glm::cross(v.normal, v.tangent), v.bitangent) < 0.0f)
+                    v.tangent *= -1.0f; // Flip tangent
             }
             else
             {
@@ -250,12 +255,12 @@ std::filesystem::path AssimpLoader::getGltfMRTexturePath(aiMaterial* mat)
     return std::filesystem::path(path.C_Str());
 }
 
-int32_t AssimpLoader::read2DTexture(std::filesystem::path texPath) const
+int32_t AssimpLoader::read2DTexture(std::filesystem::path texPath, PixelFormat format) const
 {
     if (!texPath.empty())
     {
         auto texturePath = (m_sceneDir / texPath).make_preferred().string();
-        return TextureDB::cache()->createTextureAsync(texturePath, TextureType::Texture2D);
+        return TextureDB::cache()->createTextureAsync(texturePath, TextureType::Texture2D, format);
     }
 
     return -1;
@@ -299,7 +304,7 @@ void AssimpLoader::parseMaterials(Scene& scene, const aiScene* aiScene)
 
         if (!baseColorTexturePath.empty())
         {
-            albedoTexId = read2DTexture(baseColorTexturePath);
+            albedoTexId = read2DTexture(baseColorTexturePath, PixelFormat::R8G8B8A8_srgb);
         }
         else
         {
@@ -321,7 +326,7 @@ void AssimpLoader::parseMaterials(Scene& scene, const aiScene* aiScene)
 
         if (!normalTexPath.empty())
         {
-            newMaterial.normalTexId = read2DTexture(normalTexPath);
+            newMaterial.normalTexId = read2DTexture(normalTexPath, PixelFormat::R8G8B8A8_unorm);
 
             aiMat->Get("normalScale", 0, 0, newMaterial.normalScale);
         }
@@ -331,7 +336,7 @@ void AssimpLoader::parseMaterials(Scene& scene, const aiScene* aiScene)
 
         if (!mrTexPath.empty())
         {
-            newMaterial.metallicRoughnessTexId = read2DTexture(mrTexPath);
+            newMaterial.metallicRoughnessTexId = read2DTexture(mrTexPath, PixelFormat::R8G8B8A8_unorm);
         }
         else
         {
@@ -346,7 +351,7 @@ void AssimpLoader::parseMaterials(Scene& scene, const aiScene* aiScene)
 
         if (!aoTexPath.empty())
         {
-            newMaterial.aoTexId = read2DTexture(aoTexPath);
+            newMaterial.aoTexId = read2DTexture(aoTexPath, PixelFormat::R8G8B8A8_unorm);
         }
         else
         {
@@ -360,7 +365,7 @@ void AssimpLoader::parseMaterials(Scene& scene, const aiScene* aiScene)
 
         if (!emissiveTexPath.empty())
         {
-            newMaterial.emissiveTexId = read2DTexture(emissiveTexPath);
+            newMaterial.emissiveTexId = read2DTexture(emissiveTexPath, PixelFormat::R8G8B8A8_srgb);
 
             aiMat->Get("emissiveIntensity", 0, 0, newMaterial.emissiveIntensity);
 

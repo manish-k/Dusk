@@ -33,8 +33,6 @@ Scene::Scene(const std::string_view name) :
     camera->setName("Camera");
 
     TransformComponent& cameraTransform = camera->getComponent<TransformComponent>();
-    cameraTransform.translation         = { 0.f, 0.f, 5.f };
-
     auto&       cameraComponent         = camera->addComponent<CameraComponent>();
     const auto& currentExtent           = Engine::get().getRenderer().getSwapChain().getCurrentExtent();
     cameraComponent.setPerspectiveProjection(glm::radians(50.f), static_cast<float>(currentExtent.width) / static_cast<float>(currentExtent.height), 0.5f, 10000.f);
@@ -119,6 +117,11 @@ void Scene::freeSubMeshes()
 CameraComponent& Scene::getMainCamera()
 {
     return Registry::getRegistry().get<CameraComponent>(m_cameraId);
+}
+
+CameraController& Scene::getMainCameraController()
+{
+    return *m_cameraController;
 }
 
 TransformComponent& Scene::getMainCameraTransform()

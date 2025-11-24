@@ -107,6 +107,8 @@ public:
 
     CameraComponent& getMainCamera();
 
+    CameraController&   getMainCameraController();
+
     TransformComponent& getMainCameraTransform();
 
     void initMaterialCache(uint32_t materialCount)

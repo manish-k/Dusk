@@ -2,6 +2,7 @@
 
 #include "dusk.h"
 
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -9,15 +10,15 @@
 
 namespace dusk
 {
-constexpr glm::vec3 baseForwardDir = glm::vec3 { 0.f, 0.f, -1.f };
+constexpr glm::vec3 baseForwardDir = glm::vec3 { 0.f, 0.f, 1.f };
 constexpr glm::vec3 baseRightDir   = glm::vec3 { 1.f, 0.f, 0.f };
-constexpr glm::vec3 baseUpDir      = glm::vec3 { 0.f, -1.f, 0.f };
+constexpr glm::vec3 baseUpDir      = glm::vec3 { 0.f, 1.f, 0.f };
 
 struct CameraComponent
 {
-    glm::vec3 forwardDirection        = baseForwardDir; // default; looking in -z axis dir
+    glm::vec3 forwardDirection        = baseForwardDir;
     glm::vec3 rightDirection          = baseRightDir;
-    glm::vec3 upDirection             = baseUpDir;      // default; -y axis is up dir
+    glm::vec3 upDirection             = baseUpDir;
 
     glm::mat4 projectionMatrix        = glm::mat4 { 1.0f };
     glm::mat4 viewMatrix              = glm::mat4 { 1.0f };
@@ -46,30 +47,19 @@ struct CameraComponent
      */
     void setOrthographicProjection(float left, float right, float top, float bottom, float n, float f)
     {
-        leftPlane                     = left;
-        rightPlane                    = right;
-        topPlane                      = top;
-        bottomPlane                   = bottom;
-        nearPlane                     = n;
-        farPlane                      = f;
-        isPerspective                 = false;
+        leftPlane        = left;
+        rightPlane       = right;
+        topPlane         = top;
+        bottomPlane      = bottom;
+        nearPlane        = n;
+        farPlane         = f;
+        isPerspective    = false;
 
-        projectionMatrix              = glm::mat4 { 1.0f };
-        projectionMatrix[0][0]        = 2.f / (right - left);
-        projectionMatrix[1][1]        = 2.f / (bottom - top);
-        projectionMatrix[2][2]        = 1.f / (f - n);
-        projectionMatrix[3][0]        = -(right + left) / (right - left);
-        projectionMatrix[3][1]        = -(bottom + top) / (bottom - top);
-        projectionMatrix[3][2]        = -n / (f - n);
+        projectionMatrix = glm::mat4 { 1.0f };
+        projectionMatrix = glm::orthoRH_ZO(left, right, bottom, top, n, f);
+        projectionMatrix[1][1] *= -1; // Flip Y
 
-        inverseProjectionMatrix       = glm::mat4(1.0f);
-        inverseProjectionMatrix[0][0] = (right - left) / 2.0f;
-        inverseProjectionMatrix[1][1] = (bottom - top) / 2.0f;
-        inverseProjectionMatrix[2][2] = f - n;
-        inverseProjectionMatrix[3][0] = (right + left) / 2.0f;
-        inverseProjectionMatrix[3][1] = (bottom + top) / 2.0f;
-        inverseProjectionMatrix[3][2] = n;
-        inverseProjectionMatrix[3][3] = 1.0f;
+        inverseProjectionMatrix = glm::inverse(projectionMatrix);
     };
 
     /**
@@ -83,26 +73,16 @@ struct CameraComponent
     {
         DASSERT(glm::abs(aspect - std::numeric_limits<float>::epsilon()) > 0.0f);
 
-        nearPlane                     = n;
-        farPlane                      = f;
-        aspectRatio                   = aspect;
-        fovY                          = fovy;
-        isPerspective                 = true;
+        nearPlane        = n;
+        farPlane         = f;
+        aspectRatio      = aspect;
+        fovY             = fovy;
+        isPerspective    = true;
 
-        const float tanHalfFovy       = tan(fovy / 2.f);
-        projectionMatrix              = glm::mat4 { 0.0f };
-        projectionMatrix[0][0]        = 1.f / (aspect * tanHalfFovy);
-        projectionMatrix[1][1]        = 1.f / (tanHalfFovy);
-        projectionMatrix[2][2]        = f / (f - n);
-        projectionMatrix[2][3]        = 1.f;
-        projectionMatrix[3][2]        = -(f * n) / (f - n);
+        projectionMatrix = glm::perspectiveRH_ZO(fovy, aspect, n, f);
+        projectionMatrix[1][1] *= -1; // Flip Y
 
-        inverseProjectionMatrix       = glm::mat4(0.0f);
-        inverseProjectionMatrix[0][0] = aspect * tanHalfFovy;
-        inverseProjectionMatrix[1][1] = tanHalfFovy;
-        inverseProjectionMatrix[2][3] = -(f - n) / (f * n);
-        inverseProjectionMatrix[3][2] = 1.0f;
-        inverseProjectionMatrix[3][3] = 1.0f / n;
+        inverseProjectionMatrix = glm::inverse(projectionMatrix);
     };
 
     void setAspectRatio(float aspect)
@@ -136,6 +116,10 @@ struct CameraComponent
      */
     void setViewTarget(glm::vec3 position, glm::vec3 target, glm::vec3 up)
     {
+        if (target == position)
+        {
+            target += glm::vec3(0.001f);
+        }
         setViewDirection(position, target - position, up);
     };
 
@@ -162,38 +146,25 @@ struct CameraComponent
      */
     void updateViewMatrix(glm::vec3 position, glm::vec3 u, glm::vec3 v, glm::vec3 w)
     {
-        viewMatrix = glm::mat4 { 1.f };
+        // Build rotation part (camera basis as rows)
+        viewMatrix    = glm::mat4(1.0f);
+        viewMatrix[0] = glm::vec4(u.x, v.x, w.x, 0.0f);
+        viewMatrix[1] = glm::vec4(u.y, v.y, w.y, 0.0f);
+        viewMatrix[2] = glm::vec4(u.z, v.z, w.z, 0.0f);
 
-        /// TODO: reasoning not clear
-        viewMatrix[0][0] = u.x;
-        viewMatrix[1][0] = u.y;
-        viewMatrix[2][0] = u.z;
-        viewMatrix[0][1] = v.x;
-        viewMatrix[1][1] = v.y;
-        viewMatrix[2][1] = v.z;
-        viewMatrix[0][2] = w.x;
-        viewMatrix[1][2] = w.y;
-        viewMatrix[2][2] = w.z;
+        // Translation part (rotate the camera position, then negate)
+        viewMatrix[3] = glm::vec4(
+            -glm::dot(u, position),
+            -glm::dot(v, position),
+            -glm::dot(w, position),
+            1.0f);
 
-        // moving camera back to oriign
-        viewMatrix[3][0] = -glm::dot(u, position);
-        viewMatrix[3][1] = -glm::dot(v, position);
-        viewMatrix[3][2] = -glm::dot(w, position);
-
-        // inverse calculations
-        inverseViewMatrix       = glm::mat4 { 1.f };
-        inverseViewMatrix[0][0] = u.x;
-        inverseViewMatrix[0][1] = u.y;
-        inverseViewMatrix[0][2] = u.z;
-        inverseViewMatrix[1][0] = v.x;
-        inverseViewMatrix[1][1] = v.y;
-        inverseViewMatrix[1][2] = v.z;
-        inverseViewMatrix[2][0] = w.x;
-        inverseViewMatrix[2][1] = w.y;
-        inverseViewMatrix[2][2] = w.z;
-        inverseViewMatrix[3][0] = position.x;
-        inverseViewMatrix[3][1] = position.y;
-        inverseViewMatrix[3][2] = position.z;
+        // Inverse: just transpose rotation and use original position
+        inverseViewMatrix    = glm::mat4(1.0f);
+        inverseViewMatrix[0] = glm::vec4(u.x, u.y, u.z, 0.0f);
+        inverseViewMatrix[1] = glm::vec4(v.x, v.y, v.z, 0.0f);
+        inverseViewMatrix[2] = glm::vec4(w.x, w.y, w.z, 0.0f);
+        inverseViewMatrix[3] = glm::vec4(position, 1.0f);
     }
 };
 } // namespace dusk

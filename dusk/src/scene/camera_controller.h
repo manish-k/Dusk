@@ -23,19 +23,24 @@ public:
     void onEvent(Event& ev);
     void onUpdate(TimeStep dt);
 
+    void setViewDirection(glm::vec3 position, glm::vec3 direction);
+    void setViewDirection(glm::vec3 direction);
+    void setViewTarget(glm::vec3 position, glm::vec3 target);
+    void setViewTarget(glm::vec3 target);
     void resetCamera();
 
 private:
     TransformComponent& m_cameraTransform;
     CameraComponent&    m_cameraComponent;
-    TransformComponent  m_originalTransform = {};
+    TransformComponent  m_startTransform   = {};
 
-    float               m_width             = 0.0f;
-    float               m_height            = 0.0f;
+    float               m_width            = 0.0f;
+    float               m_height           = 0.0f;
 
-    bool                m_changed           = false; // TODO:: might not be required
+    bool                m_changed          = false; // TODO:: might not be required
 
-    float               m_cameraMoveSpeed   = { 20.0f };
+    float               m_cameraMoveSpeed  = 20.0f;
+    float               m_mouseSensitivity = 0.002f;
 
     // TODO:: create input state controller to track such states
     bool  m_isRMBpressed       = false;
@@ -50,7 +55,5 @@ private:
 
     float m_mouseX             = 0.f;
     float m_mouseY             = 0.f;
-    float m_angleHorizontal    = 0.f;
-    float m_angleVertical      = 0.f;
 };
 } // namespace dusk

@@ -17,7 +17,11 @@ namespace dusk
 class CameraController
 {
 public:
-    CameraController(GameObject& camera, uint32_t width, uint32_t height);
+    CameraController(
+        GameObject& camera, 
+        uint32_t width, 
+        uint32_t height,
+        glm::vec3 up);
     ~CameraController() = default;
 
     void onEvent(Event& ev);
@@ -27,7 +31,12 @@ public:
     void setViewDirection(glm::vec3 direction);
     void setViewTarget(glm::vec3 position, glm::vec3 target);
     void setViewTarget(glm::vec3 target);
+    void setPosition(glm::vec3 position);
     void resetCamera();
+
+    glm::vec3 getRightDirection() const { return m_rightDir; };
+    glm::vec3 getUpDirection() const { return m_upDir; };
+    glm::vec3 getForwardDirection() const { return m_forwardDir; };
 
 private:
     TransformComponent& m_cameraTransform;
@@ -36,6 +45,10 @@ private:
 
     float               m_width            = 0.0f;
     float               m_height           = 0.0f;
+
+    glm::vec3           m_rightDir         = glm::vec3(1.f, 0.f, 0.f);
+    glm::vec3           m_upDir            = glm::vec3(0.f, 1.f, 0.f);
+    glm::vec3           m_forwardDir       = glm::vec3(0.f, 0.f, -1.f);
 
     bool                m_changed          = false; // TODO:: might not be required
 

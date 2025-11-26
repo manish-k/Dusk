@@ -1,4 +1,5 @@
 #include "camera_controller.h"
+
 #include "core/mouse_codes.h"
 #include "core/key_codes.h"
 #include "events/mouse_event.h"
@@ -7,10 +8,16 @@
 
 namespace dusk
 {
-CameraController::CameraController(GameObject& camera, uint32_t width, uint32_t height) :
+CameraController::CameraController(
+    GameObject& camera,
+    uint32_t    width,
+    uint32_t    height,
+    glm::vec3   up) :
     m_cameraTransform(camera.getComponent<TransformComponent>()), m_cameraComponent(camera.getComponent<CameraComponent>()),
-    m_width(width), m_height(height)
+    m_width(width), m_height(height), m_upDir(glm::normalize(up))
 {
+    m_rightDir = glm::normalize(glm::cross(m_upDir, m_forwardDir));
+    m_upDir    = glm::normalize(glm::cross(m_forwardDir, m_rightDir));
 }
 
 void CameraController::onEvent(Event& ev)
@@ -90,12 +97,18 @@ void CameraController::onEvent(Event& ev)
 
                 // fix for avoiding unintended roll is to use world up for yaw rotations
                 // https://gamedev.stackexchange.com/questions/103242/why-is-the-camera-tilting-around-the-z-axis-when-i-only-specified-x-and-y/103243#103243
-                // Also we will be using -world up and -camera right because will be flipping y in projection,
-                // this will make sure our fps movement are aligned properly
-                glm::quat quatPitch        = glm::angleAxis(pitch, -m_cameraComponent.rightDirection);
+                // Also we will be using -world up and -camera right because
+                // in projection y will be flipped,this will make sure our fps
+                // movements are aligned properly
+                glm::quat quatPitch        = glm::angleAxis(pitch, -m_rightDir);
                 glm::quat quatYaw          = glm::angleAxis(yaw, glm::vec3(0.f, -1.f, 0.f));
 
                 m_cameraTransform.rotation = quatYaw * quatPitch * m_cameraTransform.rotation;
+
+                glm::mat3 rotationMat      = glm::mat3_cast(m_cameraTransform.rotation);
+                m_rightDir                 = rotationMat[0];
+                m_upDir                    = rotationMat[1];
+                m_forwardDir               = rotationMat[2];
 
                 m_mouseX                   = ev.getX();
                 m_mouseY                   = ev.getY();
@@ -198,35 +211,36 @@ void CameraController::onUpdate(TimeStep dt)
     {
         glm::vec3 moveDirection = {};
 
-        if (m_isAPressed) moveDirection -= m_cameraComponent.rightDirection;
-        if (m_isDPressed) moveDirection += m_cameraComponent.rightDirection;
-        if (m_isWPressed) moveDirection -= m_cameraComponent.forwardDirection;
-        if (m_isSPressed) moveDirection += m_cameraComponent.forwardDirection;
-        if (m_isEPressed) moveDirection += m_cameraComponent.upDirection;
-        if (m_isQPressed) moveDirection -= m_cameraComponent.upDirection;
+        if (m_isAPressed) moveDirection -= m_rightDir;
+        if (m_isDPressed) moveDirection += m_rightDir;
+        if (m_isWPressed) moveDirection -= m_forwardDir;
+        if (m_isSPressed) moveDirection += m_forwardDir;
+        if (m_isEPressed) moveDirection += m_upDir;
+        if (m_isQPressed) moveDirection -= m_upDir;
 
         m_cameraTransform.translation += m_cameraMoveSpeed * dt.count() * moveDirection;
-        m_cameraComponent.setView(m_cameraTransform.translation, m_cameraTransform.rotation);
-
-        //DUSK_DEBUG("camera fwd dir {},{},{}", m_cameraComponent.forwardDirection.x, m_cameraComponent.forwardDirection.y, m_cameraComponent.forwardDirection.z);
     }
+    m_cameraComponent.setView(m_cameraTransform.translation, m_cameraTransform.rotation);
 }
 
 void CameraController::setViewDirection(glm::vec3 position, glm::vec3 direction)
 {
     m_cameraTransform.translation = position;
 
-    // Calculate yaw and pitch from direction
-    direction                  = glm::normalize(direction);
-    float     yaw              = atan2(direction.z, direction.x);
-    float     pitch            = asin(direction.y);
+    m_forwardDir                  = glm::normalize(direction);
+    m_rightDir                    = glm::normalize(glm::cross(m_upDir, m_forwardDir));
+    m_upDir                       = glm::cross(m_forwardDir, m_rightDir);
 
-    glm::quat quatPitch        = glm::angleAxis(pitch, -m_cameraComponent.rightDirection);
-    glm::quat quatYaw          = glm::angleAxis(yaw, glm::vec3(0.f, -1.f, 0.f));
+    glm::mat3 rotationMat         = { 1.0f };
+    rotationMat[0]                = m_rightDir;
+    rotationMat[1]                = m_upDir;
+    rotationMat[2]                = m_forwardDir;
 
-    m_cameraTransform.rotation = quatYaw * quatPitch * m_cameraTransform.rotation;
+    m_cameraTransform.rotation    = glm::quat_cast(rotationMat);
 
-    m_cameraComponent.setView(m_cameraTransform.translation, m_cameraTransform.rotation);
+    m_cameraComponent.setView(
+        m_cameraTransform.translation,
+        m_cameraTransform.rotation);
     m_startTransform = m_cameraTransform;
 }
 
@@ -256,4 +270,9 @@ void CameraController::resetCamera()
     m_cameraComponent.setView(m_cameraTransform.translation, m_cameraTransform.rotation);
 }
 
+void CameraController::setPosition(glm::vec3 position)
+{
+    m_cameraTransform.translation = position;
+    m_cameraComponent.setView(m_cameraTransform.translation, m_cameraTransform.rotation);
+}
 } // namespace dusk

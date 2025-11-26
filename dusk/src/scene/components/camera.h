@@ -10,16 +10,8 @@
 
 namespace dusk
 {
-constexpr glm::vec3 baseForwardDir = glm::vec3 { 0.f, 0.f, 1.f };
-constexpr glm::vec3 baseRightDir   = glm::vec3 { 1.f, 0.f, 0.f };
-constexpr glm::vec3 baseUpDir      = glm::vec3 { 0.f, 1.f, 0.f };
-
 struct CameraComponent
 {
-    glm::vec3 forwardDirection        = baseForwardDir;
-    glm::vec3 rightDirection          = baseRightDir;
-    glm::vec3 upDirection             = baseUpDir;
-
     glm::mat4 projectionMatrix        = glm::mat4 { 1.0f };
     glm::mat4 viewMatrix              = glm::mat4 { 1.0f };
     glm::mat4 inverseViewMatrix       = glm::mat4 { 1.0f };
@@ -45,7 +37,13 @@ struct CameraComponent
      * @param n near plane
      * @param f far plane
      */
-    void setOrthographicProjection(float left, float right, float top, float bottom, float n, float f)
+    void setOrthographicProjection(
+        float left,
+        float right,
+        float top,
+        float bottom,
+        float n,
+        float f)
     {
         leftPlane        = left;
         rightPlane       = right;
@@ -94,76 +92,48 @@ struct CameraComponent
     }
 
     /**
-     * @brief Set view direction
-     * @param position of the camera
-     * @param lookAt direction to look at
-     * @param up vector of camera
-     */
-    void setViewDirection(glm::vec3 position, glm::vec3 lookAt, glm::vec3 up)
-    {
-        forwardDirection = glm::normalize(lookAt);
-        rightDirection   = glm::normalize(glm::cross(forwardDirection, glm::normalize(up)));
-        upDirection      = glm::cross(forwardDirection, rightDirection);
-
-        updateViewMatrix(position, rightDirection, upDirection, forwardDirection);
-    };
-
-    /**
-     * @brief Set view target of camera
-     * @param position of the camera
-     * @param target position
-     * @param up vector of camera
-     */
-    void setViewTarget(glm::vec3 position, glm::vec3 target, glm::vec3 up)
-    {
-        if (target == position)
-        {
-            target += glm::vec3(0.001f);
-        }
-        setViewDirection(position, target - position, up);
-    };
-
-    /**
      * @brief Set view as per camera's position and rotation
      * @param position position of the camera
      * @param total rotation to be applied on the camera
      */
     void setView(glm::vec3 position, glm::quat rotation)
     {
-        rightDirection   = glm::normalize(rotation * baseRightDir);
-        upDirection      = glm::normalize(rotation * baseUpDir);
-        forwardDirection = glm::normalize(rotation * baseForwardDir);
+        glm::mat3 rotationMat = glm::mat3_cast(rotation);
+        glm::vec3 right       = rotationMat[0];
+        glm::vec3 up          = rotationMat[1];
+        glm::vec3 forward     = rotationMat[2];
 
-        updateViewMatrix(position, rightDirection, upDirection, forwardDirection);
+        updateViewMatrix(position, right, up, forward);
     }
 
     /**
      * @brief update view and inverseview matrices for given position and camera's bases vectors
      * @param position of the camera
-     * @param u basis in right direction perpendicular to v and w
-     * @param v basis of camera toward up direction
-     * @param w basis of camera toward lookAt direction
+     * @param Camera's right direction
+     * @param Camera's up direction
+     * @param Camera's forward direction
      */
-    void updateViewMatrix(glm::vec3 position, glm::vec3 u, glm::vec3 v, glm::vec3 w)
+    void updateViewMatrix(glm::vec3 position, glm::vec3 right, glm::vec3 up, glm::vec3 fwd)
     {
-        // Build rotation part (camera basis as rows)
-        viewMatrix    = glm::mat4(1.0f);
-        viewMatrix[0] = glm::vec4(u.x, v.x, w.x, 0.0f);
-        viewMatrix[1] = glm::vec4(u.y, v.y, w.y, 0.0f);
-        viewMatrix[2] = glm::vec4(u.z, v.z, w.z, 0.0f);
 
-        // Translation part (rotate the camera position, then negate)
+        // Rotation part
+        viewMatrix    = glm::mat4(1.0f);
+        viewMatrix[0] = glm::vec4(right.x, up.x, fwd.x, 0.0f);
+        viewMatrix[1] = glm::vec4(right.y, up.y, fwd.y, 0.0f);
+        viewMatrix[2] = glm::vec4(right.z, up.z, fwd.z, 0.0f);
+
+        // Translation part
         viewMatrix[3] = glm::vec4(
-            -glm::dot(u, position),
-            -glm::dot(v, position),
-            -glm::dot(w, position),
+            -glm::dot(right, position),
+            -glm::dot(up, position),
+            -glm::dot(fwd, position),
             1.0f);
 
         // Inverse: just transpose rotation and use original position
         inverseViewMatrix    = glm::mat4(1.0f);
-        inverseViewMatrix[0] = glm::vec4(u.x, u.y, u.z, 0.0f);
-        inverseViewMatrix[1] = glm::vec4(v.x, v.y, v.z, 0.0f);
-        inverseViewMatrix[2] = glm::vec4(w.x, w.y, w.z, 0.0f);
+        inverseViewMatrix[0] = glm::vec4(right.x, right.y, right.z, 0.0f);
+        inverseViewMatrix[1] = glm::vec4(up.x, up.y, up.z, 0.0f);
+        inverseViewMatrix[2] = glm::vec4(fwd.x, fwd.y, fwd.z, 0.0f);
         inverseViewMatrix[3] = glm::vec4(position, 1.0f);
     }
 };

@@ -2,6 +2,7 @@
 
 #include "dusk.h"
 #include "scene/scene.h"
+#include "scene/camera_controller.h"
 
 #include "components/camera.h"
 #include "components/mesh.h"
@@ -11,7 +12,6 @@
 #include "renderer/material.h"
 
 #include <imgui.h>
-#include <glm/gtx/euler_angles.hpp>
 
 namespace dusk
 {
@@ -58,7 +58,7 @@ inline void       drawGameObjectSubTree(Scene& scene, EntityId objectId)
 
             for (uint32_t index = 0u; index < mesh.meshes.size(); ++index)
             {
-                //TODO: manage string allocation
+                // TODO: manage string allocation
                 std::string id   = gObject.getName() + "_" + std::to_string(index);
                 std::string name = defaultMeshName + "_" + std::to_string(index);
 
@@ -67,7 +67,7 @@ inline void       drawGameObjectSubTree(Scene& scene, EntityId objectId)
                     if (ImGui::IsItemClicked())
                     {
                         sceneState.selectedGameObjectId = gObject.getId();
-                        sceneState.selectedMeshId = index;
+                        sceneState.selectedMeshId       = index;
                     }
 
                     ImGui::TreePop();
@@ -131,14 +131,17 @@ inline void drawSceneGraphWidget(Scene& scene)
         {
             ImGui::SeparatorText("Camera");
 
-            CameraComponent& camera      = selectedGameObject.getComponent<CameraComponent>();
+            CameraComponent&  camera           = selectedGameObject.getComponent<CameraComponent>();
+            CameraController& cameraController = scene.getMainCameraController();
 
-            float            nearPlane   = camera.nearPlane;
-            float            farPlane    = camera.farPlane;
-            float            aspectRatio = camera.aspectRatio;
-            float            fovy        = glm::degrees(camera.fovY);
+            float             nearPlane        = camera.nearPlane;
+            float             farPlane         = camera.farPlane;
+            float             aspectRatio      = camera.aspectRatio;
+            float             fovy             = glm::degrees(camera.fovY);
+            glm::vec3         fwdDirection     = cameraController.getForwardDirection();
 
-            bool             changed     = false;
+            bool              changed          = false;
+            if (ImGui::DragFloat3("Forward", (float*)&fwdDirection, 0.005f, -1, 1)) changed = true;
             if (ImGui::DragFloat("Near Plane", &nearPlane, 0.05f, 0.0f, FLT_MAX, "%.3f", ImGuiSliderFlags_None)) changed = true;
             if (ImGui::DragFloat("Far Plane", &farPlane, 0.05f, 0.0f, FLT_MAX, "%.3f", ImGuiSliderFlags_None)) changed = true;
             if (ImGui::DragFloat("FOV (Degree)", &fovy, 0.05f, 0.0f, 80, "%.3f", ImGuiSliderFlags_None)) changed = true;
@@ -146,6 +149,7 @@ inline void drawSceneGraphWidget(Scene& scene)
             if (changed)
             {
                 camera.setPerspectiveProjection(glm::radians(fovy), aspectRatio, nearPlane, farPlane);
+                cameraController.setViewDirection(fwdDirection);
             }
         }
 

@@ -6,7 +6,6 @@
 #include "engine.h"
 #include "debug/profiler.h"
 #include "ui/editor_ui.h"
-#include "backend/vulkan/vk_pass.h"
 #include "environment.h"
 
 namespace dusk

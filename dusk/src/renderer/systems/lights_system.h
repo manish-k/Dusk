@@ -18,7 +18,7 @@ struct VkGfxDescriptorPool;
 struct VkGfxDescriptorSetLayout;
 struct VkGfxDescriptorSet;
 
-// need multiple of 4 for easy packing inside global ubo (uvec4[]) 
+// need multiple of 4 for easy packing inside global ubo (uvec4[])
 // but not a strict rule
 inline constexpr uint32_t MAX_LIGHTS_PER_TYPE    = 128;
 inline constexpr uint32_t AMBIENT_BIND_INDEX     = 0;
@@ -86,6 +86,10 @@ public:
      * @return descriptor set
      */
     VkGfxDescriptorSet& getLightsDescriptorSet() const { return *m_lightsDescriptorSet; };
+
+    uint32_t            getDirectionalLightsCount() { return m_directionalLightsCount; };
+    uint32_t            getPointLightsCount() { return m_pointLightsCount; };
+    uint32_t            getSpotLightsCount() { return m_spotLightsCount; };
 
 private:
     /**

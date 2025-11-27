@@ -51,7 +51,7 @@ bool Engine::start(Shared<Application> app)
 
     // create window
     auto windowProps = Window::Properties::defaultWindowProperties();
-    windowProps.mode = Window::Mode::Fullscreen;
+    windowProps.mode = Window::Mode::Maximized;
     m_window         = std::move(Window::createWindow(windowProps));
 
     if (!m_window)
@@ -289,6 +289,32 @@ void Engine::renderFrame(FrameData& frameData)
 
     GfxTexture  swapImageTexture = m_renderer->getSwapChain().getCurrentSwapImageTexture();
 
+    // create shadow pass
+    uint32_t dirLightsCount = m_lightsSystem->getDirectionalLightsCount();
+
+    if (dirLightsCount > 0)
+    {
+        GfxRenderingAttachment dirShadowMapAttachment = GfxRenderingAttachment {
+            .texture    = &m_textureDB->getTexture2D(m_rgResources.dirShadowMapsTextureId),
+            .clearValue = DEFAULT_DEPTH_STENCIL_VALUE,
+            .loadOp     = GfxLoadOperation::Clear,
+            .storeOp    = GfxStoreOperation::Store,
+        };
+
+        auto dirShadowMapPassCtx = VkGfxRenderPassContext {
+            .writeColorAttachments = {},
+            .depthAttachment       = dirShadowMapAttachment,
+            .useDepth              = true,
+            .maxParallelism        = 1,
+            .viewMask              = 0,
+            .layerCount            = 1,
+            .secondaryCmdBuffers   = m_renderer->getSecondayCmdBuffers(frameData.frameIndex)
+        };
+
+        renderGraph.setPassContext("dir_shadow_pass", dirShadowMapPassCtx);
+        renderGraph.addPass("dir_shadow_pass", recordShadow2DMapsCmds);
+    }
+
     // create g-buffer pass
     GfxRenderingAttachment depthAttachment = GfxRenderingAttachment {
         .texture    = &m_textureDB->getTexture2D(m_rgResources.gbuffDepthTextureId),
@@ -376,6 +402,12 @@ void Engine::renderFrame(FrameData& frameData)
         // brdf lut map
         GfxRenderingAttachment {
             .texture    = &m_textureDB->getTexture2D(m_rgResources.brdfLUTextureId),
+            .clearValue = DEFAULT_COLOR_CLEAR_VALUE,
+            .loadOp     = GfxLoadOperation::Clear,
+            .storeOp    = GfxStoreOperation::Store },
+        // directional light shadow map
+        GfxRenderingAttachment {
+            .texture    = &m_textureDB->getTexture2D(m_rgResources.dirShadowMapsTextureId),
             .clearValue = DEFAULT_COLOR_CLEAR_VALUE,
             .loadOp     = GfxLoadOperation::Clear,
             .storeOp    = GfxStoreOperation::Store }
@@ -832,6 +864,47 @@ void Engine::prepareRenderGraphResources()
         (uint64_t)m_rgResources.brdfLUTPipeline->get(),
         "brdf_lut_pipeline");
 #endif // VK_RENDERER_DEBUG
+
+    // shadow pass for directional and spot lights
+    /*m_rgResources.dirShadowMapsTextureId = m_textureDB->createDepthTextureArray(
+        "dir_shadow_maps",
+        extent.width,
+        extent.height,
+        4,
+        VK_FORMAT_D32_SFLOAT_S8_UINT);*/
+    m_rgResources.dirShadowMapsTextureId = m_textureDB->createDepthTexture(
+        "dir_shadow_maps",
+        extent.width,
+        extent.height,
+        VK_FORMAT_D32_SFLOAT_S8_UINT);
+
+    m_rgResources.shadow2DMapPipelineLayout = VkGfxPipelineLayout::Builder(ctx)
+                                                  .addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(ShadowMapPushConstant))
+                                                  .addDescriptorSetLayout(m_globalDescriptorSetLayout->layout)
+                                                  .addDescriptorSetLayout(m_rgResources.gbuffModelDescriptorSetLayout->layout)
+                                                  .addDescriptorSetLayout(m_lightsSystem->getLightsDescriptorSetLayout().layout)
+                                                  .build();
+
+#ifdef VK_RENDERER_DEBUG
+    vkdebug::setObjectName(
+        ctx.device,
+        VK_OBJECT_TYPE_PIPELINE_LAYOUT,
+        (uint64_t)m_rgResources.shadow2DMapPipelineLayout->get(),
+        "shadow_2d_map_pipeline_layout");
+#endif // VK_RENDERER_DEBUG
+
+    auto shadowMapVertShaderCode      = FileSystem::readFileBinary(shaderPath / "dir_shadows.vert.spv");
+
+    auto shadowMapFragShaderCode      = FileSystem::readFileBinary(shaderPath / "dir_shadows.frag.spv");
+
+    m_rgResources.shadow2DMapPipeline = VkGfxRenderPipeline::Builder(ctx)
+                                            .setVertexShaderCode(shadowMapVertShaderCode)
+                                            .setFragmentShaderCode(shadowMapFragShaderCode)
+                                            .setPipelineLayout(*m_rgResources.shadow2DMapPipelineLayout)
+                                            .setViewMask(0)
+                                            //.setCullMode(VK_CULL_MODE_BACK_BIT)
+                                            .setDebugName("shadow_2d_map_pipeline")
+                                            .build();
 }
 
 void Engine::releaseRenderGraphResources()
@@ -846,17 +919,17 @@ void Engine::releaseRenderGraphResources()
     for (auto& buffer : m_rgResources.gbuffModelsBuffer)
         buffer.free();
 
-    // release present pass resources
-    m_rgResources.presentPipeline       = nullptr;
-    m_rgResources.presentPipelineLayout = nullptr;
+    m_rgResources.presentPipeline           = nullptr;
+    m_rgResources.presentPipelineLayout     = nullptr;
 
-    // release lighting pass resources
-    m_rgResources.lightingPipeline       = nullptr;
-    m_rgResources.lightingPipelineLayout = nullptr;
+    m_rgResources.lightingPipeline          = nullptr;
+    m_rgResources.lightingPipelineLayout    = nullptr;
 
-    // release brdf lut pipeline resources
-    m_rgResources.brdfLUTPipeline       = nullptr;
-    m_rgResources.brdfLUTPipelineLayout = nullptr;
+    m_rgResources.brdfLUTPipeline           = nullptr;
+    m_rgResources.brdfLUTPipelineLayout     = nullptr;
+
+    m_rgResources.shadow2DMapPipeline       = nullptr;
+    m_rgResources.shadow2DMapPipelineLayout = nullptr;
 }
 
 void Engine::executeBRDFLUTcomputePipeline()

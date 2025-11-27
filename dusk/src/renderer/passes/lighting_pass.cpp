@@ -6,8 +6,6 @@
 #include "engine.h"
 #include "debug/profiler.h"
 
-#include "backend/vulkan/vk_pass.h"
-
 namespace dusk
 {
 void recordLightingCmds(
@@ -65,6 +63,7 @@ void recordLightingCmds(
     push.prefilteredTextureIdx  = ctx.readAttachments[6].texture->id;
     push.maxPrefilteredLODs     = ctx.readAttachments[6].texture->numMipLevels;
     push.brdfLUTIdx             = ctx.readAttachments[7].texture->id;
+    push.dirShadowMapTextureIdx = ctx.readAttachments[8].texture->id;
 
     vkCmdPushConstants(
         ctx.cmdBuffer,

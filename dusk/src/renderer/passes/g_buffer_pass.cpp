@@ -20,7 +20,6 @@
 #include "backend/vulkan/vk_device.h"
 #include "backend/vulkan/vk_pipeline.h"
 #include "backend/vulkan/vk_pipeline_layout.h"
-#include "backend/vulkan/vk_pass.h"
 
 #include <taskflow/taskflow.hpp>
 #include <taskflow/algorithm/for_each.hpp>

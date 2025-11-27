@@ -31,6 +31,8 @@ struct VkGfxRenderPassContext
     DynamicArray<VulkanImageBarier>         preBarriers;
 
     uint32_t                                maxParallelism = 1u;
+    uint32_t                                viewMask       = 0u; // only for multiview
+    uint32_t                                layerCount     = 1u; // only for multiview
     DynamicArray<VkCommandBuffer>           secondaryCmdBuffers;
 
     /**
@@ -78,13 +80,18 @@ struct VkGfxRenderPassContext
         }
 
         renderingInfo                      = { VK_STRUCTURE_TYPE_RENDERING_INFO };
+        renderingInfo.layerCount           = 1;
         renderingInfo.renderArea           = { { 0, 0 }, extent };
-        renderingInfo.viewMask             = 0u;
-        renderingInfo.layerCount           = 1u;
         renderingInfo.colorAttachmentCount = static_cast<uint32_t>(colorAttachmentInfos.size());
         renderingInfo.pColorAttachments    = colorAttachmentInfos.data();
         renderingInfo.pDepthAttachment     = useDepth ? &depthAttachmentInfo : nullptr;
         renderingInfo.flags                = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT;
+
+        if (viewMask > 0)
+        {
+            renderingInfo.viewMask   = viewMask;
+            renderingInfo.layerCount = layerCount;
+        }
 
         vkCmdBeginRendering(cmdBuffer, &renderingInfo);
 

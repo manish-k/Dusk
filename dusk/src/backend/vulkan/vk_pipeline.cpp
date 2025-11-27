@@ -110,9 +110,7 @@ VkGfxRenderPipeline::Builder& VkGfxRenderPipeline::Builder::setDebugName(const s
 
 Unique<VkGfxRenderPipeline> VkGfxRenderPipeline::Builder::build()
 {
-    // DASSERT(m_renderConfig.renderPass != VK_NULL_HANDLE, "render pass is required for rendering");
     DASSERT(m_renderConfig.pipelineLayout != VK_NULL_HANDLE, "pipeline layout is required for rendering");
-    DASSERT(m_renderConfig.colorAttachmentFormats.size() != 0, "No color attachment format provided")
 
     auto pipeline = createUnique<VkGfxRenderPipeline>(m_context, m_renderConfig);
 

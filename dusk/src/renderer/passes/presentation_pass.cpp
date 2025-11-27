@@ -1,7 +1,6 @@
 #include "render_passes.h"
 
 #include "frame_data.h"
-#include "vk_pass.h"
 #include "vk_swapchain.h"
 #include "vk_renderer.h"
 #include "engine.h"

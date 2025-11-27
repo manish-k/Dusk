@@ -169,7 +169,7 @@ inline void drawSceneGraphWidget(Scene& scene)
 
             DirectionalLightComponent& light = selectedGameObject.getComponent<DirectionalLightComponent>();
 
-            ImGui::DragFloat3("Direction", (float*)&light.direction);
+            ImGui::DragFloat3("Direction", (float*)&light.direction, 0.005f, -FLT_MAX, FLT_MAX, "%.3f", ImGuiSliderFlags_None);
             ImGui::ColorEdit3("Color", (float*)&light.color);
             ImGui::DragFloat("Intensity", (float*)&light.color + 3, 0.005f, 0.0f, FLT_MAX, "%.3f", ImGuiSliderFlags_None);
         }

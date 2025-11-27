@@ -60,6 +60,10 @@ struct RenderGraphResources
     Unique<VkGfxComputePipeline>             brdfLUTPipeline               = nullptr;
     Unique<VkGfxPipelineLayout>              brdfLUTPipelineLayout         = nullptr;
     bool                                     brdfLUTGenerated              = false;
+
+    Unique<VkGfxRenderPipeline>              shadow2DMapPipeline           = nullptr;
+    Unique<VkGfxPipelineLayout>              shadow2DMapPipelineLayout     = nullptr;
+    uint32_t                                 dirShadowMapsTextureId        = {};
 };
 
 struct BRDFLUTPushConstant

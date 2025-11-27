@@ -2,6 +2,8 @@
 
 #include "dusk.h"
 
+#include "backend/vulkan/vk_pass.h"
+
 namespace dusk
 {
 struct FrameData;
@@ -29,6 +31,7 @@ struct LightingPushConstant
     int32_t  prefilteredTextureIdx  = -1;
     int32_t  maxPrefilteredLODs     = -1;
     int32_t  brdfLUTIdx             = -1;
+    int32_t  dirShadowMapTextureIdx = -1;
 };
 
 void recordLightingCmds(
@@ -56,6 +59,19 @@ struct PresentationPushConstant
 };
 
 void recordPresentationCmds(
+    FrameData&              frameData,
+    VkGfxRenderPassContext& ctx);
+
+//////////////////////////////////////////////////////
+// Shadow Pass
+
+struct ShadowMapPushConstant
+{
+    uint32_t frameIdx = 0u;
+    uint32_t modelIdx = 0u;
+};
+
+void recordShadow2DMapsCmds(
     FrameData&              frameData,
     VkGfxRenderPassContext& ctx);
 } // namespace dusk

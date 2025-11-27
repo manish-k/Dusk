@@ -1,13 +1,21 @@
 #include "lights_system.h"
 
+#include "engine.h"
+
 #include "scene/scene.h"
 #include "scene/components/lights.h"
 #include "scene/components/transform.h"
 
 #include "renderer/frame_data.h"
+#include "renderer/texture_db.h"
 
 #include "backend/vulkan/vk_device.h"
 #include "backend/vulkan/vk_descriptors.h"
+#include "backend/vulkan/vk_renderer.h"
+#include "backend/vulkan/vk_swapchain.h"
+
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 namespace dusk
 {
@@ -51,18 +59,7 @@ void LightsSystem::registerAllLights(Scene& scene)
 
         if (light.id != -1) continue;
 
-        DASSERT(m_directionalLightsCount < MAX_LIGHTS_PER_TYPE);
-
-        light.id = m_directionalLightsCount;
-        ++m_directionalLightsCount;
-
-        auto dirDescInfo = m_directionalLightsBuffer.getDescriptorInfoAtIndex(light.id);
-
-        m_lightsDescriptorSet->configureBuffer(
-            DIRECTIONAL_BIND_INDEX,
-            light.id,
-            1,
-            &dirDescInfo);
+        registerDirectionalLight(light);
     }
 
     auto pointLightsList = scene.GetGameObjectsWith<PointLightComponent>();
@@ -72,18 +69,7 @@ void LightsSystem::registerAllLights(Scene& scene)
 
         if (light.id != -1) continue;
 
-        DASSERT(m_pointLightsCount < MAX_LIGHTS_PER_TYPE);
-
-        light.id = m_pointLightsCount;
-        ++m_pointLightsCount;
-
-        auto pointDescInfo = m_pointLightsBuffer.getDescriptorInfoAtIndex(light.id);
-
-        m_lightsDescriptorSet->configureBuffer(
-            POINT_BIND_INDEX,
-            light.id,
-            1,
-            &pointDescInfo);
+        registerPointLight(light);
     }
 
     auto spotLightsList = scene.GetGameObjectsWith<SpotLightComponent>();
@@ -93,18 +79,7 @@ void LightsSystem::registerAllLights(Scene& scene)
 
         if (light.id != -1) continue;
 
-        DASSERT(m_spotLightsCount < MAX_LIGHTS_PER_TYPE);
-
-        light.id = m_spotLightsCount;
-        ++m_spotLightsCount;
-
-        auto spotDescInfo = m_spotLightsBuffer.getDescriptorInfoAtIndex(light.id);
-
-        m_lightsDescriptorSet->configureBuffer(
-            SPOT_BIND_INDEX,
-            light.id,
-            1,
-            &spotDescInfo);
+        registerSpotLight(light);
     }
 
     m_lightsDescriptorSet->applyConfiguration();
@@ -198,6 +173,18 @@ void LightsSystem::updateLights(Scene& scene, GlobalUbo& ubo)
 
         if (light.id == -1) continue;
 
+        // ortho projection for dir lights
+        glm::mat4 projection = glm::orthoRH_ZO(-10.0f, 10.0f, 10.0f, -10.0f, 0.1f, 1000.0f);
+        projection[1][1] *= -1; // flip Y for Vulkan
+
+        glm::vec3 lightPos   = glm::vec3(0.f) - light.direction * 10.0f;
+        glm::mat4 view       = glm::lookAtRH(
+            lightPos,
+            glm::vec3(0.f),
+            glm::vec3(0.0f, 1.0f, 0.0f));
+
+        light.projView = projection * view;
+
         m_directionalLightsBuffer.writeAndFlushAtIndex(light.id, &light, sizeof(DirectionalLightComponent));
 
         ubo.directionalLightIndices[counter / 4][counter % 4] = light.id;
@@ -260,24 +247,24 @@ void LightsSystem::setupDescriptors()
                                       .addBinding(
                                           AMBIENT_BIND_INDEX,
                                           VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                                          VK_SHADER_STAGE_FRAGMENT_BIT,
+                                          VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
                                           1) // Ambient light
                                       .addBinding(
                                           DIRECTIONAL_BIND_INDEX,
                                           VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                                          VK_SHADER_STAGE_FRAGMENT_BIT,
+                                          VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
                                           MAX_LIGHTS_PER_TYPE,
                                           true) // Directional Light
                                       .addBinding(
                                           POINT_BIND_INDEX,
                                           VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                                          VK_SHADER_STAGE_FRAGMENT_BIT,
+                                          VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
                                           MAX_LIGHTS_PER_TYPE,
                                           true) // Point Light
                                       .addBinding(
                                           SPOT_BIND_INDEX,
                                           VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                                          VK_SHADER_STAGE_FRAGMENT_BIT,
+                                          VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
                                           MAX_LIGHTS_PER_TYPE,
                                           true) // Spot Light
                                       .setDebugName("lights_desc_set_layout")

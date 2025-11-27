@@ -1,4 +1,28 @@
-#pragma once
+﻿#pragma once
+
+/**
+ * @brief Camera system with consistent RHS coordinate convention
+ *
+ * COORDINATE SYSTEM:
+ * ==================
+ * World Space:      Right-Handed, Y-up, -Z forward (standard 3D convention)
+ * Camera/View:      Right-Handed, Y-up, -Z forward (MATCHES world space)
+ * Clip/NDC:         Vulkan convention (Y-down, Z ∈ [0,1])
+ *
+ * TRANSFORMATION FLOW:
+ * ====================
+ *   World (RHS)  →  [View]  →  Camera (RHS)  →  [Projection*]  →  Clip (Vulkan NDC)
+ *       ↓                          ↓                                      ↓
+ *    -Z fwd                     -Z fwd                           Y-down & +Z forward
+ *
+ * * Projection matrix includes Y-flip: projection[1][1] *= -1.0f
+ *
+ * CAMERA AXES (match world):
+ * ==========================
+ * - Right:   +X (world and camera)
+ * - Up:      +Y (world and camera)
+ * - Forward: -Z (camera looks down -Z)
+ */
 
 #include "dusk.h"
 #include "game_object.h"
@@ -27,11 +51,41 @@ public:
     void onEvent(Event& ev);
     void onUpdate(TimeStep dt);
 
+    /**
+     * @brief Sets the camera's view using a world-space position and a forward direction vector.
+     * @param position The world-space position of the camera.
+     * @param direction The forward direction vector that the view should point toward.
+     */
     void setViewDirection(glm::vec3 position, glm::vec3 direction);
+    
+    /**
+     * @brief Sets the current view direction.
+     * @param direction The new view direction as a 3D vector (glm::vec3).
+     */
     void setViewDirection(glm::vec3 direction);
+    
+    /**
+     * @brief Sets the view by specifying the camera position and the point to look at.
+     * @param position The camera position in world coordinates.
+     * @param target The point in world coordinates that the camera should look at.
+     */
     void setViewTarget(glm::vec3 position, glm::vec3 target);
+    
+    /**
+     * @brief Sets the view to look at a target point from the current camera position.
+     * @param target The point in world coordinates that the camera should look at.
+     */
     void setViewTarget(glm::vec3 target);
+    
+    /**
+     * @brief Sets the camera's position in world space.
+     * @param position The new position of the camera as a 3D vector (glm::vec3).
+     */
     void setPosition(glm::vec3 position);
+    
+    /**
+     * @brief Resets the camera to its default state provided by set view functions.
+     */
     void resetCamera();
 
     glm::vec3 getRightDirection() const { return m_rightDir; };

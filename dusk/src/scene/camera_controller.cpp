@@ -227,6 +227,10 @@ void CameraController::setViewDirection(glm::vec3 position, glm::vec3 direction)
 {
     m_cameraTransform.translation = position;
 
+    // reversing the direction to align with camera's forward direction
+    // we are looking in the direction of -z in camera space
+    direction                     = -direction;
+
     m_forwardDir                  = glm::normalize(direction);
     m_rightDir                    = glm::normalize(glm::cross(m_upDir, m_forwardDir));
     m_upDir                       = glm::cross(m_forwardDir, m_rightDir);

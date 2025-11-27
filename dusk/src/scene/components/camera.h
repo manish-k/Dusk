@@ -1,4 +1,28 @@
-#pragma once
+﻿#pragma once
+
+/**
+ * @brief Camera system with consistent RHS coordinate convention
+ *
+ * COORDINATE SYSTEM:
+ * ==================
+ * World Space:      Right-Handed, Y-up, -Z forward (standard 3D convention)
+ * Camera/View:      Right-Handed, Y-up, -Z forward (MATCHES world space)
+ * Clip/NDC:         Vulkan convention (Y-down, Z ∈ [0,1])
+ *
+ * TRANSFORMATION FLOW:
+ * ====================
+ *   World (RHS)  →  [View]  →  Camera (RHS)  →  [Projection*]  →  Clip (Vulkan NDC)
+ *       ↓                          ↓                                      ↓
+ *    -Z fwd                     -Z fwd                           Y-down & +Z forward
+ *
+ * * Projection matrix includes Y-flip: projection[1][1] *= -1.0f
+ *
+ * CAMERA AXES (match world):
+ * ==========================
+ * - Right:   +X (world and camera)
+ * - Up:      +Y (world and camera)
+ * - Forward: -Z (camera looks down -Z)
+ */
 
 #include "dusk.h"
 
@@ -76,7 +100,7 @@ struct CameraComponent
         aspectRatio      = aspect;
         fovY             = fovy;
         isPerspective    = true;
-
+        
         projectionMatrix = glm::perspectiveRH_ZO(fovy, aspect, n, f);
         projectionMatrix[1][1] *= -1; // Flip Y
 

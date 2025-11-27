@@ -116,6 +116,24 @@ public:
         VkFormat           format);
 
     /**
+     * @brief Create a cube texture array for color attachment
+     * @param name of the render target
+     * @param width of the render target
+     * @param height of the render target
+     * @param size of the array for cubes
+     * @param total miplevels for the texture
+     * @param format of the render target
+     * @return id of the texture
+     */
+    uint32_t createCubeColorTextureArray(
+        const std::string& name,
+        uint32_t           width,
+        uint32_t           height,
+        uint32_t           numCubes,
+        uint32_t           mipLevels,
+        VkFormat           format);
+
+    /**
      * @brief Create a storage texture for compute pipeline
      * @param name of the texture
      * @param width of the texture
@@ -141,6 +159,40 @@ public:
         const std::string& name,
         uint32_t           width,
         uint32_t           height,
+        VkFormat           format);
+
+    /**
+     * @brief Create a render texture array for depth attachment
+     * @param name of the render target
+     * @param width of the render target
+     * @param height of the render target
+     * @param size of texture array
+     * @param format of the render target
+     * @return id of the texture
+     */
+    uint32_t createDepthTextureArray(
+        const std::string& name,
+        uint32_t           width,
+        uint32_t           height,
+        uint32_t           numTextures,
+        VkFormat           format);
+
+    /**
+     * @brief Create a cube texture array for depth attachment
+     * @param name of the render target
+     * @param width of the render target
+     * @param height of the render target
+     * @param size of the array for cubes
+     * @param total miplevels for the texture
+     * @param format of the render target
+     * @return id of the texture
+     */
+    uint32_t createCubeDepthTextureArray(
+        const std::string& name,
+        uint32_t           width,
+        uint32_t           height,
+        uint32_t           numCubes,
+        uint32_t           mipLevels,
         VkFormat           format);
 
     /**

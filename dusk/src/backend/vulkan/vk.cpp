@@ -407,11 +407,12 @@ VkImageType vulkan::getImageType(TextureType type)
 {
     switch (type)
     {
-        case TextureType::Texture1D: return VK_IMAGE_TYPE_1D;
-        case TextureType::Texture2D: return VK_IMAGE_TYPE_2D;
-        case TextureType::Texture3D: return VK_IMAGE_TYPE_3D;
-        case TextureType::Cube:      return VK_IMAGE_TYPE_2D;
-        case TextureType::ArrayCube: return VK_IMAGE_TYPE_2D;
+        case TextureType::Texture1D:      return VK_IMAGE_TYPE_1D;
+        case TextureType::Texture2D:      return VK_IMAGE_TYPE_2D;
+        case TextureType::Texture2DArray: return VK_IMAGE_TYPE_2D;
+        case TextureType::Texture3D:      return VK_IMAGE_TYPE_3D;
+        case TextureType::Cube:           return VK_IMAGE_TYPE_2D;
+        case TextureType::CubeArray:      return VK_IMAGE_TYPE_2D;
     }
 
     return VK_IMAGE_TYPE_MAX_ENUM;
@@ -421,11 +422,12 @@ VkImageViewType vulkan::getImageViewType(TextureType type)
 {
     switch (type)
     {
-        case TextureType::Texture1D: return VK_IMAGE_VIEW_TYPE_1D;
-        case TextureType::Texture2D: return VK_IMAGE_VIEW_TYPE_2D;
-        case TextureType::Texture3D: return VK_IMAGE_VIEW_TYPE_3D;
-        case TextureType::Cube:      return VK_IMAGE_VIEW_TYPE_CUBE;
-        case TextureType::ArrayCube: return VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
+        case TextureType::Texture1D:      return VK_IMAGE_VIEW_TYPE_1D;
+        case TextureType::Texture2D:      return VK_IMAGE_VIEW_TYPE_2D;
+        case TextureType::Texture2DArray: return VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+        case TextureType::Texture3D:      return VK_IMAGE_VIEW_TYPE_3D;
+        case TextureType::Cube:           return VK_IMAGE_VIEW_TYPE_CUBE;
+        case TextureType::CubeArray:      return VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
     }
 
     return VK_IMAGE_VIEW_TYPE_MAX_ENUM;

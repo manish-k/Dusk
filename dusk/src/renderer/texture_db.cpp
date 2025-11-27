@@ -434,6 +434,51 @@ uint32_t TextureDB::createCubeColorTexture(
     return newId;
 }
 
+uint32_t TextureDB::createCubeColorTextureArray(
+    const std::string& name,
+    uint32_t           width,
+    uint32_t           height,
+    uint32_t           numCubes,
+    uint32_t           mipLevels,
+    VkFormat           format)
+{
+    std::lock_guard<std::mutex> updateLock(m_mutex);
+
+    // initialize texture for render target
+    uint32_t   newId = m_textures.size();
+
+    GfxTexture newTex { newId };
+    newTex.init(
+        TextureType::CubeArray,
+        width,
+        height,
+        mipLevels,
+        6 * numCubes,
+        format,
+        SampledTexture | ColorTexture | TransferDstTexture | TransferSrcTexture,
+        name.c_str());
+
+    newTex.sampler = m_defaultSampler.sampler;
+
+    // update corrosponding descriptor with new image
+    VkDescriptorImageInfo texDescInfos {};
+    texDescInfos.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    texDescInfos.imageView   = newTex.imageView;
+    texDescInfos.sampler     = newTex.sampler;
+
+    m_textureDescriptorSet->configureImage(
+        COLOR_BINDING_INDEX,
+        newTex.id,
+        1,
+        &texDescInfos);
+
+    m_textureDescriptorSet->applyConfiguration();
+
+    m_textures.push_back(newTex);
+
+    return newId;
+}
+
 uint32_t TextureDB::createStorageTexture(
     const std::string& name,
     uint32_t           width,
@@ -530,6 +575,95 @@ uint32_t TextureDB::createDepthTexture(
         &texDescInfos);
 
     m_textureDescriptorSet->applyConfiguration();
+
+    return newId;
+}
+
+uint32_t TextureDB::createDepthTextureArray(
+    const std::string& name,
+    uint32_t           width,
+    uint32_t           height,
+    uint32_t           numTextures,
+    VkFormat           format)
+{
+    std::lock_guard<std::mutex> updateLock(m_mutex);
+
+    // initialize texture for render target
+    uint32_t   newId = m_textures.size();
+
+    GfxTexture newTex { newId };
+    newTex.init(
+        TextureType::Texture2DArray,
+        width,
+        height,
+        1,
+        numTextures,
+        format,
+        DepthStencilTexture | SampledTexture,
+        name.c_str());
+
+    newTex.sampler = m_defaultSampler.sampler;
+
+    m_textures.push_back(newTex);
+
+    // update corrosponding descriptor with new image
+    VkDescriptorImageInfo texDescInfos {};
+    texDescInfos.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    texDescInfos.imageView   = newTex.imageView;
+    texDescInfos.sampler     = newTex.sampler;
+
+    m_textureDescriptorSet->configureImage(
+        COLOR_BINDING_INDEX,
+        newTex.id,
+        1,
+        &texDescInfos);
+
+    m_textureDescriptorSet->applyConfiguration();
+
+    return newId;
+}
+
+uint32_t TextureDB::createCubeDepthTextureArray(
+    const std::string& name,
+    uint32_t           width,
+    uint32_t           height,
+    uint32_t           numCubes,
+    uint32_t           mipLevels,
+    VkFormat           format)
+{
+    std::lock_guard<std::mutex> updateLock(m_mutex);
+
+    // initialize texture for render target
+    uint32_t   newId = m_textures.size();
+
+    GfxTexture newTex { newId };
+    newTex.init(
+        TextureType::CubeArray,
+        width,
+        height,
+        mipLevels,
+        6 * numCubes,
+        format,
+        SampledTexture | DepthStencilTexture,
+        name.c_str());
+
+    newTex.sampler = m_defaultSampler.sampler;
+
+    // update corrosponding descriptor with new image
+    VkDescriptorImageInfo texDescInfos {};
+    texDescInfos.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    texDescInfos.imageView   = newTex.imageView;
+    texDescInfos.sampler     = newTex.sampler;
+
+    m_textureDescriptorSet->configureImage(
+        COLOR_BINDING_INDEX,
+        newTex.id,
+        1,
+        &texDescInfos);
+
+    m_textureDescriptorSet->applyConfiguration();
+
+    m_textures.push_back(newTex);
 
     return newId;
 }

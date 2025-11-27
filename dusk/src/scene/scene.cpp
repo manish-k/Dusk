@@ -9,7 +9,6 @@
 #include "renderer/vertex.h"
 
 #include "components/camera.h"
-#include "components/mesh.h"
 #include "components/transform.h"
 
 #include "debug/profiler.h"
@@ -38,7 +37,7 @@ Scene::Scene(const std::string_view name) :
     cameraComponent.setPerspectiveProjection(glm::radians(50.f), static_cast<float>(currentExtent.width) / static_cast<float>(currentExtent.height), 0.5f, 10000.f);
     cameraComponent.setView(cameraTransform.translation, cameraTransform.rotation);
 
-    m_cameraController = createUnique<CameraController>(*camera, currentExtent.width, currentExtent.height);
+    m_cameraController = createUnique<CameraController>(*camera, currentExtent.width, currentExtent.height, glm::vec3(0.f, 1.f, 0.f));
 
     m_cameraId         = camera->getId();
     addGameObject(std::move(camera), rootId);

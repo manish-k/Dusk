@@ -24,9 +24,10 @@ enum class TextureType : uint32_t
 {
     Texture1D,
     Texture2D,
+    Texture2DArray,
     Texture3D,
     Cube,
-    ArrayCube,
+    CubeArray,
 };
 
 struct GfxTexture
@@ -47,10 +48,10 @@ struct GfxTexture
     VkImageLayout  currentLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     VkSampler      sampler       = {};
 
-    // special image view for using cubemaps as output attachments because
+    // array image view for using cubemaps/texture arrays as output attachments because
     // image view type is different from view that samples the image.
     // We are going to store per mip image views of all faces
-    DynamicArray<VkImageView> cubeMipImageViews = {};
+    DynamicArray<VkImageView> perMipArrayImageViews = {};
 
     // Pixel data will be stored in mip-major order
     // [Mip 0, Face 0] [Mip 0, Face 1] ... [Mip 0, Face 5]

@@ -71,7 +71,7 @@ Error GfxTexture::init(
 
     if (result.hasError())
     {
-        DUSK_ERROR("Unable to create image for texture {}", result.toString());
+        DUSK_ERROR("Unable to create image for texture {}: {}", debugName, result.toString());
         return Error::InitializationFailed;
     }
 
@@ -197,7 +197,7 @@ Error GfxTexture::init(
 
     if (result.hasError())
     {
-        DUSK_ERROR("Unable to create image for texture {}", result.toString());
+        DUSK_ERROR("Unable to create image for texture {}: {}", name, result.toString());
         return Error::InitializationFailed;
     }
 
@@ -229,14 +229,18 @@ Error GfxTexture::init(
 
     if (result.hasError())
     {
-        DUSK_ERROR("Unable to create image view for texture {}", result.toString());
+        DUSK_ERROR("Unable to create image for texture {}: {}", name, result.toString());
         return Error::InitializationFailed;
     }
 
-    if (type == TextureType::Cube)
+    if (numLayers > 1)
     {
-        // generate per mip image view for all faces
-        cubeMipImageViews.resize(mipLevels);
+        // generate per mip 2d array image view for all faces
+        perMipArrayImageViews.resize(mipLevels);
+        
+        VkImageViewType imageViewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+        if (numLayers % 6 == 0 && type == TextureType::CubeArray)
+            imageViewType = VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
 
         for (uint32_t level = 0u; level < mipLevels; ++level)
         {
@@ -244,19 +248,19 @@ Error GfxTexture::init(
                 &image,
                 VK_IMAGE_VIEW_TYPE_2D_ARRAY,
                 format,
-                VK_IMAGE_ASPECT_COLOR_BIT,
+                imageAspectFlags,
                 level,
                 1,
                 0,
                 numLayers,
-                &cubeMipImageViews[level]);
+                &perMipArrayImageViews[level]);
 
 #ifdef VK_RENDERER_DEBUG
             vkdebug::setObjectName(
                 vkContext.device,
                 VK_OBJECT_TYPE_IMAGE_VIEW,
-                (uint64_t)cubeMipImageViews[level],
-                "cube_image_view");
+                (uint64_t)perMipArrayImageViews[level],
+                "array_image_view");
 #endif // VK_RENDERER_DEBUG
         }
     }
@@ -365,7 +369,7 @@ Error GfxTexture::init(
 
     if (result.hasError())
     {
-        DUSK_ERROR("Unable to create image for texture {}", result.toString());
+        DUSK_ERROR("Unable to create image for texture {}: {}", debugName, result.toString());
         return Error::InitializationFailed;
     }
 
@@ -691,12 +695,12 @@ void GfxTexture::free()
 
     device.freeImageView(&imageView);
 
-    if (type == TextureType::Cube)
+    if (numLayers > 1)
     {
-        for (uint32_t idx = 0u; idx < cubeMipImageViews.size(); ++idx)
-            device.freeImageView(&cubeMipImageViews[idx]);
+        for (uint32_t idx = 0u; idx < perMipArrayImageViews.size(); ++idx)
+            device.freeImageView(&perMipArrayImageViews[idx]);
     }
-    cubeMipImageViews.clear();
+    perMipArrayImageViews.clear();
 
     vulkan::freeGPUImage(vkContext.gpuAllocator, &image);
 

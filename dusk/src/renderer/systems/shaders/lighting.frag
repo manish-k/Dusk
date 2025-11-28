@@ -379,8 +379,8 @@ void main() {
 	}
 	shadow /= 9.0;
 
-	//vec3 finalColor = ambient + (1.0f - shadow) * lightColor;
-	vec3 finalColor = (1.0f - shadow) * lightColor;
+	vec3 finalColor = ambient + (1.0f - shadow) * lightColor;
+	//vec3 finalColor = (1.0f - shadow) * lightColor;
 
 	// emissive color
 	if (emissiveTexIdx > 0)

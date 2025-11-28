@@ -38,7 +38,7 @@ IBLGenerator::~IBLGenerator()
 
 bool IBLGenerator::start()
 {
-    m_hdrEnvTextureId         = TextureDB::cache()->createTextureAsync("assets/textures/room_env.hdr", TextureType::Texture2D, PixelFormat::R32G32B32A32_sfloat);
+    m_hdrEnvTextureId         = TextureDB::cache()->createTextureAsync("assets/textures/night_01_env.hdr", TextureType::Texture2D, PixelFormat::R32G32B32A32_sfloat);
 
     auto&               vkCtx = VkGfxDevice::getSharedVulkanContext();
 
@@ -119,9 +119,9 @@ void IBLGenerator::onUpdate(TimeStep dt)
 
         device.endSingleTimeCommands(cmdBuffer);
 
-        TextureDB::cache()->saveTextureAsKTX(m_hdrCubeMapTextureId, "room_env.ktx2");
-        TextureDB::cache()->saveTextureAsKTX(m_irradianceTextureId, "room_env_irradiance.ktx2");
-        TextureDB::cache()->saveTextureAsKTX(m_prefilteredTextureId, "room_env_prefiltered.ktx2");
+        TextureDB::cache()->saveTextureAsKTX(m_hdrCubeMapTextureId, "night_01_env.ktx2");
+        TextureDB::cache()->saveTextureAsKTX(m_irradianceTextureId, "night_01_env_irradiance.ktx2");
+        TextureDB::cache()->saveTextureAsKTX(m_prefilteredTextureId, "night_01_env_prefiltered.ktx2");
         TextureDB::cache()->saveTextureAsKTX(m_brdfLUTTextureId, "brdf.ktx2");
 
         m_executedOnce = true;
@@ -164,7 +164,7 @@ void IBLGenerator::executeHDRToCubeMapPipeline(VkCommandBuffer cmdBuffer)
 
     VkRenderingAttachmentInfo attachmentInfo = { VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
     attachmentInfo.imageLayout               = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    attachmentInfo.imageView                 = cubeMapAttachment.cubeMipImageViews[0];
+    attachmentInfo.imageView                 = cubeMapAttachment.perMipArrayImageViews[0];
     attachmentInfo.loadOp                    = VK_ATTACHMENT_LOAD_OP_CLEAR;
     attachmentInfo.storeOp                   = VK_ATTACHMENT_STORE_OP_STORE;
     attachmentInfo.clearValue                = { 0.f, 0.f, 0.f, 1.f };
@@ -248,7 +248,7 @@ void IBLGenerator::executeIrradiancePipeline(VkCommandBuffer cmdBuffer)
 
     VkRenderingAttachmentInfo attachmentInfo = { VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
     attachmentInfo.imageLayout               = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    attachmentInfo.imageView                 = irradianceAttachment.cubeMipImageViews[0];
+    attachmentInfo.imageView                 = irradianceAttachment.perMipArrayImageViews[0];
     attachmentInfo.loadOp                    = VK_ATTACHMENT_LOAD_OP_CLEAR;
     attachmentInfo.storeOp                   = VK_ATTACHMENT_STORE_OP_STORE;
     attachmentInfo.clearValue                = { 0.f, 0.f, 0.f, 1.f };
@@ -342,7 +342,7 @@ void IBLGenerator::executePrefilteredPipeline(VkCommandBuffer cmdBuffer)
         // prepare rendering attachment and pipeline configuration
         VkRenderingAttachmentInfo attachmentInfo = { VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
         attachmentInfo.imageLayout               = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        attachmentInfo.imageView                 = prefilteredAttachment.cubeMipImageViews[level];
+        attachmentInfo.imageView                 = prefilteredAttachment.perMipArrayImageViews[level];
         attachmentInfo.loadOp                    = VK_ATTACHMENT_LOAD_OP_CLEAR;
         attachmentInfo.storeOp                   = VK_ATTACHMENT_STORE_OP_STORE;
         attachmentInfo.clearValue                = { 0.f, 0.f, 0.f, 1.f };

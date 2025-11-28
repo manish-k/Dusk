@@ -35,21 +35,21 @@ void Environment::initCubeTextureResources(
     auto& ctx = VkGfxDevice::getSharedVulkanContext();
 
     // env cube map
-    const std::string skyboxTexturePath = resPath + "env.ktx2";
+    const std::string skyboxTexturePath = resPath + "night_01_env.ktx2";
     m_skyTextureId                      = m_textureDB.createTextureAsync(
         skyboxTexturePath, 
         TextureType::Cube,
         PixelFormat::R32G32B32A32_sfloat);
 
     // irradiance cubemap
-    const std::string skyboxIrradianceTexturePath = resPath + "env_irradiance.ktx2";
+    const std::string skyboxIrradianceTexturePath = resPath + "night_01_env_irradiance.ktx2";
     m_skyIrradianceTexId                          = m_textureDB.createTextureAsync(
         skyboxIrradianceTexturePath, 
         TextureType::Cube,
         PixelFormat::R32G32B32A32_sfloat);
 
     // prefiltered cubemap
-    const std::string skyboxPrefilteredTexturePath = resPath + "env_prefiltered.ktx2";
+    const std::string skyboxPrefilteredTexturePath = resPath + "night_01_env_prefiltered.ktx2";
     m_skyPrefilteredTexId
         = m_textureDB.createTextureAsync(
             skyboxPrefilteredTexturePath, 

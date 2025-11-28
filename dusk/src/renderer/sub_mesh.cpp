@@ -1,6 +1,4 @@
 #include "sub_mesh.h"
-#include "engine.h"
-#include "backend/vulkan/vk_allocator.h"
 
 namespace dusk
 {
@@ -21,10 +19,10 @@ Error SubMesh::init(const DynamicArray<Vertex>& vertices, const DynamicArray<uin
     return Error();
 }
 
-void SubMesh::free()
+void SubMesh::cleanup()
 {
-    m_indexBuffer.free();
-    m_vertexBuffer.free();
+    m_indexBuffer.cleanup();
+    m_vertexBuffer.cleanup();
 }
 
 Error SubMesh::initGfxVertexBuffer(const DynamicArray<Vertex>& vertices)
@@ -61,7 +59,7 @@ Error SubMesh::initGfxVertexBuffer(const DynamicArray<Vertex>& vertices)
     // copy buffer
     m_vertexBuffer.copyFrom(stagingBuffer, bufferSize);
 
-    stagingBuffer.free();
+    stagingBuffer.cleanup();
 
     return Error::Ok;
 }
@@ -100,7 +98,7 @@ Error SubMesh::initGfxIndexBuffer(const DynamicArray<uint32_t>& indices)
     // copy buffer
     m_indexBuffer.copyFrom(stagingBuffer, bufferSize);
 
-    stagingBuffer.free();
+    stagingBuffer.cleanup();
 
     return Error::Ok;
 }

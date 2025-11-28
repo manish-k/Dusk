@@ -42,7 +42,7 @@ BasicRenderSystem::~BasicRenderSystem()
     m_modelDescriptorSetLayout = nullptr;
     m_modelDescriptorPool      = nullptr;
 
-    m_modelsBuffer.free();
+    m_modelsBuffer.cleanup();
 }
 
 void BasicRenderSystem::createPipeLine()

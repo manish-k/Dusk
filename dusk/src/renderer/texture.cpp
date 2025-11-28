@@ -108,7 +108,7 @@ Error GfxTexture::init(
         1,
         1);
 
-    stagingBuffer.free();
+    stagingBuffer.cleanup();
 
     result = device.createImageView(
         &image,
@@ -237,7 +237,7 @@ Error GfxTexture::init(
     {
         // generate per mip 2d array image view for all faces
         perMipArrayImageViews.resize(mipLevels);
-        
+
         VkImageViewType imageViewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
         if (numLayers % 6 == 0 && type == TextureType::CubeArray)
             imageViewType = VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
@@ -524,7 +524,7 @@ Error GfxTexture::init(
 
     vkDestroySemaphore(vkContext.device, uploadFinishedSemaphore, nullptr);
 
-    stagingBuffer.free();
+    stagingBuffer.cleanup();
 
     result = device.createImageView(
         &image,
@@ -688,7 +688,7 @@ void GfxTexture::recordMipGenerationCmds(VkCommandBuffer cmdBuff)
     currentLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 }
 
-void GfxTexture::free()
+void GfxTexture::cleanup()
 {
     auto& device    = Engine::get().getGfxDevice();
     auto& vkContext = device.getSharedVulkanContext();
@@ -704,8 +704,8 @@ void GfxTexture::free()
 
     vulkan::freeGPUImage(vkContext.gpuAllocator, &image);
 
-    if (pixelData != nullptr && pixelData->isAllocated()) 
-pixelData->free();
+    if (pixelData != nullptr && pixelData->isAllocated())
+        pixelData->cleanup();
     pixelData = nullptr;
 }
 
@@ -757,7 +757,7 @@ void GfxTexture::downloadPixelData()
     }
 
     // staging buffer for transfer
-    if (pixelData != nullptr && pixelData->isAllocated()) pixelData->free();
+    if (pixelData != nullptr && pixelData->isAllocated()) pixelData->cleanup();
     pixelData = createShared<GfxBuffer>(); // TODO:: shared ptr looks ugly
 
     GfxBuffer::createHostReadWriteBuffer(

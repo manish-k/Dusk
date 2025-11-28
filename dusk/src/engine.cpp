@@ -571,8 +571,8 @@ void Engine::cleanupGlobals()
     m_materialDescriptorSetLayout = nullptr;
     m_materialDescriptorPool      = nullptr;
 
-    m_globalUbos.free();
-    m_materialsBuffer.free();
+    m_globalUbos.cleanup();
+    m_materialsBuffer.cleanup();
 
     releaseRenderGraphResources();
 }
@@ -917,7 +917,7 @@ void Engine::releaseRenderGraphResources()
     m_rgResources.gbuffModelDescriptorPool      = nullptr;
 
     for (auto& buffer : m_rgResources.gbuffModelsBuffer)
-        buffer.free();
+        buffer.cleanup();
 
     m_rgResources.presentPipeline           = nullptr;
     m_rgResources.presentPipelineLayout     = nullptr;

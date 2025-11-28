@@ -36,10 +36,10 @@ LightsSystem::~LightsSystem()
     m_lightsDescriptorSetLayout = nullptr;
     m_lightsDescriptorPool      = nullptr;
 
-    m_ambientLightBuffer.free();
-    m_directionalLightsBuffer.free();
-    m_pointLightsBuffer.free();
-    m_spotLightsBuffer.free();
+    m_ambientLightBuffer.cleanup();
+    m_directionalLightsBuffer.cleanup();
+    m_pointLightsBuffer.cleanup();
+    m_spotLightsBuffer.cleanup();
 }
 
 void LightsSystem::registerAllLights(Scene& scene)

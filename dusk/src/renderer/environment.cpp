@@ -98,7 +98,7 @@ void Environment::cleanup()
 {
     m_skyBoxPipeline       = nullptr;
     m_skyBoxPipelineLayout = nullptr;
-    m_cubeMesh->free();
+    m_cubeMesh->cleanup();
 }
 
 } // namespace dusk

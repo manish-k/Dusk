@@ -132,7 +132,7 @@ struct GfxTexture
     /**
      * @brief free the allocated Image and ImageView for the texture
      */
-    void free();
+    void cleanup();
 
     /**
      * @brief Download pixel data into a host visible buffer

@@ -81,7 +81,7 @@ void GfxBuffer::init(
     Engine::get().getGfxDevice().createBuffer(bufferParams, &vkBuffer);
 }
 
-void GfxBuffer::free()
+void GfxBuffer::cleanup()
 {
     Engine::get().getGfxDevice().freeBuffer(&vkBuffer);
 }

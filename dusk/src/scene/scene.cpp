@@ -109,7 +109,7 @@ void Scene::freeSubMeshes()
 {
     for (uint32_t meshIndex = 0u; meshIndex < m_subMeshes.size(); ++meshIndex)
     {
-        m_subMeshes[meshIndex].free();
+        m_subMeshes[meshIndex].cleanup();
     }
 }
 

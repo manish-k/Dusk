@@ -67,7 +67,7 @@ struct GfxBuffer
     /**
      * @brief release the resources of the buffer
      */
-    void free();
+    void cleanup();
 
     /**
      * @brief Check if buffer was allocated

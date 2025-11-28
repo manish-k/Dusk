@@ -21,7 +21,7 @@
 #else
 
 #    define DUSK_PROFILE_FUNCTION
-#    define DUSK_PROFILE_FRAME(name)
+#    define DUSK_PROFILE_FRAME
 #    define DUSK_PROFILER_THREAD(name)
 #    define DUSK_PROFILE_SECTION(name)
 #    define DUSK_PROFILE_GPU_ZONE(name, cmdBuffer)

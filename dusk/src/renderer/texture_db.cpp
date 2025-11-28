@@ -62,9 +62,9 @@ void TextureDB::freeAllResources()
     {
         // some textures might be using default texture image and image views
         if (tex.image.vkImage != defaultTex.image.vkImage)
-            tex.free();
+            tex.cleanup();
     }
-    defaultTex.free();
+    defaultTex.cleanup();
 
     m_textures.clear();
     m_loadedTextures.clear();

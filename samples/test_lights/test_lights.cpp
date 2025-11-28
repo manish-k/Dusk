@@ -1,8 +1,6 @@
 #include "test_lights.h"
 
 #include "core/entrypoint.h"
-#include "scene/components/transform.h"
-#include "scene/components/camera.h"
 #include "scene/components/lights.h"
 #include "scene/camera_controller.h"
 

@@ -9,6 +9,10 @@
 #include "debug/profiler.h"
 #include "debug/renderdoc.h"
 
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
 using namespace dusk;
 
 extern Unique<dusk::Application> dusk::createApplication(int argc, char** argv);
@@ -16,14 +20,16 @@ extern Unique<dusk::Application> dusk::createApplication(int argc, char** argv);
 // main func
 int main(int argc, char** argv)
 {
-    DUSK_PROFILE_THREAD("main_thread");
+    _CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_DEBUG); 
+
+    //_CrtSetBreakAlloc(219);
 
     // start logger
     dusk::Logger::init();
 
-     #ifdef ENABLE_RENDERDOC
-         if (!renderdoc::init()) DUSK_ERROR("Unable to load renderdoc library");
-     #endif
+#ifdef ENABLE_RENDERDOC
+    if (!renderdoc::init()) DUSK_ERROR("Unable to load renderdoc library");
+#endif
 
     auto engineConfig = Engine::Config::defaultConfig();
     auto engine       = createUnique<Engine>(engineConfig);
@@ -53,4 +59,6 @@ int main(int argc, char** argv)
 
     app->shutdown();
     engine->shutdown();
+
+    _CrtDumpMemoryLeaks();
 }

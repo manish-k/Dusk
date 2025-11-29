@@ -904,7 +904,6 @@ void Engine::prepareRenderGraphResources()
                                             .setFragmentShaderCode(shadowMapFragShaderCode)
                                             .setPipelineLayout(*m_rgResources.shadow2DMapPipelineLayout)
                                             .setViewMask(0)
-                                            //.setCullMode(VK_CULL_MODE_BACK_BIT)
                                             .setDebugName("shadow_2d_map_pipeline")
                                             .build();
 }

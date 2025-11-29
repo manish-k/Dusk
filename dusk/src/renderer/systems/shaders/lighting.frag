@@ -360,13 +360,10 @@ void main() {
 	vec4 fragLightSpacePos = (dirLights[0].projView * vec4(worldPos, 1.0));
 	float NdotL = max(dot(surfaceNormal, -dirLights[0].direction), 0.0);
 	vec3 projCoords = fragLightSpacePos.xyz / fragLightSpacePos.w;
-	projCoords.xy = projCoords.xy * 0.5 + 0.5; 
+	projCoords.xy = projCoords.xy * 0.5 + 0.5;
 	float currentDepth = projCoords.z;
-	float bias = max(0.005 * (1.0 - NdotL), 0.0005); 
-	/*
-	float closestDepth = texture(textures[dirShadowMapIdx], projCoords.xy).x; 
-	float shadow = currentDepth - bias > closestDepth  ? 1.0 : 0.0;
-	*/
+	float bias =  max(0.002 * (1.0 - NdotL), 0.0005);
+
 	float shadow = 0.0;
 	vec2 texelSize = 1.0 / textureSize(textures[dirShadowMapIdx], 0);
 	for(int x = -1; x <= 1; ++x)
@@ -379,8 +376,8 @@ void main() {
 	}
 	shadow /= 9.0;
 
+
 	vec3 finalColor = ambient + (1.0f - shadow) * lightColor;
-	//vec3 finalColor = (1.0f - shadow) * lightColor;
 
 	// emissive color
 	if (emissiveTexIdx > 0)
@@ -392,5 +389,4 @@ void main() {
 	finalColor = finalColor / (finalColor + vec3(1.0));
 
 	outColor = vec4(finalColor.rgb, 1.0);
-	//outColor = vec4(ndcDepth, 0, 0, 1);
 }

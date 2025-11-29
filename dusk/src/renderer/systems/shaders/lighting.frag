@@ -130,10 +130,11 @@ vec3 computeDirectionalLight(
 	vec3 radiance = lightColor;
 	
 	// cook-torrance
+	float r = (aoRM.g + 1.0f);
+    float k = (r*r) / 8.0f;
+
 	float ndf = distributionGGX(normal, halfDirection, aoRM.g);
-	float r = (aoRM.g + 1.0);
-    float k = (r*r) / 8.0;
-	float g = geometrySmith(normal, viewDirection, halfDirection, k);
+	float g = geometrySmith(normal, viewDirection, lightDirection, k);
 	vec3 f = fresnelSchlick(max(dot(halfDirection, viewDirection), 0.0), f0);
 
 	vec3 ks = f;
@@ -179,7 +180,7 @@ vec3 computePointLight(
 	float ndf = distributionGGX(normal, halfDirection, aoRM.g);
 	float r = (aoRM.g + 1.0);
     float k = (r*r) / 8.0;
-	float g = geometrySmith(normal, viewDirection, halfDirection, k);
+	float g = geometrySmith(normal, viewDirection, lightDirection, k);
 	vec3 f = fresnelSchlick(max(dot(halfDirection, viewDirection), 0.0), f0);
 
 	vec3 ks = f;
@@ -240,7 +241,7 @@ vec3 computeSpotLight(
 		float ndf = distributionGGX(normal, halfDirection, aoRM.g);
 		float r = (aoRM.g + 1.0);
 		float k = (r*r) / 8.0;
-		float g = geometrySmith(normal, viewDirection, halfDirection, k);
+		float g = geometrySmith(normal, viewDirection, lightDirection, k);
 		vec3 f = fresnelSchlick(max(dot(halfDirection, viewDirection), 0.0), f0);
 
 		vec3 ks = f;
@@ -362,7 +363,7 @@ void main() {
 	vec3 projCoords = fragLightSpacePos.xyz / fragLightSpacePos.w;
 	projCoords.xy = projCoords.xy * 0.5 + 0.5;
 	float currentDepth = projCoords.z;
-	float bias =  max(0.002 * (1.0 - NdotL), 0.0005);
+	float bias =  max(0.002 * (1.0 - NdotL), 0.00005);
 
 	float shadow = 0.0;
 	vec2 texelSize = 1.0 / textureSize(textures[dirShadowMapIdx], 0);

@@ -28,9 +28,18 @@ public:
      * @brief Get entity-component global registry
      * @return Reference to registry object
      */
-    static EntityRegistry& getRegistry() { return *s_registry; };
+    static EntityRegistry& getRegistry() { return s_registry; };
+
+    /**
+     * @brief Clears the static s_registry container and resets it to an empty state.
+     */
+    static void cleanup()
+    {
+        s_registry.clear();
+        s_registry = {};
+    }
 
 private:
-    static EntityRegistry* s_registry;
+    static EntityRegistry s_registry;
 };
 } // namespace dusk

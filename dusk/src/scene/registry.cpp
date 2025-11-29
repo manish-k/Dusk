@@ -2,5 +2,5 @@
 
 namespace dusk
 {
-EntityRegistry* Registry::s_registry = new EntityRegistry();
+EntityRegistry Registry::s_registry;
 }

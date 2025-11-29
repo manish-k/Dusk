@@ -9,7 +9,8 @@ Shared<spdlog::logger> Logger::s_engineLogger;
 Shared<spdlog::logger> Logger::s_appLogger;
 Shared<spdlog::logger> Logger::s_vulkanLogger;
 
-void                   Logger::init()
+// initialize loggers
+void Logger::init()
 {
     auto consoleSink = createShared<spdlog::sinks::stdout_color_sink_mt>();
     consoleSink->set_pattern("%^[%T] [%l] %n: %v%$");
@@ -47,6 +48,11 @@ void                   Logger::init()
     spdlog::register_logger(s_vulkanLogger);
 
     s_engineLogger->info("Initialized logger.");
+}
+
+void Logger::shutdown()
+{
+    spdlog::shutdown();
 }
 
 void Logger::appAssertLog(const std::string& msg)

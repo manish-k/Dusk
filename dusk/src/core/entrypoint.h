@@ -22,7 +22,7 @@ int main(int argc, char** argv)
 {
     _CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_DEBUG); 
 
-    //_CrtSetBreakAlloc(219);
+    //_CrtSetBreakAlloc(197);
 
     // start logger
     dusk::Logger::init();
@@ -59,6 +59,8 @@ int main(int argc, char** argv)
 
     app->shutdown();
     engine->shutdown();
+
+    dusk::Logger::shutdown();
 
     _CrtDumpMemoryLeaks();
 }

@@ -19,6 +19,8 @@ public:
      */
     static void init();
 
+    static void shutdown();
+
     /**
      * @brief Get static instance of Engine logger
      * @return Shared pointer to static instance

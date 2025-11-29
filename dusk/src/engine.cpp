@@ -165,6 +165,8 @@ void Engine::shutdown()
 
     m_renderer->cleanup();
     m_gfxDevice->cleanupGfxDevice();
+
+    Registry::cleanup();
 }
 
 void Engine::onUpdate(TimeStep dt)

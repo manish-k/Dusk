@@ -116,6 +116,7 @@ vec3 computeDirLightsNonPBR(vec3 viewDirection, vec3 normal)
 }
 
 vec3 computeDirectionalLight(
+	vec3 fragWorldPos,
 	vec3 albedo, 
 	vec3 f0, 
 	vec3 aoRM, 
@@ -147,7 +148,31 @@ vec3 computeDirectionalLight(
 	float denom = 4.0 * ndotv * ndotl + 0.0001;
 	vec3 specular = numer / denom;
 
-	return (kd * albedo / PI + specular) * radiance * ndotl;
+	lightColor = (kd * albedo / PI + specular) * radiance * ndotl;
+
+	// shadow calculations
+	int dirShadowMapIdx = nonuniformEXT(push.dirShadowMapIdx);
+
+	vec4 fragLightSpacePos = (dirLights.projView * vec4(fragWorldPos, 1.0));
+	float NdotL = max(dot(normal, lightDirection), 0.0);
+	vec3 projCoords = fragLightSpacePos.xyz / fragLightSpacePos.w;
+	projCoords.xy = projCoords.xy * 0.5 + 0.5; // only xy because z is in [0,1] after perspective divide
+	float currentDepth = projCoords.z;
+	float bias =  max(0.002 * (1.0 - NdotL), 0.00005);
+
+	float shadow = 0.0;
+	vec2 texelSize = 1.0 / textureSize(textures[dirShadowMapIdx], 0);
+	for(int x = -1; x <= 1; ++x)
+	{
+		for(int y = -1; y <= 1; ++y)
+		{
+			float pcfDepth = texture(textures[dirShadowMapIdx], projCoords.xy + vec2(x, y) * texelSize).r; 
+			shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;        
+		}    
+	}
+	shadow /= 9.0;
+
+	return (1.0f - shadow) * lightColor;
 }
 
 vec3 computePointLight(
@@ -272,7 +297,6 @@ void main() {
 	int prefilteredTexIdx = nonuniformEXT(push.prefilteredTextureIdx);
 	int brdfLUTIdx = nonuniformEXT(push.brdfLUTIdx);
 	int emissiveTexIdx = nonuniformEXT(push.emissiveTextureIdx);
-	int dirShadowMapIdx = nonuniformEXT(push.dirShadowMapIdx);
 
 	vec3 surfaceNormal = normalize(texture(textures[normalTexIdx], fragUV).xyz * 2.0 - 1.0);
 	vec3 albedo = texture(textures[albedoTexIdx], fragUV).xyz;
@@ -300,7 +324,7 @@ void main() {
 	uint dirCount  = globalubo[guboIdx].directionalLightsCount;
 	if (dirCount > 0u)
 	{
-		lightColor += computeDirectionalLight(albedo, f0, aoRM, viewDirection, surfaceNormal);
+		lightColor += computeDirectionalLight(worldPos, albedo, f0, aoRM, viewDirection, surfaceNormal);
 	}
 
 	// compute contribution of all point lights
@@ -349,29 +373,8 @@ void main() {
 	vec3 specular = prefilteredColor * (f * brdf.x + brdf.y);
 
 	vec3 ambient = (kD * diffuse + specular) * ao;
-	
-	// shadow calculations
-	vec4 fragLightSpacePos = (dirLights.projView * vec4(worldPos, 1.0));
-	float NdotL = max(dot(surfaceNormal, -dirLights.direction), 0.0);
-	vec3 projCoords = fragLightSpacePos.xyz / fragLightSpacePos.w;
-	projCoords.xy = projCoords.xy * 0.5 + 0.5;
-	float currentDepth = projCoords.z;
-	float bias =  max(0.002 * (1.0 - NdotL), 0.00005);
 
-	float shadow = 0.0;
-	vec2 texelSize = 1.0 / textureSize(textures[dirShadowMapIdx], 0);
-	for(int x = -1; x <= 1; ++x)
-	{
-		for(int y = -1; y <= 1; ++y)
-		{
-			float pcfDepth = texture(textures[dirShadowMapIdx], projCoords.xy + vec2(x, y) * texelSize).r; 
-			shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;        
-		}    
-	}
-	shadow /= 9.0;
-
-
-	vec3 finalColor = ambient + (1.0f - shadow) * lightColor;
+	vec3 finalColor = ambient + lightColor;
 
 	// emissive color
 	if (emissiveTexIdx > 0)

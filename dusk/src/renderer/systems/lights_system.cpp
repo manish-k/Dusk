@@ -1,18 +1,13 @@
 #include "lights_system.h"
 
-#include "engine.h"
-
 #include "scene/scene.h"
 #include "scene/components/lights.h"
 #include "scene/components/transform.h"
 
 #include "renderer/frame_data.h"
-#include "renderer/texture_db.h"
 
 #include "backend/vulkan/vk_device.h"
 #include "backend/vulkan/vk_descriptors.h"
-#include "backend/vulkan/vk_renderer.h"
-#include "backend/vulkan/vk_swapchain.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -58,6 +53,8 @@ void LightsSystem::registerAllLights(Scene& scene)
         auto& light = directionalLightList.get<DirectionalLightComponent>(entity);
 
         if (light.id != -1) continue;
+
+        if (light.id > 0) continue; // only one directional light for now
 
         registerDirectionalLight(light);
     }
@@ -173,12 +170,14 @@ void LightsSystem::updateLights(Scene& scene, GlobalUbo& ubo)
 
         if (light.id == -1) continue;
 
+        if (light.id > 0) continue; // only one directional light for now
+
         // ortho projection for dir lights
         glm::mat4 projection = glm::orthoRH_ZO(-10.0f, 10.0f, 10.0f, -10.0f, 0.1f, 1000.0f);
         projection[1][1] *= -1; // flip Y for Vulkan
 
-        glm::vec3 lightPos   = glm::vec3(0.f) - light.direction * 10.0f;
-        glm::mat4 view       = glm::lookAtRH(
+        glm::vec3 lightPos = glm::vec3(0.f) - light.direction * 30.0f;
+        glm::mat4 view     = glm::lookAtRH(
             lightPos,
             glm::vec3(0.f),
             glm::vec3(0.0f, 1.0f, 0.0f));
@@ -253,8 +252,7 @@ void LightsSystem::setupDescriptors()
                                           DIRECTIONAL_BIND_INDEX,
                                           VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                                           VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-                                          MAX_LIGHTS_PER_TYPE,
-                                          true) // Directional Light
+                                          1) // Directional Light
                                       .addBinding(
                                           POINT_BIND_INDEX,
                                           VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
@@ -284,7 +282,7 @@ void LightsSystem::setupDescriptors()
     GfxBuffer::createHostWriteBuffer(
         GfxBufferUsageFlags::StorageBuffer,
         sizeof(DirectionalLightComponent),
-        MAX_LIGHTS_PER_TYPE,
+        1,
         "directional_lights_buffer",
         &m_directionalLightsBuffer);
 

@@ -43,7 +43,7 @@ layout(set = 2, binding = 1) buffer DirectionalLight
 	mat4 projView;
 	vec4 color;
 	vec3 direction;
-} dirLights[];
+} dirLights;
 
 layout(set = 2, binding = 2) buffer PointLight
 {
@@ -92,11 +92,11 @@ vec2 directionToEquirectangular(vec3 dir) {
     return uv;
 }
 
-vec3 computeDirLightsNonPBR(uint lightIdx, vec3 viewDirection, vec3 normal)
+vec3 computeDirLightsNonPBR(vec3 viewDirection, vec3 normal)
 {
-    vec3 lightDirection = normalize(-dirLights[lightIdx].direction);
-	vec3 lightColor = dirLights[lightIdx].color.xyz;
-	float lightIntensity = dirLights[lightIdx].color.w;
+    vec3 lightDirection = normalize(-dirLights.direction);
+	vec3 lightColor = dirLights.color.xyz;
+	float lightIntensity = dirLights.color.w;
     
 	// diffuse shading
     float diff = max(dot(normal, lightDirection), 0.0);
@@ -116,17 +116,16 @@ vec3 computeDirLightsNonPBR(uint lightIdx, vec3 viewDirection, vec3 normal)
 }
 
 vec3 computeDirectionalLight(
-	uint lightIdx, 
 	vec3 albedo, 
 	vec3 f0, 
 	vec3 aoRM, 
 	vec3 viewDirection, 
 	vec3 normal)
 {
-	vec3 lightDirection = normalize(-dirLights[lightIdx].direction);
+	vec3 lightDirection = normalize(-dirLights.direction);
 	vec3 halfDirection = normalize(lightDirection + viewDirection);
 	
-	vec3 lightColor = dirLights[lightIdx].color.xyz * dirLights[lightIdx].color.w;
+	vec3 lightColor = dirLights.color.xyz * dirLights.color.w;
 	vec3 radiance = lightColor;
 	
 	// cook-torrance
@@ -299,20 +298,14 @@ void main() {
 
 	// compute contribution of all directional light
 	uint dirCount  = globalubo[guboIdx].directionalLightsCount;
-    uint vec4Count = (dirCount + 3u) >> 2;   // divide by 4, round up
-    for (uint v = 0u; v < vec4Count; ++v)
-    {
-        uvec4 idx4 = globalubo[guboIdx].directionalLightIndices[v];
-
-        if (4u*v + 0u < dirCount) lightColor += computeDirectionalLight(idx4.x, albedo, f0, aoRM, viewDirection, surfaceNormal);
-        if (4u*v + 1u < dirCount) lightColor += computeDirectionalLight(idx4.y, albedo, f0, aoRM, viewDirection, surfaceNormal);
-        if (4u*v + 2u < dirCount) lightColor += computeDirectionalLight(idx4.z, albedo, f0, aoRM, viewDirection, surfaceNormal);
-        if (4u*v + 3u < dirCount) lightColor += computeDirectionalLight(idx4.w, albedo, f0, aoRM, viewDirection, surfaceNormal);
-    }
+	if (dirCount > 0u)
+	{
+		lightColor += computeDirectionalLight(albedo, f0, aoRM, viewDirection, surfaceNormal);
+	}
 
 	// compute contribution of all point lights
 	uint pointCount  = globalubo[guboIdx].pointLightsCount;
-    vec4Count = (pointCount + 3u) >> 2;   // divide by 4, round up
+    uint vec4Count = (pointCount + 3u) >> 2;   // divide by 4, round up
     for (uint v = 0u; v < vec4Count; ++v)
     {
         uvec4 idx4 = globalubo[guboIdx].pointLightIndices[v];
@@ -358,8 +351,8 @@ void main() {
 	vec3 ambient = (kD * diffuse + specular) * ao;
 	
 	// shadow calculations
-	vec4 fragLightSpacePos = (dirLights[0].projView * vec4(worldPos, 1.0));
-	float NdotL = max(dot(surfaceNormal, -dirLights[0].direction), 0.0);
+	vec4 fragLightSpacePos = (dirLights.projView * vec4(worldPos, 1.0));
+	float NdotL = max(dot(surfaceNormal, -dirLights.direction), 0.0);
 	vec3 projCoords = fragLightSpacePos.xyz / fragLightSpacePos.w;
 	projCoords.xy = projCoords.xy * 0.5 + 0.5;
 	float currentDepth = projCoords.z;

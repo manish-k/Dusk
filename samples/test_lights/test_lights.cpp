@@ -64,7 +64,9 @@ bool TestLights::start()
     Engine::get().loadScene(m_testScene.get());
 
     auto& cameraController = m_testScene.get()->getMainCameraController();
-    cameraController.setViewTarget({ 10.f, 10.f, 10.f }, { 0.f, 0.f, 0.f });
+    //cameraController.setViewTarget({ 0.05f, -0.3f, -0.25f }, { 0.f, 0.f, 0.f });
+    cameraController.setPosition({-2.f, 0.5f, -1.6f});
+    cameraController.setViewDirection({0.7f, -0.3f, 0.5f});
 
     return true;
 }

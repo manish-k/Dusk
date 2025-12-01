@@ -2,6 +2,7 @@
 
 #include "core/entrypoint.h"
 #include "scene/components/lights.h"
+#include "scene/camera_controller.h"
 
 TestSponza::TestSponza()
 {
@@ -24,15 +25,20 @@ bool TestSponza::start()
 
     m_testSponza          = Scene::createSceneFromGLTF(scenePath);
 
-    // adding ambient light
-    auto ambientLight = dusk::createUnique<GameObject>();
-    ambientLight->setName("ambient_light");
-    auto& aLight = ambientLight->addComponent<AmbientLightComponent>();
-    aLight.color = glm::vec4(1.f, 1.f, 1.f, 0.8);
-    m_testSponza->addGameObject(std::move(ambientLight), m_testSponza->getRootId());
+    // adding directional light
+    auto directionalLight = dusk::createUnique<GameObject>();
+    directionalLight->setName("directional_light_0");
+    auto& dLight     = directionalLight->addComponent<DirectionalLightComponent>();
+    dLight.direction = glm::vec3(0.735f, -5.5f, 0.9f);
+    dLight.color     = glm::vec4(1.f, 1.f, 1.f, 0.9);
+    m_testSponza->addGameObject(std::move(directionalLight), m_testSponza->getRootId());
 
     if (m_testSponza)
         Engine::get().loadScene(m_testSponza.get());
+
+    auto& cameraController = m_testSponza.get()->getMainCameraController();
+    cameraController.setPosition({ 9.6f, 1.f, -0.9f });
+    cameraController.setViewDirection({ -0.9f, 0.1f, 0.4f });
 
     return true;
 }

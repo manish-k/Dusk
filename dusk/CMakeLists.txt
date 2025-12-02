@@ -97,6 +97,7 @@ set(RENDERER_DIR "${PROJECT_SOURCE_DIR}/src/renderer")
 set(RENDERER_SYSTEMS_DIR "${RENDERER_DIR}/systems")
 set(RENDERER_SHADERS_DIR "${RENDERER_SYSTEMS_DIR}/shaders")
 set(RENDERER_PASSES_DIR "${RENDERER_DIR}/passes")
+set(RENDERER_GEOMETRY_DIR "${RENDERER_DIR}/geometry")
 set(RENDERER_FILES
 	# Header files
 	"${RENDERER_DIR}/render_api.h"
@@ -117,6 +118,9 @@ set(RENDERER_FILES
 	"${RENDERER_SYSTEMS_DIR}/grid_render_system.h"
 	"${RENDERER_SYSTEMS_DIR}/lights_system.h"
 	"${RENDERER_PASSES_DIR}/render_passes.h"
+	"${RENDERER_GEOMETRY_DIR}/frustum.h"
+	"${RENDERER_GEOMETRY_DIR}/plane.h"
+	"${RENDERER_GEOMETRY_DIR}/sphere.h"
 	# Source files
 	"${RENDERER_DIR}/sub_mesh.cpp"
 	"${RENDERER_DIR}/texture.cpp"

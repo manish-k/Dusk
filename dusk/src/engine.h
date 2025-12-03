@@ -125,6 +125,34 @@ public:
 
     tf::Executor&         getTfExecutor() { return m_tfExecutor; }
 
+    /**
+     * @brief Returns a non-const reference to the global vertex buffer.
+     * @return A reference to the global vertex buffer.
+     */
+    GfxBuffer&            getVertexBuffer() { return m_vertexBuffer; };
+    
+    /**
+     * @brief Copies src vertex data buffer to the engine's vertex buffer.
+     * @param A reference to the source vertex buffer containing vertex data to be copied. 
+     * @param Size in bytes of the data to be copied from the source buffer. 
+     * @return Vertex buffer offset where the data has been copied.
+     */
+    size_t                copyToVertexBuffer(const GfxBuffer& srcVertexBuffer, size_t size);
+
+    /**
+     * @brief Returns a non-const reference to the global index buffer.
+     * @return A reference to the global index buffer.
+     */
+    GfxBuffer&            getIndexBuffer() { return m_indexBuffer; };
+    
+    /**
+     * @brief Copies src index data buffer to the engine's index buffer.
+     * @param A reference to the source index buffer containing index data to be copied. 
+     * @param Size in bytes of the data to be copied from the source buffer. 
+     * @return Index buffer offset where the data has been copied.
+     */
+    size_t                copyToIndexBuffer(const GfxBuffer& srcIndexbuffer, size_t size);
+
     void                  executeBRDFLUTcomputePipeline();
 
 private:
@@ -152,6 +180,11 @@ private:
 
     TimePoint                        m_lastFrameTime {};
     TimeStep                         m_deltaTime {};
+
+    GfxBuffer                        m_vertexBuffer;
+    size_t                           m_availableVertexOffset = 0u;
+    GfxBuffer                        m_indexBuffer;
+    size_t                           m_availableIndexOffset      = 0u;
 
     Unique<VkGfxDescriptorPool>      m_globalDescriptorPool      = nullptr;
     Unique<VkGfxDescriptorSetLayout> m_globalDescriptorSetLayout = nullptr;

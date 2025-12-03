@@ -1,5 +1,7 @@
 #include "sub_mesh.h"
 
+#include "engine.h"
+
 namespace dusk
 {
 Error SubMesh::init(const DynamicArray<Vertex>& vertices, const DynamicArray<uint32_t>& indices)
@@ -59,6 +61,8 @@ Error SubMesh::initGfxVertexBuffer(const DynamicArray<Vertex>& vertices)
     // copy buffer
     m_vertexBuffer.copyFrom(stagingBuffer, bufferSize);
 
+    m_globalVertexOffset = Engine::get().copyToVertexBuffer(stagingBuffer, bufferSize);
+
     stagingBuffer.cleanup();
 
     return Error::Ok;
@@ -97,6 +101,8 @@ Error SubMesh::initGfxIndexBuffer(const DynamicArray<uint32_t>& indices)
 
     // copy buffer
     m_indexBuffer.copyFrom(stagingBuffer, bufferSize);
+
+    m_globalIndexOffset = Engine::get().copyToIndexBuffer(stagingBuffer, bufferSize);
 
     stagingBuffer.cleanup();
 

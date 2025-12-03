@@ -494,6 +494,23 @@ bool Engine::setupGlobals()
     uint32_t      maxFramesCount = m_renderer->getMaxFramesCount();
     VulkanContext ctx            = VkGfxDevice::getSharedVulkanContext();
 
+    // setup 256mb vertex buffer * 32mb index buffer
+    m_vertexBuffer.init(
+        GfxBufferUsageFlags::VertexBuffer | GfxBufferUsageFlags::TransferTarget,
+        256 * 1024 * 1024,
+        GfxBufferMemoryTypeFlags::DedicatedDeviceMemory,
+        "global_vertex_buffer");
+
+    CHECK_AND_RETURN_FALSE(!m_vertexBuffer.isAllocated());
+
+    m_indexBuffer.init(
+        GfxBufferUsageFlags::IndexBuffer | GfxBufferUsageFlags::TransferTarget,
+        32 * 1024 * 1024,
+        GfxBufferMemoryTypeFlags::DedicatedDeviceMemory,
+        "global_index_buffer");
+
+    CHECK_AND_RETURN_FALSE(!m_indexBuffer.isAllocated())
+
     // create global descriptor pool
     m_globalDescriptorPool = VkGfxDescriptorPool::Builder(ctx)
                                  .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, maxFramesCount)
@@ -565,6 +582,9 @@ bool Engine::setupGlobals()
 
 void Engine::cleanupGlobals()
 {
+    m_vertexBuffer.cleanup();
+    m_indexBuffer.cleanup();
+
     m_globalDescriptorPool->resetPool();
     m_globalDescriptorSetLayout = nullptr;
     m_globalDescriptorPool      = nullptr;
@@ -1004,6 +1024,32 @@ void Engine::executeBRDFLUTcomputePipeline()
     vkQueueWaitIdle(ctx.graphicsQueue);
 
     vkFreeCommandBuffers(ctx.device, ctx.commandPool, 1, &commandBuffer);
+}
+
+size_t Engine::copyToVertexBuffer(const GfxBuffer& srcVertexBuffer, size_t size)
+{
+    m_gfxDevice->copyBuffer(
+        srcVertexBuffer.vkBuffer,
+        0,
+        m_vertexBuffer.vkBuffer,
+        m_availableVertexOffset,
+        size);
+
+    m_availableVertexOffset += size;
+
+    return m_availableVertexOffset;
+}
+
+size_t Engine::copyToIndexBuffer(const GfxBuffer& srcIndexBuffer, size_t size)
+{
+    m_gfxDevice->copyBuffer(
+        srcIndexBuffer.vkBuffer,
+        0,
+        m_indexBuffer.vkBuffer,
+        m_availableIndexOffset,
+        size);
+    m_availableIndexOffset += size;
+    return m_availableIndexOffset;
 }
 
 } // namespace dusk

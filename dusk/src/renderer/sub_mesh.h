@@ -31,10 +31,12 @@ private:
 
 private:
     GfxBuffer m_vertexBuffer {};
-    uint32_t  m_vertexCount = 0u;
+    uint32_t  m_vertexCount        = 0u;
+    size_t    m_globalVertexOffset = 0u;
 
     GfxBuffer m_indexBuffer {};
-    uint32_t  m_indexCount = 0u;
+    uint32_t  m_indexCount        = 0u;
+    size_t    m_globalIndexOffset = 0u;
 };
 
 } // namespace dusk

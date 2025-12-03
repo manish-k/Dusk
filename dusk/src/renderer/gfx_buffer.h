@@ -138,6 +138,19 @@ struct GfxBuffer
     void copyFrom(const GfxBuffer& srcBuffer, size_t size);
 
     /**
+     * @brief Copies a block of data from a source buffer into the destination buffer at the specified offsets.
+     * @param srcBuffer Source buffer to copy data from.
+     * @param srcOffset Byte offset within the source buffer to start copying.
+     * @param dstOffset Byte offset within the destination buffer where data will be written.
+     * @param size Number of bytes to copy.
+     */
+    void copyFrom(
+        const GfxBuffer& srcBuffer,
+        size_t           srcOffset,
+        size_t           dstOffset,
+        size_t           size);
+
+    /**
      * @brief Get descriptor info for writing into the descriptor set for the
      * current buffer
      * @param index for which descriptor info is required

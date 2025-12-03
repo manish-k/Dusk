@@ -50,7 +50,9 @@ public:
     void            freeBuffer(VulkanGfxBuffer* buffer);
     void            copyBuffer(
                    const VulkanGfxBuffer& srcBuffer,
+                   VkDeviceSize           srcOffset,
                    VulkanGfxBuffer&       dstBuffer,
+                   VkDeviceSize           dstOffset,
                    VkDeviceSize           size);
     void mapBuffer(VulkanGfxBuffer* buffer);
     void unmapBuffer(VulkanGfxBuffer* buffer);

@@ -1,7 +1,5 @@
 #pragma once
 
-#include "dusk.h"
-
 #include "plane.h"
 
 namespace dusk

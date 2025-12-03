@@ -17,7 +17,6 @@ struct VertexAttributeDescription
 struct Vertex
 {
     glm::vec3 position  = {};
-    glm::vec3 color     = {};
     glm::vec3 normal    = {};
     glm::vec3 tangent   = {};
     glm::vec3 bitangent = {};
@@ -30,7 +29,7 @@ struct Vertex
      */
     bool operator==(const Vertex& other) const
     {
-        return position == other.position && color == other.color && normal == other.normal && uv == other.uv;
+        return position == other.position && normal == other.normal && uv == other.uv;
     }
 
     /**
@@ -43,9 +42,6 @@ struct Vertex
 
         // position
         attributesInfo.push_back({ 0, offsetof(Vertex, position), VertexAttributeFormat ::X32Y32Z32_FLOAT });
-
-        // color
-        attributesInfo.push_back({ 1, offsetof(Vertex, color), VertexAttributeFormat ::X32Y32Z32_FLOAT });
 
         // normal
         attributesInfo.push_back({ 2, offsetof(Vertex, normal), VertexAttributeFormat ::X32Y32Z32_FLOAT });

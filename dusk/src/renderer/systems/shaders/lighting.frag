@@ -158,7 +158,7 @@ vec3 computeDirectionalLight(
 	vec3 projCoords = fragLightSpacePos.xyz / fragLightSpacePos.w;
 	projCoords.xy = projCoords.xy * 0.5 + 0.5; // only xy because z is in [0,1] after perspective divide
 	float currentDepth = projCoords.z;
-	float bias =  max(0.002 * (1.0 - NdotL), 0.00005);
+	float bias =  max(0.0001 * (1.0 - NdotL), 0.00005);
 
 	float shadow = 0.0;
 	vec2 texelSize = 1.0 / textureSize(textures[dirShadowMapIdx], 0);

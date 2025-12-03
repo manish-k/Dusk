@@ -44,16 +44,16 @@ struct Vertex
         attributesInfo.push_back({ 0, offsetof(Vertex, position), VertexAttributeFormat ::X32Y32Z32_FLOAT });
 
         // normal
-        attributesInfo.push_back({ 2, offsetof(Vertex, normal), VertexAttributeFormat ::X32Y32Z32_FLOAT });
+        attributesInfo.push_back({ 1, offsetof(Vertex, normal), VertexAttributeFormat ::X32Y32Z32_FLOAT });
 
         // tangent
-        attributesInfo.push_back({ 3, offsetof(Vertex, tangent), VertexAttributeFormat ::X32Y32Z32_FLOAT });
+        attributesInfo.push_back({ 2, offsetof(Vertex, tangent), VertexAttributeFormat ::X32Y32Z32_FLOAT });
 
         // bitangent
-        attributesInfo.push_back({ 4, offsetof(Vertex, bitangent), VertexAttributeFormat ::X32Y32Z32_FLOAT });
+        attributesInfo.push_back({ 3, offsetof(Vertex, bitangent), VertexAttributeFormat ::X32Y32Z32_FLOAT });
 
         // uv
-        attributesInfo.push_back({ 5, offsetof(Vertex, uv), VertexAttributeFormat ::X32Y32_FLOAT });
+        attributesInfo.push_back({ 4, offsetof(Vertex, uv), VertexAttributeFormat ::X32Y32_FLOAT });
 
         return attributesInfo;
     }

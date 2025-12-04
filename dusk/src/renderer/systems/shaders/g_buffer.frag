@@ -5,6 +5,7 @@ layout(location = 0) in vec3 fragWorldPos;
 layout(location = 1) in vec2 fragUV;
 layout(location = 2) in vec3 fragTangent;
 layout(location = 3) in vec3 fragNormal;
+layout(location = 4) in flat int fragInstanceId;
 
 layout (location = 0) out vec4 outColor;
 layout (location = 1) out vec4 outNormal; // TODO: explore octohedral representation for effecient packing
@@ -47,18 +48,24 @@ layout (set = 1, binding = 0) buffer Material
 
 } materials[];
 
+layout (set = 2, binding = 0) buffer MeshInstanceData 
+{
+	mat4 modelMatrix;
+	mat4 normalMatrix;
+	uint materialIdx;
+} meshInstanceData[];
+
 layout (set = 3, binding = 0) uniform sampler2D textures[];
 
 layout(push_constant) uniform DrawData 
 {
 	uint cameraIdx;
-	uint materialIdx;
 } push;
 
 void main()
 {
 	uint guboIdx = nonuniformEXT(push.cameraIdx);
-	uint materialIdx = nonuniformEXT(push.materialIdx);
+	uint materialIdx = nonuniformEXT(meshInstanceData[fragInstanceId].materialIdx);
 	int textureIdx = nonuniformEXT(materials[materialIdx].albedoTexId);
 	int normalTexIdx = nonuniformEXT(materials[materialIdx].normalTexId);
 	int metalRoughTexIdx = nonuniformEXT(materials[materialIdx].metallicRoughnessTexId);

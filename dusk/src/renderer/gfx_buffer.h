@@ -16,7 +16,8 @@ enum GfxBufferUsageFlags : uint32_t
     UniformBuffer  = 0x00000004,
     VertexBuffer   = 0x00000008,
     IndexBuffer    = 0x00000010,
-    StorageBuffer  = 0x00000020
+    StorageBuffer  = 0x00000020,
+    IndirectBuffer = 0x00000040
 };
 
 enum GfxBufferMemoryTypeFlags : uint32_t

@@ -11,8 +11,7 @@ layout(location = 0) out vec3 fragWorldPos;
 layout(location = 1) out vec2 fragUV;
 layout(location = 2) out vec3 fragTangent;
 layout(location = 3) out vec3 fragNormal;
-
-
+layout(location = 4) out int fragInstanceId;
 
 layout (set = 0, binding = 0) uniform GlobalUBO 
 {
@@ -30,27 +29,25 @@ layout (set = 0, binding = 0) uniform GlobalUBO
 	uvec4 spotLightIndices[32];
 } globalubo[];
 
-layout (set = 2, binding = 0) buffer ModelUBO 
+layout (set = 2, binding = 0) buffer MeshInstanceData 
 {
 	mat4 modelMatrix;
 	mat4 normalMatrix;
-} modelubo[];
+	uint matrialId;
+} meshInstanceData[];
 
 layout(push_constant) uniform DrawData 
 {
 	uint cameraIdx;
-	uint materialIdx;
-	uint modelIdx;
 } push;
 
 void main() {	
 	uint globalIdx = nonuniformEXT(push.cameraIdx);
-	uint modelIdx = nonuniformEXT(push.modelIdx);
 
-	mat4 model = modelubo[modelIdx].modelMatrix;
+	mat4 model = meshInstanceData[gl_InstanceIndex].modelMatrix;
 	mat4 view = globalubo[globalIdx].view;
 	mat4 proj = globalubo[globalIdx].projection;
-	mat3 normalMat = mat3(modelubo[modelIdx].normalMatrix);
+	mat3 normalMat = mat3(meshInstanceData[gl_InstanceIndex].normalMatrix);
 
 	vec4 worldPos = model * vec4(position, 1.0);
 	
@@ -60,5 +57,7 @@ void main() {
 	fragUV = uv;
 	fragWorldPos = worldPos.xyz;
 
-	gl_Position = proj * (view * worldPos); 
+	fragInstanceId = gl_InstanceIndex;
+
+	gl_Position = proj * (view * worldPos);
 }

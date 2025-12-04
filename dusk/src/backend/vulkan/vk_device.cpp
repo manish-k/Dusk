@@ -356,6 +356,9 @@ Error VkGfxDevice::createDevice()
         }
         pDeviceInfo->deviceFeatures2.features.samplerAnisotropy = VK_TRUE;
 
+        // Enabling multiDrawIndirect
+        pDeviceInfo->deviceFeatures2.features.multiDrawIndirect = VK_TRUE;
+
         // check for gpu profiling extension/features
 #ifdef DUSK_ENABLE_PROFILING
         if (!availableExtensionsSet.has(hash(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME)))

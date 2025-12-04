@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 #include <array>
+#include <format>
 #include <ExcaliburHash.h>
 
 namespace dusk

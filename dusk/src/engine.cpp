@@ -19,11 +19,9 @@
 
 #include "renderer/material.h"
 #include "renderer/texture.h"
-#include "renderer/sub_mesh.h"
 #include "renderer/texture_db.h"
 #include "renderer/environment.h"
 #include "renderer/systems/basic_render_system.h"
-#include "renderer/systems/grid_render_system.h"
 #include "renderer/systems/lights_system.h"
 #include "renderer/render_graph.h"
 #include "renderer/passes/render_passes.h"
@@ -148,7 +146,6 @@ void Engine::stop() { m_running = false; }
 void Engine::shutdown()
 {
     m_basicRenderSystem = nullptr;
-    m_gridRenderSystem  = nullptr;
 
     m_lightsSystem      = nullptr;
 
@@ -635,6 +632,17 @@ void Engine::prepareRenderGraphResources()
     auto     extent         = m_renderer->getSwapChain().getCurrentExtent();
     uint32_t maxFramesCount = m_renderer->getMaxFramesCount();
 
+    m_rgResources.frameIndirectDrawCommands.resize(maxFramesCount);
+    for (uint32_t frameIdx = 0u; frameIdx < maxFramesCount; ++frameIdx)
+    {
+        GfxBuffer::createDeviceLocalBuffer(
+            GfxBufferUsageFlags::StorageBuffer | GfxBufferUsageFlags::IndirectBuffer | GfxBufferUsageFlags::TransferTarget,
+            sizeof(GfxIndirectDrawCommand),
+            maxModelCount,
+            std::format("indirect_draw_buffer_{}", std::to_string(frameIdx)),
+            &m_rgResources.frameIndirectDrawCommands[frameIdx]);
+    }
+
     // g-buffer resources
     // Allocate g-buffer render targets
     m_rgResources.gbuffRenderTextureIds.push_back(m_textureDB->createColorTexture(
@@ -667,13 +675,54 @@ void Engine::prepareRenderGraphResources()
         extent.height,
         VK_FORMAT_D32_SFLOAT_S8_UINT);
 
+    m_rgResources.meshInstanceDataDescriptorPool = VkGfxDescriptorPool::Builder(ctx)
+                                                       .addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, maxFramesCount * maxModelCount)
+                                                       .setDebugName("mesh_instance_desc_pool")
+                                                       .build(maxFramesCount, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
+
+    m_rgResources.meshInstanceDataDescriptorSetLayout = VkGfxDescriptorSetLayout::Builder(ctx)
+                                                            .addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, maxModelCount, true)
+                                                            .setDebugName("mesh_instance_desc_set_layout")
+                                                            .build();
+
+    m_rgResources.meshInstanceDataBuffers.resize(maxFramesCount);
+    m_rgResources.meshInstanceDataDescriptorSet.resize(maxFramesCount);
+
+    for (uint32_t frameIdx = 0u; frameIdx < maxFramesCount; ++frameIdx)
+    {
+        GfxBuffer::createHostWriteBuffer(
+            GfxBufferUsageFlags::StorageBuffer,
+            sizeof(GfxMeshInstanceData),
+            maxModelCount,
+            std::format("mesh_instance_buffer_{}", std::to_string(frameIdx)),
+            &m_rgResources.meshInstanceDataBuffers[frameIdx]);
+
+        m_rgResources.meshInstanceDataDescriptorSet[frameIdx] = m_rgResources.meshInstanceDataDescriptorPool->allocateDescriptorSet(
+            *m_rgResources.meshInstanceDataDescriptorSetLayout, "mesh_instance_desc_set");
+
+        DynamicArray<VkDescriptorBufferInfo> meshBufferInfo;
+        meshBufferInfo.reserve(maxModelCount);
+        for (uint32_t meshIdx = 0u; meshIdx < maxModelCount; ++meshIdx)
+        {
+            meshBufferInfo.push_back(m_rgResources.meshInstanceDataBuffers[frameIdx].getDescriptorInfoAtIndex(meshIdx));
+        }
+
+        m_rgResources.meshInstanceDataDescriptorSet[frameIdx]->configureBuffer(
+            0,
+            0,
+            meshBufferInfo.size(),
+            meshBufferInfo.data());
+
+        m_rgResources.meshInstanceDataDescriptorSet[frameIdx]->applyConfiguration();
+    }
+
     m_rgResources.gbuffModelDescriptorPool = VkGfxDescriptorPool::Builder(ctx)
-                                                 .addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, maxFramesCount * maxRenderableMeshes)
+                                                 .addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, maxFramesCount * maxModelCount)
                                                  .setDebugName("model_desc_pool")
                                                  .build(maxFramesCount, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
 
     m_rgResources.gbuffModelDescriptorSetLayout = VkGfxDescriptorSetLayout::Builder(ctx)
-                                                      .addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, maxRenderableMeshes, true)
+                                                      .addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, maxModelCount, true)
                                                       .setDebugName("model_desc_set_layout")
                                                       .build();
 
@@ -686,7 +735,7 @@ void Engine::prepareRenderGraphResources()
         GfxBuffer::createHostWriteBuffer(
             GfxBufferUsageFlags::StorageBuffer,
             sizeof(ModelData),
-            maxRenderableMeshes,
+            maxModelCount,
             "model_buffer_" + std::to_string(frameIdx),
             &m_rgResources.gbuffModelsBuffer[frameIdx]);
 
@@ -694,8 +743,8 @@ void Engine::prepareRenderGraphResources()
             *m_rgResources.gbuffModelDescriptorSetLayout, "model_desc_set");
 
         DynamicArray<VkDescriptorBufferInfo> meshBufferInfo;
-        meshBufferInfo.reserve(maxRenderableMeshes);
-        for (uint32_t meshIdx = 0u; meshIdx < maxRenderableMeshes; ++meshIdx)
+        meshBufferInfo.reserve(maxModelCount);
+        for (uint32_t meshIdx = 0u; meshIdx < maxModelCount; ++meshIdx)
         {
             meshBufferInfo.push_back(m_rgResources.gbuffModelsBuffer[frameIdx].getDescriptorInfoAtIndex(meshIdx));
         }
@@ -714,7 +763,7 @@ void Engine::prepareRenderGraphResources()
                                             .addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(DrawData))
                                             .addDescriptorSetLayout(m_globalDescriptorSetLayout->layout)
                                             .addDescriptorSetLayout(m_materialDescriptorSetLayout->layout)
-                                            .addDescriptorSetLayout(m_rgResources.gbuffModelDescriptorSetLayout->layout)
+                                            .addDescriptorSetLayout(m_rgResources.meshInstanceDataDescriptorSetLayout->layout)
                                             .addDescriptorSetLayout(m_textureDB->getTexturesDescriptorSetLayout().layout)
                                             .build();
 
@@ -930,6 +979,16 @@ void Engine::prepareRenderGraphResources()
 
 void Engine::releaseRenderGraphResources()
 {
+    for (auto& buffer : m_rgResources.frameIndirectDrawCommands)
+        buffer.cleanup();
+
+    m_rgResources.meshInstanceDataDescriptorPool->resetPool();
+    m_rgResources.meshInstanceDataDescriptorSetLayout = nullptr;
+    m_rgResources.meshInstanceDataDescriptorPool      = nullptr;
+
+    for (auto& buffer : m_rgResources.meshInstanceDataBuffers)
+        buffer.cleanup();
+
     m_rgResources.gbuffPipeline       = nullptr;
     m_rgResources.gbuffPipelineLayout = nullptr;
 

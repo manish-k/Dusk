@@ -37,33 +37,41 @@ struct VkGfxDescriptorSetLayout;
 struct VkGfxDescriptorSet;
 
 constexpr uint32_t maxMaterialCount = 1000;
+constexpr uint32_t maxModelCount    = 10000;
 
 struct RenderGraphResources
 {
-    DynamicArray<uint32_t>                   gbuffRenderTextureIds         = {};
-    uint32_t                                 gbuffDepthTextureId           = {};
-    Unique<VkGfxRenderPipeline>              gbuffPipeline                 = nullptr;
-    Unique<VkGfxPipelineLayout>              gbuffPipelineLayout           = nullptr;
-    Unique<VkGfxDescriptorPool>              gbuffModelDescriptorPool      = nullptr;
-    Unique<VkGfxDescriptorSetLayout>         gbuffModelDescriptorSetLayout = nullptr;
-    DynamicArray<Unique<VkGfxDescriptorSet>> gbuffModelDescriptorSet       = {};
-    DynamicArray<GfxBuffer>                  gbuffModelsBuffer             = {};
+    DynamicArray<GfxBuffer>                  frameIndirectDrawCommands           = {};
 
-    Unique<VkGfxRenderPipeline>              presentPipeline               = nullptr;
-    Unique<VkGfxPipelineLayout>              presentPipelineLayout         = nullptr;
+    DynamicArray<uint32_t>                   gbuffRenderTextureIds               = {};
+    uint32_t                                 gbuffDepthTextureId                 = {};
+    Unique<VkGfxRenderPipeline>              gbuffPipeline                       = nullptr;
+    Unique<VkGfxPipelineLayout>              gbuffPipelineLayout                 = nullptr;
+    Unique<VkGfxDescriptorPool>              gbuffModelDescriptorPool            = nullptr;
+    Unique<VkGfxDescriptorSetLayout>         gbuffModelDescriptorSetLayout       = nullptr;
+    DynamicArray<Unique<VkGfxDescriptorSet>> gbuffModelDescriptorSet             = {};
+    DynamicArray<GfxBuffer>                  gbuffModelsBuffer                   = {};
 
-    uint32_t                                 lightingRenderTextureId       = {};
-    Unique<VkGfxRenderPipeline>              lightingPipeline              = nullptr;
-    Unique<VkGfxPipelineLayout>              lightingPipelineLayout        = nullptr;
+    Unique<VkGfxDescriptorPool>              meshInstanceDataDescriptorPool      = nullptr;
+    Unique<VkGfxDescriptorSetLayout>         meshInstanceDataDescriptorSetLayout = nullptr;
+    DynamicArray<Unique<VkGfxDescriptorSet>> meshInstanceDataDescriptorSet       = {};
+    DynamicArray<GfxBuffer>                  meshInstanceDataBuffers             = {};
 
-    uint32_t                                 brdfLUTextureId               = {};
-    Unique<VkGfxComputePipeline>             brdfLUTPipeline               = nullptr;
-    Unique<VkGfxPipelineLayout>              brdfLUTPipelineLayout         = nullptr;
-    bool                                     brdfLUTGenerated              = false;
+    Unique<VkGfxRenderPipeline>              presentPipeline                     = nullptr;
+    Unique<VkGfxPipelineLayout>              presentPipelineLayout               = nullptr;
 
-    Unique<VkGfxRenderPipeline>              shadow2DMapPipeline           = nullptr;
-    Unique<VkGfxPipelineLayout>              shadow2DMapPipelineLayout     = nullptr;
-    uint32_t                                 dirShadowMapsTextureId        = {};
+    uint32_t                                 lightingRenderTextureId             = {};
+    Unique<VkGfxRenderPipeline>              lightingPipeline                    = nullptr;
+    Unique<VkGfxPipelineLayout>              lightingPipelineLayout              = nullptr;
+
+    uint32_t                                 brdfLUTextureId                     = {};
+    Unique<VkGfxComputePipeline>             brdfLUTPipeline                     = nullptr;
+    Unique<VkGfxPipelineLayout>              brdfLUTPipelineLayout               = nullptr;
+    bool                                     brdfLUTGenerated                    = false;
+
+    Unique<VkGfxRenderPipeline>              shadow2DMapPipeline                 = nullptr;
+    Unique<VkGfxPipelineLayout>              shadow2DMapPipelineLayout           = nullptr;
+    uint32_t                                 dirShadowMapsTextureId              = {};
 };
 
 struct BRDFLUTPushConstant
@@ -129,31 +137,31 @@ public:
      * @brief Returns a non-const reference to the global vertex buffer.
      * @return A reference to the global vertex buffer.
      */
-    GfxBuffer&            getVertexBuffer() { return m_vertexBuffer; };
-    
+    GfxBuffer& getVertexBuffer() { return m_vertexBuffer; };
+
     /**
      * @brief Copies src vertex data buffer to the engine's vertex buffer.
-     * @param A reference to the source vertex buffer containing vertex data to be copied. 
-     * @param Size in bytes of the data to be copied from the source buffer. 
+     * @param A reference to the source vertex buffer containing vertex data to be copied.
+     * @param Size in bytes of the data to be copied from the source buffer.
      * @return Vertex buffer offset where the data has been copied.
      */
-    size_t                copyToVertexBuffer(const GfxBuffer& srcVertexBuffer, size_t size);
+    size_t copyToVertexBuffer(const GfxBuffer& srcVertexBuffer, size_t size);
 
     /**
      * @brief Returns a non-const reference to the global index buffer.
      * @return A reference to the global index buffer.
      */
-    GfxBuffer&            getIndexBuffer() { return m_indexBuffer; };
-    
+    GfxBuffer& getIndexBuffer() { return m_indexBuffer; };
+
     /**
      * @brief Copies src index data buffer to the engine's index buffer.
-     * @param A reference to the source index buffer containing index data to be copied. 
-     * @param Size in bytes of the data to be copied from the source buffer. 
+     * @param A reference to the source index buffer containing index data to be copied.
+     * @param Size in bytes of the data to be copied from the source buffer.
      * @return Index buffer offset where the data has been copied.
      */
-    size_t                copyToIndexBuffer(const GfxBuffer& srcIndexbuffer, size_t size);
+    size_t copyToIndexBuffer(const GfxBuffer& srcIndexbuffer, size_t size);
 
-    void                  executeBRDFLUTcomputePipeline();
+    void   executeBRDFLUTcomputePipeline();
 
 private:
     Config                           m_config;
@@ -166,7 +174,6 @@ private:
 
     Unique<Environment>              m_environment       = nullptr;
     Unique<BasicRenderSystem>        m_basicRenderSystem = nullptr;
-    Unique<GridRenderSystem>         m_gridRenderSystem  = nullptr;
     Unique<LightsSystem>             m_lightsSystem      = nullptr;
 
     Unique<TextureDB>                m_textureDB         = nullptr;

@@ -386,6 +386,7 @@ VkBufferUsageFlags vulkan::getBufferUsageFlagBits(uint32_t usage)
     if (usage & GfxBufferUsageFlags::VertexBuffer) flags |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     if (usage & GfxBufferUsageFlags::IndexBuffer) flags |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
     if (usage & GfxBufferUsageFlags::StorageBuffer) flags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    if (usage & GfxBufferUsageFlags::IndirectBuffer) flags |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
 
     return flags;
 }

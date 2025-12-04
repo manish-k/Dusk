@@ -2,7 +2,6 @@
 
 #include "engine.h"
 #include "backend/vulkan/vk_device.h"
-#include "backend/vulkan/vk_descriptors.h"
 
 namespace dusk
 {

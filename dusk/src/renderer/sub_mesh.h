@@ -22,8 +22,8 @@ public:
     GfxBuffer& getIndexBuffer() { return m_indexBuffer; };
     uint32_t   getIndexCount() const { return m_indexCount; };
 
-    int32_t    getGlobalVertexOffset() const { return m_globalVertexOffset; };
-    uint32_t   getGlobalIndexOffset() const { return static_cast<uint32_t>(m_globalIndexOffset); };
+    int32_t    getVertexOffset() const { return m_globalVertexOffset; };
+    uint32_t   getIndexBufferIndex() const { return static_cast<uint32_t>(m_globalIndexOffset); };
 
 public:
     static Shared<SubMesh> createCubeMesh();

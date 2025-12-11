@@ -16,11 +16,13 @@ struct GfxRenderingAttachment
     GfxStoreOperation storeOp    = GfxStoreOperation::Store;
 };
 
-struct GfxMeshInstanceData
+struct alignas(16) GfxMeshInstanceData
 {
     glm::mat4 modelMat   = { 1.f };
     glm::mat4 normalMat  = { 1.f };
     uint32_t  materialId = 0u;
+
+    uint32_t  padding[3] = { 0u, 0u, 0u };
 };
 
 struct GfxIndirectDrawCommand

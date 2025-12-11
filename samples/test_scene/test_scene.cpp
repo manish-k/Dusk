@@ -24,18 +24,18 @@ Unique<dusk::Application> dusk::createApplication(int argc, char** argv)
 bool TestScene::start()
 {
     // std::string scenePath = "assets/scenes/EnvironmentTest.gltf";
-    std::string scenePath = "assets/scenes/Scene.gltf";
+    std::string scenePath = "assets/scenes/2_cubes.gltf";
     //std::string scenePath
     //    = "assets/scenes/tea_cup/DiffuseTransmissionTeacup.gltf";
     m_testScene = Scene::createSceneFromGLTF(scenePath);
 
     // adding directional light
-    /*auto directionalLight = dusk::createUnique<GameObject>();
+    auto directionalLight = dusk::createUnique<GameObject>();
     directionalLight->setName("directional_light_0");
     auto& dLight     = directionalLight->addComponent<DirectionalLightComponent>();
     dLight.direction = glm::vec3(4.f, -2.f, -6.f);
     dLight.color     = glm::vec4(1.f, 1.f, 1.f, 0.2);
-    m_testScene->addGameObject(std::move(directionalLight), m_testScene->getRootId());*/
+    m_testScene->addGameObject(std::move(directionalLight), m_testScene->getRootId());
 
     // adding point light
     /*auto pointLight = dusk::createUnique<GameObject>();
@@ -53,7 +53,6 @@ bool TestScene::start()
 
 void TestScene::shutdown()
 {
-    m_tex.free();
     m_testScene = nullptr;
 }
 

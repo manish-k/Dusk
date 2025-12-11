@@ -143,7 +143,7 @@ public:
      * @brief Copies src vertex data buffer to the engine's vertex buffer.
      * @param A reference to the source vertex buffer containing vertex data to be copied.
      * @param Size in bytes of the data to be copied from the source buffer.
-     * @return Vertex buffer offset where the data has been copied.
+     * @return Vertex buffer offset where the data has been copied. This is not byte offset.
      */
     size_t copyToVertexBuffer(const GfxBuffer& srcVertexBuffer, size_t size);
 
@@ -157,11 +157,11 @@ public:
      * @brief Copies src index data buffer to the engine's index buffer.
      * @param A reference to the source index buffer containing index data to be copied.
      * @param Size in bytes of the data to be copied from the source buffer.
-     * @return Index buffer offset where the data has been copied.
+     * @return Base index within the index buffer where the data has been copied. This is not byte offset.
      */
     size_t copyToIndexBuffer(const GfxBuffer& srcIndexbuffer, size_t size);
 
-    void   executeBRDFLUTcomputePipeline();
+    void executeBRDFLUTcomputePipeline();
 
 private:
     Config                           m_config;
@@ -189,8 +189,9 @@ private:
     TimeStep                         m_deltaTime {};
 
     GfxBuffer                        m_vertexBuffer;
-    size_t                           m_availableVertexOffset = 0u;
     GfxBuffer                        m_indexBuffer;
+
+    size_t                           m_availableVertexOffset     = 0u;
     size_t                           m_availableIndexOffset      = 0u;
 
     Unique<VkGfxDescriptorPool>      m_globalDescriptorPool      = nullptr;

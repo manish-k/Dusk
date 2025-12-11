@@ -33,7 +33,7 @@ layout (set = 2, binding = 0) buffer MeshInstanceData
 {
 	mat4 modelMatrix;
 	mat4 normalMatrix;
-	uint matrialId;
+	uint materialId;
 } meshInstanceData[];
 
 layout(push_constant) uniform DrawData 

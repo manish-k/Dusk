@@ -1087,28 +1087,34 @@ void Engine::executeBRDFLUTcomputePipeline()
 
 size_t Engine::copyToVertexBuffer(const GfxBuffer& srcVertexBuffer, size_t size)
 {
+    size_t startOffset = m_availableVertexOffset;
+
     m_gfxDevice->copyBuffer(
         srcVertexBuffer.vkBuffer,
         0,
         m_vertexBuffer.vkBuffer,
-        m_availableVertexOffset,
+        m_availableVertexOffset * sizeof(Vertex),
         size);
 
-    m_availableVertexOffset += size;
+    m_availableVertexOffset += size / sizeof(Vertex);
 
-    return m_availableVertexOffset;
+    return startOffset;
 }
 
 size_t Engine::copyToIndexBuffer(const GfxBuffer& srcIndexBuffer, size_t size)
 {
+    size_t startOffset = m_availableIndexOffset;
+
     m_gfxDevice->copyBuffer(
         srcIndexBuffer.vkBuffer,
         0,
         m_indexBuffer.vkBuffer,
-        m_availableIndexOffset,
+        m_availableIndexOffset * sizeof(uint32_t),
         size);
-    m_availableIndexOffset += size;
-    return m_availableIndexOffset;
+
+    m_availableIndexOffset += size / sizeof(uint32_t);
+
+    return startOffset;
 }
 
 } // namespace dusk

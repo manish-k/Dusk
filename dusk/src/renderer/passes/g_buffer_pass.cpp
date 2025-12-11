@@ -140,9 +140,9 @@ void recordGBufferCmds(
                 GfxIndexedIndirectDrawCommand {
                     .indexCount    = mesh.getIndexCount(),
                     .instanceCount = 1,
-                    .firstIndex    = mesh.getGlobalIndexOffset(),
-                    .vertexOffset  = mesh.getGlobalVertexOffset(),
-                    .firstInstance = static_cast<uint32_t>(meshInstanceData.size() - 1),
+                    .firstIndex    = mesh.getIndexBufferIndex(),
+                    .vertexOffset  = mesh.getVertexOffset(),
+                    .firstInstance = instanceCounter,
                 });
         }
     }

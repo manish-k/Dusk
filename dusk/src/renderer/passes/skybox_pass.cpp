@@ -63,7 +63,13 @@ void recordSkyBoxCmds(
 
     vkCmdBindIndexBuffer(ctx.cmdBuffer, environment.getCubeMesh().getIndexBuffer().vkBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
 
-    vkCmdDrawIndexed(ctx.cmdBuffer, environment.getCubeMesh().getIndexCount(), 1, 0, 0, 0);
+    vkCmdDrawIndexed(
+        ctx.cmdBuffer, 
+        environment.getCubeMesh().getIndexCount(), 
+        1, 
+        environment.getCubeMesh().getIndexBufferIndex(),
+        environment.getCubeMesh().getVertexOffset(),
+        0);
 }
 
 } // namespace dusk

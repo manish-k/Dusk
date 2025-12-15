@@ -119,6 +119,7 @@ void recordGBufferCmds(
     indirectDrawCommands.reserve(maxModelCount);
     meshInstanceData.reserve(maxModelCount);
 
+    uint32_t instanceCounter = 0u;
     for (auto& entity : renderablesView)
     {
         auto& meshData = renderablesView.get<MeshComponent>(entity);
@@ -144,6 +145,8 @@ void recordGBufferCmds(
                     .vertexOffset  = mesh.getVertexOffset(),
                     .firstInstance = instanceCounter,
                 });
+
+            ++instanceCounter;
         }
     }
 

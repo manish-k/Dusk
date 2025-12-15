@@ -25,6 +25,7 @@ bool TestScene::start()
 {
     // std::string scenePath = "assets/scenes/EnvironmentTest.gltf";
     std::string scenePath = "assets/scenes/2_cubes.gltf";
+    //std::string scenePath = "D:/resources/scene/bistro_gltf/bistro.gltf"";
     //std::string scenePath
     //    = "assets/scenes/tea_cup/DiffuseTransmissionTeacup.gltf";
     m_testScene = Scene::createSceneFromGLTF(scenePath);

@@ -18,6 +18,8 @@ Error SubMesh::init(const DynamicArray<Vertex>& vertices, const DynamicArray<uin
         return err;
     }
 
+    m_aabb = computeAABB(vertices);
+
     return Error();
 }
 

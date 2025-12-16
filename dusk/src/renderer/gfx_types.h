@@ -20,6 +20,13 @@ struct alignas(16) GfxMeshInstanceData
 {
     glm::mat4 modelMat   = { 1.f };
     glm::mat4 normalMat  = { 1.f };
+
+    glm::vec3 aabbMin    = {};
+    uint32_t  padding0   = 0u;
+    
+    glm::vec3 aabbMax    = {};
+    uint32_t  padding1   = 0u;
+
     uint32_t  materialId = 0u;
 
     uint32_t  padding[3] = { 0u, 0u, 0u };

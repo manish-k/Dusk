@@ -124,14 +124,19 @@ void recordGBufferCmds(
 
         for (uint32_t index = 0u; index < meshData.meshes.size(); ++index)
         {
-            uint32_t       materialId = meshData.materials[index];
-            const SubMesh& mesh       = scene.getSubMesh(meshData.meshes[index]);
-            auto&          transform  = Registry::getRegistry().get<TransformComponent>(entity);
+            uint32_t       materialId      = meshData.materials[index];
+            const SubMesh& mesh            = scene.getSubMesh(meshData.meshes[index]);
+            auto&          transform       = Registry::getRegistry().get<TransformComponent>(entity);
+
+            glm::mat4      transformMatrix = transform.mat4();
+            AABB           transformedAABB = recomputeAABB(mesh.getAABB(), transformMatrix);
 
             meshInstanceData.push_back(
                 GfxMeshInstanceData {
-                    .modelMat   = transform.mat4(),
+                    .modelMat   = transformMatrix,
                     .normalMat  = transform.normalMat4(),
+                    .aabbMin    = transformedAABB.min,
+                    .aabbMax    = transformedAABB.max,
                     .materialId = materialId,
                 });
 

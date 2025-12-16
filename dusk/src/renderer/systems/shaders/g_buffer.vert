@@ -33,6 +33,10 @@ layout (set = 2, binding = 0) buffer MeshInstanceData
 {
 	mat4 modelMatrix;
 	mat4 normalMatrix;
+	vec3 aabbMin;
+	uint pad0;
+	vec3 aabbMax;
+	uint pad1;
 	uint materialId;
 } meshInstanceData[];
 

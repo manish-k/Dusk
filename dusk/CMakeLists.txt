@@ -66,6 +66,7 @@ set(DEBUG_FILES
 	# Header files
 	"${DEBUG_DIR}/renderdoc.h"
 	"${DEBUG_DIR}/profiler.h"
+	"${DEBUG_DIR}/tracy.h"
 	# Source files
 	"${DEBUG_DIR}/debug.cpp"
 )
@@ -121,6 +122,7 @@ set(RENDERER_FILES
 	"${RENDERER_GEOMETRY_DIR}/frustum.h"
 	"${RENDERER_GEOMETRY_DIR}/plane.h"
 	"${RENDERER_GEOMETRY_DIR}/sphere.h"
+	"${RENDERER_GEOMETRY_DIR}/aabb.h"
 	# Source files
 	"${RENDERER_DIR}/sub_mesh.cpp"
 	"${RENDERER_DIR}/texture.cpp"

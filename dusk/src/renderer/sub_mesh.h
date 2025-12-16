@@ -3,6 +3,7 @@
 #include "dusk.h"
 #include "vertex.h"
 #include "gfx_buffer.h"
+#include "geometry/aabb.h"
 
 namespace dusk
 {
@@ -25,6 +26,8 @@ public:
     int32_t    getVertexOffset() const { return m_globalVertexOffset; };
     uint32_t   getIndexBufferIndex() const { return static_cast<uint32_t>(m_globalIndexOffset); };
 
+    const AABB& getAABB() const { return m_aabb; };
+
 public:
     static Shared<SubMesh> createCubeMesh();
 
@@ -40,6 +43,8 @@ private:
     GfxBuffer m_indexBuffer {};
     uint32_t  m_indexCount        = 0u;
     size_t    m_globalIndexOffset = 0u;
+
+    AABB      m_aabb              = {};
 };
 
 } // namespace dusk

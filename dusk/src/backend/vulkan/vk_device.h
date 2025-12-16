@@ -6,16 +6,12 @@
 #include "vk_allocator.h"
 #include "renderer/gfx_buffer.h"
 #include "platform/glfw_vulkan_window.h"
+#include "debug/tracy.h"
 
 #include <volk.h>
 
 #include <unordered_map>
 #include <optional>
-
-#ifdef DUSK_ENABLE_PROFILING
-#    include <tracy/Tracy.hpp>
-#    include <tracy/TracyVulkan.hpp>
-#endif
 
 namespace dusk
 {

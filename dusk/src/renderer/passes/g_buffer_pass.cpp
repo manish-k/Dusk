@@ -42,8 +42,6 @@ void recordGBufferCmds(
     // cache friendly. https://gamedev.stackexchange.com/a/212879
     // TODO: Profile below code
 
-    DUSK_PROFILE_SECTION("draw_calls_recording_single_thread");
-
     resources.gbuffPipeline->bind(commandBuffer);
 
     // TODO:: this might be required only once, check case

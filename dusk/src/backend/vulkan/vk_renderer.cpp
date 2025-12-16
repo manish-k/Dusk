@@ -54,6 +54,8 @@ VkCommandBuffer VulkanRenderer::getCurrentCommandBuffer() const
 
 VkCommandBuffer VulkanRenderer::beginFrame()
 {
+    DUSK_PROFILE_FUNCTION;
+
     DASSERT(!m_isFrameStarted, "Can't call begin frame when already in progress");
 
     VulkanResult result = m_swapChain->acquireNextImage(&m_currentImageIndex);
@@ -95,6 +97,8 @@ VkCommandBuffer VulkanRenderer::beginFrame()
 
 Error VulkanRenderer::endFrame()
 {
+    DUSK_PROFILE_FUNCTION;
+
     DASSERT(m_isFrameStarted, "Can't call endFrame while frame is not in progress");
     VkCommandBuffer commandBuffer = getCurrentCommandBuffer();
 

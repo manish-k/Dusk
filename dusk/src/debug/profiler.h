@@ -1,11 +1,9 @@
 #pragma once
 
+#include "tracy.h"
+
 #ifdef DUSK_ENABLE_PROFILING
 #    include "backend/vulkan/vk_device.h"
-
-#    include <volk.h>
-#    include <tracy/Tracy.hpp>
-#    include <tracy/TracyVulkan.hpp>
 
 #    define DUSK_PROFILE_FUNCTION      ZoneScoped
 #    define DUSK_PROFILE_FRAME         FrameMark

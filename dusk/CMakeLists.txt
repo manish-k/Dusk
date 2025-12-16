@@ -230,9 +230,8 @@ target_include_directories(
 ##target_compile_definitions(${PROJECT_NAME} PUBLIC ENABLE_RENDERDOC)
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC 
-	#DUSK_ENABLE_PROFILING
-	#TRACY_ENABLE
-	_CRTDBG_MAP_ALLOC
+	DUSK_ENABLE_PROFILING
+	#_CRTDBG_MAP_ALLOC
 )
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC 

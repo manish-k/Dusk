@@ -9,9 +9,10 @@
 #include "debug/profiler.h"
 #include "debug/renderdoc.h"
 
-#define _CRTDBG_MAP_ALLOC
-#include <stdlib.h>
-#include <crtdbg.h>
+// TODO: CRT doesn't work with tracy properly yet. Enable it after disabling tracy profiling
+//#define _CRTDBG_MAP_ALLOC
+//#include <stdlib.h>
+//#include <crtdbg.h>
 
 using namespace dusk;
 
@@ -20,7 +21,7 @@ extern Unique<dusk::Application> dusk::createApplication(int argc, char** argv);
 // main func
 int main(int argc, char** argv)
 {
-    _CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_DEBUG); 
+    //_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_DEBUG); 
 
     //_CrtSetBreakAlloc(197);
 
@@ -62,5 +63,5 @@ int main(int argc, char** argv)
 
     dusk::Logger::shutdown();
 
-    _CrtDumpMemoryLeaks();
+    //_CrtDumpMemoryLeaks();
 }

@@ -452,8 +452,8 @@ void Engine::renderFrame(FrameData& frameData)
         .secondaryCmdBuffers   = m_renderer->getSecondayCmdBuffers(frameData.frameIndex)
     };
 
-    //renderGraph.setPassContext("skybox_pass", skyBoxCtx);
-    //renderGraph.addPass("skybox_pass", recordSkyBoxCmds);
+    // renderGraph.setPassContext("skybox_pass", skyBoxCtx);
+    // renderGraph.addPass("skybox_pass", recordSkyBoxCmds);
 
     // create presentation pass
     auto presentReadAttachments = {
@@ -617,6 +617,8 @@ void Engine::registerMaterials(DynamicArray<Material>& materials)
 
 void Engine::updateMaterialsBuffer(DynamicArray<Material>& materials)
 {
+    DUSK_PROFILE_FUNCTION;
+
     for (uint32_t index = 0u; index < materials.size(); ++index)
     {
         DASSERT(materials[index].id != -1);

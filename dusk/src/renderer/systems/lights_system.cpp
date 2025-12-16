@@ -6,6 +6,8 @@
 
 #include "renderer/frame_data.h"
 
+#include "debug/profiler.h"
+
 #include "backend/vulkan/vk_device.h"
 #include "backend/vulkan/vk_descriptors.h"
 
@@ -154,6 +156,8 @@ void LightsSystem::registerSpotLight(SpotLightComponent& light)
 
 void LightsSystem::updateLights(Scene& scene, GlobalUbo& ubo)
 {
+    DUSK_PROFILE_FUNCTION;
+
     auto ambientLightList = scene.GetGameObjectsWith<AmbientLightComponent>();
     for (auto& entity : ambientLightList)
     {

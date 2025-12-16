@@ -60,6 +60,7 @@ void Scene::onEvent(Event& ev)
 
 void Scene::onUpdate(TimeStep dt)
 {
+    DUSK_PROFILE_FUNCTION;
     m_cameraController->onUpdate(dt);
 }
 

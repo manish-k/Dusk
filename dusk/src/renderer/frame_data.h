@@ -17,6 +17,8 @@ struct alignas(16) GlobalUbo
     glm::mat4 inverseView            = { 1.f };
     glm::mat4 inverseProjection      = { 1.f };
 
+    glm::vec4 frustumPlanes[6]       = {};
+
     uint32_t  directionalLightsCount = 0u;
     uint32_t  pointLightsCount       = 0u;
     uint32_t  spotLightsCount        = 0u;

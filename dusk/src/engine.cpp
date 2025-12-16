@@ -25,6 +25,7 @@
 #include "renderer/systems/lights_system.h"
 #include "renderer/render_graph.h"
 #include "renderer/passes/render_passes.h"
+#include "renderer/geometry/frustum.h"
 
 namespace dusk
 {
@@ -200,11 +201,21 @@ void Engine::onUpdate(TimeStep dt)
             CameraComponent& camera = m_currentScene->getMainCamera();
             camera.setAspectRatio(m_renderer->getAspectRatio());
 
+            Frustum cameraFrustum = extractFrustumFromMatrix(
+                camera.projectionMatrix * camera.viewMatrix);
+
             GlobalUbo ubo {};
             ubo.view              = camera.viewMatrix;
             ubo.prjoection        = camera.projectionMatrix;
             ubo.inverseView       = glm::inverse(camera.viewMatrix);
             ubo.inverseProjection = camera.inverseProjectionMatrix;
+
+            ubo.frustumPlanes[0]  = cameraFrustum.left.toVec4();
+            ubo.frustumPlanes[1]  = cameraFrustum.right.toVec4();
+            ubo.frustumPlanes[2]  = cameraFrustum.bottom.toVec4();
+            ubo.frustumPlanes[3]  = cameraFrustum.top.toVec4();
+            ubo.frustumPlanes[4]  = cameraFrustum.near.toVec4();
+            ubo.frustumPlanes[5]  = cameraFrustum.far.toVec4();
 
             m_lightsSystem->updateLights(*m_currentScene, ubo);
 

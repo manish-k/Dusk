@@ -10,7 +10,9 @@ layout (set = 0, binding = 0) uniform GlobalUBO
 	mat4 projection;
 	mat4 view;
 	mat4 inverseView;
-		
+	
+	vec4 frustumPlanes[6];
+	
 	uint directionalLightsCount;
 	uint pointLightsCount;     
 	uint spotLightsCount;      

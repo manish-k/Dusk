@@ -397,11 +397,6 @@ VkGfxComputePipeline::VkGfxComputePipeline(VulkanContext& vkContext, VkGfxComput
         DUSK_ERROR("Unable to create compute shader");
         return;
     }
-    vkdebug::setObjectName(
-        m_device,
-        VK_OBJECT_TYPE_SHADER_MODULE,
-        (uint64_t)m_computeShaderModule,
-        "BRDF LUT Compute shader");
 
     // Shader stage info
     VkPipelineShaderStageCreateInfo computeShaderStageInfo { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };

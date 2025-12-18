@@ -41,7 +41,11 @@ constexpr uint32_t maxModelCount    = 10000;
 
 struct RenderGraphResources
 {
-    DynamicArray<GfxBuffer>                  frameIndirectDrawCommands           = {};
+    DynamicArray<GfxBuffer>                  frameIndirectDrawCommandsBuffers           = {};
+    DynamicArray<GfxBuffer>                  frameIndirectDrawCountBuffers       = {};
+    Unique<VkGfxDescriptorPool>              indirectDrawDescriptorPool          = nullptr;
+    Unique<VkGfxDescriptorSetLayout>         indirectDrawDescriptorSetLayout     = nullptr;
+    DynamicArray<Unique<VkGfxDescriptorSet>> indirectDrawDescriptorSet           = {};
 
     DynamicArray<uint32_t>                   gbuffRenderTextureIds               = {};
     uint32_t                                 gbuffDepthTextureId                 = {};
@@ -72,11 +76,20 @@ struct RenderGraphResources
     Unique<VkGfxRenderPipeline>              shadow2DMapPipeline                 = nullptr;
     Unique<VkGfxPipelineLayout>              shadow2DMapPipelineLayout           = nullptr;
     uint32_t                                 dirShadowMapsTextureId              = {};
+
+    Unique<VkGfxComputePipeline>             cullLodPipeline                     = nullptr;
+    Unique<VkGfxPipelineLayout>              cullLodPipelineLayout               = nullptr;
 };
 
 struct BRDFLUTPushConstant
 {
     uint32_t lutTextureIdx;
+};
+
+struct CullLodPushConstant
+{
+    uint32_t globalUboIdx;
+    uint32_t objectCount;
 };
 
 class Engine final
@@ -161,7 +174,7 @@ public:
      */
     size_t copyToIndexBuffer(const GfxBuffer& srcIndexbuffer, size_t size);
 
-    void executeBRDFLUTcomputePipeline();
+    void   executeBRDFLUTcomputePipeline();
 
 private:
     Config                           m_config;

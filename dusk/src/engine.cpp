@@ -528,7 +528,7 @@ bool Engine::setupGlobals()
     CHECK_AND_RETURN_FALSE(!m_globalDescriptorPool);
 
     m_globalDescriptorSetLayout = VkGfxDescriptorSetLayout::Builder(ctx)
-                                      .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS, maxFramesCount, true)
+                                      .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT, maxFramesCount, true)
                                       .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1000, true) // TODO: make count configurable
                                       .setDebugName("global_desc_set_layout")
                                       .build();
@@ -645,7 +645,22 @@ void Engine::prepareRenderGraphResources()
     auto     extent         = m_renderer->getSwapChain().getCurrentExtent();
     uint32_t maxFramesCount = m_renderer->getMaxFramesCount();
 
-    m_rgResources.frameIndirectDrawCommands.resize(maxFramesCount);
+    // Indirect draw resources
+    m_rgResources.indirectDrawDescriptorPool = VkGfxDescriptorPool::Builder(ctx)
+                                                   .addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2 * maxFramesCount)
+                                                   .setDebugName("indirect draw_desc_pool")
+                                                   .build(maxFramesCount, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
+
+    m_rgResources.indirectDrawDescriptorSetLayout = VkGfxDescriptorSetLayout::Builder(ctx)
+                                                        .addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, maxFramesCount, true)
+                                                        .addBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, maxFramesCount, true)
+                                                        .setDebugName("indirect draw_desc_set_layout")
+                                                        .build();
+
+    m_rgResources.frameIndirectDrawCommandsBuffers.resize(maxFramesCount);
+    m_rgResources.frameIndirectDrawCountBuffers.resize(maxFramesCount);
+    m_rgResources.indirectDrawDescriptorSet.resize(maxFramesCount);
+
     for (uint32_t frameIdx = 0u; frameIdx < maxFramesCount; ++frameIdx)
     {
         GfxBuffer::createDeviceLocalBuffer(
@@ -653,7 +668,37 @@ void Engine::prepareRenderGraphResources()
             sizeof(GfxIndirectDrawCommand),
             maxModelCount,
             std::format("indirect_draw_buffer_{}", std::to_string(frameIdx)),
-            &m_rgResources.frameIndirectDrawCommands[frameIdx]);
+            &m_rgResources.frameIndirectDrawCommandsBuffers[frameIdx]);
+
+        GfxBuffer::createDeviceLocalBuffer(
+            GfxBufferUsageFlags::StorageBuffer,
+            sizeof(GfxIndexedIndirectDrawCount),
+            maxModelCount,
+            std::format("indirect_draw_count_buffer_{}", std::to_string(frameIdx)),
+            &m_rgResources.frameIndirectDrawCountBuffers[frameIdx]);
+
+        m_rgResources.indirectDrawDescriptorSet[frameIdx] = m_rgResources.indirectDrawDescriptorPool->allocateDescriptorSet(
+            *m_rgResources.indirectDrawDescriptorSetLayout, "indirect_draw_desc_set");
+
+        DynamicArray<VkDescriptorBufferInfo> drawCmdBufferInfo;
+        drawCmdBufferInfo.push_back(m_rgResources.frameIndirectDrawCommandsBuffers[frameIdx].getDescriptorInfoAtIndex(0));
+
+        DynamicArray<VkDescriptorBufferInfo> drawCountBufferInfo;
+        drawCountBufferInfo.push_back(m_rgResources.frameIndirectDrawCountBuffers[frameIdx].getDescriptorInfoAtIndex(0));
+
+        m_rgResources.indirectDrawDescriptorSet[frameIdx]->configureBuffer(
+            0,
+            0,
+            drawCmdBufferInfo.size(),
+            drawCmdBufferInfo.data());
+
+        m_rgResources.indirectDrawDescriptorSet[frameIdx]->configureBuffer(
+            1,
+            0,
+            drawCountBufferInfo.size(),
+            drawCountBufferInfo.data());
+
+        m_rgResources.indirectDrawDescriptorSet[frameIdx]->applyConfiguration();
     }
 
     // g-buffer resources
@@ -694,7 +739,7 @@ void Engine::prepareRenderGraphResources()
                                                        .build(maxFramesCount, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
 
     m_rgResources.meshInstanceDataDescriptorSetLayout = VkGfxDescriptorSetLayout::Builder(ctx)
-                                                            .addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, maxModelCount, true)
+                                                            .addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT, maxModelCount, true)
                                                             .setDebugName("mesh_instance_desc_set_layout")
                                                             .build();
 
@@ -988,12 +1033,50 @@ void Engine::prepareRenderGraphResources()
                                             .setViewMask(0)
                                             .setDebugName("shadow_2d_map_pipeline")
                                             .build();
+
+    // cull & lod compute pipeline
+    m_rgResources.cullLodPipelineLayout = VkGfxPipelineLayout::Builder(ctx)
+                                              .addPushConstantRange(VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(CullLodPushConstant))
+                                              .addDescriptorSetLayout(m_globalDescriptorSetLayout->layout)
+                                              .addDescriptorSetLayout(m_rgResources.meshInstanceDataDescriptorSetLayout->layout)
+                                              .addDescriptorSetLayout(m_rgResources.indirectDrawDescriptorSetLayout->layout)
+                                              .build();
+
+#ifdef VK_RENDERER_DEBUG
+    vkdebug::setObjectName(
+        ctx.device,
+        VK_OBJECT_TYPE_PIPELINE_LAYOUT,
+        (uint64_t)m_rgResources.cullLodPipelineLayout->get(),
+        "cull_lod_pipeline_layout");
+#endif // VK_RENDERER_DEBUG
+
+    auto cullLodShader            = FileSystem::readFileBinary(shaderPath / "cull_lod.comp.spv");
+
+    m_rgResources.cullLodPipeline = VkGfxComputePipeline::Builder(ctx)
+                                        .setComputeShaderCode(cullLodShader)
+                                        .setPipelineLayout(*m_rgResources.cullLodPipelineLayout)
+                                        .setDebugName("cull_lod_pipeline")
+                                        .build();
+#ifdef VK_RENDERER_DEBUG
+    vkdebug::setObjectName(
+        ctx.device,
+        VK_OBJECT_TYPE_PIPELINE,
+        (uint64_t)m_rgResources.cullLodPipeline->get(),
+        "cull_lod_pipeline");
+#endif // VK_RENDERER_DEBUG
 }
 
 void Engine::releaseRenderGraphResources()
 {
-    for (auto& buffer : m_rgResources.frameIndirectDrawCommands)
+    for (auto& buffer : m_rgResources.frameIndirectDrawCommandsBuffers)
         buffer.cleanup();
+
+    for (auto& buffer : m_rgResources.frameIndirectDrawCountBuffers)
+        buffer.cleanup();
+
+    m_rgResources.indirectDrawDescriptorPool->resetPool();
+    m_rgResources.indirectDrawDescriptorSetLayout = nullptr;
+    m_rgResources.indirectDrawDescriptorPool      = nullptr;
 
     m_rgResources.meshInstanceDataDescriptorPool->resetPool();
     m_rgResources.meshInstanceDataDescriptorSetLayout = nullptr;
@@ -1023,6 +1106,9 @@ void Engine::releaseRenderGraphResources()
 
     m_rgResources.shadow2DMapPipeline       = nullptr;
     m_rgResources.shadow2DMapPipelineLayout = nullptr;
+
+    m_rgResources.cullLodPipeline           = nullptr;
+    m_rgResources.cullLodPipelineLayout     = nullptr;
 }
 
 void Engine::executeBRDFLUTcomputePipeline()

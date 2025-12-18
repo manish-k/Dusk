@@ -4,7 +4,7 @@
 #extension GL_ARB_shading_language_include : enable
 #extension GL_EXT_nonuniform_qualifier : enable
 
-layout (binding = 0, std140) uniform GlobalUBO 
+layout (set = 0, binding = 0, std140) uniform GlobalUBO 
 {
 	mat4 projection;
 	mat4 view;
@@ -22,7 +22,7 @@ layout (binding = 0, std140) uniform GlobalUBO
 	uvec4 spotLightIndices[32];
 } globalubo[];
 
-layout (binding = 1, std140) readonly buffer MeshInstanceData 
+layout (set = 1, binding = 0, std140) readonly buffer MeshInstanceData 
 {
 	mat4 modelMatrix;
 	mat4 normalMatrix;
@@ -42,12 +42,12 @@ struct IndexedIndirectCommand
 	uint firstInstance;
 };
 
-layout (binding = 2, std430) writeonly buffer IndirectDraws
+layout (set = 2, binding = 0, std430) writeonly buffer IndirectDraws
 {
 	IndexedIndirectCommand indirectDraws[];
 };
 
-layout(binding = 4, std430) buffer CountOut {
+layout(set = 2, binding = 1, std430) buffer CountOut {
     uint drawCount;
 } countBuf;
 

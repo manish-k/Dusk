@@ -23,7 +23,7 @@ struct alignas(16) GfxMeshInstanceData
 
     glm::vec3 aabbMin    = {};
     uint32_t  padding0   = 0u;
-    
+
     glm::vec3 aabbMax    = {};
     uint32_t  padding1   = 0u;
 
@@ -47,5 +47,10 @@ struct GfxIndexedIndirectDrawCommand
     uint32_t firstIndex    = 0u;
     int32_t  vertexOffset  = 0u;
     uint32_t firstInstance = 0u;
+};
+
+struct GfxIndexedIndirectDrawCount
+{
+    uint32_t count = 0u;
 };
 } // namespace dusk

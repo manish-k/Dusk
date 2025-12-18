@@ -153,7 +153,7 @@ void recordGBufferCmds(
         }
     }
 
-    auto& currentIndirectBuffer     = resources.frameIndirectDrawCommands[frameData.frameIndex];
+    auto& currentIndirectBuffer     = resources.frameIndirectDrawCommandsBuffers[frameData.frameIndex];
     auto& currentMeshInstanceBuffer = resources.meshInstanceDataBuffers[frameData.frameIndex];
 
     currentMeshInstanceBuffer.writeAndFlushAtIndex(0, meshInstanceData.data(), sizeof(GfxMeshInstanceData) * meshInstanceData.size());

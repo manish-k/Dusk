@@ -22,7 +22,7 @@ layout (set = 0, binding = 0, std140) uniform GlobalUBO
 	uvec4 spotLightIndices[32];
 } globalubo[];
 
-layout (set = 1, binding = 0, std140) readonly buffer MeshInstanceData 
+layout (set = 1, binding = 0, std430) readonly buffer MeshInstanceData 
 {
 	mat4 modelMatrix;
 	mat4 normalMatrix;
@@ -45,11 +45,11 @@ struct IndexedIndirectCommand
 layout (set = 2, binding = 0, std430) writeonly buffer IndirectDraws
 {
 	IndexedIndirectCommand indirectDraws[];
-};
+} drawBuffer;
 
-layout(set = 2, binding = 1, std430) buffer CountOut {
+layout(set = 2, binding = 1, std430) writeonly buffer CountOut {
     uint drawCount;
-} countBuf;
+} countBuffer;
 
 layout(push_constant) uniform PushConstant 
 {
@@ -61,15 +61,14 @@ layout (local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
 
 bool isAABBinFrustum(uint meshInstanceIdx)
 {
-	uint guboIdx = nonuniformEXT(push.globalUBOIdx);
-
+	// this are already in view space
 	vec3 aabbMin = meshInstanceData[meshInstanceIdx].aabbMin;
 	vec3 aabbMax = meshInstanceData[meshInstanceIdx].aabbMax;
 
 	// Test AABB against frustum planes
 	for (int i = 0; i < 6; ++i)
 	{
-		vec4 plane = globalubo[guboIdx].frustumPlanes[i];
+		vec4 plane = globalubo[push.globalUBOIdx].frustumPlanes[i];
 		
 		// Compute the positive vertex
 		// For a given plane, pick the AABB corner that is farthest in the direction of the plane normal
@@ -100,8 +99,9 @@ void main()
 
 	if (isAABBinFrustum(idx))
 	{
-		indirectDraws[idx].instanceCount = 1;
+		drawBuffer.indirectDraws[idx].instanceCount = 1;
 		
-		atomicAdd(countBuf.drawCount, 1);
+		// TODO: first make indirect buffer compact
+		//atomicAdd(countBuffer.drawCount, 1);
 	}
 }

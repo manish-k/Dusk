@@ -3,7 +3,7 @@
 namespace dusk
 {
 void RenderGraph::addPass(
-    const std::string&     passName,
+    const std::string&           passName,
     const RecordCmdBuffFunction& recordFn)
 {
     DASSERT(!m_addedPasses.has(passName));
@@ -26,11 +26,23 @@ void RenderGraph::execute(FrameData& frameData)
         renderCtx.cmdBuffer               = frameData.commandBuffer;
         renderCtx.extent                  = { frameData.width, frameData.height };
 
-        vkdebug::cmdBeginLabel(frameData.commandBuffer, pass.name.c_str(), glm::vec4(0.7f, 0.7f, 0.f, 0.f));
-        renderCtx.begin();
-        pass.recordFn(frameData, renderCtx);
-        renderCtx.end();
-        vkdebug::cmdEndLabel(frameData.commandBuffer);
+        if (renderCtx.isComputePass)
+        {
+            vkdebug::cmdBeginLabel(frameData.commandBuffer, pass.name.c_str(), glm::vec4(0.7f, 0.7f, 0.f, 0.f));
+            renderCtx.beginCompute();
+            pass.recordFn(frameData, renderCtx);
+            vkdebug::cmdEndLabel(frameData.commandBuffer);
+            renderCtx.endCompute();
+            continue;
+        }
+        else
+        {
+            vkdebug::cmdBeginLabel(frameData.commandBuffer, pass.name.c_str(), glm::vec4(0.7f, 0.7f, 0.f, 0.f));
+            renderCtx.begin();
+            pass.recordFn(frameData, renderCtx);
+            renderCtx.end();
+            vkdebug::cmdEndLabel(frameData.commandBuffer);
+        }
     }
 }
 } // namespace dusk

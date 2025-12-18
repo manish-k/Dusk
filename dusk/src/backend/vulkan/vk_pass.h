@@ -35,6 +35,8 @@ struct VkGfxRenderPassContext
     uint32_t                                layerCount     = 1u; // only for multiview
     DynamicArray<VkCommandBuffer>           secondaryCmdBuffers;
 
+    bool                                    isComputePass = false;
+
     /**
      * @brief begin rendering of the pass
      */
@@ -165,6 +167,15 @@ struct VkGfxRenderPassContext
         }
 
         vkCmdEndRendering(cmdBuffer);
+    }
+
+    // TODO: compute passes can be better integrated
+    void beginCompute()
+    {
+    }
+
+    void endCompute()
+    {
     }
 };
 } // namespace dusk

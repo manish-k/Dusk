@@ -31,16 +31,9 @@ void recordGBufferCmds(
 
     if (!frameData.scene) return;
 
-    Scene&          scene           = *frameData.scene;
-    VkCommandBuffer commandBuffer   = frameData.commandBuffer;
-
-    auto&           resources       = Engine::get().getRenderGraphResources();
-
-    auto            renderablesView = scene.GetGameObjectsWith<MeshComponent>();
-
-    // possiblity of cache unfriendliness here. Only first component is
-    // cache friendly. https://gamedev.stackexchange.com/a/212879
-    // TODO: Profile below code
+    Scene&          scene         = *frameData.scene;
+    VkCommandBuffer commandBuffer = frameData.commandBuffer;
+    auto&           resources     = Engine::get().getRenderGraphResources();
 
     resources.gbuffPipeline->bind(commandBuffer);
 
@@ -111,76 +104,19 @@ void recordGBufferCmds(
         sizeof(DrawData),
         &push);
 
-    DynamicArray<GfxIndexedIndirectDrawCommand> indirectDrawCommands;
-    DynamicArray<GfxMeshInstanceData>           meshInstanceData;
-
-    indirectDrawCommands.reserve(maxModelCount);
-    meshInstanceData.reserve(maxModelCount);
-
-    uint32_t instanceCounter = 0u;
-    for (auto& entity : renderablesView)
-    {
-        auto& meshData = renderablesView.get<MeshComponent>(entity);
-
-        for (uint32_t index = 0u; index < meshData.meshes.size(); ++index)
-        {
-            uint32_t       materialId      = meshData.materials[index];
-            const SubMesh& mesh            = scene.getSubMesh(meshData.meshes[index]);
-            auto&          transform       = Registry::getRegistry().get<TransformComponent>(entity);
-
-            glm::mat4      transformMatrix = transform.mat4();
-            AABB           transformedAABB = recomputeAABB(mesh.getAABB(), transformMatrix);
-
-            meshInstanceData.push_back(
-                GfxMeshInstanceData {
-                    .modelMat   = transformMatrix,
-                    .normalMat  = transform.normalMat4(),
-                    .aabbMin    = transformedAABB.min,
-                    .aabbMax    = transformedAABB.max,
-                    .materialId = materialId,
-                });
-
-            indirectDrawCommands.push_back(
-                GfxIndexedIndirectDrawCommand {
-                    .indexCount    = mesh.getIndexCount(),
-                    .instanceCount = 1,
-                    .firstIndex    = mesh.getIndexBufferIndex(),
-                    .vertexOffset  = mesh.getVertexOffset(),
-                    .firstInstance = instanceCounter,
-                });
-
-            ++instanceCounter;
-        }
-    }
-
-    auto& currentIndirectBuffer     = resources.frameIndirectDrawCommandsBuffers[frameData.frameIndex];
-    auto& currentMeshInstanceBuffer = resources.meshInstanceDataBuffers[frameData.frameIndex];
-
-    currentMeshInstanceBuffer.writeAndFlushAtIndex(0, meshInstanceData.data(), sizeof(GfxMeshInstanceData) * meshInstanceData.size());
-
-    GfxBuffer indirectStagingBuffer;
-    GfxBuffer::createHostWriteBuffer(
-        GfxBufferUsageFlags::TransferSource,
-        sizeof(GfxIndexedIndirectDrawCommand),
-        indirectDrawCommands.size(),
-        "staging_index_buffer",
-        &indirectStagingBuffer);
-
-    indirectStagingBuffer.writeAndFlushAtIndex(0, indirectDrawCommands.data(), sizeof(GfxIndexedIndirectDrawCommand) * indirectDrawCommands.size());
-
-    currentIndirectBuffer.copyFrom(indirectStagingBuffer, sizeof(GfxIndexedIndirectDrawCommand) * indirectDrawCommands.size());
-
-    indirectStagingBuffer.cleanup();
+    auto&    currentIndirectBuffer          = resources.frameIndirectDrawCommandsBuffers[frameData.frameIndex];
+    auto&    currentIndirectDrawCountBuffer = resources.frameIndirectDrawCountBuffers[frameData.frameIndex];
 
     {
         DUSK_PROFILE_GPU_ZONE("gbuffer_indirect_draw", commandBuffer);
-        // vkCmdDrawIndexed(commandBuffer, mesh.getIndexCount(), 1, 0, 0, 0);
 
-        vkCmdDrawIndexedIndirect(
+        vkCmdDrawIndexedIndirectCount(
             commandBuffer,
             currentIndirectBuffer.vkBuffer.buffer,
             0,
-            static_cast<uint32_t>(indirectDrawCommands.size()),
+            currentIndirectDrawCountBuffer.vkBuffer.buffer,
+            0,
+            maxRenderableMeshes,
             sizeof(GfxIndexedIndirectDrawCommand));
     }
 }

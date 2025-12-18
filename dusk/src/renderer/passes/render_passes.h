@@ -74,4 +74,18 @@ struct ShadowMapPushConstant
 void recordShadow2DMapsCmds(
     FrameData&              frameData,
     VkGfxRenderPassContext& ctx);
+
+//////////////////////////////////////////////////////
+// Cull & LOD Pass
+
+struct CullLodPushConstant
+{
+    uint32_t globalUboIdx;
+    uint32_t objectCount;
+};
+
+void dispatchIndirectDrawCompute(
+    FrameData&              frameData,
+    VkGfxRenderPassContext& ctx);
+
 } // namespace dusk

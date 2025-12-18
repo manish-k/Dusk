@@ -299,6 +299,19 @@ void Engine::renderFrame(FrameData& frameData)
 
     GfxTexture  swapImageTexture = m_renderer->getSwapChain().getCurrentSwapImageTexture();
 
+    // create cull and LOD pass
+    auto cullLodPassCtx = VkGfxRenderPassContext {
+        .writeColorAttachments = {},
+        .depthAttachment       = {},
+        .useDepth              = false,
+        .maxParallelism        = 1,
+        .secondaryCmdBuffers   = m_renderer->getSecondayCmdBuffers(frameData.frameIndex),
+        .isComputePass         = true,
+    };
+
+    renderGraph.setPassContext("cull_lod_pass", cullLodPassCtx);
+    renderGraph.addPass("cull_lod_pass", dispatchIndirectDrawCompute);
+
     // create shadow pass
     uint32_t dirLightsCount = m_lightsSystem->getDirectionalLightsCount();
 
@@ -671,7 +684,7 @@ void Engine::prepareRenderGraphResources()
             &m_rgResources.frameIndirectDrawCommandsBuffers[frameIdx]);
 
         GfxBuffer::createDeviceLocalBuffer(
-            GfxBufferUsageFlags::StorageBuffer,
+            GfxBufferUsageFlags::StorageBuffer | GfxBufferUsageFlags::IndirectBuffer,
             sizeof(GfxIndexedIndirectDrawCount),
             maxModelCount,
             std::format("indirect_draw_count_buffer_{}", std::to_string(frameIdx)),

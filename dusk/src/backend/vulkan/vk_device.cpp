@@ -358,6 +358,7 @@ Error VkGfxDevice::createDevice()
 
         // Enabling multiDrawIndirect
         pDeviceInfo->deviceFeatures2.features.multiDrawIndirect = VK_TRUE;
+        pDeviceInfo->deviceFeaturesVk12.drawIndirectCount       = VK_TRUE;
 
         // check for gpu profiling extension/features
 #ifdef DUSK_ENABLE_PROFILING

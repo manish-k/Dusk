@@ -41,7 +41,7 @@ constexpr uint32_t maxModelCount    = 10000;
 
 struct RenderGraphResources
 {
-    DynamicArray<GfxBuffer>                  frameIndirectDrawCommandsBuffers           = {};
+    DynamicArray<GfxBuffer>                  frameIndirectDrawCommandsBuffers    = {};
     DynamicArray<GfxBuffer>                  frameIndirectDrawCountBuffers       = {};
     Unique<VkGfxDescriptorPool>              indirectDrawDescriptorPool          = nullptr;
     Unique<VkGfxDescriptorSetLayout>         indirectDrawDescriptorSetLayout     = nullptr;
@@ -84,12 +84,6 @@ struct RenderGraphResources
 struct BRDFLUTPushConstant
 {
     uint32_t lutTextureIdx;
-};
-
-struct CullLodPushConstant
-{
-    uint32_t globalUboIdx;
-    uint32_t objectCount;
 };
 
 class Engine final

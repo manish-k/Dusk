@@ -116,7 +116,7 @@ void recordGBufferCmds(
             0,
             currentIndirectDrawCountBuffer.vkBuffer.buffer,
             0,
-            maxRenderableMeshes,
+            100,
             sizeof(GfxIndexedIndirectDrawCommand));
     }
 }

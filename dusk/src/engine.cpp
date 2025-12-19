@@ -665,8 +665,8 @@ void Engine::prepareRenderGraphResources()
                                                    .build(maxFramesCount, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
 
     m_rgResources.indirectDrawDescriptorSetLayout = VkGfxDescriptorSetLayout::Builder(ctx)
-                                                        .addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, maxFramesCount, true)
-                                                        .addBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, maxFramesCount, true)
+                                                        .addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 1, true)
+                                                        .addBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 1, true)
                                                         .setDebugName("indirect draw_desc_set_layout")
                                                         .build();
 
@@ -676,15 +676,22 @@ void Engine::prepareRenderGraphResources()
 
     for (uint32_t frameIdx = 0u; frameIdx < maxFramesCount; ++frameIdx)
     {
-        GfxBuffer::createDeviceLocalBuffer(
+        /*GfxBuffer::createDeviceLocalBuffer(
             GfxBufferUsageFlags::StorageBuffer | GfxBufferUsageFlags::IndirectBuffer | GfxBufferUsageFlags::TransferTarget,
             sizeof(GfxIndirectDrawCommand),
             maxModelCount,
             std::format("indirect_draw_buffer_{}", std::to_string(frameIdx)),
-            &m_rgResources.frameIndirectDrawCommandsBuffers[frameIdx]);
+            &m_rgResources.frameIndirectDrawCommandsBuffers[frameIdx]);*/
+
+        m_rgResources.frameIndirectDrawCommandsBuffers[frameIdx].init(
+            GfxBufferUsageFlags::StorageBuffer | GfxBufferUsageFlags::IndirectBuffer | GfxBufferUsageFlags::TransferTarget,
+            sizeof(GfxIndirectDrawCommand) * maxModelCount,
+            GfxBufferMemoryTypeFlags::DedicatedDeviceMemory,
+            std::format("indirect_draw_buffer_{}", std::to_string(frameIdx))
+        );
 
         GfxBuffer::createDeviceLocalBuffer(
-            GfxBufferUsageFlags::StorageBuffer | GfxBufferUsageFlags::IndirectBuffer,
+            GfxBufferUsageFlags::StorageBuffer | GfxBufferUsageFlags::IndirectBuffer | GfxBufferUsageFlags::TransferTarget,
             sizeof(GfxIndexedIndirectDrawCount),
             maxModelCount,
             std::format("indirect_draw_count_buffer_{}", std::to_string(frameIdx)),
@@ -694,7 +701,7 @@ void Engine::prepareRenderGraphResources()
             *m_rgResources.indirectDrawDescriptorSetLayout, "indirect_draw_desc_set");
 
         DynamicArray<VkDescriptorBufferInfo> drawCmdBufferInfo;
-        drawCmdBufferInfo.push_back(m_rgResources.frameIndirectDrawCommandsBuffers[frameIdx].getDescriptorInfoAtIndex(0));
+        drawCmdBufferInfo.push_back(m_rgResources.frameIndirectDrawCommandsBuffers[frameIdx].getDescriptorInfo());
 
         DynamicArray<VkDescriptorBufferInfo> drawCountBufferInfo;
         drawCountBufferInfo.push_back(m_rgResources.frameIndirectDrawCountBuffers[frameIdx].getDescriptorInfoAtIndex(0));

@@ -42,12 +42,12 @@ struct IndexedIndirectCommand
 	uint firstInstance;
 };
 
-layout (set = 2, binding = 0, std430) writeonly buffer IndirectDraws
+layout (set = 2, binding = 0, std430) buffer IndirectDraws
 {
 	IndexedIndirectCommand indirectDraws[];
-} drawBuffer;
+} cmdsBuffer;
 
-layout(set = 2, binding = 1, std430) writeonly buffer CountOut {
+layout(set = 2, binding = 1, std430) buffer CountOut {
     uint drawCount;
 } countBuffer;
 
@@ -99,9 +99,11 @@ void main()
 
 	if (isAABBinFrustum(idx))
 	{
-		drawBuffer.indirectDraws[idx].instanceCount = 1;
+		cmdsBuffer.indirectDraws[idx].instanceCount = 1;
 		
 		// TODO: first make indirect buffer compact
 		//atomicAdd(countBuffer.drawCount, 1);
 	}
+
+	//cmdsBuffer.indirectDraws[idx].instanceCount = 1;
 }

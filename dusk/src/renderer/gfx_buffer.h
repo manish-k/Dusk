@@ -77,6 +77,12 @@ struct GfxBuffer
     bool isAllocated() const;
 
     /**
+     * @brief Get size of the buffer in bytes
+     * @return size in bytes
+     */
+    size_t getSizeInBytes() const { return vkBuffer.sizeInBytes; }
+
+    /**
      * @brief map the buffer to host memory
      */
     void map();
@@ -158,6 +164,13 @@ struct GfxBuffer
      * @return descriptor buffer info of the indexed instance data
      */
     VkDescriptorBufferInfo getDescriptorInfoAtIndex(uint32_t index) const;
+
+    /**
+     * @brief Get descriptor info for writing into the descriptor set for the
+     * current buffer
+     * @return descriptor buffer info of the buffer
+     */
+    VkDescriptorBufferInfo getDescriptorInfo() const;
 
     /**
      * @brief Create buffer to be used by host to write to

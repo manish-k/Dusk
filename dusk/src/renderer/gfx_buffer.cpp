@@ -163,6 +163,15 @@ VkDescriptorBufferInfo GfxBuffer::getDescriptorInfoAtIndex(uint32_t index) const
     return bufferInfo;
 }
 
+VkDescriptorBufferInfo GfxBuffer::getDescriptorInfo() const
+{
+    VkDescriptorBufferInfo bufferInfo {};
+    bufferInfo.buffer = vkBuffer.buffer;
+    bufferInfo.offset = 0;
+    bufferInfo.range  = vkBuffer.sizeInBytes;
+    return bufferInfo;
+}
+
 uint32_t getBufferOffsetAlignment(uint32_t usage, size_t instanceSize)
 {
     uint32_t      minOffsetAlignment = 1;

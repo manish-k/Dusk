@@ -155,7 +155,7 @@ void dispatchIndirectDrawCompute(
     // push constants
     CullLodPushConstant push {};
     push.globalUboIdx = frameData.frameIndex;
-    push.objectCount  = 100;
+    push.objectCount  = instanceCounter;
 
     vkCmdPushConstants(
         commandBuffer,

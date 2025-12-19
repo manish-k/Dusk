@@ -18,7 +18,7 @@ struct Frustum
 
 inline Frustum extractFrustumFromMatrix(const glm::mat4& vpMatrix)
 {
-    Frustum frustum;
+    Frustum frustum = {};
 
     // column major order
     // Left plane
@@ -49,11 +49,11 @@ inline Frustum extractFrustumFromMatrix(const glm::mat4& vpMatrix)
     frustum.top.distance = vpMatrix[3][3] - vpMatrix[3][1];
     frustum.top          = normalizePlane(frustum.top);
     
-    // Near plane
-    frustum.near.normal.x = vpMatrix[0][3] + vpMatrix[0][2];
-    frustum.near.normal.y = vpMatrix[1][3] + vpMatrix[1][2];
-    frustum.near.normal.z = vpMatrix[2][3] + vpMatrix[2][2];
-    frustum.near.distance = vpMatrix[3][3] + vpMatrix[3][2];
+    // Near plane, specific to vulkan's clip space
+    frustum.near.normal.x = vpMatrix[0][2];
+    frustum.near.normal.y = vpMatrix[1][2];
+    frustum.near.normal.z = vpMatrix[2][2];
+    frustum.near.distance = vpMatrix[3][2];
     frustum.near          = normalizePlane(frustum.near);
 
     // Far plane

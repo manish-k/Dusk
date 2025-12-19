@@ -32,69 +32,76 @@ void dispatchIndirectDrawCompute(
     // gather all mesh instances in the scene and upload to GPU buffers along with indirect draw commands
 
     // TODO: mesh buffer updates should go inside scene update()
-    DynamicArray<GfxIndexedIndirectDrawCommand> indirectDrawCommands;
-    DynamicArray<GfxMeshInstanceData>           meshInstanceData;
+    DynamicArray<GfxMeshInstanceData> meshInstanceData;
 
-    indirectDrawCommands.reserve(maxModelCount);
     meshInstanceData.reserve(maxModelCount);
 
     // possiblity of cache unfriendliness here. Only first component is
     // cache friendly. https://gamedev.stackexchange.com/a/212879
     // TODO: Profile below code
     uint32_t instanceCounter = 0u;
-    auto     renderablesView = scene.GetGameObjectsWith<MeshComponent>();
-    for (auto& entity : renderablesView)
+
     {
-        auto& meshData = renderablesView.get<MeshComponent>(entity);
-
-        for (uint32_t index = 0u; index < meshData.meshes.size(); ++index)
+        DUSK_PROFILE_SECTION("gather_mesh_instances");
+        auto renderablesView = scene.GetGameObjectsWith<MeshComponent>();
+        for (auto& entity : renderablesView)
         {
-            uint32_t       materialId      = meshData.materials[index];
-            const SubMesh& mesh            = scene.getSubMesh(meshData.meshes[index]);
-            auto&          transform       = Registry::getRegistry().get<TransformComponent>(entity);
+            auto& meshData = renderablesView.get<MeshComponent>(entity);
 
-            glm::mat4      transformMatrix = transform.mat4();
-            AABB           transformedAABB = recomputeAABB(mesh.getAABB(), transformMatrix);
+            for (uint32_t index = 0u; index < meshData.meshes.size(); ++index)
+            {
+                uint32_t       materialId      = meshData.materials[index];
+                const SubMesh& mesh            = scene.getSubMesh(meshData.meshes[index]);
+                auto&          transform       = Registry::getRegistry().get<TransformComponent>(entity);
 
-            meshInstanceData.push_back(
-                GfxMeshInstanceData {
-                    .modelMat      = transformMatrix,
-                    .normalMat     = transform.normalMat4(),
-                    .aabbMin       = transformedAABB.min,
-                    .aabbMax       = transformedAABB.max,
-                    .materialId    = materialId,
-                    .indexCount    = mesh.getIndexCount(),
-                    .firstIndex    = mesh.getIndexBufferIndex(),
-                    .vertexOffset  = mesh.getVertexOffset(),
-                    .firstInstance = instanceCounter,
-                });
+                glm::mat4      transformMatrix = transform.mat4();
+                AABB           transformedAABB = recomputeAABB(mesh.getAABB(), transformMatrix);
 
-            ++instanceCounter;
+                meshInstanceData.push_back(
+                    GfxMeshInstanceData {
+                        .modelMat      = transformMatrix,
+                        .normalMat     = transform.normalMat4(),
+                        .aabbMin       = transformedAABB.min,
+                        .aabbMax       = transformedAABB.max,
+                        .materialId    = materialId,
+                        .indexCount    = mesh.getIndexCount(),
+                        .firstIndex    = mesh.getIndexBufferIndex(),
+                        .vertexOffset  = mesh.getVertexOffset(),
+                        .firstInstance = instanceCounter,
+                    });
+
+                ++instanceCounter;
+            }
         }
     }
 
-    auto& currentMeshInstanceBuffer = resources.meshInstanceDataBuffers[frameData.frameIndex];
+    {
+        DUSK_PROFILE_SECTION("upload_mesh_instance_data");
+        auto& currentMeshInstanceBuffer = resources.meshInstanceDataBuffers[frameData.frameIndex];
 
-    currentMeshInstanceBuffer.writeAndFlushAtIndex(0, meshInstanceData.data(), sizeof(GfxMeshInstanceData) * meshInstanceData.size());
+        currentMeshInstanceBuffer.writeAndFlushAtIndex(0, meshInstanceData.data(), sizeof(GfxMeshInstanceData) * meshInstanceData.size());
+    }
+    {
+        DUSK_PROFILE_SECTION("reset_draw_count_buffer");
+        // reset draw count buffer to zero
+        GfxBuffer drawCountStagingBuffer;
+        GfxBuffer::createHostWriteBuffer(
+            GfxBufferUsageFlags::TransferSource,
+            sizeof(GfxIndexedIndirectDrawCount),
+            1,
+            "staging_draw_count_buffer",
+            &drawCountStagingBuffer);
 
-    // reset draw count buffer to zero
-    GfxBuffer drawCountStagingBuffer;
-    GfxBuffer::createHostWriteBuffer(
-        GfxBufferUsageFlags::TransferSource,
-        sizeof(GfxIndexedIndirectDrawCount),
-        1,
-        "staging_draw_count_buffer",
-        &drawCountStagingBuffer);
+        // TODO: reset value to zero each frame.
+        // for testing using instancecounter
+        GfxIndexedIndirectDrawCount defaultCount { 0 };
+        drawCountStagingBuffer.writeAndFlushAtIndex(0, &defaultCount, sizeof(GfxIndexedIndirectDrawCount));
+        auto& currentDrawCountBuffer = resources.frameIndirectDrawCountBuffers[frameData.frameIndex];
 
-    // TODO: reset value to zero each frame.
-    // for testing using instancecounter
-    GfxIndexedIndirectDrawCount defaultCount { 0 };
-    drawCountStagingBuffer.writeAndFlushAtIndex(0, &defaultCount, sizeof(GfxIndexedIndirectDrawCount));
-    auto& currentDrawCountBuffer = resources.frameIndirectDrawCountBuffers[frameData.frameIndex];
+        currentDrawCountBuffer.copyFrom(drawCountStagingBuffer, sizeof(GfxIndexedIndirectDrawCount) * 1);
 
-    currentDrawCountBuffer.copyFrom(drawCountStagingBuffer, sizeof(GfxIndexedIndirectDrawCount) * 1);
-
-    drawCountStagingBuffer.cleanup();
+        drawCountStagingBuffer.cleanup();
+    }
 
     // bind cull and lod pipeline
     resources.cullLodPipeline->bind(commandBuffer);

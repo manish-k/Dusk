@@ -678,7 +678,7 @@ void Engine::prepareRenderGraphResources()
     {
         m_rgResources.frameIndirectDrawCommandsBuffers[frameIdx].init(
             GfxBufferUsageFlags::StorageBuffer | GfxBufferUsageFlags::IndirectBuffer | GfxBufferUsageFlags::TransferTarget,
-            sizeof(GfxIndirectDrawCommand) * maxModelCount,
+            sizeof(GfxIndexedIndirectDrawCommand) * maxModelCount,
             GfxBufferMemoryTypeFlags::DedicatedDeviceMemory,
             std::format("indirect_draw_buffer_{}", std::to_string(frameIdx))
         );

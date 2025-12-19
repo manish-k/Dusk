@@ -39,8 +39,11 @@ layout (set = 2, binding = 0) buffer MeshInstanceData
 	vec3 aabbMin;
 	uint pad0;
 	vec3 aabbMax;
-	uint pad1;
 	uint materialId;
+	uint indexCount;   
+	uint firstIndex;
+	uint vertexOffset;
+	uint firstInstance;
 } meshInstanceData[];
 
 layout(push_constant) uniform DrawData 

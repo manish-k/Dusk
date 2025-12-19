@@ -676,13 +676,6 @@ void Engine::prepareRenderGraphResources()
 
     for (uint32_t frameIdx = 0u; frameIdx < maxFramesCount; ++frameIdx)
     {
-        /*GfxBuffer::createDeviceLocalBuffer(
-            GfxBufferUsageFlags::StorageBuffer | GfxBufferUsageFlags::IndirectBuffer | GfxBufferUsageFlags::TransferTarget,
-            sizeof(GfxIndirectDrawCommand),
-            maxModelCount,
-            std::format("indirect_draw_buffer_{}", std::to_string(frameIdx)),
-            &m_rgResources.frameIndirectDrawCommandsBuffers[frameIdx]);*/
-
         m_rgResources.frameIndirectDrawCommandsBuffers[frameIdx].init(
             GfxBufferUsageFlags::StorageBuffer | GfxBufferUsageFlags::IndirectBuffer | GfxBufferUsageFlags::TransferTarget,
             sizeof(GfxIndirectDrawCommand) * maxModelCount,
@@ -690,10 +683,11 @@ void Engine::prepareRenderGraphResources()
             std::format("indirect_draw_buffer_{}", std::to_string(frameIdx))
         );
 
+        // TODO: count buffer should scale with piplines used. For now we assume only one pipeline uses indirect draws.
         GfxBuffer::createDeviceLocalBuffer(
             GfxBufferUsageFlags::StorageBuffer | GfxBufferUsageFlags::IndirectBuffer | GfxBufferUsageFlags::TransferTarget,
             sizeof(GfxIndexedIndirectDrawCount),
-            maxModelCount,
+            1,
             std::format("indirect_draw_count_buffer_{}", std::to_string(frameIdx)),
             &m_rgResources.frameIndirectDrawCountBuffers[frameIdx]);
 

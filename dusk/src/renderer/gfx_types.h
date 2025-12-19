@@ -16,20 +16,23 @@ struct GfxRenderingAttachment
     GfxStoreOperation storeOp    = GfxStoreOperation::Store;
 };
 
+// TODO:: make it std430 aligned
 struct alignas(16) GfxMeshInstanceData
 {
-    glm::mat4 modelMat   = { 1.f };
-    glm::mat4 normalMat  = { 1.f };
+    glm::mat4 modelMat      = { 1.f };
+    glm::mat4 normalMat     = { 1.f };
 
-    glm::vec3 aabbMin    = {};
-    uint32_t  padding0   = 0u;
+    glm::vec3 aabbMin       = {};
+    uint32_t  padding0      = 0u;
 
-    glm::vec3 aabbMax    = {};
-    uint32_t  padding1   = 0u;
+    glm::vec3 aabbMax       = {};
 
-    uint32_t  materialId = 0u;
+    uint32_t  materialId    = 0u;
 
-    uint32_t  padding[3] = { 0u, 0u, 0u };
+    uint32_t  indexCount    = 0u;
+    uint32_t  firstIndex    = 0u;
+    int32_t   vertexOffset  = 0u;
+    uint32_t  firstInstance = 0u;
 };
 
 struct GfxIndirectDrawCommand

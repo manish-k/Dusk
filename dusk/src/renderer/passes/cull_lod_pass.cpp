@@ -58,17 +58,12 @@ void dispatchIndirectDrawCompute(
 
             meshInstanceData.push_back(
                 GfxMeshInstanceData {
-                    .modelMat   = transformMatrix,
-                    .normalMat  = transform.normalMat4(),
-                    .aabbMin    = transformedAABB.min,
-                    .aabbMax    = transformedAABB.max,
-                    .materialId = materialId,
-                });
-
-            indirectDrawCommands.push_back(
-                GfxIndexedIndirectDrawCommand {
+                    .modelMat      = transformMatrix,
+                    .normalMat     = transform.normalMat4(),
+                    .aabbMin       = transformedAABB.min,
+                    .aabbMax       = transformedAABB.max,
+                    .materialId    = materialId,
                     .indexCount    = mesh.getIndexCount(),
-                    .instanceCount = 0, // compute shader will fill this
                     .firstIndex    = mesh.getIndexBufferIndex(),
                     .vertexOffset  = mesh.getVertexOffset(),
                     .firstInstance = instanceCounter,
@@ -78,24 +73,9 @@ void dispatchIndirectDrawCompute(
         }
     }
 
-    auto& currentIndirectBuffer     = resources.frameIndirectDrawCommandsBuffers[frameData.frameIndex];
     auto& currentMeshInstanceBuffer = resources.meshInstanceDataBuffers[frameData.frameIndex];
 
     currentMeshInstanceBuffer.writeAndFlushAtIndex(0, meshInstanceData.data(), sizeof(GfxMeshInstanceData) * meshInstanceData.size());
-
-    GfxBuffer indirectStagingBuffer;
-    GfxBuffer::createHostWriteBuffer(
-        GfxBufferUsageFlags::TransferSource,
-        sizeof(GfxIndexedIndirectDrawCommand),
-        indirectDrawCommands.size(),
-        "staging_index_buffer",
-        &indirectStagingBuffer);
-
-    indirectStagingBuffer.writeAndFlushAtIndex(0, indirectDrawCommands.data(), sizeof(GfxIndexedIndirectDrawCommand) * indirectDrawCommands.size());
-
-    currentIndirectBuffer.copyFrom(indirectStagingBuffer, sizeof(GfxIndexedIndirectDrawCommand) * indirectDrawCommands.size());
-
-    indirectStagingBuffer.cleanup();
 
     // reset draw count buffer to zero
     GfxBuffer drawCountStagingBuffer;
@@ -108,7 +88,7 @@ void dispatchIndirectDrawCompute(
 
     // TODO: reset value to zero each frame.
     // for testing using instancecounter
-    GfxIndexedIndirectDrawCount defaultCount { instanceCounter };
+    GfxIndexedIndirectDrawCount defaultCount { 0 };
     drawCountStagingBuffer.writeAndFlushAtIndex(0, &defaultCount, sizeof(GfxIndexedIndirectDrawCount));
     auto& currentDrawCountBuffer = resources.frameIndirectDrawCountBuffers[frameData.frameIndex];
 

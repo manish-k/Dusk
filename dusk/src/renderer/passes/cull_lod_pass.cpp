@@ -46,21 +46,23 @@ void dispatchIndirectDrawCompute(
         auto renderablesView = scene.GetGameObjectsWith<MeshComponent>();
         for (auto& entity : renderablesView)
         {
-            auto& meshData = renderablesView.get<MeshComponent>(entity);
+            auto&     meshData        = renderablesView.get<MeshComponent>(entity);
+
+            auto&     transform       = Registry::getRegistry().get<TransformComponent>(entity);
+            glm::mat4 transformMatrix = transform.mat4();
+            glm::mat4 normalMatrix    = transform.normalMat4();
 
             for (uint32_t index = 0u; index < meshData.meshes.size(); ++index)
             {
                 uint32_t       materialId      = meshData.materials[index];
                 const SubMesh& mesh            = scene.getSubMesh(meshData.meshes[index]);
-                auto&          transform       = Registry::getRegistry().get<TransformComponent>(entity);
 
-                glm::mat4      transformMatrix = transform.mat4();
                 AABB           transformedAABB = recomputeAABB(mesh.getAABB(), transformMatrix);
 
                 meshInstanceData.push_back(
                     GfxMeshInstanceData {
                         .modelMat      = transformMatrix,
-                        .normalMat     = transform.normalMat4(),
+                        .normalMat     = normalMatrix,
                         .aabbMin       = transformedAABB.min,
                         .aabbMax       = transformedAABB.max,
                         .materialId    = materialId,

@@ -25,7 +25,7 @@ layout (set = 0, binding = 0) uniform GlobalUBO
 	
 	uvec4 directionalLightIndices[32];
 	uvec4 pointLightIndices[32];
-	uvec4 spotLightIndices[32];
+ 	uvec4 spotLightIndices[32];
 } globalubo[];
 
 layout (set = 1, binding = 0) uniform sampler2D textures[];

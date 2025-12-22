@@ -157,8 +157,8 @@ void Scene::updateModelsBuffer(GfxBuffer& modelBuffer)
         auto      objectId  = static_cast<entt::id_type>(entity);
         auto&     transform = entities.get<TransformComponent>(entity);
 
-        //ModelData md { transform.mat4(), transform.normalMat4() };
-        //modelBuffer.writeAndFlushAtIndex(objectId, &md, sizeof(ModelData));
+        ModelData md { transform.mat4(), transform.normalMat4() };
+        modelBuffer.writeAndFlushAtIndex(objectId, &md, sizeof(ModelData));
     }
 }
 

@@ -680,8 +680,7 @@ void Engine::prepareRenderGraphResources()
             GfxBufferUsageFlags::StorageBuffer | GfxBufferUsageFlags::IndirectBuffer | GfxBufferUsageFlags::TransferTarget,
             sizeof(GfxIndexedIndirectDrawCommand) * maxModelCount,
             GfxBufferMemoryTypeFlags::DedicatedDeviceMemory,
-            std::format("indirect_draw_buffer_{}", std::to_string(frameIdx))
-        );
+            std::format("indirect_draw_buffer_{}", std::to_string(frameIdx)));
 
         // TODO: count buffer should scale with piplines used. For now we assume only one pipeline uses indirect draws.
         GfxBuffer::createDeviceLocalBuffer(
@@ -721,24 +720,24 @@ void Engine::prepareRenderGraphResources()
         "gbuffer_pass_albedo",
         extent.width,
         extent.height,
-        VK_FORMAT_R32G32B32A32_SFLOAT));
+        VK_FORMAT_R8G8B8A8_UNORM));
     m_rgResources.gbuffRenderTextureIds.push_back(m_textureDB->createColorTexture(
         "gbuffer_pass_normal",
         extent.width,
         extent.height,
-        VK_FORMAT_R16G16B16A16_SFLOAT));
+        VK_FORMAT_R16G16B16A16_UNORM));
 
     m_rgResources.gbuffRenderTextureIds.push_back(m_textureDB->createColorTexture(
         "gbuffer_pass_occlu_rough_metal",
         extent.width,
         extent.height,
-        VK_FORMAT_R16G16B16A16_SFLOAT));
+        VK_FORMAT_R8G8B8A8_UNORM));
 
     m_rgResources.gbuffRenderTextureIds.push_back(m_textureDB->createColorTexture(
         "gbuffer_pass_emissive_color",
         extent.width,
         extent.height,
-        VK_FORMAT_R16G16B16A16_SFLOAT));
+        VK_FORMAT_R8G8B8A8_UNORM));
 
     // Allocate g-buffer depth texture
     m_rgResources.gbuffDepthTextureId = m_textureDB->createDepthTexture(
@@ -860,10 +859,10 @@ void Engine::prepareRenderGraphResources()
                                       .setVertexShaderCode(vertShaderCode)
                                       .setFragmentShaderCode(fragShaderCode)
                                       .setPipelineLayout(*m_rgResources.gbuffPipelineLayout)
-                                      .addColorAttachmentFormat(VK_FORMAT_R32G32B32A32_SFLOAT) // albedo
-                                      .addColorAttachmentFormat(VK_FORMAT_R16G16B16A16_SFLOAT) // normal
-                                      .addColorAttachmentFormat(VK_FORMAT_R16G16B16A16_SFLOAT) // ao-roughness-metallic
-                                      .addColorAttachmentFormat(VK_FORMAT_R16G16B16A16_SFLOAT) // emissive color
+                                      .addColorAttachmentFormat(VK_FORMAT_R8G8B8A8_UNORM)     // albedo
+                                      .addColorAttachmentFormat(VK_FORMAT_R16G16B16A16_UNORM) // normal
+                                      .addColorAttachmentFormat(VK_FORMAT_R8G8B8A8_UNORM)     // ao-roughness-metallic
+                                      .addColorAttachmentFormat(VK_FORMAT_R8G8B8A8_UNORM)     // emissive color
                                       .setDebugName("gbuff_pipeline")
                                       .build();
 

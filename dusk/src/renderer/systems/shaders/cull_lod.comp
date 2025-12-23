@@ -109,6 +109,6 @@ void main()
 		cmdsBuffer.indirectDraws[outIdx].instanceCount = 1;
 		cmdsBuffer.indirectDraws[outIdx].firstIndex = meshInstanceData[idx].firstIndex;
 		cmdsBuffer.indirectDraws[outIdx].vertexOffset = meshInstanceData[idx].vertexOffset;
-		cmdsBuffer.indirectDraws[outIdx].firstInstance = meshInstanceData[idx].firstInstance;
+		cmdsBuffer.indirectDraws[outIdx].firstInstance = idx;
 	}
 }

@@ -12,6 +12,25 @@ layout (location = 1) out vec4 outNormal; // TODO: explore octohedral representa
 layout (location = 2) out vec4 outAORoughMetal; // R: AO, G: Roughness, B: Metallic
 layout (location = 3) out vec4 outEmissiveColor;
 
+struct Material 
+{
+	int id;
+	int albedoTexId;
+	int normalTexId;
+	int metallicRoughnessTexId;
+	int aoTexId;          
+	int emissiveTexId;    
+	float aoStrength;       
+	float emissiveIntensity;
+	float normalScale;
+	float metal;
+	float rough;
+	float padding0;
+	vec4 albedoColor;
+	vec4 emissiveColor;
+
+};
+
 layout (set = 0, binding = 0) uniform GlobalUBO 
 {
 	mat4 projection;
@@ -31,22 +50,9 @@ layout (set = 0, binding = 0) uniform GlobalUBO
 	uvec4 spotLightIndices[32];
 } globalubo[];
 
-layout (set = 1, binding = 0) buffer Material 
+layout (set = 1, binding = 0) buffer MaterialBuffer 
 {
-	int id;
-	int albedoTexId;
-	int normalTexId;
-	int metallicRoughnessTexId;
-	int aoTexId;          
-	int emissiveTexId;    
-	float aoStrength;       
-	float emissiveIntensity;
-	float normalScale;
-	float metal;
-	float rough;
-	float padding0;
-	vec4 albedoColor;
-	vec4 emissiveColor;
+	Material mat;
 
 } materials[];
 
@@ -75,27 +81,54 @@ void main()
 {
 	uint guboIdx = nonuniformEXT(push.cameraIdx);
 	uint materialIdx = nonuniformEXT(meshInstanceData[fragInstanceId].materialId);
-	int textureIdx = nonuniformEXT(materials[materialIdx].albedoTexId);
-	int normalTexIdx = nonuniformEXT(materials[materialIdx].normalTexId);
-	int metalRoughTexIdx = nonuniformEXT(materials[materialIdx].metallicRoughnessTexId);
-	int aoTexIdx = nonuniformEXT(materials[materialIdx].aoTexId);
-	int emissiveTexIdx = nonuniformEXT(materials[materialIdx].emissiveTexId);
+	
+	// pull and cache
+	Material m = materials[materialIdx].mat;
+	
+	int albedoTexIdx  = nonuniformEXT(m.albedoTexId);
+	int normalTexIdx = nonuniformEXT(m.normalTexId);
+	int metalRoughTexIdx = nonuniformEXT(m.metallicRoughnessTexId);
+	int aoTexIdx = nonuniformEXT(m.aoTexId);
+	int emissiveTexIdx = nonuniformEXT(m.emissiveTexId);
+
+	vec4 albedoSample   = vec4(1.0);
+    vec3 mrSample       = vec3(1.0);
+    float aoSample      = 1.0;
+    vec3 emissiveSample = vec3(0.0);
+    vec3 normalSample   = vec3(0.0);
+
+	// fetch textures
+	if (albedoTexIdx >= 0)
+        albedoSample = texture(textures[albedoTexIdx], fragUV);
+
+    if (metalRoughTexIdx >= 0)
+        mrSample = texture(textures[metalRoughTexIdx], fragUV).rgb;
+
+    if (aoTexIdx >= 0)
+        aoSample = texture(textures[aoTexIdx], fragUV).r;
+
+    if (emissiveTexIdx >= 0)
+        emissiveSample = texture(textures[emissiveTexIdx], fragUV).rgb;
+
+    if (normalTexIdx >= 0)
+        normalSample = texture(textures[normalTexIdx], fragUV).xyz * 2.0 - 1.0;
+
+	vec3 emissiveColor = texture(textures[emissiveTexIdx], fragUV).rgb;
 	
 	vec3 cameraPos = globalubo[guboIdx].inverseView[3].xyz;
 	vec3 viewDirection = normalize(cameraPos - fragWorldPos);
 
-	vec4 baseColor = materials[materialIdx].albedoColor;
-	vec3 lightColor = baseColor.xyz * texture(textures[textureIdx], fragUV).xyz;
+	vec4 baseColor = m.albedoColor;
+	vec3 lightColor = baseColor.xyz * albedoSample.xyz;
 	
-	vec3 mrSampleValue = texture(textures[metalRoughTexIdx], fragUV).rgb;
-	float ao = texture(textures[aoTexIdx], fragUV).r * materials[materialIdx].aoStrength;
+	float ao = aoSample.r * m.aoStrength;
 	if (ao <= 0) ao = 1;
 
-	float roughness = mrSampleValue.g * materials[materialIdx].rough;
-	float metallic = mrSampleValue.b * materials[materialIdx].metal;
+	float roughness = mrSample.g * m.rough;
+	float metallic = mrSample.b * m.metal;
 
 	vec3 surfaceNormal = normalize(fragNormal);
-	if (normalTexIdx != -1)
+	if (normalTexIdx >= 0)
 	{
 		vec3 tangent = normalize(fragTangent);
 	
@@ -105,11 +138,9 @@ void main()
 
 		mat3 TBN = mat3(tangent, bitangent, surfaceNormal);
 
-		vec3 texNormal = texture(textures[normalTexIdx], fragUV).xyz * 2.0 - 1.0;
-		surfaceNormal = normalize(TBN * normalize(texNormal));
+		surfaceNormal = normalize(TBN * normalize(normalSample));
 	}
 
-	vec3 emissiveColor = texture(textures[emissiveTexIdx], fragUV).rgb;
 
 	outColor = vec4(lightColor.rgb, 1.f);
 	outNormal = vec4(surfaceNormal.xyz * 0.5 + 0.5, 0.f);

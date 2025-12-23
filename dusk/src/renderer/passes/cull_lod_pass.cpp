@@ -39,8 +39,6 @@ void dispatchIndirectDrawCompute(
     // possiblity of cache unfriendliness here. Only first component is
     // cache friendly. https://gamedev.stackexchange.com/a/212879
     // TODO: Profile below code
-    uint32_t instanceCounter = 0u;
-
     {
         DUSK_PROFILE_SECTION("gather_mesh_instances");
         auto renderablesView = scene.GetGameObjectsWith<MeshComponent>();
@@ -68,12 +66,18 @@ void dispatchIndirectDrawCompute(
                         .indexCount    = subMesh.getIndexCount(),
                         .firstIndex    = subMesh.getIndexBufferIndex(),
                         .vertexOffset  = subMesh.getVertexOffset(),
-                        .firstInstance = instanceCounter,
+                        .firstInstance = 0, // to be filled by compute shader
                     });
-
-                ++instanceCounter;
             }
         }
+
+        // sorting by material to improve cache locality in the gpu
+        std::sort(
+            meshInstanceData.begin(),
+            meshInstanceData.end(),
+            [](const GfxMeshInstanceData& a, const GfxMeshInstanceData& b) {
+                return a.materialId < b.materialId;
+            });
     }
 
     {
@@ -143,7 +147,7 @@ void dispatchIndirectDrawCompute(
     // push constants
     CullLodPushConstant push {};
     push.globalUboIdx = frameData.frameIndex;
-    push.objectCount  = instanceCounter;
+    push.objectCount  = meshInstanceData.size();
 
     vkCmdPushConstants(
         commandBuffer,

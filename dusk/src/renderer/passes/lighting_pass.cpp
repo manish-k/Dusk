@@ -73,6 +73,9 @@ void recordLightingCmds(
         sizeof(LightingPushConstant),
         &push);
 
-    vkCmdDraw(ctx.cmdBuffer, 3, 1, 0, 0);
+    {
+        DUSK_PROFILE_GPU_ZONE("lighting_draw", ctx.cmdBuffer);
+        vkCmdDraw(ctx.cmdBuffer, 3, 1, 0, 0);
+    }
 }
 } // namespace dusk

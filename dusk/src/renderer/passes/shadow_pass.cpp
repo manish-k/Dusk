@@ -74,35 +74,39 @@ void recordShadow2DMapsCmds(
         vkCmdBindIndexBuffer(commandBuffer, Engine::get().getIndexBuffer().vkBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
     }
 
-    for (auto& entity : renderablesView)
     {
-        entt::id_type objectId = static_cast<entt::id_type>(entity);
-        auto&         meshData = renderablesView.get<MeshComponent>(entity);
+        DUSK_PROFILE_GPU_ZONE("shadow_map_draw", commandBuffer);
 
-        for (uint32_t index = 0u; index < meshData.meshes.size(); ++index)
+        for (auto& entity : renderablesView)
         {
-            const SubMesh&        mesh   = scene.getSubMesh(meshData.meshes[index]);
+            entt::id_type objectId = static_cast<entt::id_type>(entity);
+            auto&         meshData = renderablesView.get<MeshComponent>(entity);
 
-            ShadowMapPushConstant push {};
-            push.frameIdx = frameData.frameIndex;
-            push.modelIdx = objectId;
-
-            vkCmdPushConstants(
-                commandBuffer,
-                resources.gbuffPipelineLayout->get(),
-                VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-                0,
-                sizeof(ShadowMapPushConstant),
-                &push);
-
+            for (uint32_t index = 0u; index < meshData.meshes.size(); ++index)
             {
-                vkCmdDrawIndexed(
+                const SubMesh&        mesh = scene.getSubMesh(meshData.meshes[index]);
+
+                ShadowMapPushConstant push {};
+                push.frameIdx = frameData.frameIndex;
+                push.modelIdx = objectId;
+
+                vkCmdPushConstants(
                     commandBuffer,
-                    mesh.getIndexCount(),
-                    1,                          // instance count
-                    mesh.getIndexBufferIndex(), // firstIndex
-                    mesh.getVertexOffset(),     // vertexOffset
-                    0);                         // firstInstance
+                    resources.gbuffPipelineLayout->get(),
+                    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                    0,
+                    sizeof(ShadowMapPushConstant),
+                    &push);
+
+                {
+                    vkCmdDrawIndexed(
+                        commandBuffer,
+                        mesh.getIndexCount(),
+                        1,                          // instance count
+                        mesh.getIndexBufferIndex(), // firstIndex
+                        mesh.getVertexOffset(),     // vertexOffset
+                        0);                         // firstInstance
+                }
             }
         }
     }

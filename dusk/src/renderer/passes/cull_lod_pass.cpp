@@ -51,24 +51,23 @@ void dispatchIndirectDrawCompute(
             auto&     transform       = Registry::getRegistry().get<TransformComponent>(entity);
             glm::mat4 transformMatrix = transform.mat4();
             glm::mat4 normalMatrix    = transform.normalMat4();
+            AABB      aabb            = meshData.worldAABB;
 
             for (uint32_t index = 0u; index < meshData.meshes.size(); ++index)
             {
-                uint32_t       materialId      = meshData.materials[index];
-                const SubMesh& mesh            = scene.getSubMesh(meshData.meshes[index]);
-
-                AABB           transformedAABB = recomputeAABB(mesh.getAABB(), transformMatrix);
+                uint32_t       materialId = meshData.materials[index];
+                const SubMesh& subMesh    = scene.getSubMesh(meshData.meshes[index]);
 
                 meshInstanceData.push_back(
                     GfxMeshInstanceData {
                         .modelMat      = transformMatrix,
                         .normalMat     = normalMatrix,
-                        .aabbMin       = transformedAABB.min,
-                        .aabbMax       = transformedAABB.max,
+                        .aabbMin       = aabb.min,
+                        .aabbMax       = aabb.max,
                         .materialId    = materialId,
-                        .indexCount    = mesh.getIndexCount(),
-                        .firstIndex    = mesh.getIndexBufferIndex(),
-                        .vertexOffset  = mesh.getVertexOffset(),
+                        .indexCount    = subMesh.getIndexCount(),
+                        .firstIndex    = subMesh.getIndexBufferIndex(),
+                        .vertexOffset  = subMesh.getVertexOffset(),
                         .firstInstance = instanceCounter,
                     });
 

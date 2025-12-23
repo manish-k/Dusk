@@ -6,11 +6,15 @@
 
 namespace dusk
 {
+
+// TODO: component to support parent-child relationships
+// TODO: component size is not cache line friendly. Optimize later if needed.
 struct TransformComponent
 {
     glm::vec3 translation = glm::vec3 { 0.0f };
     glm::quat rotation    = glm::quat(1.0, 0.0, 0.0, 0.0);
     glm::vec3 scale       = glm::vec3 { 1.0f };
+    bool      dirty       = true;
 
     glm::mat4 mat4()
     {
@@ -62,12 +66,13 @@ struct TransformComponent
             },
             { 0.f, 0.f, 0.f, 0.f }
         };
-        //return glm::transpose(glm::inverse(glm::mat3(this->mat4())));
+        // return glm::transpose(glm::inverse(glm::mat3(this->mat4())));
     }
 
     void setTranslation(const glm::vec3& newTranslation)
     {
         translation = newTranslation;
+        dirty       = true;
     }
 
     const glm::vec3& getTranslation() const
@@ -78,6 +83,7 @@ struct TransformComponent
     void setRotation(const glm::quat& newRotation)
     {
         rotation = newRotation;
+        dirty    = true;
     }
 
     const glm::quat& getRotation() const
@@ -88,11 +94,17 @@ struct TransformComponent
     void setScale(const glm::vec3& newScale)
     {
         scale = newScale;
+        dirty = true;
     }
 
     const glm::vec3& getScale() const
     {
         return scale;
+    }
+
+    void markClean()
+    {
+        dirty = false;
     }
 };
 } // namespace dusk

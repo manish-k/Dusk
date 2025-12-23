@@ -42,7 +42,11 @@ Unique<Scene> AssimpLoader::readScene(const std::filesystem::path& filePath)
         // are missing in file bcos assimp will not calculate for us
         assimpScene = m_importer.ReadFile(
             filePath.string(),
-            aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace | aiProcess_JoinIdenticalVertices | aiProcess_FlipUVs);
+            aiProcess_Triangulate | 
+            aiProcess_GenSmoothNormals | 
+            aiProcess_CalcTangentSpace | 
+            aiProcess_JoinIdenticalVertices | 
+            aiProcess_FlipUVs);
 
         if (!assimpScene || assimpScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !assimpScene->mRootNode)
         {
@@ -94,12 +98,24 @@ void AssimpLoader::traverseSceneNodes(Scene& scene, const aiNode* node, const ai
     {
         auto& meshComponent = gameObject->addComponent<MeshComponent>();
 
+        // calculate AABB for the whole mesh model
+        auto modelAABB = AABB {};
+        modelAABB.min  = glm::vec3(std::numeric_limits<float>::max());
+        modelAABB.max  = glm::vec3(std::numeric_limits<float>::lowest());
+
         for (uint32_t index = 0u; index < node->mNumMeshes; ++index)
         {
             uint32_t sceneMeshIndex = node->mMeshes[index];
             meshComponent.meshes.push_back(sceneMeshIndex);
             meshComponent.materials.push_back(aiScene->mMeshes[sceneMeshIndex]->mMaterialIndex);
+
+            AABB subMeshAABB  = scene.getSubMesh(sceneMeshIndex).getAABB();
+            modelAABB.min     = glm::min(modelAABB.min, subMeshAABB.min);
+            modelAABB.max     = glm::max(modelAABB.max, subMeshAABB.max);
         }
+
+        // object space model AABB
+        meshComponent.objectAABB = modelAABB;
     }
 
     // attach object to the scene

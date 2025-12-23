@@ -10,6 +10,7 @@
 
 #include "components/camera.h"
 #include "components/transform.h"
+#include "components/mesh.h"
 
 #include "debug/profiler.h"
 
@@ -32,8 +33,8 @@ Scene::Scene(const std::string_view name) :
     camera->setName("Camera");
 
     TransformComponent& cameraTransform = camera->getComponent<TransformComponent>();
-    auto&       cameraComponent         = camera->addComponent<CameraComponent>();
-    const auto& currentExtent           = Engine::get().getRenderer().getSwapChain().getCurrentExtent();
+    auto&               cameraComponent = camera->addComponent<CameraComponent>();
+    const auto&         currentExtent   = Engine::get().getRenderer().getSwapChain().getCurrentExtent();
     cameraComponent.setPerspectiveProjection(glm::radians(50.f), static_cast<float>(currentExtent.width) / static_cast<float>(currentExtent.height), 0.5f, 10000.f);
     cameraComponent.setView(cameraTransform.translation, cameraTransform.rotation);
 
@@ -154,11 +155,30 @@ void Scene::updateModelsBuffer(GfxBuffer& modelBuffer)
     auto entities = GetGameObjectsWith<TransformComponent>();
     for (auto& entity : entities)
     {
-        auto      objectId  = static_cast<entt::id_type>(entity);
-        auto&     transform = entities.get<TransformComponent>(entity);
+        auto  objectId  = static_cast<entt::id_type>(entity);
+        auto& transform = entities.get<TransformComponent>(entity);
 
-        ModelData md { transform.mat4(), transform.normalMat4() };
-        modelBuffer.writeAndFlushAtIndex(objectId, &md, sizeof(ModelData));
+        {
+            DUSK_PROFILE_SECTION("Update model buffer");
+            ModelData md { transform.mat4(), transform.normalMat4() };
+            modelBuffer.writeAndFlushAtIndex(objectId, &md, sizeof(ModelData));
+        }
+
+        if (!transform.dirty)
+        {
+            continue;
+        }
+
+        // update AABBs for model
+        if (transform.dirty && Registry::getRegistry().all_of<MeshComponent>(entity))
+        {
+            auto& meshComponent     = Registry::getRegistry().get<MeshComponent>(entity);
+            meshComponent.worldAABB = recomputeAABB(
+                meshComponent.objectAABB,
+                transform.mat4());
+        }
+
+        transform.markClean();
     }
 }
 

@@ -15,6 +15,8 @@ void recordSkyBoxCmds(
     VkGfxRenderPassContext& ctx)
 
 {
+    DUSK_PROFILE_FUNCTION;
+
     if (!EditorUI::state().rendererState.useSkybox) return;
 
     if (!frameData.scene) return;

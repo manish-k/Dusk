@@ -1,5 +1,7 @@
 #include "render_graph.h"
 
+#include "debug/profiler.h"
+
 namespace dusk
 {
 void RenderGraph::addPass(
@@ -33,7 +35,6 @@ void RenderGraph::execute(FrameData& frameData)
             pass.recordFn(frameData, renderCtx);
             vkdebug::cmdEndLabel(frameData.commandBuffer);
             renderCtx.endCompute();
-            continue;
         }
         else
         {

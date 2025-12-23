@@ -5,6 +5,7 @@
 #include "vk_renderer.h"
 #include "engine.h"
 #include "ui/editor_ui.h"
+#include "debug/profiler.h"
 
 namespace dusk
 {
@@ -12,6 +13,8 @@ void recordPresentationCmds(
     FrameData&              frameData,
     VkGfxRenderPassContext& ctx)
 {
+    DUSK_PROFILE_FUNCTION;
+
     if (!frameData.scene) return;
 
     auto& resources = Engine::get().getRenderGraphResources();
@@ -41,13 +44,17 @@ void recordPresentationCmds(
 
     vkCmdDraw(ctx.cmdBuffer, 3, 1, 0, 0);
 
-    // record commands for editor ui here
-    auto& editorUI = Engine::get().getEditorUI();
+    {
+        DUSK_PROFILE_SECTION("editor_cmds_recording");
 
-    editorUI.beginRendering();
-    editorUI.renderCommonWidgets();
-    editorUI.renderSceneWidgets(*frameData.scene);
-    editorUI.endRendering(ctx.cmdBuffer);
+        // record commands for editor ui here
+        auto& editorUI = Engine::get().getEditorUI();
+
+        editorUI.beginRendering();
+        editorUI.renderCommonWidgets();
+        editorUI.renderSceneWidgets(*frameData.scene);
+        editorUI.endRendering(ctx.cmdBuffer);
+    }
 
     return;
 }

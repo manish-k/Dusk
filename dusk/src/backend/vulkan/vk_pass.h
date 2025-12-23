@@ -5,6 +5,7 @@
 #include "vk_types.h"
 #include "vk_device.h"
 #include "renderer/gfx_types.h"
+#include "debug/profiler.h"
 
 #define DEFAULT_COLOR_CLEAR_VALUE   { 0.f, 0.f, 0.f, 1.f }
 #define DEFAULT_DEPTH_STENCIL_VALUE { 1.0f, 0 }
@@ -42,6 +43,8 @@ struct VkGfxRenderPassContext
      */
     void begin()
     {
+        DUSK_PROFILE_SECTION("begin_pass");
+
         for (const auto& attachment : readAttachments)
         {
             // transition to shader read layout
@@ -156,6 +159,8 @@ struct VkGfxRenderPassContext
      */
     void end()
     {
+        DUSK_PROFILE_SECTION("end_pass");
+
         if (maxParallelism > 1u)
         {
             for (uint32_t i = 0u; i < maxParallelism; ++i)

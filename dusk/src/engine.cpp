@@ -526,7 +526,7 @@ bool Engine::setupGlobals()
 
     m_indexBuffer.init(
         GfxBufferUsageFlags::IndexBuffer | GfxBufferUsageFlags::TransferTarget,
-        32 * 1024 * 1024,
+        64 * 1024 * 1024,
         GfxBufferMemoryTypeFlags::DedicatedDeviceMemory,
         "global_index_buffer");
 

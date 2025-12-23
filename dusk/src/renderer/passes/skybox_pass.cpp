@@ -56,12 +56,12 @@ void recordSkyBoxCmds(
         sizeof(SkyBoxPushConstant),
         &push);
 
-    VkBuffer     buffers[1] = { environment.getCubeMesh().getVertexBuffer().vkBuffer.buffer };
-    VkDeviceSize offsets[1] = { 0 };
+    VkBuffer     buffers[] = { Engine::get().getVertexBuffer().vkBuffer.buffer };
+    VkDeviceSize offsets[] = { 0 };
 
     vkCmdBindVertexBuffers(ctx.cmdBuffer, 0, 1, buffers, offsets);
 
-    vkCmdBindIndexBuffer(ctx.cmdBuffer, environment.getCubeMesh().getIndexBuffer().vkBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+    vkCmdBindIndexBuffer(ctx.cmdBuffer, Engine::get().getIndexBuffer().vkBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
 
     vkCmdDrawIndexed(
         ctx.cmdBuffer, 

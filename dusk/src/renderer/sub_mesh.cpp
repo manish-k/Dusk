@@ -25,8 +25,6 @@ Error SubMesh::init(const DynamicArray<Vertex>& vertices, const DynamicArray<uin
 
 void SubMesh::cleanup()
 {
-    m_indexBuffer.cleanup();
-    m_vertexBuffer.cleanup();
 }
 
 Error SubMesh::initGfxVertexBuffer(const DynamicArray<Vertex>& vertices)
@@ -49,19 +47,6 @@ Error SubMesh::initGfxVertexBuffer(const DynamicArray<Vertex>& vertices)
         return Error::InitializationFailed;
 
     stagingBuffer.writeAndFlush(0, (void*)vertices.data(), bufferSize);
-
-    // device vertex buffer
-    m_vertexBuffer.init(
-        GfxBufferUsageFlags::VertexBuffer | GfxBufferUsageFlags::TransferTarget,
-        bufferSize,
-        GfxBufferMemoryTypeFlags::DedicatedDeviceMemory,
-        "vertex_buffer");
-
-    if (!m_vertexBuffer.isAllocated())
-        return Error::InitializationFailed;
-
-    // copy buffer
-    m_vertexBuffer.copyFrom(stagingBuffer, bufferSize);
 
     m_globalVertexOffset = Engine::get().copyToVertexBuffer(stagingBuffer, bufferSize);
 
@@ -90,19 +75,6 @@ Error SubMesh::initGfxIndexBuffer(const DynamicArray<uint32_t>& indices)
         return Error::InitializationFailed;
 
     stagingBuffer.writeAndFlush(0, (void*)indices.data(), bufferSize);
-
-    // device index buffer
-    m_indexBuffer.init(
-        GfxBufferUsageFlags::IndexBuffer | GfxBufferUsageFlags::TransferTarget,
-        bufferSize,
-        GfxBufferMemoryTypeFlags::DedicatedDeviceMemory,
-        "index_buffer");
-
-    if (!m_indexBuffer.isAllocated())
-        return Error::InitializationFailed;
-
-    // copy buffer
-    m_indexBuffer.copyFrom(stagingBuffer, bufferSize);
 
     m_globalIndexOffset = Engine::get().copyToIndexBuffer(stagingBuffer, bufferSize);
 

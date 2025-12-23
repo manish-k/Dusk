@@ -18,9 +18,7 @@ public:
     Error      init(const DynamicArray<Vertex>& vertices, const DynamicArray<uint32_t>& indices);
     void       cleanup();
 
-    GfxBuffer& getVertexBuffer() { return m_vertexBuffer; };
     uint32_t   getVertexCount() const { return m_vertexCount; };
-    GfxBuffer& getIndexBuffer() { return m_indexBuffer; };
     uint32_t   getIndexCount() const { return m_indexCount; };
 
     int32_t    getVertexOffset() const { return m_globalVertexOffset; };
@@ -36,11 +34,9 @@ private:
     Error initGfxIndexBuffer(const DynamicArray<uint32_t>& indices);
 
 private:
-    GfxBuffer m_vertexBuffer {};
     uint32_t  m_vertexCount        = 0u;
     int32_t   m_globalVertexOffset = 0u;
 
-    GfxBuffer m_indexBuffer {};
     uint32_t  m_indexCount        = 0u;
     size_t    m_globalIndexOffset = 0u;
 

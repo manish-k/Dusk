@@ -54,7 +54,7 @@ void recordShadow2DMapsCmds(
 
     // lights descriptor set
     vkCmdBindDescriptorSets(
-        ctx.cmdBuffer,
+        commandBuffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
         resources.shadow2DMapPipelineLayout->get(),
         2,
@@ -63,6 +63,17 @@ void recordShadow2DMapsCmds(
         0,
         nullptr);
 
+    {
+        DUSK_PROFILE_GPU_ZONE("shadow_bind_vertex", commandBuffer);
+
+        // TODO:: getter for index and vertex buffer is ugly
+        VkBuffer     buffers[] = { Engine::get().getVertexBuffer().vkBuffer.buffer };
+        VkDeviceSize offsets[] = { 0 };
+
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
+        vkCmdBindIndexBuffer(commandBuffer, Engine::get().getIndexBuffer().vkBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+    }
+
     for (auto& entity : renderablesView)
     {
         entt::id_type objectId = static_cast<entt::id_type>(entity);
@@ -70,12 +81,7 @@ void recordShadow2DMapsCmds(
 
         for (uint32_t index = 0u; index < meshData.meshes.size(); ++index)
         {
-            int32_t               meshId     = meshData.meshes[index];
-            int32_t               materialId = meshData.materials[index];
-
-            SubMesh&              mesh       = scene.getSubMesh(meshId);
-            VkBuffer              buffers[]  = { mesh.getVertexBuffer().vkBuffer.buffer };
-            VkDeviceSize          offsets[]  = { 0 };
+            const SubMesh&        mesh   = scene.getSubMesh(meshData.meshes[index]);
 
             ShadowMapPushConstant push {};
             push.frameIdx = frameData.frameIndex;
@@ -90,12 +96,13 @@ void recordShadow2DMapsCmds(
                 &push);
 
             {
-                vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
-                vkCmdBindIndexBuffer(commandBuffer, mesh.getIndexBuffer().vkBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
-            }
-
-            {
-                vkCmdDrawIndexed(commandBuffer, mesh.getIndexCount(), 1, 0, 0, 0);
+                vkCmdDrawIndexed(
+                    commandBuffer,
+                    mesh.getIndexCount(),
+                    1,                          // instance count
+                    mesh.getIndexBufferIndex(), // firstIndex
+                    mesh.getVertexOffset(),     // vertexOffset
+                    0);                         // firstInstance
             }
         }
     }

@@ -104,8 +104,8 @@ void recordGBufferCmds(
         sizeof(DrawData),
         &push);
 
-    auto&    currentIndirectBuffer          = resources.frameIndirectDrawCommandsBuffers[frameData.frameIndex];
-    auto&    currentIndirectDrawCountBuffer = resources.frameIndirectDrawCountBuffers[frameData.frameIndex];
+    auto& currentIndirectBuffer          = resources.frameIndirectDrawCommandsBuffers[frameData.frameIndex];
+    auto& currentIndirectDrawCountBuffer = resources.frameIndirectDrawCountBuffers[frameData.frameIndex];
 
     {
         DUSK_PROFILE_GPU_ZONE("gbuffer_indirect_draw", commandBuffer);
@@ -195,6 +195,17 @@ void recordGBufferCmdsMutliThreaded(
                     nullptr);
             }
 
+            {
+                // TODO:: getter for index and vertex buffer is ugly
+                VkBuffer     buffers[] = { Engine::get().getVertexBuffer().vkBuffer.buffer };
+                VkDeviceSize offsets[] = { 0 };
+
+                DUSK_PROFILE_GPU_ZONE("gbuffer_bind_vertex", commandBuffer);
+                vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
+
+                vkCmdBindIndexBuffer(commandBuffer, Engine::get().getIndexBuffer().vkBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+            }
+
             for (int index = subrange.begin(); index < subrange.end() && index < renderablesView.size(); index += 1)
             {
                 entt::entity  entity   = renderables[index];
@@ -204,14 +215,12 @@ void recordGBufferCmdsMutliThreaded(
 
                 for (uint32_t index = 0u; index < meshData.meshes.size(); ++index)
                 {
-                    int32_t      meshId     = meshData.meshes[index];
-                    int32_t      materialId = meshData.materials[index];
+                    int32_t  meshId     = meshData.meshes[index];
+                    int32_t  materialId = meshData.materials[index];
 
-                    SubMesh&     mesh       = scene.getSubMesh(meshId);
-                    VkBuffer     buffers[]  = { mesh.getVertexBuffer().vkBuffer.buffer };
-                    VkDeviceSize offsets[]  = { 0 };
+                    SubMesh& mesh       = scene.getSubMesh(meshId);
 
-                    DrawData     push {};
+                    DrawData push {};
                     push.cameraBufferIdx = frameData.frameIndex;
                     push.materialIdx     = materialId;
                     push.modelIdx        = objectId;
@@ -225,15 +234,14 @@ void recordGBufferCmdsMutliThreaded(
                         &push);
 
                     {
-                        DUSK_PROFILE_GPU_ZONE("gbuffer_bind_vertex", secondayBuffer);
-                        vkCmdBindVertexBuffers(secondayBuffer, 0, 1, buffers, offsets);
-
-                        vkCmdBindIndexBuffer(secondayBuffer, mesh.getIndexBuffer().vkBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
-                    }
-
-                    {
                         DUSK_PROFILE_GPU_ZONE("gbuffer_draw", secondayBuffer);
-                        vkCmdDrawIndexed(secondayBuffer, mesh.getIndexCount(), 1, 0, 0, 0);
+                        vkCmdDrawIndexed(
+                            secondayBuffer,
+                            mesh.getIndexCount(),
+                            1,                          // instance count
+                            mesh.getIndexBufferIndex(), // firstIndex
+                            mesh.getVertexOffset(),     // vertexOffset
+                            0); 
                     }
                 }
             }

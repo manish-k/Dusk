@@ -180,46 +180,46 @@ void BasicRenderSystem::renderGameObjects(const FrameData& frameData)
     {
         for (uint32_t index = 0u; index < meshData.meshes.size(); ++index)
         {
-            entt::id_type objectId   = static_cast<entt::id_type>(entity);
-            int32_t       meshId     = meshData.meshes[index];
-            int32_t       materialId = meshData.materials[index];
+            //entt::id_type objectId   = static_cast<entt::id_type>(entity);
+            //int32_t       meshId     = meshData.meshes[index];
+            //int32_t       materialId = meshData.materials[index];
 
-            SubMesh&      mesh       = scene.getSubMesh(meshId);
-            VkBuffer      buffers[]  = { mesh.getVertexBuffer().vkBuffer.buffer };
-            VkDeviceSize  offsets[]  = { 0 };
+            //SubMesh&      mesh       = scene.getSubMesh(meshId);
+            //VkBuffer      buffers[]  = { mesh.getVertexBuffer().vkBuffer.buffer };
+            //VkDeviceSize  offsets[]  = { 0 };
 
-            DrawData      push {};
-            push.cameraBufferIdx = frameData.frameIndex;
-            push.materialIdx     = materialId;
+            //DrawData      push {};
+            //push.cameraBufferIdx = frameData.frameIndex;
+            //push.materialIdx     = materialId;
 
-            // update mesh transform data
-            ModelData md { transform.mat4(), transform.normalMat4() };
-            m_modelsBuffer.writeAndFlushAtIndex(objectId, &md, sizeof(ModelData));
+            //// update mesh transform data
+            //ModelData md { transform.mat4(), transform.normalMat4() };
+            //m_modelsBuffer.writeAndFlushAtIndex(objectId, &md, sizeof(ModelData));
 
-            uint32_t dynamicOffset = objectId * static_cast<uint32_t>(m_modelsBuffer.instanceAlignmentSize);
-            vkCmdBindDescriptorSets(
-                commandBuffer,
-                VK_PIPELINE_BIND_POINT_GRAPHICS,
-                m_pipelineLayout->get(),
-                MODEL_SET_INDEX,
-                1,
-                &m_modelDescriptorSet->set,
-                1,
-                &dynamicOffset);
+            //uint32_t dynamicOffset = objectId * static_cast<uint32_t>(m_modelsBuffer.instanceAlignmentSize);
+            //vkCmdBindDescriptorSets(
+            //    commandBuffer,
+            //    VK_PIPELINE_BIND_POINT_GRAPHICS,
+            //    m_pipelineLayout->get(),
+            //    MODEL_SET_INDEX,
+            //    1,
+            //    &m_modelDescriptorSet->set,
+            //    1,
+            //    &dynamicOffset);
 
-            vkCmdPushConstants(
-                commandBuffer,
-                m_pipelineLayout->get(),
-                VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-                0,
-                sizeof(DrawData),
-                &push);
+            //vkCmdPushConstants(
+            //    commandBuffer,
+            //    m_pipelineLayout->get(),
+            //    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+            //    0,
+            //    sizeof(DrawData),
+            //    &push);
 
-            vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
+            //vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
 
-            vkCmdBindIndexBuffer(commandBuffer, mesh.getIndexBuffer().vkBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+            //vkCmdBindIndexBuffer(commandBuffer, mesh.getIndexBuffer().vkBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
 
-            vkCmdDrawIndexed(commandBuffer, mesh.getIndexCount(), 1, 0, 0, 0);
+            //vkCmdDrawIndexed(commandBuffer, mesh.getIndexCount(), 1, 0, 0, 0);
         }
     }
 }

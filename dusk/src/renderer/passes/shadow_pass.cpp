@@ -11,6 +11,8 @@
 #include "scene/components/mesh.h"
 #include "scene/components/lights.h"
 
+// TODO: https://developer.nvidia.com/gpugems/gpugems2/part-ii-shading-lighting-and-shadows/chapter-17-efficient-soft-edged-shadows-using for softer shadows
+
 namespace dusk
 {
 void recordShadow2DMapsCmds(

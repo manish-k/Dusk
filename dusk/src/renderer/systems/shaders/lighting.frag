@@ -30,6 +30,7 @@ layout (set = 0, binding = 0) uniform GlobalUBO
 
 layout (set = 1, binding = 0) uniform sampler2D textures[];
 layout (set = 1, binding = 0) uniform samplerCube cubeTextures[];
+layout (set = 1, binding = 0) uniform sampler2DShadow  shadowMaps[];
 
 layout(set = 2, binding = 0) buffer AmbientLight
 {
@@ -162,17 +163,11 @@ vec3 computeDirectionalLight(
 	float currentDepth = projCoords.z;
 	float bias =  max(0.0001 * (1.0 - NdotL), 0.00005);
 
-	float shadow = 0.0;
-	vec2 texelSize = 1.0 / textureSize(textures[dirShadowMapIdx], 0);
-	for(int x = -1; x <= 1; ++x)
-	{
-		for(int y = -1; y <= 1; ++y)
-		{
-			float pcfDepth = texture(textures[dirShadowMapIdx], projCoords.xy + vec2(x, y) * texelSize).r; 
-			shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;        
-		}    
-	}
-	shadow /= 9.0;
+	// hardware pcf
+	float shadow = texture(
+		shadowMaps[dirShadowMapIdx],
+		vec3(projCoords.xy, projCoords.z - bias)
+	);
 
 	return (1.0f - shadow) * lightColor;
 }

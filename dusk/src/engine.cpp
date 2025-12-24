@@ -1020,6 +1020,25 @@ void Engine::prepareRenderGraphResources()
         extent.height,
         VK_FORMAT_D32_SFLOAT_S8_UINT);
 
+    VkSampler shadowSampler;
+    samplerInfo                         = {};
+    samplerInfo.sType                   = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerInfo.magFilter               = VK_FILTER_LINEAR;
+    samplerInfo.minFilter               = VK_FILTER_LINEAR;
+    samplerInfo.addressModeU            = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    samplerInfo.addressModeV            = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    samplerInfo.addressModeW            = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    samplerInfo.anisotropyEnable        = VK_TRUE;
+    samplerInfo.maxAnisotropy           = ctx.physicalDeviceProperties.limits.maxSamplerAnisotropy;
+    samplerInfo.borderColor             = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    samplerInfo.unnormalizedCoordinates = VK_FALSE;
+    samplerInfo.compareEnable           = VK_TRUE;               // changed for shadow maps
+    samplerInfo.compareOp               = VK_COMPARE_OP_GREATER; // changed for shadow maps
+    samplerInfo.mipmapMode              = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+
+    vkCreateSampler(ctx.device, &samplerInfo, nullptr, &shadowSampler);
+    m_textureDB->updateTextureSampler(m_rgResources.dirShadowMapsTextureId, shadowSampler);
+
     m_rgResources.shadow2DMapPipelineLayout = VkGfxPipelineLayout::Builder(ctx)
                                                   .addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(ShadowMapPushConstant))
                                                   .addDescriptorSetLayout(m_globalDescriptorSetLayout->layout)

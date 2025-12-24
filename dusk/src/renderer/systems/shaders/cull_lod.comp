@@ -23,18 +23,21 @@ layout (set = 0, binding = 0, std140) uniform GlobalUBO
 	uvec4 spotLightIndices[32];
 } globalubo[];
 
-layout (set = 1, binding = 0, std430) readonly buffer MeshInstanceData 
+layout(set = 1, binding = 0) buffer meshDataBuffer
+{
+	uint indexCount;
+    uint firstIndex;
+    int vertexOffset;
+} meshData[];
+
+layout (set = 2, binding = 0, std430) readonly buffer MeshInstanceData 
 {
 	mat4 modelMatrix;
 	mat4 normalMatrix;
 	vec3 aabbMin;
-	uint pad0;
+	uint meshId;
 	vec3 aabbMax;
 	uint materialId;
-	uint indexCount;   
-	uint firstIndex;
-	uint vertexOffset;
-	uint firstInstance;
 } meshInstanceData[];
 
 struct IndexedIndirectCommand 
@@ -46,12 +49,12 @@ struct IndexedIndirectCommand
 	uint firstInstance;
 };
 
-layout (set = 2, binding = 0, std430) writeonly buffer IndirectDraws
+layout (set = 3, binding = 0, std430) writeonly buffer IndirectDraws
 {
 	IndexedIndirectCommand indirectDraws[];
 } cmdsBuffer;
 
-layout(set = 2, binding = 1, std430) buffer CountOut {
+layout(set = 3, binding = 1, std430) buffer CountOut {
     uint drawCount;
 } countBuffer;
 
@@ -105,10 +108,12 @@ void main()
 	{	
 		uint outIdx = atomicAdd(countBuffer.drawCount, 1);
 
-		cmdsBuffer.indirectDraws[outIdx].indexCount = meshInstanceData[idx].indexCount;
+		uint meshId = nonuniformEXT(meshInstanceData[idx].meshId);
+
+		cmdsBuffer.indirectDraws[outIdx].indexCount = meshData[meshId].indexCount;
 		cmdsBuffer.indirectDraws[outIdx].instanceCount = 1;
-		cmdsBuffer.indirectDraws[outIdx].firstIndex = meshInstanceData[idx].firstIndex;
-		cmdsBuffer.indirectDraws[outIdx].vertexOffset = meshInstanceData[idx].vertexOffset;
+		cmdsBuffer.indirectDraws[outIdx].firstIndex = meshData[meshId].firstIndex;
+		cmdsBuffer.indirectDraws[outIdx].vertexOffset = meshData[meshId].vertexOffset;
 		cmdsBuffer.indirectDraws[outIdx].firstInstance = idx;
 	}
 }

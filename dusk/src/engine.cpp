@@ -187,7 +187,8 @@ void Engine::onUpdate(TimeStep dt)
             m_globalDescriptorSet->set,
             m_textureDB->getTexturesDescriptorSet().set,
             m_lightsSystem->getLightsDescriptorSet().set,
-            m_materialsDescriptorSet->set
+            m_materialsDescriptorSet->set,
+            m_meshDataDescriptorSet->set
         };
 
         if (m_currentScene)
@@ -610,7 +611,7 @@ bool Engine::setupGlobals()
                                         .addBinding(
                                             0,
                                             VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                                            VK_SHADER_STAGE_FRAGMENT_BIT,
+                                            VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
                                             maxModelCount, // TODO: make count configurable
                                             true)
                                         .setDebugName("mesh_data_desc_set_layout")
@@ -1135,6 +1136,7 @@ void Engine::prepareRenderGraphResources()
     m_rgResources.cullLodPipelineLayout = VkGfxPipelineLayout::Builder(ctx)
                                               .addPushConstantRange(VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(CullLodPushConstant))
                                               .addDescriptorSetLayout(m_globalDescriptorSetLayout->layout)
+                                              .addDescriptorSetLayout(m_meshDataDescriptorSetLayout->layout)
                                               .addDescriptorSetLayout(m_rgResources.meshInstanceDataDescriptorSetLayout->layout)
                                               .addDescriptorSetLayout(m_rgResources.indirectDrawDescriptorSetLayout->layout)
                                               .build();

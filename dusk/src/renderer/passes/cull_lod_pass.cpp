@@ -53,20 +53,14 @@ void dispatchIndirectDrawCompute(
 
             for (uint32_t index = 0u; index < meshData.meshes.size(); ++index)
             {
-                uint32_t       materialId = meshData.materials[index];
-                const SubMesh& subMesh    = scene.getSubMesh(meshData.meshes[index]);
-
                 meshInstanceData.push_back(
                     GfxMeshInstanceData {
-                        .modelMat      = transformMatrix,
-                        .normalMat     = normalMatrix,
-                        .aabbMin       = aabb.min,
-                        .aabbMax       = aabb.max,
-                        .materialId    = materialId,
-                        .indexCount    = subMesh.getIndexCount(),
-                        .firstIndex    = subMesh.getIndexBufferIndex(),
-                        .vertexOffset  = subMesh.getVertexOffset(),
-                        .firstInstance = 0, // to be filled by compute shader
+                        .modelMat   = transformMatrix,
+                        .normalMat  = normalMatrix,
+                        .aabbMin    = aabb.min,
+                        .meshId     = meshData.meshes[index],
+                        .aabbMax    = aabb.max,
+                        .materialId = meshData.materials[index],
                     });
             }
         }
@@ -75,7 +69,8 @@ void dispatchIndirectDrawCompute(
         std::sort(
             meshInstanceData.begin(),
             meshInstanceData.end(),
-            [](const GfxMeshInstanceData& a, const GfxMeshInstanceData& b) {
+            [](const GfxMeshInstanceData& a, const GfxMeshInstanceData& b)
+            {
                 return a.materialId < b.materialId;
             });
     }
@@ -122,12 +117,22 @@ void dispatchIndirectDrawCompute(
         0,
         nullptr);
 
-    // bind mesh instance data descriptor set
     vkCmdBindDescriptorSets(
         commandBuffer,
         VK_PIPELINE_BIND_POINT_COMPUTE,
         resources.cullLodPipelineLayout->get(),
         1, // binding location
+        1,
+        &frameData.meshDataDescriptorSet,
+        0,
+        nullptr);
+
+    // bind mesh instance data descriptor set
+    vkCmdBindDescriptorSets(
+        commandBuffer,
+        VK_PIPELINE_BIND_POINT_COMPUTE,
+        resources.cullLodPipelineLayout->get(),
+        2, // binding location
         1,
         &resources.meshInstanceDataDescriptorSet[frameData.frameIndex]->set,
         0,
@@ -138,7 +143,7 @@ void dispatchIndirectDrawCompute(
         commandBuffer,
         VK_PIPELINE_BIND_POINT_COMPUTE,
         resources.cullLodPipelineLayout->get(),
-        2, // binding location
+        3, // binding location
         1,
         &resources.indirectDrawDescriptorSet[frameData.frameIndex]->set,
         0,

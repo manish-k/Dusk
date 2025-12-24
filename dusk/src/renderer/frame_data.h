@@ -42,5 +42,6 @@ struct FrameData
     VkDescriptorSet& textureDescriptorSet;
     VkDescriptorSet& lightsDescriptorSet;
     VkDescriptorSet& materialDescriptorSet;
+    VkDescriptorSet& meshDataDescriptorSet;
 };
 } // namespace dusk

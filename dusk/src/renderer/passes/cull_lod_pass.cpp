@@ -84,108 +84,106 @@ void dispatchIndirectDrawCompute(
     {
         DUSK_PROFILE_SECTION("reset_draw_count_buffer");
         // reset draw count buffer to zero
-        GfxBuffer drawCountStagingBuffer;
-        GfxBuffer::createHostWriteBuffer(
-            GfxBufferUsageFlags::TransferSource,
-            sizeof(GfxIndexedIndirectDrawCount),
-            1,
-            "staging_draw_count_buffer",
-            &drawCountStagingBuffer);
-
-        // TODO: reset value to zero each frame.
-        // for testing using instancecounter
-        GfxIndexedIndirectDrawCount defaultCount { 0 };
-        drawCountStagingBuffer.writeAndFlushAtIndex(0, &defaultCount, sizeof(GfxIndexedIndirectDrawCount));
         auto& currentDrawCountBuffer = resources.frameIndirectDrawCountBuffers[frameData.frameIndex];
 
-        currentDrawCountBuffer.copyFrom(drawCountStagingBuffer, sizeof(GfxIndexedIndirectDrawCount) * 1);
-
-        drawCountStagingBuffer.cleanup();
+        vkCmdFillBuffer(
+            commandBuffer,
+            currentDrawCountBuffer.vkBuffer.buffer,
+            0,
+            VK_WHOLE_SIZE,
+            0);
     }
 
-    // bind cull and lod pipeline
-    resources.cullLodPipeline->bind(commandBuffer);
+    {
+        DUSK_PROFILE_SECTION("resource_bindings");
 
-    // bind global descriptor set
-    vkCmdBindDescriptorSets(
-        commandBuffer,
-        VK_PIPELINE_BIND_POINT_COMPUTE,
-        resources.cullLodPipelineLayout->get(),
-        0, // binding location
-        1,
-        &frameData.globalDescriptorSet,
-        0,
-        nullptr);
+        // bind cull and lod pipeline
+        resources.cullLodPipeline->bind(commandBuffer);
 
-    vkCmdBindDescriptorSets(
-        commandBuffer,
-        VK_PIPELINE_BIND_POINT_COMPUTE,
-        resources.cullLodPipelineLayout->get(),
-        1, // binding location
-        1,
-        &frameData.meshDataDescriptorSet,
-        0,
-        nullptr);
+        // bind global descriptor set
+        vkCmdBindDescriptorSets(
+            commandBuffer,
+            VK_PIPELINE_BIND_POINT_COMPUTE,
+            resources.cullLodPipelineLayout->get(),
+            0, // binding location
+            1,
+            &frameData.globalDescriptorSet,
+            0,
+            nullptr);
 
-    // bind mesh instance data descriptor set
-    vkCmdBindDescriptorSets(
-        commandBuffer,
-        VK_PIPELINE_BIND_POINT_COMPUTE,
-        resources.cullLodPipelineLayout->get(),
-        2, // binding location
-        1,
-        &resources.meshInstanceDataDescriptorSet[frameData.frameIndex]->set,
-        0,
-        nullptr);
+        vkCmdBindDescriptorSets(
+            commandBuffer,
+            VK_PIPELINE_BIND_POINT_COMPUTE,
+            resources.cullLodPipelineLayout->get(),
+            1, // binding location
+            1,
+            &frameData.meshDataDescriptorSet,
+            0,
+            nullptr);
 
-    // bind indirect draw descriptor set
-    vkCmdBindDescriptorSets(
-        commandBuffer,
-        VK_PIPELINE_BIND_POINT_COMPUTE,
-        resources.cullLodPipelineLayout->get(),
-        3, // binding location
-        1,
-        &resources.indirectDrawDescriptorSet[frameData.frameIndex]->set,
-        0,
-        nullptr);
+        // bind mesh instance data descriptor set
+        vkCmdBindDescriptorSets(
+            commandBuffer,
+            VK_PIPELINE_BIND_POINT_COMPUTE,
+            resources.cullLodPipelineLayout->get(),
+            2, // binding location
+            1,
+            &resources.meshInstanceDataDescriptorSet[frameData.frameIndex]->set,
+            0,
+            nullptr);
 
-    // push constants
-    CullLodPushConstant push {};
-    push.globalUboIdx = frameData.frameIndex;
-    push.objectCount  = meshInstanceData.size();
+        // bind indirect draw descriptor set
+        vkCmdBindDescriptorSets(
+            commandBuffer,
+            VK_PIPELINE_BIND_POINT_COMPUTE,
+            resources.cullLodPipelineLayout->get(),
+            3, // binding location
+            1,
+            &resources.indirectDrawDescriptorSet[frameData.frameIndex]->set,
+            0,
+            nullptr);
+    }
 
-    vkCmdPushConstants(
-        commandBuffer,
-        resources.cullLodPipelineLayout->get(),
-        VK_SHADER_STAGE_COMPUTE_BIT,
-        0,
-        sizeof(CullLodPushConstant),
-        &push);
+    {
+        DUSK_PROFILE_SECTION("dispatch");
+        // push constants
+        CullLodPushConstant push {};
+        push.globalUboIdx = frameData.frameIndex;
+        push.objectCount  = meshInstanceData.size();
 
-    // dispatch compute shader
-    uint32_t workgroupCount = (push.objectCount + 31) / 32;
-    vkCmdDispatch(
-        commandBuffer,
-        workgroupCount,
-        1,
-        1);
+        vkCmdPushConstants(
+            commandBuffer,
+            resources.cullLodPipelineLayout->get(),
+            VK_SHADER_STAGE_COMPUTE_BIT,
+            0,
+            sizeof(CullLodPushConstant),
+            &push);
 
-    // barrier to ensure compute shader writes are visible to subsequent draw calls
-    VkMemoryBarrier memoryBarrier {};
-    memoryBarrier.sType         = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
-    memoryBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-    memoryBarrier.dstAccessMask = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
+        // dispatch compute shader
+        uint32_t workgroupCount = (push.objectCount + 31) / 32;
+        vkCmdDispatch(
+            commandBuffer,
+            workgroupCount,
+            1,
+            1);
 
-    vkCmdPipelineBarrier(
-        commandBuffer,
-        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-        VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
-        0,
-        1,
-        &memoryBarrier,
-        0,
-        nullptr,
-        0,
-        nullptr);
+        // barrier to ensure compute shader writes are visible to subsequent draw calls
+        VkMemoryBarrier memoryBarrier {};
+        memoryBarrier.sType         = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+        memoryBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+        memoryBarrier.dstAccessMask = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
+
+        vkCmdPipelineBarrier(
+            commandBuffer,
+            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+            VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
+            0,
+            1,
+            &memoryBarrier,
+            0,
+            nullptr,
+            0,
+            nullptr);
+    }
 }
 } // namespace dusk

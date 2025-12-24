@@ -57,9 +57,9 @@ void dispatchIndirectDrawCompute(
                     GfxMeshInstanceData {
                         .modelMat   = transformMatrix,
                         .normalMat  = normalMatrix,
-                        .aabbMin    = aabb.min,
+                        .center     = (aabb.min + aabb.max) * 0.5f,
                         .meshId     = meshData.meshes[index],
-                        .aabbMax    = aabb.max,
+                        .extents    = (aabb.max - aabb.min) * 0.5f,
                         .materialId = meshData.materials[index],
                     });
             }

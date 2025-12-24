@@ -28,12 +28,9 @@ struct alignas(16) GfxMeshInstanceData
 {
     glm::mat4 modelMat   = { 1.f };
     glm::mat4 normalMat  = { 1.f };
-
-    glm::vec3 aabbMin    = {};
+    glm::vec3 center     = {};
     uint32_t  meshId     = 0u;
-
-    glm::vec3 aabbMax    = {};
-
+    glm::vec3 extents    = {};
     uint32_t  materialId = 0u;
 };
 

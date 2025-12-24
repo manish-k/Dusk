@@ -34,9 +34,9 @@ layout (set = 2, binding = 0, std430) readonly buffer MeshInstanceData
 {
 	mat4 modelMatrix;
 	mat4 normalMatrix;
-	vec3 aabbMin;
+	vec3 center;
 	uint meshId;
-	vec3 aabbMax;
+	vec3 extents;
 	uint materialId;
 } meshInstanceData[];
 
@@ -69,26 +69,23 @@ layout (local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
 bool isAABBinFrustum(uint meshInstanceIdx)
 {
 	// this are already in view space
-	vec3 aabbMin = meshInstanceData[meshInstanceIdx].aabbMin;
-	vec3 aabbMax = meshInstanceData[meshInstanceIdx].aabbMax;
+	vec3 center = meshInstanceData[meshInstanceIdx].center;
+	vec3 extents = meshInstanceData[meshInstanceIdx].extents;
 
 	// Test AABB against frustum planes
 	for (int i = 0; i < 6; ++i)
 	{
-		vec4 plane = globalubo[push.globalUBOIdx].frustumPlanes[i];
+		vec4 p = globalubo[push.globalUBOIdx].frustumPlanes[i];
 		
-		// Compute the positive vertex
-		// For a given plane, pick the AABB corner that is farthest in the direction of the plane normal
-		vec3 pVertex;
-		pVertex.x = (plane.x >= 0.0) ? aabbMax.x : aabbMin.x;
-		pVertex.y = (plane.y >= 0.0) ? aabbMax.y : aabbMin.y;
-		pVertex.z = (plane.z >= 0.0) ? aabbMax.z : aabbMin.z;
-		
-		// If positive vertex is outside the plane, then AABB is outside
-		if (dot(plane.xyz, pVertex) + plane.w < 0.0)
-		{
-			return false;
-		}
+		float d = dot(vec4(center, 1.0), p);
+
+        float r =
+            extents.x * abs(p.x) +
+            extents.y * abs(p.y) +
+            extents.z * abs(p.z);
+
+        if (d + r < 0.0)
+            return false;
 	}
 
 	return true;

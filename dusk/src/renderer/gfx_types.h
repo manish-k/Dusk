@@ -16,6 +16,13 @@ struct GfxRenderingAttachment
     GfxStoreOperation storeOp    = GfxStoreOperation::Store;
 };
 
+struct GfxMeshData
+{
+    uint32_t indexCount   = 0u;
+    uint32_t firstIndex   = 0u;
+    int32_t  vertexOffset = 0u;
+};
+
 // TODO:: make it std430 aligned
 struct alignas(16) GfxMeshInstanceData
 {

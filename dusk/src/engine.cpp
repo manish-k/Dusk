@@ -288,6 +288,7 @@ void Engine::loadScene(Scene* scene)
     m_currentScene = scene;
     registerMaterials(scene->getMaterials());
 
+    updateMeshDataBuffer(scene->getSubMeshes());
     m_lightsSystem->registerAllLights(*scene);
 }
 
@@ -598,6 +599,35 @@ bool Engine::setupGlobals()
     m_materialsDescriptorSet = m_materialDescriptorPool->allocateDescriptorSet(*m_materialDescriptorSetLayout, "material_desc_set");
     CHECK_AND_RETURN_FALSE(!m_materialsDescriptorSet);
 
+    // mesh info resources
+    m_meshDataDescriptorPool = VkGfxDescriptorPool::Builder(ctx)
+                                   .addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, maxModelCount) // TODO: make count configurable
+                                   .setDebugName("mesh_data_desc_pool")
+                                   .build(1, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
+    CHECK_AND_RETURN_FALSE(!m_meshDataDescriptorPool);
+
+    m_meshDataDescriptorSetLayout = VkGfxDescriptorSetLayout::Builder(ctx)
+                                        .addBinding(
+                                            0,
+                                            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                                            VK_SHADER_STAGE_FRAGMENT_BIT,
+                                            maxModelCount, // TODO: make count configurable
+                                            true)
+                                        .setDebugName("mesh_data_desc_set_layout")
+                                        .build();
+    CHECK_AND_RETURN_FALSE(!m_meshDataDescriptorSetLayout);
+
+    GfxBuffer::createHostWriteBuffer(
+        GfxBufferUsageFlags::StorageBuffer,
+        sizeof(GfxMeshData),
+        maxModelCount,
+        "mesh_data_buffer",
+        &m_meshDataBuffer);
+    CHECK_AND_RETURN_FALSE(!m_meshDataBuffer.isAllocated());
+
+    m_meshDataDescriptorSet = m_meshDataDescriptorPool->allocateDescriptorSet(*m_meshDataDescriptorSetLayout, "mesh_data_desc_set");
+    CHECK_AND_RETURN_FALSE(!m_meshDataDescriptorSet);
+
     return true;
 }
 
@@ -614,8 +644,13 @@ void Engine::cleanupGlobals()
     m_materialDescriptorSetLayout = nullptr;
     m_materialDescriptorPool      = nullptr;
 
+    m_meshDataDescriptorPool->resetPool();
+    m_meshDataDescriptorSetLayout = nullptr;
+    m_meshDataDescriptorPool      = nullptr;
+
     m_globalUbos.cleanup();
     m_materialsBuffer.cleanup();
+    m_meshDataBuffer.cleanup();
 
     releaseRenderGraphResources();
 }
@@ -648,6 +683,36 @@ void Engine::updateMaterialsBuffer(DynamicArray<Material>& materials)
         DASSERT(materials[index].id != -1);
         m_materialsBuffer.writeAndFlushAtIndex(materials[index].id, &materials[index], sizeof(Material));
     }
+}
+
+void Engine::updateMeshDataBuffer(DynamicArray<SubMesh>& subMeshes)
+{
+    DUSK_PROFILE_FUNCTION;
+
+    DynamicArray<VkDescriptorBufferInfo> meshDataDescInfo;
+    meshDataDescInfo.reserve(subMeshes.size());
+    
+    for (uint32_t meshId = 0u; meshId < subMeshes.size(); ++meshId)
+    {
+        SubMesh&    subMesh = subMeshes[meshId];
+
+        GfxMeshData meshData {};
+        meshData.indexCount   = subMesh.getIndexCount();
+        meshData.firstIndex   = subMesh.getIndexBufferIndex();
+        meshData.vertexOffset = subMesh.getVertexOffset();
+
+        m_meshDataBuffer.writeAndFlushAtIndex(meshId, &meshData, sizeof(GfxMeshData));
+
+        meshDataDescInfo.push_back(m_meshDataBuffer.getDescriptorInfoAtIndex(meshId));
+    }
+
+    m_meshDataDescriptorSet->configureBuffer(
+        0,
+        0,
+        meshDataDescInfo.size(),
+        meshDataDescInfo.data());
+
+    m_meshDataDescriptorSet->applyConfiguration();
 }
 
 void Engine::prepareRenderGraphResources()

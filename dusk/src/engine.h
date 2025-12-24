@@ -129,6 +129,7 @@ public:
     void                  registerMaterials(DynamicArray<Material>& materials);
 
     void                  updateMaterialsBuffer(DynamicArray<Material>& materials);
+    void                  updateMeshDataBuffer(DynamicArray<SubMesh>& subMeshes);
 
     TimeStep              getFrameDelta() const { return m_deltaTime; };
 
@@ -212,6 +213,12 @@ private:
 
     GfxBuffer                        m_materialsBuffer;
     Unique<VkGfxDescriptorSet>       m_materialsDescriptorSet;
+
+    Unique<VkGfxDescriptorPool>      m_meshDataDescriptorPool      = nullptr;
+    Unique<VkGfxDescriptorSetLayout> m_meshDataDescriptorSetLayout = nullptr;
+
+    GfxBuffer                        m_meshDataBuffer;
+    Unique<VkGfxDescriptorSet>       m_meshDataDescriptorSet;
 
     RenderGraphResources             m_rgResources;
 

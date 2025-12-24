@@ -1,7 +1,5 @@
 #include "render_graph.h"
 
-#include "debug/profiler.h"
-
 namespace dusk
 {
 void RenderGraph::addPass(

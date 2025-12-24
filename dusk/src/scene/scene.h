@@ -101,31 +101,33 @@ public:
     /**
      * @brief
      */
-    void             freeSubMeshes();
+    void                   freeSubMeshes();
 
-    SubMesh&         getSubMesh(uint32_t meshId) { return m_subMeshes[meshId]; }
+    SubMesh&               getSubMesh(uint32_t meshId) { return m_subMeshes[meshId]; }
 
-    CameraComponent& getMainCamera();
+    DynamicArray<SubMesh>& getSubMeshes() { return m_subMeshes; }
 
-    CameraController&   getMainCameraController();
+    CameraComponent&       getMainCamera();
 
-    TransformComponent& getMainCameraTransform();
+    CameraController&      getMainCameraController();
 
-    void initMaterialCache(uint32_t materialCount)
+    TransformComponent&    getMainCameraTransform();
+
+    void                   initMaterialCache(uint32_t materialCount)
     {
         m_materials.reserve(materialCount);
     };
 
-    void                     addMaterial(Material& mat);
+    void                    addMaterial(Material& mat);
 
-    Material&                getMaterial(uint32_t matId) { return m_materials[matId]; };
+    Material&               getMaterial(uint32_t matId) { return m_materials[matId]; };
 
-    void                     freeMaterials();
+    void                    freeMaterials();
 
-    DynamicArray<Material>&  getMaterials() { return m_materials; }
-    DynamicArray<EntityId>&  getChildren() { return m_children; }
+    DynamicArray<Material>& getMaterials() { return m_materials; }
+    DynamicArray<EntityId>& getChildren() { return m_children; }
 
-    void                     updateModelsBuffer(GfxBuffer& modelBuffer);
+    void                    updateModelsBuffer(GfxBuffer& modelBuffer);
 
     /**
      * @brief Create a scene from a gltf file
@@ -136,16 +138,16 @@ public:
         const std::string& fileName);
 
 private:
-    const std::string              m_name;
-    EntityId                       m_root = NULL_ENTITY;
-    DynamicArray<EntityId>         m_children {};
-    GameObject::UMap               m_sceneGameObjects {};
+    const std::string        m_name;
+    EntityId                 m_root = NULL_ENTITY;
+    DynamicArray<EntityId>   m_children {};
+    GameObject::UMap         m_sceneGameObjects {};
 
-    DynamicArray<SubMesh>          m_subMeshes {};
+    DynamicArray<SubMesh>    m_subMeshes {};
 
-    EntityId                       m_cameraId;
-    Unique<CameraController>       m_cameraController;
+    EntityId                 m_cameraId;
+    Unique<CameraController> m_cameraController;
 
-    DynamicArray<Material>         m_materials;
+    DynamicArray<Material>   m_materials;
 };
 } // namespace dusk

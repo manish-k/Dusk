@@ -178,16 +178,6 @@ void recordGBufferCmdsMutliThreaded(
                     secondayBuffer,
                     VK_PIPELINE_BIND_POINT_GRAPHICS,
                     resources.gbuffPipelineLayout->get(),
-                    2, // model desc set binding location
-                    1,
-                    &resources.gbuffModelDescriptorSet[frameData.frameIndex]->set,
-                    0,
-                    nullptr);
-
-                vkCmdBindDescriptorSets(
-                    secondayBuffer,
-                    VK_PIPELINE_BIND_POINT_GRAPHICS,
-                    resources.gbuffPipelineLayout->get(),
                     3, // texture desc set binding location
                     1,
                     &frameData.textureDescriptorSet,

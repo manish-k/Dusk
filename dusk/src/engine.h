@@ -51,10 +51,6 @@ struct RenderGraphResources
     uint32_t                                 gbuffDepthTextureId                 = {};
     Unique<VkGfxRenderPipeline>              gbuffPipeline                       = nullptr;
     Unique<VkGfxPipelineLayout>              gbuffPipelineLayout                 = nullptr;
-    Unique<VkGfxDescriptorPool>              gbuffModelDescriptorPool            = nullptr;
-    Unique<VkGfxDescriptorSetLayout>         gbuffModelDescriptorSetLayout       = nullptr;
-    DynamicArray<Unique<VkGfxDescriptorSet>> gbuffModelDescriptorSet             = {};
-    DynamicArray<GfxBuffer>                  gbuffModelsBuffer                   = {};
 
     Unique<VkGfxDescriptorPool>              meshInstanceDataDescriptorPool      = nullptr;
     Unique<VkGfxDescriptorSetLayout>         meshInstanceDataDescriptorSetLayout = nullptr;

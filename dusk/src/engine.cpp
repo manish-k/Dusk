@@ -199,8 +199,6 @@ void Engine::onUpdate(TimeStep dt)
 
             m_currentScene->onUpdate(dt);
 
-            m_currentScene->updateModelsBuffer(m_rgResources.gbuffModelsBuffer[currentFrameIndex]);
-
             m_currentScene->gatherRenderables(&m_frameRenderables[currentFrameIndex]);
 
             CameraComponent& camera = m_currentScene->getMainCamera();
@@ -226,7 +224,7 @@ void Engine::onUpdate(TimeStep dt)
 
             m_globalUbos.writeAndFlushAtIndex(currentFrameIndex, &ubo, sizeof(GlobalUbo));
 
-            //write all renderables data
+            // write all renderables data
             m_modelMatrixBuffers[currentFrameIndex].writeAndFlush(
                 0,
                 m_frameRenderables[currentFrameIndex].modelMatrices.data(),
@@ -1010,48 +1008,6 @@ void Engine::prepareRenderGraphResources()
         m_rgResources.meshInstanceDataDescriptorSet[frameIdx]->applyConfiguration();
     }
 
-    m_rgResources.gbuffModelDescriptorPool = VkGfxDescriptorPool::Builder(ctx)
-                                                 .addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, maxFramesCount * MAX_RENDERABLES_COUNT)
-                                                 .setDebugName("model_desc_pool")
-                                                 .build(maxFramesCount, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
-
-    m_rgResources.gbuffModelDescriptorSetLayout = VkGfxDescriptorSetLayout::Builder(ctx)
-                                                      .addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, MAX_RENDERABLES_COUNT, true)
-                                                      .setDebugName("model_desc_set_layout")
-                                                      .build();
-
-    // create models buffer and descriptor set
-    m_rgResources.gbuffModelsBuffer.resize(maxFramesCount);
-    m_rgResources.gbuffModelDescriptorSet.resize(maxFramesCount);
-
-    for (uint32_t frameIdx = 0u; frameIdx < maxFramesCount; ++frameIdx)
-    {
-        GfxBuffer::createHostWriteBuffer(
-            GfxBufferUsageFlags::StorageBuffer,
-            sizeof(ModelData),
-            MAX_RENDERABLES_COUNT,
-            "model_buffer_" + std::to_string(frameIdx),
-            &m_rgResources.gbuffModelsBuffer[frameIdx]);
-
-        m_rgResources.gbuffModelDescriptorSet[frameIdx] = m_rgResources.gbuffModelDescriptorPool->allocateDescriptorSet(
-            *m_rgResources.gbuffModelDescriptorSetLayout, "model_desc_set");
-
-        DynamicArray<VkDescriptorBufferInfo> meshBufferInfo;
-        meshBufferInfo.reserve(MAX_RENDERABLES_COUNT);
-        for (uint32_t meshIdx = 0u; meshIdx < MAX_RENDERABLES_COUNT; ++meshIdx)
-        {
-            meshBufferInfo.push_back(m_rgResources.gbuffModelsBuffer[frameIdx].getDescriptorInfoAtIndex(meshIdx));
-        }
-
-        m_rgResources.gbuffModelDescriptorSet[frameIdx]->configureBuffer(
-            0,
-            0,
-            meshBufferInfo.size(),
-            meshBufferInfo.data());
-
-        m_rgResources.gbuffModelDescriptorSet[frameIdx]->applyConfiguration();
-    }
-
     // create g-buff pipeline layout
     m_rgResources.gbuffPipelineLayout = VkGfxPipelineLayout::Builder(ctx)
                                             .addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(DrawData))
@@ -1339,15 +1295,8 @@ void Engine::releaseRenderGraphResources()
     for (auto& buffer : m_rgResources.meshInstanceDataBuffers)
         buffer.cleanup();
 
-    m_rgResources.gbuffPipeline       = nullptr;
-    m_rgResources.gbuffPipelineLayout = nullptr;
-
-    m_rgResources.gbuffModelDescriptorPool->resetPool();
-    m_rgResources.gbuffModelDescriptorSetLayout = nullptr;
-    m_rgResources.gbuffModelDescriptorPool      = nullptr;
-
-    for (auto& buffer : m_rgResources.gbuffModelsBuffer)
-        buffer.cleanup();
+    m_rgResources.gbuffPipeline             = nullptr;
+    m_rgResources.gbuffPipelineLayout       = nullptr;
 
     m_rgResources.presentPipeline           = nullptr;
     m_rgResources.presentPipelineLayout     = nullptr;

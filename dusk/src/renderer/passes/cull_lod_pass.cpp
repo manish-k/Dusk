@@ -34,7 +34,7 @@ void dispatchIndirectDrawCompute(
     // TODO: mesh buffer updates should go inside scene update()
     DynamicArray<GfxMeshInstanceData> meshInstanceData;
 
-    meshInstanceData.reserve(maxModelCount);
+    meshInstanceData.reserve(MAX_RENDERABLES_COUNT);
 
     // possiblity of cache unfriendliness here. Only first component is
     // cache friendly. https://gamedev.stackexchange.com/a/212879

@@ -19,6 +19,7 @@ class TransformComponent;
 class Event;
 
 struct Vertex;
+struct GfxRenderables;
 
 struct ModelData
 {
@@ -128,6 +129,8 @@ public:
     DynamicArray<EntityId>& getChildren() { return m_children; }
 
     void                    updateModelsBuffer(GfxBuffer& modelBuffer);
+
+    void                    gatherRenderables(GfxRenderables* currentFrameRenderables);
 
     /**
      * @brief Create a scene from a gltf file

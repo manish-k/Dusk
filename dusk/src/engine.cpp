@@ -184,11 +184,13 @@ void Engine::onUpdate(TimeStep dt)
             m_currentScene,
             extent.width,
             extent.height,
+            &m_frameRenderables[currentFrameIndex],
             m_globalDescriptorSet->set,
             m_textureDB->getTexturesDescriptorSet().set,
             m_lightsSystem->getLightsDescriptorSet().set,
             m_materialsDescriptorSet->set,
-            m_meshDataDescriptorSet->set
+            m_meshDataDescriptorSet->set,
+            m_renderableDescriptorSets[currentFrameIndex]->set
         };
 
         if (m_currentScene)
@@ -198,6 +200,8 @@ void Engine::onUpdate(TimeStep dt)
             m_currentScene->onUpdate(dt);
 
             m_currentScene->updateModelsBuffer(m_rgResources.gbuffModelsBuffer[currentFrameIndex]);
+
+            m_currentScene->gatherRenderables(&m_frameRenderables[currentFrameIndex]);
 
             CameraComponent& camera = m_currentScene->getMainCamera();
             camera.setAspectRatio(m_renderer->getAspectRatio());
@@ -222,12 +226,40 @@ void Engine::onUpdate(TimeStep dt)
 
             m_globalUbos.writeAndFlushAtIndex(currentFrameIndex, &ubo, sizeof(GlobalUbo));
 
+            //write all renderables data
+            m_modelMatrixBuffers[currentFrameIndex].writeAndFlush(
+                0,
+                m_frameRenderables[currentFrameIndex].modelMatrices.data(),
+                m_frameRenderables[currentFrameIndex].modelMatrices.size() * sizeof(glm::mat4));
+            m_normalMatrixBuffers[currentFrameIndex].writeAndFlush(
+                0,
+                m_frameRenderables[currentFrameIndex].normalMatrices.data(),
+                m_frameRenderables[currentFrameIndex].normalMatrices.size() * sizeof(glm::mat4));
+            m_boundingBoxBuffers[currentFrameIndex].writeAndFlush(
+                0,
+                m_frameRenderables[currentFrameIndex].boundingBoxes.data(),
+                m_frameRenderables[currentFrameIndex].boundingBoxes.size() * sizeof(GfxBoundingBoxData));
+            m_meshIdsBuffers[currentFrameIndex].writeAndFlush(
+                0,
+                m_frameRenderables[currentFrameIndex].meshIds.data(),
+                m_frameRenderables[currentFrameIndex].meshIds.size() * sizeof(uint32_t));
+            m_materialIdsBuffers[currentFrameIndex].writeAndFlush(
+                0,
+                m_frameRenderables[currentFrameIndex].materialIds.data(),
+                m_frameRenderables[currentFrameIndex].materialIds.size() * sizeof(uint32_t));
+
             updateMaterialsBuffer(m_currentScene->getMaterials());
         }
 
         renderFrame(frameData);
 
         m_renderer->endFrame();
+
+        m_frameRenderables[currentFrameIndex].modelMatrices.clear();
+        m_frameRenderables[currentFrameIndex].normalMatrices.clear();
+        m_frameRenderables[currentFrameIndex].boundingBoxes.clear();
+        m_frameRenderables[currentFrameIndex].meshIds.clear();
+        m_frameRenderables[currentFrameIndex].materialIds.clear();
     }
 
     {
@@ -478,8 +510,8 @@ void Engine::renderFrame(FrameData& frameData)
         .secondaryCmdBuffers   = m_renderer->getSecondayCmdBuffers(frameData.frameIndex)
     };
 
-     renderGraph.setPassContext("skybox_pass", skyBoxCtx);
-     renderGraph.addPass("skybox_pass", recordSkyBoxCmds);
+    renderGraph.setPassContext("skybox_pass", skyBoxCtx);
+    renderGraph.addPass("skybox_pass", recordSkyBoxCmds);
 
     // create presentation pass
     auto presentReadAttachments = {
@@ -577,13 +609,13 @@ bool Engine::setupGlobals()
 
     // create descriptor pool and layout for materials
     m_materialDescriptorPool = VkGfxDescriptorPool::Builder(ctx)
-                                   .addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, maxMaterialCount) // TODO: make count configurable
+                                   .addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, MAX_MATERIALS_COUNT) // TODO: make count configurable
                                    .setDebugName("material_desc_pool")
                                    .build(1, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
     CHECK_AND_RETURN_FALSE(!m_materialDescriptorPool);
 
     m_materialDescriptorSetLayout = VkGfxDescriptorSetLayout::Builder(ctx)
-                                        .addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, maxMaterialCount, true) // TODO: make count configurable
+                                        .addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, MAX_MATERIALS_COUNT, true) // TODO: make count configurable
                                         .setDebugName("material_desc_set_layout")
                                         .build();
     CHECK_AND_RETURN_FALSE(!m_materialDescriptorSetLayout);
@@ -592,7 +624,7 @@ bool Engine::setupGlobals()
     GfxBuffer::createHostWriteBuffer(
         GfxBufferUsageFlags::StorageBuffer,
         sizeof(Material),
-        maxMaterialCount,
+        MAX_MATERIALS_COUNT,
         "material_buffer",
         &m_materialsBuffer);
     CHECK_AND_RETURN_FALSE(!m_materialsBuffer.isAllocated());
@@ -602,7 +634,7 @@ bool Engine::setupGlobals()
 
     // mesh info resources
     m_meshDataDescriptorPool = VkGfxDescriptorPool::Builder(ctx)
-                                   .addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, maxModelCount) // TODO: make count configurable
+                                   .addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, MAX_RENDERABLES_COUNT) // TODO: make count configurable
                                    .setDebugName("mesh_data_desc_pool")
                                    .build(1, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
     CHECK_AND_RETURN_FALSE(!m_meshDataDescriptorPool);
@@ -612,7 +644,7 @@ bool Engine::setupGlobals()
                                             0,
                                             VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                                             VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
-                                            maxModelCount, // TODO: make count configurable
+                                            MAX_RENDERABLES_COUNT, // TODO: make count configurable
                                             true)
                                         .setDebugName("mesh_data_desc_set_layout")
                                         .build();
@@ -621,13 +653,125 @@ bool Engine::setupGlobals()
     GfxBuffer::createHostWriteBuffer(
         GfxBufferUsageFlags::StorageBuffer,
         sizeof(GfxMeshData),
-        maxModelCount,
+        MAX_RENDERABLES_COUNT,
         "mesh_data_buffer",
         &m_meshDataBuffer);
     CHECK_AND_RETURN_FALSE(!m_meshDataBuffer.isAllocated());
 
     m_meshDataDescriptorSet = m_meshDataDescriptorPool->allocateDescriptorSet(*m_meshDataDescriptorSetLayout, "mesh_data_desc_set");
     CHECK_AND_RETURN_FALSE(!m_meshDataDescriptorSet);
+
+    // renderables resources
+    m_renderableDescriptorPool = VkGfxDescriptorPool::Builder(ctx)
+                                     .addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 5 * maxFramesCount)
+                                     .setDebugName("renderables_desc_pool")
+                                     .build(maxFramesCount, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
+    CHECK_AND_RETURN_FALSE(!m_renderableDescriptorPool);
+
+    m_renderableDescriptorSetLayout = VkGfxDescriptorSetLayout::Builder(ctx)
+                                          .addBinding(
+                                              0, // model matrices binding
+                                              VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                                              VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
+                                              1,
+                                              true)
+                                          .addBinding(
+                                              1, // normal matrices binding
+                                              VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                                              VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
+                                              1,
+                                              true)
+                                          .addBinding(
+                                              2, // bounding boxes binding
+                                              VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                                              VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
+                                              1,
+                                              true)
+                                          .addBinding(
+                                              3, // mesh ids binding
+                                              VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                                              VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
+                                              1,
+                                              true)
+                                          .addBinding(
+                                              4, // material ids binding
+                                              VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                                              VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
+                                              1,
+                                              true)
+                                          .setDebugName("mesh_data_desc_set_layout")
+                                          .build();
+    CHECK_AND_RETURN_FALSE(!m_renderableDescriptorSetLayout);
+
+    m_frameRenderables.resize(maxFramesCount);
+    m_modelMatrixBuffers.resize(maxFramesCount);
+    m_normalMatrixBuffers.resize(maxFramesCount);
+    m_boundingBoxBuffers.resize(maxFramesCount);
+    m_meshIdsBuffers.resize(maxFramesCount);
+    m_materialIdsBuffers.resize(maxFramesCount);
+    m_renderableDescriptorSets.resize(maxFramesCount);
+    for (uint32_t frameIdx = 0u; frameIdx < maxFramesCount; ++frameIdx)
+    {
+        m_frameRenderables[frameIdx].modelMatrices.reserve(MAX_RENDERABLES_COUNT);
+        m_frameRenderables[frameIdx].normalMatrices.reserve(MAX_RENDERABLES_COUNT);
+        m_frameRenderables[frameIdx].boundingBoxes.reserve(MAX_RENDERABLES_COUNT);
+        m_frameRenderables[frameIdx].meshIds.reserve(MAX_RENDERABLES_COUNT);
+        m_frameRenderables[frameIdx].materialIds.reserve(MAX_RENDERABLES_COUNT);
+
+        GfxBuffer::createHostWriteBuffer(
+            GfxBufferUsageFlags::StorageBuffer,
+            sizeof(glm::mat4),
+            MAX_RENDERABLES_COUNT,
+            "model_matrix_buffer",
+            &m_modelMatrixBuffers[frameIdx]);
+
+        GfxBuffer::createHostWriteBuffer(
+            GfxBufferUsageFlags::StorageBuffer,
+            sizeof(glm::mat4),
+            MAX_RENDERABLES_COUNT,
+            "normal_matrix_buffer",
+            &m_normalMatrixBuffers[frameIdx]);
+
+        GfxBuffer::createHostWriteBuffer(
+            GfxBufferUsageFlags::StorageBuffer,
+            sizeof(GfxBoundingBoxData),
+            MAX_RENDERABLES_COUNT,
+            "bounding_box_buffer",
+            &m_boundingBoxBuffers[frameIdx]);
+
+        GfxBuffer::createHostWriteBuffer(
+            GfxBufferUsageFlags::StorageBuffer,
+            sizeof(uint32_t),
+            MAX_RENDERABLES_COUNT,
+            "mesh_id_buffer",
+            &m_meshIdsBuffers[frameIdx]);
+
+        GfxBuffer::createHostWriteBuffer(
+            GfxBufferUsageFlags::StorageBuffer,
+            sizeof(uint32_t),
+            MAX_RENDERABLES_COUNT,
+            "material_id_buffer",
+            &m_materialIdsBuffers[frameIdx]);
+
+        m_renderableDescriptorSets[frameIdx] = m_renderableDescriptorPool->allocateDescriptorSet(
+            *m_renderableDescriptorSetLayout,
+            "renderables_desc_set");
+
+        DynamicArray<VkDescriptorBufferInfo> renderableBuffersInfo;
+        renderableBuffersInfo.push_back(m_modelMatrixBuffers[frameIdx].getDescriptorInfo());
+        renderableBuffersInfo.push_back(m_normalMatrixBuffers[frameIdx].getDescriptorInfo());
+        renderableBuffersInfo.push_back(m_boundingBoxBuffers[frameIdx].getDescriptorInfo());
+        renderableBuffersInfo.push_back(m_meshIdsBuffers[frameIdx].getDescriptorInfo());
+        renderableBuffersInfo.push_back(m_materialIdsBuffers[frameIdx].getDescriptorInfo());
+
+        m_renderableDescriptorSets[frameIdx]->configureBuffer(
+            0,
+            0,
+            renderableBuffersInfo.size(),
+            renderableBuffersInfo.data());
+
+        m_renderableDescriptorSets[frameIdx]->applyConfiguration();
+    }
 
     return true;
 }
@@ -648,6 +792,19 @@ void Engine::cleanupGlobals()
     m_meshDataDescriptorPool->resetPool();
     m_meshDataDescriptorSetLayout = nullptr;
     m_meshDataDescriptorPool      = nullptr;
+
+    m_renderableDescriptorPool->resetPool();
+    m_renderableDescriptorSetLayout = nullptr;
+    m_renderableDescriptorPool      = nullptr;
+
+    for (uint32_t frameIdx = 0u; frameIdx < m_renderer->getMaxFramesCount(); ++frameIdx)
+    {
+        m_modelMatrixBuffers[frameIdx].cleanup();
+        m_normalMatrixBuffers[frameIdx].cleanup();
+        m_boundingBoxBuffers[frameIdx].cleanup();
+        m_meshIdsBuffers[frameIdx].cleanup();
+        m_materialIdsBuffers[frameIdx].cleanup();
+    }
 
     m_globalUbos.cleanup();
     m_materialsBuffer.cleanup();
@@ -692,7 +849,7 @@ void Engine::updateMeshDataBuffer(DynamicArray<SubMesh>& subMeshes)
 
     DynamicArray<VkDescriptorBufferInfo> meshDataDescInfo;
     meshDataDescInfo.reserve(subMeshes.size());
-    
+
     for (uint32_t meshId = 0u; meshId < subMeshes.size(); ++meshId)
     {
         SubMesh&    subMesh = subMeshes[meshId];
@@ -744,7 +901,7 @@ void Engine::prepareRenderGraphResources()
     {
         m_rgResources.frameIndirectDrawCommandsBuffers[frameIdx].init(
             GfxBufferUsageFlags::StorageBuffer | GfxBufferUsageFlags::IndirectBuffer | GfxBufferUsageFlags::TransferTarget,
-            sizeof(GfxIndexedIndirectDrawCommand) * maxModelCount,
+            sizeof(GfxIndexedIndirectDrawCommand) * MAX_RENDERABLES_COUNT,
             GfxBufferMemoryTypeFlags::DedicatedDeviceMemory,
             std::format("indirect_draw_buffer_{}", std::to_string(frameIdx)));
 
@@ -813,12 +970,12 @@ void Engine::prepareRenderGraphResources()
         VK_FORMAT_D32_SFLOAT_S8_UINT);
 
     m_rgResources.meshInstanceDataDescriptorPool = VkGfxDescriptorPool::Builder(ctx)
-                                                       .addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, maxFramesCount * maxModelCount)
+                                                       .addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, maxFramesCount * MAX_RENDERABLES_COUNT)
                                                        .setDebugName("mesh_instance_desc_pool")
                                                        .build(maxFramesCount, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
 
     m_rgResources.meshInstanceDataDescriptorSetLayout = VkGfxDescriptorSetLayout::Builder(ctx)
-                                                            .addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT, maxModelCount, true)
+                                                            .addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT, MAX_RENDERABLES_COUNT, true)
                                                             .setDebugName("mesh_instance_desc_set_layout")
                                                             .build();
 
@@ -830,7 +987,7 @@ void Engine::prepareRenderGraphResources()
         GfxBuffer::createHostWriteBuffer(
             GfxBufferUsageFlags::StorageBuffer,
             sizeof(GfxMeshInstanceData),
-            maxModelCount,
+            MAX_RENDERABLES_COUNT,
             std::format("mesh_instance_buffer_{}", std::to_string(frameIdx)),
             &m_rgResources.meshInstanceDataBuffers[frameIdx]);
 
@@ -838,8 +995,8 @@ void Engine::prepareRenderGraphResources()
             *m_rgResources.meshInstanceDataDescriptorSetLayout, "mesh_instance_desc_set");
 
         DynamicArray<VkDescriptorBufferInfo> meshBufferInfo;
-        meshBufferInfo.reserve(maxModelCount);
-        for (uint32_t meshIdx = 0u; meshIdx < maxModelCount; ++meshIdx)
+        meshBufferInfo.reserve(MAX_RENDERABLES_COUNT);
+        for (uint32_t meshIdx = 0u; meshIdx < MAX_RENDERABLES_COUNT; ++meshIdx)
         {
             meshBufferInfo.push_back(m_rgResources.meshInstanceDataBuffers[frameIdx].getDescriptorInfoAtIndex(meshIdx));
         }
@@ -854,12 +1011,12 @@ void Engine::prepareRenderGraphResources()
     }
 
     m_rgResources.gbuffModelDescriptorPool = VkGfxDescriptorPool::Builder(ctx)
-                                                 .addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, maxFramesCount * maxModelCount)
+                                                 .addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, maxFramesCount * MAX_RENDERABLES_COUNT)
                                                  .setDebugName("model_desc_pool")
                                                  .build(maxFramesCount, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
 
     m_rgResources.gbuffModelDescriptorSetLayout = VkGfxDescriptorSetLayout::Builder(ctx)
-                                                      .addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, maxModelCount, true)
+                                                      .addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, MAX_RENDERABLES_COUNT, true)
                                                       .setDebugName("model_desc_set_layout")
                                                       .build();
 
@@ -872,7 +1029,7 @@ void Engine::prepareRenderGraphResources()
         GfxBuffer::createHostWriteBuffer(
             GfxBufferUsageFlags::StorageBuffer,
             sizeof(ModelData),
-            maxModelCount,
+            MAX_RENDERABLES_COUNT,
             "model_buffer_" + std::to_string(frameIdx),
             &m_rgResources.gbuffModelsBuffer[frameIdx]);
 
@@ -880,8 +1037,8 @@ void Engine::prepareRenderGraphResources()
             *m_rgResources.gbuffModelDescriptorSetLayout, "model_desc_set");
 
         DynamicArray<VkDescriptorBufferInfo> meshBufferInfo;
-        meshBufferInfo.reserve(maxModelCount);
-        for (uint32_t meshIdx = 0u; meshIdx < maxModelCount; ++meshIdx)
+        meshBufferInfo.reserve(MAX_RENDERABLES_COUNT);
+        for (uint32_t meshIdx = 0u; meshIdx < MAX_RENDERABLES_COUNT; ++meshIdx)
         {
             meshBufferInfo.push_back(m_rgResources.gbuffModelsBuffer[frameIdx].getDescriptorInfoAtIndex(meshIdx));
         }

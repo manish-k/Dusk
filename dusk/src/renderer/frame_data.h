@@ -10,6 +10,8 @@ namespace dusk
 {
 class Scene;
 
+struct GfxRenderables;
+
 struct alignas(16) GlobalUbo
 {
     glm::mat4 prjoection             = { 1.f };
@@ -38,10 +40,13 @@ struct FrameData
     uint32_t         width;
     uint32_t         height;
 
+    GfxRenderables*  renderables;
+
     VkDescriptorSet& globalDescriptorSet;
     VkDescriptorSet& textureDescriptorSet;
     VkDescriptorSet& lightsDescriptorSet;
     VkDescriptorSet& materialDescriptorSet;
     VkDescriptorSet& meshDataDescriptorSet;
+    VkDescriptorSet& renderablesDescriptorSet;
 };
 } // namespace dusk

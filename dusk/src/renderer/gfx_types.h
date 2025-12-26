@@ -8,6 +8,12 @@
 
 namespace dusk
 {
+struct GfxBoundingBoxData
+{
+    glm::vec3 center  = {};
+    glm::vec3 extents = {};
+};
+
 struct GfxRenderingAttachment
 {
     GfxTexture*       texture    = nullptr;
@@ -21,6 +27,15 @@ struct GfxMeshData
     uint32_t indexCount   = 0u;
     uint32_t firstIndex   = 0u;
     int32_t  vertexOffset = 0u;
+};
+
+struct GfxRenderables
+{
+    DynamicArray<glm::mat4>          modelMatrices  = {};
+    DynamicArray<glm::mat4>          normalMatrices = {};
+    DynamicArray<GfxBoundingBoxData> boundingBoxes  = {};
+    DynamicArray<uint32_t>           meshIds        = {};
+    DynamicArray<uint32_t>           materialIds    = {};
 };
 
 // TODO:: make it std430 aligned

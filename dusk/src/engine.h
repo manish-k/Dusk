@@ -36,8 +36,8 @@ struct VkGfxDescriptorPool;
 struct VkGfxDescriptorSetLayout;
 struct VkGfxDescriptorSet;
 
-constexpr uint32_t maxMaterialCount = 1000;
-constexpr uint32_t maxModelCount    = 10000;
+constexpr uint32_t MAX_MATERIALS_COUNT   = 1000;
+constexpr uint32_t MAX_RENDERABLES_COUNT = 10000;
 
 struct RenderGraphResources
 {
@@ -172,57 +172,68 @@ public:
     void   executeBRDFLUTcomputePipeline();
 
 private:
-    Config                           m_config;
+    Config                                   m_config;
 
-    Unique<VkGfxDevice>              m_gfxDevice         = nullptr;
-    Unique<VulkanRenderer>           m_renderer          = nullptr;
+    Unique<VkGfxDevice>                      m_gfxDevice         = nullptr;
+    Unique<VulkanRenderer>                   m_renderer          = nullptr;
 
-    Shared<Window>                   m_window            = nullptr;
-    Shared<Application>              m_app               = nullptr;
+    Shared<Window>                           m_window            = nullptr;
+    Shared<Application>                      m_app               = nullptr;
 
-    Unique<Environment>              m_environment       = nullptr;
-    Unique<BasicRenderSystem>        m_basicRenderSystem = nullptr;
-    Unique<LightsSystem>             m_lightsSystem      = nullptr;
+    Unique<Environment>                      m_environment       = nullptr;
+    Unique<BasicRenderSystem>                m_basicRenderSystem = nullptr;
+    Unique<LightsSystem>                     m_lightsSystem      = nullptr;
 
-    Unique<TextureDB>                m_textureDB         = nullptr;
+    Unique<TextureDB>                        m_textureDB         = nullptr;
 
-    Unique<EditorUI>                 m_editorUI          = nullptr;
+    Unique<EditorUI>                         m_editorUI          = nullptr;
 
-    bool                             m_running           = false;
-    bool                             m_paused            = false;
+    bool                                     m_running           = false;
+    bool                                     m_paused            = false;
 
-    Scene*                           m_currentScene      = nullptr;
+    Scene*                                   m_currentScene      = nullptr;
 
-    TimePoint                        m_lastFrameTime {};
-    TimeStep                         m_deltaTime {};
+    TimePoint                                m_lastFrameTime {};
+    TimeStep                                 m_deltaTime {};
 
-    GfxBuffer                        m_vertexBuffer;
-    GfxBuffer                        m_indexBuffer;
+    GfxBuffer                                m_vertexBuffer;
+    GfxBuffer                                m_indexBuffer;
 
-    size_t                           m_availableVertexOffset     = 0u;
-    size_t                           m_availableIndexOffset      = 0u;
+    size_t                                   m_availableVertexOffset     = 0u;
+    size_t                                   m_availableIndexOffset      = 0u;
 
-    Unique<VkGfxDescriptorPool>      m_globalDescriptorPool      = nullptr;
-    Unique<VkGfxDescriptorSetLayout> m_globalDescriptorSetLayout = nullptr;
+    Unique<VkGfxDescriptorPool>              m_globalDescriptorPool      = nullptr;
+    Unique<VkGfxDescriptorSetLayout>         m_globalDescriptorSetLayout = nullptr;
 
-    GfxBuffer                        m_globalUbos;
-    Unique<VkGfxDescriptorSet>       m_globalDescriptorSet;
+    GfxBuffer                                m_globalUbos;
+    Unique<VkGfxDescriptorSet>               m_globalDescriptorSet         = nullptr;
 
-    Unique<VkGfxDescriptorPool>      m_materialDescriptorPool      = nullptr;
-    Unique<VkGfxDescriptorSetLayout> m_materialDescriptorSetLayout = nullptr;
+    Unique<VkGfxDescriptorPool>              m_materialDescriptorPool      = nullptr;
+    Unique<VkGfxDescriptorSetLayout>         m_materialDescriptorSetLayout = nullptr;
 
-    GfxBuffer                        m_materialsBuffer;
-    Unique<VkGfxDescriptorSet>       m_materialsDescriptorSet;
+    GfxBuffer                                m_materialsBuffer;
+    Unique<VkGfxDescriptorSet>               m_materialsDescriptorSet      = nullptr;
 
-    Unique<VkGfxDescriptorPool>      m_meshDataDescriptorPool      = nullptr;
-    Unique<VkGfxDescriptorSetLayout> m_meshDataDescriptorSetLayout = nullptr;
+    Unique<VkGfxDescriptorPool>              m_meshDataDescriptorPool      = nullptr;
+    Unique<VkGfxDescriptorSetLayout>         m_meshDataDescriptorSetLayout = nullptr;
 
-    GfxBuffer                        m_meshDataBuffer;
-    Unique<VkGfxDescriptorSet>       m_meshDataDescriptorSet;
+    GfxBuffer                                m_meshDataBuffer;
+    Unique<VkGfxDescriptorSet>               m_meshDataDescriptorSet         = nullptr;
 
-    RenderGraphResources             m_rgResources;
+    DynamicArray<GfxRenderables>             m_frameRenderables              = {};
+    DynamicArray<GfxBuffer>                  m_modelMatrixBuffers            = {};
+    DynamicArray<GfxBuffer>                  m_normalMatrixBuffers           = {};
+    DynamicArray<GfxBuffer>                  m_boundingBoxBuffers            = {};
+    DynamicArray<GfxBuffer>                  m_meshIdsBuffers                = {};
+    DynamicArray<GfxBuffer>                  m_materialIdsBuffers            = {};
 
-    tf::Executor                     m_tfExecutor;
+    Unique<VkGfxDescriptorPool>              m_renderableDescriptorPool      = nullptr;
+    Unique<VkGfxDescriptorSetLayout>         m_renderableDescriptorSetLayout = nullptr;
+    DynamicArray<Unique<VkGfxDescriptorSet>> m_renderableDescriptorSets      = {};
+
+    RenderGraphResources                     m_rgResources;
+
+    tf::Executor                             m_tfExecutor;
 
 private:
     static Engine* s_instance;

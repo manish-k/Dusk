@@ -182,4 +182,25 @@ void Scene::updateModelsBuffer(GfxBuffer& modelBuffer)
     }
 }
 
+void Scene::gatherRenderables(GfxRenderables* currentFrameRenderables)
+{
+    DUSK_PROFILE_FUNCTION;
+    Registry::getRegistry().group<TransformComponent, MeshComponent>().each(
+        [&](auto entity, auto& transform, auto& meshData)
+        {
+            for (uint32_t index = 0u; index < meshData.meshes.size(); ++index)
+            {
+                currentFrameRenderables->modelMatrices.push_back(transform.mat4());
+                currentFrameRenderables->normalMatrices.push_back(transform.normalMat4());
+                currentFrameRenderables->boundingBoxes.push_back(
+                    GfxBoundingBoxData {
+                        .center  = (meshData.worldAABB.min + meshData.worldAABB.max) * 0.5f,
+                        .extents = (meshData.worldAABB.max - meshData.worldAABB.min) * 0.5f,
+                    });
+                currentFrameRenderables->meshIds.push_back(meshData.meshes[index]);
+                currentFrameRenderables->materialIds.push_back(meshData.materials[index]);
+            }
+        });
+}
+
 } // namespace dusk

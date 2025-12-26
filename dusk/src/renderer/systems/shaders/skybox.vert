@@ -39,6 +39,6 @@ void main()
 	mat4 untranslatedView = mat4(mat3(view)); // remove translation
 	vec4 clipPos = proj * (untranslatedView * vec4(position, 1.0));
 
-	// giving maximum depth and avoiding z fighting on far plane
-	gl_Position = vec4(clipPos.x, clipPos.y, clipPos.w - 0.01, clipPos.w);
+	// giving maximum depth
+	gl_Position = clipPos.xyww;
 }

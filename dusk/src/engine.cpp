@@ -478,8 +478,8 @@ void Engine::renderFrame(FrameData& frameData)
         .secondaryCmdBuffers   = m_renderer->getSecondayCmdBuffers(frameData.frameIndex)
     };
 
-    // renderGraph.setPassContext("skybox_pass", skyBoxCtx);
-    // renderGraph.addPass("skybox_pass", recordSkyBoxCmds);
+     renderGraph.setPassContext("skybox_pass", skyBoxCtx);
+     renderGraph.addPass("skybox_pass", recordSkyBoxCmds);
 
     // create presentation pass
     auto presentReadAttachments = {
@@ -520,7 +520,7 @@ bool Engine::setupGlobals()
     // setup 256mb vertex buffer * 32mb index buffer
     m_vertexBuffer.init(
         GfxBufferUsageFlags::VertexBuffer | GfxBufferUsageFlags::TransferTarget,
-        256 * 1024 * 1024,
+        512 * 1024 * 1024,
         GfxBufferMemoryTypeFlags::DedicatedDeviceMemory,
         "global_vertex_buffer");
 

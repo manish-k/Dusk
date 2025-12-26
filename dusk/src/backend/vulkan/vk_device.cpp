@@ -780,6 +780,7 @@ VulkanResult VkGfxDevice::createBuffer(const GfxBufferParams& params, VulkanGfxB
     if (result.hasError())
     {
         DUSK_ERROR("Error in creating buffer {}", result.toString());
+        return result;
     }
 
 #ifdef VK_RENDERER_DEBUG

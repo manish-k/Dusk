@@ -265,7 +265,7 @@ VkGfxRenderPipeline::VkGfxRenderPipeline(VulkanContext& vkContext, VkGfxRenderPi
     depthStencilInfo.sType                 = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
     depthStencilInfo.depthTestEnable       = renderConfig.enableDepthTest;
     depthStencilInfo.depthWriteEnable      = renderConfig.enableDepthWrites;
-    depthStencilInfo.depthCompareOp        = VK_COMPARE_OP_LESS;
+    depthStencilInfo.depthCompareOp        = VK_COMPARE_OP_LESS_OR_EQUAL;
     depthStencilInfo.depthBoundsTestEnable = VK_FALSE;
     depthStencilInfo.minDepthBounds        = 0.0f;
     depthStencilInfo.maxDepthBounds        = 1.0f;

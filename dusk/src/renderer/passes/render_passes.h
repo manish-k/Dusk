@@ -65,12 +65,6 @@ void recordPresentationCmds(
 //////////////////////////////////////////////////////
 // Shadow Pass
 
-struct ShadowMapPushConstant
-{
-    uint32_t frameIdx = 0u;
-    uint32_t modelIdx = 0u;
-};
-
 void recordShadow2DMapsCmds(
     FrameData&              frameData,
     VkGfxRenderPassContext& ctx);

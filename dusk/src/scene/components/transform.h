@@ -16,7 +16,7 @@ struct TransformComponent
     glm::vec3 scale       = glm::vec3 { 1.0f };
     bool      dirty       = true;
 
-    glm::mat4 mat4()
+    glm::mat4 mat4() const
     {
         return glm::mat4 {
             {
@@ -41,7 +41,7 @@ struct TransformComponent
         };
     }
 
-    glm::mat4 normalMat4()
+    glm::mat4 normalMat4() const
     {
         const glm::vec3 inverseScale = 1.0f / scale;
 

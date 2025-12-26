@@ -1263,9 +1263,7 @@ void Engine::prepareRenderGraphResources()
     m_textureDB->updateTextureSampler(m_rgResources.dirShadowMapsTextureId, shadowSampler);
 
     m_rgResources.shadow2DMapPipelineLayout = VkGfxPipelineLayout::Builder(ctx)
-                                                  .addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(ShadowMapPushConstant))
-                                                  .addDescriptorSetLayout(m_globalDescriptorSetLayout->layout)
-                                                  .addDescriptorSetLayout(m_rgResources.gbuffModelDescriptorSetLayout->layout)
+                                                  .addDescriptorSetLayout(m_renderableDescriptorSetLayout->layout)
                                                   .addDescriptorSetLayout(m_lightsSystem->getLightsDescriptorSetLayout().layout)
                                                   .build();
 

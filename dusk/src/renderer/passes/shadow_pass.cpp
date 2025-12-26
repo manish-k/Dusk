@@ -23,34 +23,20 @@ void recordShadow2DMapsCmds(
 
     if (!frameData.scene) return;
 
-    Scene&          scene           = *frameData.scene;
-    VkCommandBuffer commandBuffer   = frameData.commandBuffer;
+    Scene&          scene         = *frameData.scene;
+    VkCommandBuffer commandBuffer = ctx.cmdBuffer;
 
-    auto&           resources       = Engine::get().getRenderGraphResources();
-
-    auto            renderablesView = scene.GetGameObjectsWith<MeshComponent>();
-
+    const auto&     resources     = Engine::get().getRenderGraphResources();
     resources.shadow2DMapPipeline->bind(commandBuffer);
 
-    // global descriptor set
+    // renderable list descriptor set
     vkCmdBindDescriptorSets(
         commandBuffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
         resources.shadow2DMapPipelineLayout->get(),
-        0, // global desc set binding location
+        0, // renderable desc set binding location
         1,
-        &frameData.globalDescriptorSet,
-        0,
-        nullptr);
-
-    // model descriptor set
-    vkCmdBindDescriptorSets(
-        commandBuffer,
-        VK_PIPELINE_BIND_POINT_GRAPHICS,
-        resources.shadow2DMapPipelineLayout->get(),
-        1, // model desc set binding location
-        1,
-        &resources.gbuffModelDescriptorSet[frameData.frameIndex]->set,
+        &frameData.renderablesDescriptorSet,
         0,
         nullptr);
 
@@ -59,14 +45,14 @@ void recordShadow2DMapsCmds(
         commandBuffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
         resources.shadow2DMapPipelineLayout->get(),
-        2,
+        1, // binding location
         1,
         &frameData.lightsDescriptorSet,
         0,
         nullptr);
 
     {
-        DUSK_PROFILE_GPU_ZONE("shadow_bind_vertex", commandBuffer);
+        DUSK_PROFILE_SECTION("shadow_bind_vertex", commandBuffer);
 
         // TODO:: getter for index and vertex buffer is ugly
         VkBuffer     buffers[] = { Engine::get().getVertexBuffer().vkBuffer.buffer };
@@ -77,39 +63,24 @@ void recordShadow2DMapsCmds(
     }
 
     {
-        DUSK_PROFILE_GPU_ZONE("shadow_map_draw", commandBuffer);
+        DUSK_PROFILE_SECTION("shadow_map_draw", commandBuffer);
 
-        for (auto& entity : renderablesView)
+        auto& submeshes      = scene.getSubMeshes();
+        auto  renderables    = frameData.renderables;
+        auto  totalInstnaces = static_cast<uint32_t>(renderables->meshIds.size());
+
+        for (uint32_t instanceIdx = 0u; instanceIdx < totalInstnaces; ++instanceIdx)
         {
-            entt::id_type objectId = static_cast<entt::id_type>(entity);
-            auto&         meshData = renderablesView.get<MeshComponent>(entity);
+            uint32_t       meshId = renderables->meshIds[instanceIdx];
+            const SubMesh& mesh   = submeshes[meshId];
 
-            for (uint32_t index = 0u; index < meshData.meshes.size(); ++index)
-            {
-                const SubMesh&        mesh = scene.getSubMesh(meshData.meshes[index]);
-
-                ShadowMapPushConstant push {};
-                push.frameIdx = frameData.frameIndex;
-                push.modelIdx = objectId;
-
-                vkCmdPushConstants(
-                    commandBuffer,
-                    resources.gbuffPipelineLayout->get(),
-                    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-                    0,
-                    sizeof(ShadowMapPushConstant),
-                    &push);
-
-                {
-                    vkCmdDrawIndexed(
-                        commandBuffer,
-                        mesh.getIndexCount(),
-                        1,                          // instance count
-                        mesh.getIndexBufferIndex(), // firstIndex
-                        mesh.getVertexOffset(),     // vertexOffset
-                        0);                         // firstInstance
-                }
-            }
+            vkCmdDrawIndexed(
+                commandBuffer,
+                mesh.getIndexCount(),
+                1,                          // instance count
+                mesh.getIndexBufferIndex(), // firstIndex
+                mesh.getVertexOffset(),     // vertexOffset
+                instanceIdx);               // firstInstance
         }
     }
 }

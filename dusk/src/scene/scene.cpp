@@ -63,6 +63,21 @@ void Scene::onUpdate(TimeStep dt)
 {
     DUSK_PROFILE_FUNCTION;
     m_cameraController->onUpdate(dt);
+
+    // TODO:: this can be optimized further by maintaining a list of dirty transforms
+    // update world AABBs for all mesh components whose transforms are dirty
+    Registry::getRegistry().group<TransformComponent, MeshComponent>().each(
+        [&](auto entity, auto& transform, auto& meshData)
+        {
+            // auto  objectId  = static_cast<entt::id_type>(entity);
+            if (!transform.dirty)
+            {
+                return;
+            }
+
+            meshData.worldAABB = recomputeAABB(meshData.objectAABB, transform.mat4());
+            transform.markClean();
+        });
 }
 
 void Scene::addGameObject(
@@ -151,35 +166,6 @@ void Scene::freeMaterials()
 
 void Scene::updateModelsBuffer(GfxBuffer& modelBuffer)
 {
-    DUSK_PROFILE_FUNCTION;
-    auto entities = GetGameObjectsWith<TransformComponent>();
-    for (auto& entity : entities)
-    {
-        auto  objectId  = static_cast<entt::id_type>(entity);
-        auto& transform = entities.get<TransformComponent>(entity);
-
-        {
-            DUSK_PROFILE_SECTION("Update model buffer");
-            ModelData md { transform.mat4(), transform.normalMat4() };
-            modelBuffer.writeAndFlushAtIndex(objectId, &md, sizeof(ModelData));
-        }
-
-        if (!transform.dirty)
-        {
-            continue;
-        }
-
-        // update AABBs for model
-        if (transform.dirty && Registry::getRegistry().all_of<MeshComponent>(entity))
-        {
-            auto& meshComponent     = Registry::getRegistry().get<MeshComponent>(entity);
-            meshComponent.worldAABB = recomputeAABB(
-                meshComponent.objectAABB,
-                transform.mat4());
-        }
-
-        transform.markClean();
-    }
 }
 
 void Scene::gatherRenderables(GfxRenderables* currentFrameRenderables)
@@ -188,14 +174,17 @@ void Scene::gatherRenderables(GfxRenderables* currentFrameRenderables)
     Registry::getRegistry().group<TransformComponent, MeshComponent>().each(
         [&](auto entity, auto& transform, auto& meshData)
         {
+            glm::vec3 center  = (meshData.worldAABB.min + meshData.worldAABB.max) * 0.5f;
+            glm::vec3 extents = (meshData.worldAABB.max - meshData.worldAABB.min) * 0.5f;
+
             for (uint32_t index = 0u; index < meshData.meshes.size(); ++index)
             {
                 currentFrameRenderables->modelMatrices.push_back(transform.mat4());
                 currentFrameRenderables->normalMatrices.push_back(transform.normalMat4());
                 currentFrameRenderables->boundingBoxes.push_back(
                     GfxBoundingBoxData {
-                        .center  = (meshData.worldAABB.min + meshData.worldAABB.max) * 0.5f,
-                        .extents = (meshData.worldAABB.max - meshData.worldAABB.min) * 0.5f,
+                        .center  = center,
+                        .extents = extents,
                     });
                 currentFrameRenderables->meshIds.push_back(meshData.meshes[index]);
                 currentFrameRenderables->materialIds.push_back(meshData.materials[index]);

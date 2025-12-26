@@ -21,13 +21,13 @@ inline AABB computeAABB(const DynamicArray<Vertex>& vertices)
     const size_t vertexCount = vertices.size();
     for (size_t i = 0; i < vertexCount; ++i)
     {
-        const glm::vec3& pos = vertices[i].position;
-        aabb.min.x           = glm::min(aabb.min.x, pos.x);
-        aabb.min.y           = glm::min(aabb.min.y, pos.y);
-        aabb.min.z           = glm::min(aabb.min.z, pos.z);
-        aabb.max.x           = glm::max(aabb.max.x, pos.x);
-        aabb.max.y           = glm::max(aabb.max.y, pos.y);
-        aabb.max.z           = glm::max(aabb.max.z, pos.z);
+        const auto& pos = vertices[i].position;
+        aabb.min.x      = glm::min(aabb.min.x, pos.x);
+        aabb.min.y      = glm::min(aabb.min.y, pos.y);
+        aabb.min.z      = glm::min(aabb.min.z, pos.z);
+        aabb.max.x      = glm::max(aabb.max.x, pos.x);
+        aabb.max.y      = glm::max(aabb.max.y, pos.y);
+        aabb.max.z      = glm::max(aabb.max.z, pos.z);
     }
     return aabb;
 }

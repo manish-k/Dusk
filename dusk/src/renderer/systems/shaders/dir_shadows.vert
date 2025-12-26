@@ -11,31 +11,12 @@ layout(location = 4) in vec2 uv;
 
 layout(location = 0) out vec3 fragWorldPos;
 
-layout (set = 0, binding = 0) uniform GlobalUBO 
+layout (set = 0, binding = 0) buffer ModelMatrixBuffer 
 {
-	mat4 projection;
-	mat4 view;
-	mat4 inverseView;
+	mat4 modelMatrix[];
+};
 
-	vec4 frustumPlanes[6];
-		
-	uint directionalLightsCount;
-	uint pointLightsCount;     
-	uint spotLightsCount;      
-	uint padding;
-	
-	uvec4 directionalLightIndices[32];
-	uvec4 pointLightIndices[32];
-	uvec4 spotLightIndices[32];
-} globalubo[];
-
-layout (set = 1, binding = 0) buffer ModelUBO 
-{
-	mat4 modelMatrix;
-	mat4 normalMatrix;
-} modelubo[];
-
-layout(set = 2, binding = 1) buffer DirectionalLight
+layout(set = 1, binding = 1) buffer DirectionalLight
 {
 	int id;
 	int pad0;
@@ -46,20 +27,12 @@ layout(set = 2, binding = 1) buffer DirectionalLight
 	vec3 direction;
 } dirLights[];
 
-layout(push_constant) uniform ShadowMapData 
-{
-	uint frameIdx;
-	uint modelIdx;
-} push;
-
 void main() 
 {
-	uint globalIdx = nonuniformEXT(push.frameIdx);
-	uint modelIdx = nonuniformEXT(push.modelIdx);
 	uint dirLightIdx = nonuniformEXT(gl_ViewIndex);
 
-	mat4 model = modelubo[modelIdx].modelMatrix;
-	mat4 projView = dirLights[dirLightIdx].projView;
+	mat4 modelMat = modelMatrix[gl_InstanceIndex];
+	mat4 projViewMat = dirLights[dirLightIdx].projView;
 
-	gl_Position = projView * (model * vec4(position, 1.0));
+	gl_Position = projViewMat * (modelMat * vec4(position, 1.0));
 }

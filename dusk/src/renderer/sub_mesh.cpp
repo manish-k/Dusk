@@ -88,7 +88,7 @@ Shared<SubMesh> SubMesh::createCubeMesh()
     auto cubeMesh = createShared<SubMesh>();
 
     // load cube mesh
-    DynamicArray<Vertex> skyboxVertices = {
+    DynamicArray<Vertex> cubeVertices = {
         // positions
         { glm::vec3(-1.0f, -1.0f, -1.0f) }, // 0
         { glm::vec3(1.0f, -1.0f, -1.0f) },  // 1
@@ -100,7 +100,7 @@ Shared<SubMesh> SubMesh::createCubeMesh()
         { glm::vec3(-1.0f, 1.0f, 1.0f) }    // 7
     };
 
-    DynamicArray<uint32_t> skyboxIndices = {
+    DynamicArray<uint32_t> cubeIndices = {
         // Back face
         0,
         1,
@@ -145,7 +145,7 @@ Shared<SubMesh> SubMesh::createCubeMesh()
         0
     };
 
-    cubeMesh->init(skyboxVertices, skyboxIndices);
+    cubeMesh->init(cubeVertices, cubeIndices);
 
     return cubeMesh;
 }

@@ -7,8 +7,6 @@
 #include "debug/profiler.h"
 
 #include "scene/scene.h"
-#include "scene/components/transform.h"
-#include "scene/components/mesh.h"
 
 #include "backend/vulkan/vk_descriptors.h"
 #include "backend/vulkan/vk_device.h"
@@ -26,60 +24,20 @@ void dispatchIndirectDrawCompute(
     if (!frameData.scene) return;
 
     Scene&          scene         = *frameData.scene;
-    VkCommandBuffer commandBuffer = frameData.commandBuffer;
+    VkCommandBuffer commandBuffer = ctx.cmdBuffer;
     auto&           resources     = Engine::get().getRenderGraphResources();
 
     // gather all mesh instances in the scene and upload to GPU buffers along with indirect draw commands
 
-    // TODO: mesh buffer updates should go inside scene update()
-    DynamicArray<GfxMeshInstanceData> meshInstanceData;
-
-    meshInstanceData.reserve(MAX_RENDERABLES_COUNT);
-
-    // possiblity of cache unfriendliness here. Only first component is
-    // cache friendly. https://gamedev.stackexchange.com/a/212879
-    // TODO: Profile below code
     {
-        DUSK_PROFILE_SECTION("gather_mesh_instances");
-        auto renderablesView = scene.GetGameObjectsWith<MeshComponent>();
-        for (auto& entity : renderablesView)
-        {
-            auto&     meshData        = renderablesView.get<MeshComponent>(entity);
-
-            auto&     transform       = Registry::getRegistry().get<TransformComponent>(entity);
-            glm::mat4 transformMatrix = transform.mat4();
-            glm::mat4 normalMatrix    = transform.normalMat4();
-            AABB      aabb            = meshData.worldAABB;
-
-            for (uint32_t index = 0u; index < meshData.meshes.size(); ++index)
-            {
-                meshInstanceData.push_back(
-                    GfxMeshInstanceData {
-                        .modelMat   = transformMatrix,
-                        .normalMat  = normalMatrix,
-                        .center     = (aabb.min + aabb.max) * 0.5f,
-                        .meshId     = meshData.meshes[index],
-                        .extents    = (aabb.max - aabb.min) * 0.5f,
-                        .materialId = meshData.materials[index],
-                    });
-            }
-        }
-
         // sorting by material to improve cache locality in the gpu
-        std::sort(
+        /*std::sort(
             meshInstanceData.begin(),
             meshInstanceData.end(),
             [](const GfxMeshInstanceData& a, const GfxMeshInstanceData& b)
             {
                 return a.materialId < b.materialId;
-            });
-    }
-
-    {
-        DUSK_PROFILE_SECTION("upload_mesh_instance_data");
-        auto& currentMeshInstanceBuffer = resources.meshInstanceDataBuffers[frameData.frameIndex];
-
-        currentMeshInstanceBuffer.writeAndFlushAtIndex(0, meshInstanceData.data(), sizeof(GfxMeshInstanceData) * meshInstanceData.size());
+            });*/
     }
     {
         DUSK_PROFILE_SECTION("reset_draw_count_buffer");
@@ -128,7 +86,7 @@ void dispatchIndirectDrawCompute(
             resources.cullLodPipelineLayout->get(),
             2, // binding location
             1,
-            &resources.meshInstanceDataDescriptorSet[frameData.frameIndex]->set,
+            &frameData.renderablesDescriptorSet,
             0,
             nullptr);
 
@@ -149,7 +107,7 @@ void dispatchIndirectDrawCompute(
         // push constants
         CullLodPushConstant push {};
         push.globalUboIdx = frameData.frameIndex;
-        push.objectCount  = meshInstanceData.size();
+        push.objectCount  = frameData.renderables->meshIds.size();
 
         vkCmdPushConstants(
             commandBuffer,

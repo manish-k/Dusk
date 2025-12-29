@@ -1,5 +1,6 @@
-#include "assimp_loader.h"
+﻿#include "assimp_loader.h"
 
+#include "engine.h"
 #include "debug/profiler.h"
 
 #include "scene/scene.h"
@@ -42,11 +43,7 @@ Unique<Scene> AssimpLoader::readScene(const std::filesystem::path& filePath)
         // are missing in file bcos assimp will not calculate for us
         assimpScene = m_importer.ReadFile(
             filePath.string(),
-            aiProcess_Triangulate | 
-            aiProcess_GenSmoothNormals | 
-            aiProcess_CalcTangentSpace | 
-            aiProcess_JoinIdenticalVertices | 
-            aiProcess_FlipUVs);
+            aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace | aiProcess_JoinIdenticalVertices | aiProcess_FlipUVs | aiProcess_GenBoundingBoxes);
 
         if (!assimpScene || assimpScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !assimpScene->mRootNode)
         {
@@ -63,11 +60,25 @@ Unique<Scene> AssimpLoader::parseScene(const aiScene* assimpScene)
 {
     DUSK_PROFILE_FUNCTION;
 
-    auto newScene = createUnique<Scene>(assimpScene->mName.C_Str());
+    auto newScene      = createUnique<Scene>(assimpScene->mName.C_Str());
+
+    int  totalVertices = 0;
+    int  totalIndices  = 0;
+    for (uint32_t meshIndex = 0u; meshIndex < assimpScene->mNumMeshes; ++meshIndex)
+    {
+        totalVertices += assimpScene->mMeshes[meshIndex]->mNumVertices;
+        totalIndices += assimpScene->mMeshes[meshIndex]->mNumFaces * 3; // Assumption, face is triangular
+    }
+
+    m_tempVertices.reserve(totalVertices);
+    m_tempIndices.reserve(totalIndices);
+    newScene->m_sceneMeshes.reserve(assimpScene->mNumMeshes);
+
+    m_tempVertices.clear();
+    m_tempIndices.clear();
 
     if (assimpScene->mNumMeshes > 0)
     {
-        newScene->initMeshesCache(assimpScene->mNumMeshes);
         parseMeshes(*newScene, assimpScene);
     }
 
@@ -81,6 +92,26 @@ Unique<Scene> AssimpLoader::parseScene(const aiScene* assimpScene)
     {
         traverseSceneNodes(*newScene, assimpScene->mRootNode, assimpScene, newScene->getRootId());
     }
+
+    // TODO: uploading temp mesh data to GPU here currently. Need a better place for this
+    auto&    engine           = Engine::get();
+    int      baseVertexOffset = 0;
+    uint32_t baseFirstIndex   = 0;
+    engine.uploadVertexAndIndexBuffers(
+        m_tempVertices,
+        m_tempIndices,
+        &baseVertexOffset,
+        &baseFirstIndex);
+
+    for (uint32_t meshIndex = 0u; meshIndex < assimpScene->mNumMeshes; ++meshIndex)
+    {
+        GfxMeshData& meshData = newScene->m_sceneMeshes[meshIndex];
+        meshData.firstIndex   = baseFirstIndex + meshData.firstIndex;
+        meshData.vertexOffset = baseVertexOffset + meshData.vertexOffset;
+    }
+
+    m_tempVertices.clear();
+    m_tempIndices.clear();
 
     return newScene;
 }
@@ -109,9 +140,11 @@ void AssimpLoader::traverseSceneNodes(Scene& scene, const aiNode* node, const ai
             meshComponent.meshes.push_back(sceneMeshIndex);
             meshComponent.materials.push_back(aiScene->mMeshes[sceneMeshIndex]->mMaterialIndex);
 
-            AABB subMeshAABB  = scene.getSubMesh(sceneMeshIndex).getAABB();
-            modelAABB.min     = glm::min(modelAABB.min, subMeshAABB.min);
-            modelAABB.max     = glm::max(modelAABB.max, subMeshAABB.max);
+            aiVector3D meshMin = aiScene->mMeshes[sceneMeshIndex]->mAABB.mMin;
+            aiVector3D meshMax = aiScene->mMeshes[sceneMeshIndex]->mAABB.mMax;
+
+            modelAABB.min      = glm::min(modelAABB.min, glm::vec3(meshMin.x, meshMin.y, meshMin.z));
+            modelAABB.max      = glm::max(modelAABB.max, glm::vec3(meshMax.x, meshMax.y, meshMax.z));
         }
 
         // object space model AABB
@@ -189,6 +222,10 @@ void AssimpLoader::parseMeshes(Scene& scene, const aiScene* aiScene)
         vertices.reserve(mesh->mNumVertices);
         indices.reserve(mesh->mNumFaces * 3); // Assumption, face is triangular
 
+        uint32_t indexCount   = 0u;
+        uint32_t firstIndex   = m_tempIndices.size();
+        int32_t  vertexOffset = m_tempVertices.size();
+
         for (uint32_t vertexIndex = 0u; vertexIndex < mesh->mNumVertices; ++vertexIndex)
         {
             Vertex v;
@@ -225,16 +262,27 @@ void AssimpLoader::parseMeshes(Scene& scene, const aiScene* aiScene)
             }
 
             vertices.push_back(v);
+            m_tempVertices.push_back(v);
         }
 
         for (uint32_t faceIndex = 0u; faceIndex < mesh->mNumFaces; ++faceIndex)
         {
             DASSERT(mesh->mFaces[faceIndex].mNumIndices == 3, "Face is not triangular");
             for (uint32_t vertexIndex = 0u; vertexIndex < 3; ++vertexIndex)
-                indices.push_back(mesh->mFaces[faceIndex].mIndices[vertexIndex]);
+            {
+                uint32_t index = mesh->mFaces[faceIndex].mIndices[vertexIndex];
+                indices.push_back(index);
+                m_tempIndices.push_back(index);
+
+                indexCount++;
+            }
         }
 
-        scene.initSubMesh(meshIndex, vertices, indices);
+        scene.m_sceneMeshes.push_back({
+            .indexCount   = indexCount,
+            .firstIndex   = firstIndex,
+            .vertexOffset = vertexOffset,
+        });
     }
 }
 

@@ -32,19 +32,15 @@ layout (set = 0, binding = 0) uniform GlobalUBO
 	uvec4 spotLightIndices[32];
 } globalubo[];
 
-layout (set = 2, binding = 0) buffer MeshInstanceData 
+layout (set = 2, binding = 0) buffer InstanceModelMatrixBuffer 
 {
-	mat4 modelMatrix;
-	mat4 normalMatrix;
-	vec3 aabbMin;
-	uint pad0;
-	vec3 aabbMax;
-	uint materialId;
-	uint indexCount;   
-	uint firstIndex;
-	uint vertexOffset;
-	uint firstInstance;
-} meshInstanceData[];
+	mat4 modelMatrices[];
+};
+
+layout (set = 2, binding = 1) buffer InstanceNormalMatrixBuffer 
+{
+	mat4 normalMatrices[];
+};
 
 layout(push_constant) uniform DrawData 
 {
@@ -54,10 +50,10 @@ layout(push_constant) uniform DrawData
 void main() {	
 	uint globalIdx = nonuniformEXT(push.cameraIdx);
 
-	mat4 model = meshInstanceData[gl_InstanceIndex].modelMatrix;
+	mat4 model = modelMatrices[gl_InstanceIndex];
 	mat4 view = globalubo[globalIdx].view;
 	mat4 proj = globalubo[globalIdx].projection;
-	mat3 normalMat = mat3(meshInstanceData[gl_InstanceIndex].normalMatrix);
+	mat3 normalMat = mat3(normalMatrices[gl_InstanceIndex]);
 
 	vec4 worldPos = model * vec4(position, 1.0);
 	

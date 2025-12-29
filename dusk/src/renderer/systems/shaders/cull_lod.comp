@@ -23,22 +23,32 @@ layout (set = 0, binding = 0, std140) uniform GlobalUBO
 	uvec4 spotLightIndices[32];
 } globalubo[];
 
-layout(set = 1, binding = 0) buffer meshDataBuffer
+struct MeshData
 {
 	uint indexCount;
     uint firstIndex;
     int vertexOffset;
-} meshData[];
+};
 
-layout (set = 2, binding = 0, std430) readonly buffer MeshInstanceData 
+layout(set = 1, binding = 0) buffer meshDataBuffer
 {
-	mat4 modelMatrix;
-	mat4 normalMatrix;
-	vec3 center;
-	uint meshId;
+	MeshData meshData[];
+};
+
+struct BoundingBox
+{	vec3 center;
 	vec3 extents;
-	uint materialId;
-} meshInstanceData[];
+};
+
+layout (set = 2, binding = 2, std430) readonly buffer InstanceBoundingBoxBuffer 
+{
+	BoundingBox aabb[];
+};
+
+layout (set = 2, binding = 3, std430) readonly buffer InstanceMeshIdsBuffer 
+{
+	uint meshIds[];
+};
 
 struct IndexedIndirectCommand 
 {
@@ -69,8 +79,8 @@ layout (local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
 bool isAABBinFrustum(uint meshInstanceIdx)
 {
 	// this are already in view space
-	vec3 center = meshInstanceData[meshInstanceIdx].center;
-	vec3 extents = meshInstanceData[meshInstanceIdx].extents;
+	vec3 center = aabb[meshInstanceIdx].center;
+	vec3 extents = aabb[meshInstanceIdx].extents;
 
 	// Test AABB against frustum planes
 	for (int i = 0; i < 6; ++i)
@@ -101,11 +111,11 @@ void main()
 	if (idx >= push.objectCount)
 		return;
 
-	if (isAABBinFrustum(idx))
+	if (true)
 	{	
 		uint outIdx = atomicAdd(countBuffer.drawCount, 1);
 
-		uint meshId = nonuniformEXT(meshInstanceData[idx].meshId);
+		uint meshId = meshIds[idx];
 
 		cmdsBuffer.indirectDraws[outIdx].indexCount = meshData[meshId].indexCount;
 		cmdsBuffer.indirectDraws[outIdx].instanceCount = 1;

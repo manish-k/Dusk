@@ -9,7 +9,6 @@
 #include "scene/components/mesh.h"
 #include "scene/components/camera.h"
 
-#include "renderer/sub_mesh.h"
 #include "renderer/frame_data.h"
 
 #include "backend/vulkan/vk_allocator.h"
@@ -103,7 +102,7 @@ void BasicRenderSystem::setupDescriptors()
     // create dynamic ubo
     GfxBuffer::createHostWriteBuffer(
         GfxBufferUsageFlags::UniformBuffer,
-        sizeof(ModelData),
+        sizeof(glm::mat4),
         maxRenderableMeshes,
         "model_buffer",
         &m_modelsBuffer);

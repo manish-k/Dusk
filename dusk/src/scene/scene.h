@@ -4,9 +4,9 @@
 #include "game_object.h"
 #include "registry.h"
 
-#include "renderer/sub_mesh.h"
 #include "renderer/texture.h"
 #include "renderer/material.h"
+#include "renderer/gfx_types.h"
 
 #include <string>
 
@@ -20,12 +20,6 @@ class Event;
 
 struct Vertex;
 struct GfxRenderables;
-
-struct ModelData
-{
-    glm::mat4 model { 1.f };
-    glm::mat4 normal { 1.f };
-};
 
 class Scene
 {
@@ -89,32 +83,13 @@ public:
         return Registry::getRegistry().view<Components...>();
     }
 
-    void initMeshesCache(uint32_t meshCount)
-    {
-        m_subMeshes = DynamicArray<SubMesh>(meshCount);
-    }
+    CameraComponent&    getMainCamera();
 
-    /**
-     * @brief
-     */
-    void initSubMesh(uint32_t meshIndex, const DynamicArray<Vertex>& vertices, const DynamicArray<uint32_t> indices);
+    CameraController&   getMainCameraController();
 
-    /**
-     * @brief
-     */
-    void                   freeSubMeshes();
+    TransformComponent& getMainCameraTransform();
 
-    SubMesh&               getSubMesh(uint32_t meshId) { return m_subMeshes[meshId]; }
-
-    DynamicArray<SubMesh>& getSubMeshes() { return m_subMeshes; }
-
-    CameraComponent&       getMainCamera();
-
-    CameraController&      getMainCameraController();
-
-    TransformComponent&    getMainCameraTransform();
-
-    void                   initMaterialCache(uint32_t materialCount)
+    void                initMaterialCache(uint32_t materialCount)
     {
         m_materials.reserve(materialCount);
     };
@@ -127,8 +102,6 @@ public:
 
     DynamicArray<Material>& getMaterials() { return m_materials; }
     DynamicArray<EntityId>& getChildren() { return m_children; }
-
-    void                    updateModelsBuffer(GfxBuffer& modelBuffer);
 
     void                    gatherRenderables(GfxRenderables* currentFrameRenderables);
 
@@ -146,11 +119,12 @@ private:
     DynamicArray<EntityId>   m_children {};
     GameObject::UMap         m_sceneGameObjects {};
 
-    DynamicArray<SubMesh>    m_subMeshes {};
-
     EntityId                 m_cameraId;
     Unique<CameraController> m_cameraController;
 
     DynamicArray<Material>   m_materials;
+
+public:
+    DynamicArray<GfxMeshData> m_sceneMeshes = {};
 };
 } // namespace dusk

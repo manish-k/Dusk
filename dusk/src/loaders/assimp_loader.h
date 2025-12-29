@@ -3,6 +3,7 @@
 #include "dusk.h"
 #include "scene/entity.h"
 #include "renderer/image.h"
+#include "renderer/vertex.h"
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -23,13 +24,13 @@ public:
     Unique<Scene> readScene(const std::filesystem::path& filePath);
 
 private:
-    Unique<Scene> parseScene(const aiScene* scene);
-    void          parseMeshes(Scene& scene, const aiScene* aiScene);
-    void          parseMaterials(Scene& scene, const aiScene* aiScene);
+    Unique<Scene>         parseScene(const aiScene* scene);
+    void                  parseMeshes(Scene& scene, const aiScene* aiScene);
+    void                  parseMaterials(Scene& scene, const aiScene* aiScene);
 
-    void          traverseSceneNodes(Scene& scene, const aiNode* node, const aiScene* aiScene, EntityId parentId);
+    void                  traverseSceneNodes(Scene& scene, const aiNode* node, const aiScene* aiScene, EntityId parentId);
 
-    GameObject    parseAssimpNode(const aiNode* node);
+    GameObject            parseAssimpNode(const aiNode* node);
 
     std::filesystem::path getGltfTexturePath(aiMaterial* mat);
     std::filesystem::path getTexturePath(aiMaterial* mat, aiTextureType type);
@@ -37,10 +38,13 @@ private:
     int32_t               read2DTexture(std::filesystem::path texPath, PixelFormat format) const;
 
 private:
-    Assimp::Importer m_importer;
+    Assimp::Importer          m_importer;
 
-    std::filesystem::path m_sceneDir = "";
+    std::filesystem::path     m_sceneDir     = "";
 
-    bool                  m_isGltf   = false;
+    bool                      m_isGltf       = false;
+
+    DynamicArray<Vertex>      m_tempVertices = {};
+    DynamicArray<uint32_t>    m_tempIndices  = {};
 };
 } // namespace dusk

@@ -56,19 +56,10 @@ layout (set = 1, binding = 0) buffer MaterialBuffer
 
 } materials[];
 
-layout (set = 2, binding = 0) buffer MeshInstanceData 
+layout (set = 2, binding = 4) buffer InstanceMaterialIdsBuffer 
 {
-	mat4 modelMatrix;
-	mat4 normalMatrix;
-	vec3 aabbMin;
-	uint pad0;
-	vec3 aabbMax;
-	uint materialId;
-	uint indexCount;   
-	uint firstIndex;
-	uint vertexOffset;
-	uint firstInstance;
-} meshInstanceData[];
+	uint materialIds[];
+};
 
 layout (set = 3, binding = 0) uniform sampler2D textures[];
 
@@ -80,7 +71,7 @@ layout(push_constant) uniform DrawData
 void main()
 {
 	uint guboIdx = nonuniformEXT(push.cameraIdx);
-	uint materialIdx = nonuniformEXT(meshInstanceData[fragInstanceId].materialId);
+	uint materialIdx = nonuniformEXT(materialIds[fragInstanceId]);
 	
 	// pull and cache
 	Material m = materials[materialIdx].mat;

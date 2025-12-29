@@ -10,7 +10,6 @@
 #include "scene/components/transform.h"
 #include "scene/components/mesh.h"
 
-#include "renderer/sub_mesh.h"
 #include "renderer/systems/basic_render_system.h"
 
 #include "backend/vulkan/vk_descriptors.h"
@@ -67,7 +66,7 @@ void recordGBufferCmds(
             resources.gbuffPipelineLayout->get(),
             2, // mesh instance data desc set binding location
             1,
-            &resources.meshInstanceDataDescriptorSet[frameData.frameIndex]->set,
+            &frameData.renderablesDescriptorSet,
             0,
             nullptr);
 
@@ -196,45 +195,45 @@ void recordGBufferCmdsMutliThreaded(
                 vkCmdBindIndexBuffer(commandBuffer, Engine::get().getIndexBuffer().vkBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
             }
 
-            for (int index = subrange.begin(); index < subrange.end() && index < renderablesView.size(); index += 1)
-            {
-                entt::entity  entity   = renderables[index];
+            //for (int index = subrange.begin(); index < subrange.end() && index < renderablesView.size(); index += 1)
+            //{
+            //    entt::entity  entity   = renderables[index];
 
-                entt::id_type objectId = static_cast<entt::id_type>(entity);
-                auto&         meshData = renderablesView.get<MeshComponent>(entity);
+            //    entt::id_type objectId = static_cast<entt::id_type>(entity);
+            //    auto&         meshData = renderablesView.get<MeshComponent>(entity);
 
-                for (uint32_t index = 0u; index < meshData.meshes.size(); ++index)
-                {
-                    int32_t  meshId     = meshData.meshes[index];
-                    int32_t  materialId = meshData.materials[index];
+            //    for (uint32_t index = 0u; index < meshData.meshes.size(); ++index)
+            //    {
+            //        int32_t  meshId     = meshData.meshes[index];
+            //        int32_t  materialId = meshData.materials[index];
 
-                    SubMesh& mesh       = scene.getSubMesh(meshId);
+            //        SubMesh& mesh       = scene.getSubMesh(meshId);
 
-                    DrawData push {};
-                    push.cameraBufferIdx = frameData.frameIndex;
-                    push.materialIdx     = materialId;
-                    push.modelIdx        = objectId;
+            //        DrawData push {};
+            //        push.cameraBufferIdx = frameData.frameIndex;
+            //        push.materialIdx     = materialId;
+            //        push.modelIdx        = objectId;
 
-                    vkCmdPushConstants(
-                        secondayBuffer,
-                        resources.gbuffPipelineLayout->get(),
-                        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-                        0,
-                        sizeof(DrawData),
-                        &push);
+            //        vkCmdPushConstants(
+            //            secondayBuffer,
+            //            resources.gbuffPipelineLayout->get(),
+            //            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+            //            0,
+            //            sizeof(DrawData),
+            //            &push);
 
-                    {
-                        DUSK_PROFILE_GPU_ZONE("gbuffer_draw", secondayBuffer);
-                        vkCmdDrawIndexed(
-                            secondayBuffer,
-                            mesh.getIndexCount(),
-                            1,                          // instance count
-                            mesh.getIndexBufferIndex(), // firstIndex
-                            mesh.getVertexOffset(),     // vertexOffset
-                            0); 
-                    }
-                }
-            }
+            //        {
+            //            DUSK_PROFILE_GPU_ZONE("gbuffer_draw", secondayBuffer);
+            //            vkCmdDrawIndexed(
+            //                secondayBuffer,
+            //                mesh.getIndexCount(),
+            //                1,                          // instance count
+            //                mesh.getIndexBufferIndex(), // firstIndex
+            //                mesh.getVertexOffset(),     // vertexOffset
+            //                0); 
+            //        }
+            //    }
+            //}
         });
 
     executor.run(taskflow).wait();

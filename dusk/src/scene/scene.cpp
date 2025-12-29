@@ -6,8 +6,6 @@
 
 #include "loaders/assimp_loader.h"
 
-#include "renderer/vertex.h"
-
 #include "components/camera.h"
 #include "components/transform.h"
 #include "components/mesh.h"
@@ -48,7 +46,6 @@ Scene::~Scene()
 {
     DUSK_DEBUG("Destroying scene {}", m_name);
 
-    freeSubMeshes();
     freeMaterials();
 
     Registry::getRegistry().clear();
@@ -114,22 +111,6 @@ GameObject& Scene::getGameObject(EntityId objectId)
     return *m_sceneGameObjects[objectId];
 }
 
-void Scene::initSubMesh(uint32_t meshIndex, const DynamicArray<Vertex>& vertices, const DynamicArray<uint32_t> indices)
-{
-    DASSERT(meshIndex >= 0, "mesh index can't be negative");
-    DASSERT(meshIndex < m_subMeshes.size(), "mesh index can't be greater than total sub meshes");
-
-    m_subMeshes[meshIndex].init(vertices, indices);
-}
-
-void Scene::freeSubMeshes()
-{
-    for (uint32_t meshIndex = 0u; meshIndex < m_subMeshes.size(); ++meshIndex)
-    {
-        m_subMeshes[meshIndex].cleanup();
-    }
-}
-
 CameraComponent& Scene::getMainCamera()
 {
     return Registry::getRegistry().get<CameraComponent>(m_cameraId);
@@ -162,10 +143,6 @@ void Scene::addMaterial(Material& mat)
 void Scene::freeMaterials()
 {
     m_materials.clear();
-}
-
-void Scene::updateModelsBuffer(GfxBuffer& modelBuffer)
-{
 }
 
 void Scene::gatherRenderables(GfxRenderables* currentFrameRenderables)

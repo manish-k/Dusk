@@ -1,7 +1,6 @@
 #include "environment.h"
 
 #include "texture_db.h"
-#include "sub_mesh.h"
 
 #include "platform/file_system.h"
 
@@ -56,8 +55,6 @@ void Environment::initCubeTextureResources(
             TextureType::Cube,
             PixelFormat::R32G32B32A32_sfloat);
 
-    m_cubeMesh             = SubMesh::createCubeMesh();
-
     m_skyBoxPipelineLayout = VkGfxPipelineLayout::Builder(ctx)
                                  .addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(SkyBoxPushConstant))
                                  .addDescriptorSetLayout(globalDescSetLayout.layout)
@@ -83,6 +80,7 @@ void Environment::initCubeTextureResources(
                            .addColorAttachmentFormat(VK_FORMAT_R8G8B8A8_SRGB)
                            .setDepthWrite(false)
                            .setCullMode(VK_CULL_MODE_FRONT_BIT)
+                           .removeVertexInputState()
                            .setDebugName("skybox_pipeline")
                            .build();
 #ifdef VK_RENDERER_DEBUG
@@ -98,7 +96,6 @@ void Environment::cleanup()
 {
     m_skyBoxPipeline       = nullptr;
     m_skyBoxPipelineLayout = nullptr;
-    m_cubeMesh->cleanup();
 }
 
 } // namespace dusk

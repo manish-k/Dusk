@@ -7,9 +7,6 @@
 #include "debug/profiler.h"
 
 #include "scene/scene.h"
-#include "scene/components/transform.h"
-#include "scene/components/mesh.h"
-#include "scene/components/lights.h"
 
 // TODO: https://developer.nvidia.com/gpugems/gpugems2/part-ii-shading-lighting-and-shadows/chapter-17-efficient-soft-edged-shadows-using for softer shadows
 
@@ -52,7 +49,7 @@ void recordShadow2DMapsCmds(
         nullptr);
 
     {
-        DUSK_PROFILE_SECTION("shadow_bind_vertex", commandBuffer);
+        DUSK_PROFILE_SECTION("shadow_bind_vertex");
 
         // TODO:: getter for index and vertex buffer is ugly
         VkBuffer     buffers[] = { Engine::get().getVertexBuffer().vkBuffer.buffer };
@@ -63,24 +60,24 @@ void recordShadow2DMapsCmds(
     }
 
     {
-        DUSK_PROFILE_SECTION("shadow_map_draw", commandBuffer);
+        DUSK_PROFILE_SECTION("shadow_map_draw");
 
-        auto& submeshes      = scene.getSubMeshes();
+        auto& meshesData     = scene.m_sceneMeshes;
         auto  renderables    = frameData.renderables;
         auto  totalInstnaces = static_cast<uint32_t>(renderables->meshIds.size());
 
         for (uint32_t instanceIdx = 0u; instanceIdx < totalInstnaces; ++instanceIdx)
         {
-            uint32_t       meshId = renderables->meshIds[instanceIdx];
-            const SubMesh& mesh   = submeshes[meshId];
+            uint32_t    meshId   = renderables->meshIds[instanceIdx];
+            const auto& meshData = meshesData[meshId];
 
             vkCmdDrawIndexed(
                 commandBuffer,
-                mesh.getIndexCount(),
-                1,                          // instance count
-                mesh.getIndexBufferIndex(), // firstIndex
-                mesh.getVertexOffset(),     // vertexOffset
-                instanceIdx);               // firstInstance
+                meshData.indexCount,
+                1,                     // instance count
+                meshData.firstIndex,   // firstIndex
+                meshData.vertexOffset, // vertexOffset
+                instanceIdx);          // firstInstance
         }
     }
 }

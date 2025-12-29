@@ -5,7 +5,6 @@
 namespace dusk
 {
 class TextureDB;
-class SubMesh;
 class VkGfxDevice;
 class VkGfxRenderPipeline;
 class VkGfxPipelineLayout;
@@ -24,7 +23,6 @@ public:
 
     VkGfxRenderPipeline& getPipeline() { return *m_skyBoxPipeline; }
     VkGfxPipelineLayout& getPipelineLayout() { return *m_skyBoxPipelineLayout; }
-    SubMesh&             getCubeMesh() const { return *m_cubeMesh; };
     uint32_t             getSkyTextureId() const { return m_skyTextureId; };
     uint32_t             getSkyPrefilteredTextureId() const { return m_skyPrefilteredTexId; };
     uint32_t             getSkyIrradianceTextureId() const { return m_skyIrradianceTexId; };
@@ -41,8 +39,6 @@ private:
     uint32_t                    m_skyTextureId         = {};
     uint32_t                    m_skyIrradianceTexId   = {};
     uint32_t                    m_skyPrefilteredTexId     = {};
-
-    Shared<SubMesh>             m_cubeMesh             = nullptr;
 
     Unique<VkGfxRenderPipeline> m_skyBoxPipeline       = nullptr;
     Unique<VkGfxPipelineLayout> m_skyBoxPipelineLayout = nullptr;

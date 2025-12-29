@@ -104,7 +104,6 @@ set(RENDERER_FILES
 	"${RENDERER_DIR}/render_api.h"
 	"${RENDERER_DIR}/renderer.h"
 	"${RENDERER_DIR}/vertex.h"
-	"${RENDERER_DIR}/sub_mesh.h"
 	"${RENDERER_DIR}/material.h"
 	"${RENDERER_DIR}/gfx_buffer.h"
 	"${RENDERER_DIR}/frame_data.h"
@@ -124,7 +123,6 @@ set(RENDERER_FILES
 	"${RENDERER_GEOMETRY_DIR}/sphere.h"
 	"${RENDERER_GEOMETRY_DIR}/aabb.h"
 	# Source files
-	"${RENDERER_DIR}/sub_mesh.cpp"
 	"${RENDERER_DIR}/texture.cpp"
 	"${RENDERER_DIR}/gfx_buffer.cpp"
 	"${RENDERER_DIR}/render_graph.cpp"

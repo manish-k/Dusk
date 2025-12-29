@@ -6,6 +6,7 @@
 #include "renderer/gfx_buffer.h"
 #include "renderer/frame_data.h"
 #include "renderer/gfx_types.h"
+#include "renderer/vertex.h"
 
 #include "backend/vulkan/vk_descriptors.h"
 #include "backend/vulkan/vk_pipeline.h"
@@ -29,7 +30,6 @@ class LightsSystem;
 class TextureDB;
 class VulkanRenderer;
 class VkGfxDevice;
-class SubMesh;
 
 struct Material;
 struct VkGfxDescriptorPool;
@@ -41,40 +41,35 @@ constexpr uint32_t MAX_RENDERABLES_COUNT = 10000;
 
 struct RenderGraphResources
 {
-    DynamicArray<GfxBuffer>                  frameIndirectDrawCommandsBuffers    = {};
-    DynamicArray<GfxBuffer>                  frameIndirectDrawCountBuffers       = {};
-    Unique<VkGfxDescriptorPool>              indirectDrawDescriptorPool          = nullptr;
-    Unique<VkGfxDescriptorSetLayout>         indirectDrawDescriptorSetLayout     = nullptr;
-    DynamicArray<Unique<VkGfxDescriptorSet>> indirectDrawDescriptorSet           = {};
+    DynamicArray<GfxBuffer>                  frameIndirectDrawCommandsBuffers = {};
+    DynamicArray<GfxBuffer>                  frameIndirectDrawCountBuffers    = {};
+    Unique<VkGfxDescriptorPool>              indirectDrawDescriptorPool       = nullptr;
+    Unique<VkGfxDescriptorSetLayout>         indirectDrawDescriptorSetLayout  = nullptr;
+    DynamicArray<Unique<VkGfxDescriptorSet>> indirectDrawDescriptorSet        = {};
 
-    DynamicArray<uint32_t>                   gbuffRenderTextureIds               = {};
-    uint32_t                                 gbuffDepthTextureId                 = {};
-    Unique<VkGfxRenderPipeline>              gbuffPipeline                       = nullptr;
-    Unique<VkGfxPipelineLayout>              gbuffPipelineLayout                 = nullptr;
+    DynamicArray<uint32_t>                   gbuffRenderTextureIds            = {};
+    uint32_t                                 gbuffDepthTextureId              = {};
+    Unique<VkGfxRenderPipeline>              gbuffPipeline                    = nullptr;
+    Unique<VkGfxPipelineLayout>              gbuffPipelineLayout              = nullptr;
 
-    Unique<VkGfxDescriptorPool>              meshInstanceDataDescriptorPool      = nullptr;
-    Unique<VkGfxDescriptorSetLayout>         meshInstanceDataDescriptorSetLayout = nullptr;
-    DynamicArray<Unique<VkGfxDescriptorSet>> meshInstanceDataDescriptorSet       = {};
-    DynamicArray<GfxBuffer>                  meshInstanceDataBuffers             = {};
+    Unique<VkGfxRenderPipeline>              presentPipeline                  = nullptr;
+    Unique<VkGfxPipelineLayout>              presentPipelineLayout            = nullptr;
 
-    Unique<VkGfxRenderPipeline>              presentPipeline                     = nullptr;
-    Unique<VkGfxPipelineLayout>              presentPipelineLayout               = nullptr;
+    uint32_t                                 lightingRenderTextureId          = {};
+    Unique<VkGfxRenderPipeline>              lightingPipeline                 = nullptr;
+    Unique<VkGfxPipelineLayout>              lightingPipelineLayout           = nullptr;
 
-    uint32_t                                 lightingRenderTextureId             = {};
-    Unique<VkGfxRenderPipeline>              lightingPipeline                    = nullptr;
-    Unique<VkGfxPipelineLayout>              lightingPipelineLayout              = nullptr;
+    uint32_t                                 brdfLUTextureId                  = {};
+    Unique<VkGfxComputePipeline>             brdfLUTPipeline                  = nullptr;
+    Unique<VkGfxPipelineLayout>              brdfLUTPipelineLayout            = nullptr;
+    bool                                     brdfLUTGenerated                 = false;
 
-    uint32_t                                 brdfLUTextureId                     = {};
-    Unique<VkGfxComputePipeline>             brdfLUTPipeline                     = nullptr;
-    Unique<VkGfxPipelineLayout>              brdfLUTPipelineLayout               = nullptr;
-    bool                                     brdfLUTGenerated                    = false;
+    Unique<VkGfxRenderPipeline>              shadow2DMapPipeline              = nullptr;
+    Unique<VkGfxPipelineLayout>              shadow2DMapPipelineLayout        = nullptr;
+    uint32_t                                 dirShadowMapsTextureId           = {};
 
-    Unique<VkGfxRenderPipeline>              shadow2DMapPipeline                 = nullptr;
-    Unique<VkGfxPipelineLayout>              shadow2DMapPipelineLayout           = nullptr;
-    uint32_t                                 dirShadowMapsTextureId              = {};
-
-    Unique<VkGfxComputePipeline>             cullLodPipeline                     = nullptr;
-    Unique<VkGfxPipelineLayout>              cullLodPipelineLayout               = nullptr;
+    Unique<VkGfxComputePipeline>             cullLodPipeline                  = nullptr;
+    Unique<VkGfxPipelineLayout>              cullLodPipelineLayout            = nullptr;
 };
 
 struct BRDFLUTPushConstant
@@ -125,7 +120,11 @@ public:
     void                  registerMaterials(DynamicArray<Material>& materials);
 
     void                  updateMaterialsBuffer(DynamicArray<Material>& materials);
-    void                  updateMeshDataBuffer(DynamicArray<SubMesh>& subMeshes);
+    void                  uploadVertexAndIndexBuffers(
+                         DynamicArray<Vertex>&   vertices,
+                         DynamicArray<uint32_t>& indices,
+                         int*                    outVertexOffset,
+                         uint32_t*               firstIndex);
 
     TimeStep              getFrameDelta() const { return m_deltaTime; };
 

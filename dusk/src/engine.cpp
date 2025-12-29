@@ -319,7 +319,25 @@ void Engine::loadScene(Scene* scene)
     m_currentScene = scene;
     registerMaterials(scene->getMaterials());
 
-    updateMeshDataBuffer(scene->getSubMeshes());
+    {
+        DUSK_PROFILE_SECTION("mesh_data_buffer_update");
+        // TODO: do something about public m_sceneMeshes access
+        auto meshDataCount = static_cast<uint32_t>(scene->m_sceneMeshes.size());
+
+        m_meshDataBuffer.writeAndFlush(0, scene->m_sceneMeshes.data(), meshDataCount * sizeof(GfxMeshData));
+
+        // update descset
+        DynamicArray<VkDescriptorBufferInfo> meshDataDescInfo;
+        meshDataDescInfo.push_back(m_meshDataBuffer.getDescriptorInfo());
+
+        m_meshDataDescriptorSet->configureBuffer(
+            0,
+            0,
+            meshDataDescInfo.size(),
+            meshDataDescInfo.data());
+        m_meshDataDescriptorSet->applyConfiguration();
+    }
+
     m_lightsSystem->registerAllLights(*scene);
 }
 
@@ -508,8 +526,8 @@ void Engine::renderFrame(FrameData& frameData)
         .secondaryCmdBuffers   = m_renderer->getSecondayCmdBuffers(frameData.frameIndex)
     };
 
-    renderGraph.setPassContext("skybox_pass", skyBoxCtx);
-    renderGraph.addPass("skybox_pass", recordSkyBoxCmds);
+    //renderGraph.setPassContext("skybox_pass", skyBoxCtx);
+    //renderGraph.addPass("skybox_pass", recordSkyBoxCmds);
 
     // create presentation pass
     auto presentReadAttachments = {
@@ -547,10 +565,10 @@ bool Engine::setupGlobals()
     uint32_t      maxFramesCount = m_renderer->getMaxFramesCount();
     VulkanContext ctx            = VkGfxDevice::getSharedVulkanContext();
 
-    // setup 256mb vertex buffer * 32mb index buffer
+    // setup 256mb vertex buffer * 128mb index buffer
     m_vertexBuffer.init(
         GfxBufferUsageFlags::VertexBuffer | GfxBufferUsageFlags::TransferTarget,
-        512 * 1024 * 1024,
+        256 * 1024 * 1024,
         GfxBufferMemoryTypeFlags::DedicatedDeviceMemory,
         "global_vertex_buffer");
 
@@ -558,7 +576,7 @@ bool Engine::setupGlobals()
 
     m_indexBuffer.init(
         GfxBufferUsageFlags::IndexBuffer | GfxBufferUsageFlags::TransferTarget,
-        64 * 1024 * 1024,
+        128 * 1024 * 1024,
         GfxBufferMemoryTypeFlags::DedicatedDeviceMemory,
         "global_index_buffer");
 
@@ -642,16 +660,17 @@ bool Engine::setupGlobals()
                                             0,
                                             VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                                             VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
-                                            MAX_RENDERABLES_COUNT, // TODO: make count configurable
+                                            1,
                                             true)
                                         .setDebugName("mesh_data_desc_set_layout")
                                         .build();
     CHECK_AND_RETURN_FALSE(!m_meshDataDescriptorSetLayout);
 
+    // TODO: make it device local buffer
     GfxBuffer::createHostWriteBuffer(
         GfxBufferUsageFlags::StorageBuffer,
-        sizeof(GfxMeshData),
-        MAX_RENDERABLES_COUNT,
+        sizeof(GfxMeshData) * MAX_RENDERABLES_COUNT,
+        1,
         "mesh_data_buffer",
         &m_meshDataBuffer);
     CHECK_AND_RETURN_FALSE(!m_meshDataBuffer.isAllocated());
@@ -697,7 +716,7 @@ bool Engine::setupGlobals()
                                               VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
                                               1,
                                               true)
-                                          .setDebugName("mesh_data_desc_set_layout")
+                                          .setDebugName("renderables_desc_set_layout")
                                           .build();
     CHECK_AND_RETURN_FALSE(!m_renderableDescriptorSetLayout);
 
@@ -841,36 +860,6 @@ void Engine::updateMaterialsBuffer(DynamicArray<Material>& materials)
     }
 }
 
-void Engine::updateMeshDataBuffer(DynamicArray<SubMesh>& subMeshes)
-{
-    DUSK_PROFILE_FUNCTION;
-
-    DynamicArray<VkDescriptorBufferInfo> meshDataDescInfo;
-    meshDataDescInfo.reserve(subMeshes.size());
-
-    for (uint32_t meshId = 0u; meshId < subMeshes.size(); ++meshId)
-    {
-        SubMesh&    subMesh = subMeshes[meshId];
-
-        GfxMeshData meshData {};
-        meshData.indexCount   = subMesh.getIndexCount();
-        meshData.firstIndex   = subMesh.getIndexBufferIndex();
-        meshData.vertexOffset = subMesh.getVertexOffset();
-
-        m_meshDataBuffer.writeAndFlushAtIndex(meshId, &meshData, sizeof(GfxMeshData));
-
-        meshDataDescInfo.push_back(m_meshDataBuffer.getDescriptorInfoAtIndex(meshId));
-    }
-
-    m_meshDataDescriptorSet->configureBuffer(
-        0,
-        0,
-        meshDataDescInfo.size(),
-        meshDataDescInfo.data());
-
-    m_meshDataDescriptorSet->applyConfiguration();
-}
-
 void Engine::prepareRenderGraphResources()
 {
     DUSK_PROFILE_FUNCTION;
@@ -967,53 +956,12 @@ void Engine::prepareRenderGraphResources()
         extent.height,
         VK_FORMAT_D32_SFLOAT_S8_UINT);
 
-    m_rgResources.meshInstanceDataDescriptorPool = VkGfxDescriptorPool::Builder(ctx)
-                                                       .addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, maxFramesCount * MAX_RENDERABLES_COUNT)
-                                                       .setDebugName("mesh_instance_desc_pool")
-                                                       .build(maxFramesCount, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
-
-    m_rgResources.meshInstanceDataDescriptorSetLayout = VkGfxDescriptorSetLayout::Builder(ctx)
-                                                            .addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT, MAX_RENDERABLES_COUNT, true)
-                                                            .setDebugName("mesh_instance_desc_set_layout")
-                                                            .build();
-
-    m_rgResources.meshInstanceDataBuffers.resize(maxFramesCount);
-    m_rgResources.meshInstanceDataDescriptorSet.resize(maxFramesCount);
-
-    for (uint32_t frameIdx = 0u; frameIdx < maxFramesCount; ++frameIdx)
-    {
-        GfxBuffer::createHostWriteBuffer(
-            GfxBufferUsageFlags::StorageBuffer,
-            sizeof(GfxMeshInstanceData),
-            MAX_RENDERABLES_COUNT,
-            std::format("mesh_instance_buffer_{}", std::to_string(frameIdx)),
-            &m_rgResources.meshInstanceDataBuffers[frameIdx]);
-
-        m_rgResources.meshInstanceDataDescriptorSet[frameIdx] = m_rgResources.meshInstanceDataDescriptorPool->allocateDescriptorSet(
-            *m_rgResources.meshInstanceDataDescriptorSetLayout, "mesh_instance_desc_set");
-
-        DynamicArray<VkDescriptorBufferInfo> meshBufferInfo;
-        meshBufferInfo.reserve(MAX_RENDERABLES_COUNT);
-        for (uint32_t meshIdx = 0u; meshIdx < MAX_RENDERABLES_COUNT; ++meshIdx)
-        {
-            meshBufferInfo.push_back(m_rgResources.meshInstanceDataBuffers[frameIdx].getDescriptorInfoAtIndex(meshIdx));
-        }
-
-        m_rgResources.meshInstanceDataDescriptorSet[frameIdx]->configureBuffer(
-            0,
-            0,
-            meshBufferInfo.size(),
-            meshBufferInfo.data());
-
-        m_rgResources.meshInstanceDataDescriptorSet[frameIdx]->applyConfiguration();
-    }
-
     // create g-buff pipeline layout
     m_rgResources.gbuffPipelineLayout = VkGfxPipelineLayout::Builder(ctx)
                                             .addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(DrawData))
                                             .addDescriptorSetLayout(m_globalDescriptorSetLayout->layout)
                                             .addDescriptorSetLayout(m_materialDescriptorSetLayout->layout)
-                                            .addDescriptorSetLayout(m_rgResources.meshInstanceDataDescriptorSetLayout->layout)
+                                            .addDescriptorSetLayout(m_renderableDescriptorSetLayout->layout)
                                             .addDescriptorSetLayout(m_textureDB->getTexturesDescriptorSetLayout().layout)
                                             .build();
 
@@ -1248,7 +1196,7 @@ void Engine::prepareRenderGraphResources()
                                               .addPushConstantRange(VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(CullLodPushConstant))
                                               .addDescriptorSetLayout(m_globalDescriptorSetLayout->layout)
                                               .addDescriptorSetLayout(m_meshDataDescriptorSetLayout->layout)
-                                              .addDescriptorSetLayout(m_rgResources.meshInstanceDataDescriptorSetLayout->layout)
+                                              .addDescriptorSetLayout(m_renderableDescriptorSetLayout->layout)
                                               .addDescriptorSetLayout(m_rgResources.indirectDrawDescriptorSetLayout->layout)
                                               .build();
 
@@ -1288,30 +1236,23 @@ void Engine::releaseRenderGraphResources()
     m_rgResources.indirectDrawDescriptorSetLayout = nullptr;
     m_rgResources.indirectDrawDescriptorPool      = nullptr;
 
-    m_rgResources.meshInstanceDataDescriptorPool->resetPool();
-    m_rgResources.meshInstanceDataDescriptorSetLayout = nullptr;
-    m_rgResources.meshInstanceDataDescriptorPool      = nullptr;
+    m_rgResources.gbuffPipeline                   = nullptr;
+    m_rgResources.gbuffPipelineLayout             = nullptr;
 
-    for (auto& buffer : m_rgResources.meshInstanceDataBuffers)
-        buffer.cleanup();
+    m_rgResources.presentPipeline                 = nullptr;
+    m_rgResources.presentPipelineLayout           = nullptr;
 
-    m_rgResources.gbuffPipeline             = nullptr;
-    m_rgResources.gbuffPipelineLayout       = nullptr;
+    m_rgResources.lightingPipeline                = nullptr;
+    m_rgResources.lightingPipelineLayout          = nullptr;
 
-    m_rgResources.presentPipeline           = nullptr;
-    m_rgResources.presentPipelineLayout     = nullptr;
+    m_rgResources.brdfLUTPipeline                 = nullptr;
+    m_rgResources.brdfLUTPipelineLayout           = nullptr;
 
-    m_rgResources.lightingPipeline          = nullptr;
-    m_rgResources.lightingPipelineLayout    = nullptr;
+    m_rgResources.shadow2DMapPipeline             = nullptr;
+    m_rgResources.shadow2DMapPipelineLayout       = nullptr;
 
-    m_rgResources.brdfLUTPipeline           = nullptr;
-    m_rgResources.brdfLUTPipelineLayout     = nullptr;
-
-    m_rgResources.shadow2DMapPipeline       = nullptr;
-    m_rgResources.shadow2DMapPipelineLayout = nullptr;
-
-    m_rgResources.cullLodPipeline           = nullptr;
-    m_rgResources.cullLodPipelineLayout     = nullptr;
+    m_rgResources.cullLodPipeline                 = nullptr;
+    m_rgResources.cullLodPipelineLayout           = nullptr;
 }
 
 void Engine::executeBRDFLUTcomputePipeline()
@@ -1417,6 +1358,58 @@ size_t Engine::copyToIndexBuffer(const GfxBuffer& srcIndexBuffer, size_t size)
     m_availableIndexOffset += size / sizeof(uint32_t);
 
     return startOffset;
+}
+
+// TODO:: implement with chunks if needed
+void Engine::uploadVertexAndIndexBuffers(
+    DynamicArray<Vertex>&   vertices,
+    DynamicArray<uint32_t>& indices,
+    int*                    outVertexOffset,
+    uint32_t*               outfirstIndex)
+{
+    *outVertexOffset        = static_cast<int>(m_availableVertexOffset);
+    *outfirstIndex          = static_cast<uint32_t>(m_availableIndexOffset);
+
+    auto      totalVertices = vertices.size();
+    auto      totalIndices  = indices.size();
+
+    GfxBuffer stagingBuffer;
+    size_t    stagingBufferSize = vertices.size() * sizeof(Vertex) + indices.size() * sizeof(uint32_t);
+    GfxBuffer::createHostWriteBuffer(
+        GfxBufferUsageFlags::TransferSource,
+        stagingBufferSize,
+        1,
+        "staging_vertex_index_buffer",
+        &stagingBuffer);
+
+    // upload vertex buffer
+    stagingBuffer.writeAndFlush(0, (void*)vertices.data(), totalVertices * sizeof(Vertex));
+
+    m_gfxDevice->copyBuffer(
+        stagingBuffer.vkBuffer,
+        0,
+        m_vertexBuffer.vkBuffer,
+        m_availableVertexOffset * sizeof(Vertex),
+        totalVertices * sizeof(Vertex));
+
+    m_availableVertexOffset += totalVertices;
+
+    // upload index buffer
+    stagingBuffer.writeAndFlush(
+        totalVertices * sizeof(Vertex),
+        (void*)indices.data(),
+        totalIndices * sizeof(uint32_t));
+
+    m_gfxDevice->copyBuffer(
+        stagingBuffer.vkBuffer,
+        totalVertices * sizeof(Vertex),
+        m_indexBuffer.vkBuffer,
+        m_availableIndexOffset * sizeof(uint32_t),
+        totalIndices * sizeof(uint32_t));
+
+    m_availableIndexOffset += totalIndices;
+
+    stagingBuffer.cleanup();
 }
 
 } // namespace dusk

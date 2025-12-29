@@ -1,9 +1,33 @@
 #version 450
+
+#extension GL_KHR_vulkan_glsl : enable
 #extension GL_EXT_nonuniform_qualifier : enable
 
 layout(location = 0) in vec3 position;
 
 layout(location = 0) out vec3 fragUVW;
+
+// Cube vertices
+const vec3 positions[8] = vec3[8](
+    vec3(-1.0, -1.0, -1.0),
+    vec3( 1.0, -1.0, -1.0),
+    vec3( 1.0,  1.0, -1.0),
+    vec3(-1.0,  1.0, -1.0),
+    vec3(-1.0, -1.0,  1.0),
+    vec3( 1.0, -1.0,  1.0),
+    vec3( 1.0,  1.0,  1.0),
+    vec3(-1.0,  1.0,  1.0)
+);
+
+// Cube indices
+const uint indices[36] = uint[36](
+    0, 1, 2, 2, 3, 0, // front
+    1, 5, 6, 6, 2, 1, // right
+    5, 4, 7, 7, 6, 5, // back
+    4, 0, 3, 3, 7, 4, // left
+    3, 2, 6, 6, 7, 3, // top
+    4, 5, 1, 1, 0, 4  // bottom
+);
 
 layout (set = 0, binding = 0) uniform GlobalUBO 
 {
@@ -31,7 +55,9 @@ layout(push_constant) uniform SkyBoxPushConstant
 
 void main()
 {	
-	fragUVW = position;
+	uint idx = indices[gl_VertexIndex];
+
+    fragUVW = positions[idx];
 
 	mat4 view = globalubo[nonuniformEXT(push.frameIdx)].view;
 	mat4 proj = globalubo[nonuniformEXT(push.frameIdx)].projection;

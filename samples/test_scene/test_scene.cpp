@@ -2,9 +2,7 @@
 
 #include "core/entrypoint.h"
 #include "scene/components/lights.h"
-#include "scene/components/transform.h"
-#include "renderer/texture_db.h"
-#include "loaders/image_loader.h"
+#include "scene/camera_controller.h"
 
 TestScene::TestScene()
 {
@@ -25,7 +23,8 @@ bool TestScene::start()
 {
     // std::string scenePath = "assets/scenes/EnvironmentTest.gltf";
     //std::string scenePath = "assets/scenes/2_cubes.gltf";
-    std::string scenePath = "D:/resources/scene/bistro_gltf/bistro.gltf";
+    //std::string scenePath = "assets/scenes/Cube.gltf";
+    std::string scenePath = "D:/resources/scene/bistro_ext_gltf/bistro.gltf";
     //std::string scenePath
     //    = "assets/scenes/tea_cup/DiffuseTransmissionTeacup.gltf";
     m_testScene = Scene::createSceneFromGLTF(scenePath);
@@ -46,6 +45,11 @@ bool TestScene::start()
     auto& pLight               = pointLight->addComponent<PointLightComponent>();
     pLight.color               = glm::vec4(1.f, 1.f, 1.f, 0.6);
     m_testScene->addGameObject(std::move(pointLight), m_testScene->getRootId());*/
+
+    
+    auto& cameraController = m_testScene.get()->getMainCameraController();
+    cameraController.setPosition({ -1500.f, 565.f,-50.f });
+    cameraController.setViewDirection({ 1.f, -0.2f, -0.1f });
 
     Engine::get().loadScene(m_testScene.get());
 

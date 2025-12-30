@@ -19,7 +19,6 @@ struct Vertex
     glm::vec3 position  = {};
     glm::vec3 normal    = {};
     glm::vec3 tangent   = {};
-    glm::vec3 bitangent = {};
     glm::vec2 uv        = {};
 
     /**
@@ -49,11 +48,8 @@ struct Vertex
         // tangent
         attributesInfo.push_back({ 2, offsetof(Vertex, tangent), VertexAttributeFormat ::X32Y32Z32_FLOAT });
 
-        // bitangent
-        attributesInfo.push_back({ 3, offsetof(Vertex, bitangent), VertexAttributeFormat ::X32Y32Z32_FLOAT });
-
         // uv
-        attributesInfo.push_back({ 4, offsetof(Vertex, uv), VertexAttributeFormat ::X32Y32_FLOAT });
+        attributesInfo.push_back({ 3, offsetof(Vertex, uv), VertexAttributeFormat ::X32Y32_FLOAT });
 
         return attributesInfo;
     }

@@ -245,10 +245,10 @@ void AssimpLoader::parseMeshes(Scene& scene, const aiScene* aiScene)
             {
                 v.tangent   = glm::vec3(mesh->mTangents[vertexIndex].x, mesh->mTangents[vertexIndex].y, mesh->mTangents[vertexIndex].z);
 
-                v.bitangent = glm::vec3(mesh->mBitangents[vertexIndex].x, mesh->mBitangents[vertexIndex].y, mesh->mBitangents[vertexIndex].z);
+                auto bitangent = glm::vec3(mesh->mBitangents[vertexIndex].x, mesh->mBitangents[vertexIndex].y, mesh->mBitangents[vertexIndex].z);
 
                 // flip if not right handed
-                if (glm::dot(glm::cross(v.normal, v.tangent), v.bitangent) < 0.0f)
+                if (glm::dot(glm::cross(v.normal, v.tangent), bitangent) < 0.0f)
                     v.tangent *= -1.0f; // Flip tangent
             }
             else
@@ -416,10 +416,6 @@ void AssimpLoader::parseMaterials(Scene& scene, const aiScene* aiScene)
         if (!aoTexPath.empty())
         {
             newMaterial.aoTexId = read2DTexture(aoTexPath, PixelFormat::R8G8B8A8_unorm);
-        }
-        else
-        {
-            newMaterial.aoTexId = defaultTexId;
         }
 
         aiMat->Get(AI_MATKEY_REFLECTIVITY, newMaterial.aoStrength);

@@ -23,7 +23,7 @@ void recordShadow2DMapsCmds(
     Scene&          scene         = *frameData.scene;
     VkCommandBuffer commandBuffer = ctx.cmdBuffer;
 
-    const auto&     resources     = Engine::get().getRenderGraphResources();
+    auto&           resources     = Engine::get().getRenderGraphResources();
     resources.shadow2DMapPipeline->bind(commandBuffer);
 
     // renderable list descriptor set
@@ -59,26 +59,61 @@ void recordShadow2DMapsCmds(
         vkCmdBindIndexBuffer(commandBuffer, Engine::get().getIndexBuffer().vkBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
     }
 
-    {
-        DUSK_PROFILE_SECTION("shadow_map_draw");
+    GfxBuffer& frameIndirectBuffer = resources.frameIndirectDrawCommandsBuffers[frameData.frameIndex];
+    auto&      meshesData          = scene.m_sceneMeshes;
+    auto       renderables         = frameData.renderables;
+    auto       totalInstnaces      = static_cast<uint32_t>(renderables->meshIds.size());
 
-        auto& meshesData     = scene.m_sceneMeshes;
-        auto  renderables    = frameData.renderables;
-        auto  totalInstnaces = static_cast<uint32_t>(renderables->meshIds.size());
+    {
+        DUSK_PROFILE_SECTION("shadow_indirect_buffer_prep");
+        DynamicArray<GfxIndexedIndirectDrawCommand> indirectCmdsBuffer = {};
+
+        // record cmds in buffer
+        indirectCmdsBuffer.reserve(totalInstnaces);
 
         for (uint32_t instanceIdx = 0u; instanceIdx < totalInstnaces; ++instanceIdx)
         {
             uint32_t    meshId   = renderables->meshIds[instanceIdx];
             const auto& meshData = meshesData[meshId];
 
-            vkCmdDrawIndexed(
-                commandBuffer,
-                meshData.indexCount,
-                1,                     // instance count
-                meshData.firstIndex,   // firstIndex
-                meshData.vertexOffset, // vertexOffset
-                instanceIdx);          // firstInstance
+            indirectCmdsBuffer.push_back(
+                { .indexCount    = meshData.indexCount,
+                  .instanceCount = 1u,
+                  .firstIndex    = meshData.firstIndex,
+                  .vertexOffset  = meshData.vertexOffset,
+                  .firstInstance = instanceIdx });
         }
+
+        GfxBuffer stagingBuffer;
+        size_t    stagingBufferSize = totalInstnaces * sizeof(GfxIndexedIndirectDrawCommand);
+        GfxBuffer::createHostWriteBuffer(
+            GfxBufferUsageFlags::TransferSource,
+            stagingBufferSize,
+            1,
+            "staging_indirect_index_buffer",
+            &stagingBuffer);
+
+        // upload indirect cmds buffer
+        stagingBuffer.writeAndFlush(0, (void*)indirectCmdsBuffer.data(), stagingBufferSize);
+
+        frameIndirectBuffer.copyFrom(
+            stagingBuffer,
+            0,
+            MAX_RENDERABLES_COUNT * sizeof(GfxIndexedIndirectDrawCommand),
+            stagingBufferSize);
+
+        stagingBuffer.cleanup();
+    }
+
+    {
+        DUSK_PROFILE_SECTION("shadow_map_draw");
+
+        vkCmdDrawIndexedIndirect(
+            commandBuffer,
+            frameIndirectBuffer.vkBuffer.buffer,
+            MAX_RENDERABLES_COUNT * sizeof(GfxIndexedIndirectDrawCommand),
+            totalInstnaces,
+            sizeof(GfxIndexedIndirectDrawCommand));
     }
 }
 

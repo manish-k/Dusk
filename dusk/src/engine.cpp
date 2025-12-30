@@ -175,6 +175,8 @@ void Engine::onUpdate(TimeStep dt)
 
     if (VkCommandBuffer commandBuffer = m_renderer->beginFrame())
     {
+        DUSK_PROFILE_SECTION("frame_update");
+
         auto      extent = m_renderer->getSwapChain().getCurrentExtent();
 
         FrameData frameData {
@@ -888,7 +890,7 @@ void Engine::prepareRenderGraphResources()
     {
         m_rgResources.frameIndirectDrawCommandsBuffers[frameIdx].init(
             GfxBufferUsageFlags::StorageBuffer | GfxBufferUsageFlags::IndirectBuffer | GfxBufferUsageFlags::TransferTarget,
-            sizeof(GfxIndexedIndirectDrawCommand) * MAX_RENDERABLES_COUNT,
+            sizeof(GfxIndexedIndirectDrawCommand) * MAX_RENDERABLES_COUNT * 2, // doubled because first half buffer for gbuffer pass, second half for shadow pass
             GfxBufferMemoryTypeFlags::DedicatedDeviceMemory,
             std::format("indirect_draw_buffer_{}", std::to_string(frameIdx)));
 

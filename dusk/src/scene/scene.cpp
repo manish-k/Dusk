@@ -63,7 +63,7 @@ void Scene::onUpdate(TimeStep dt)
 
     // TODO:: this can be optimized further by maintaining a list of dirty transforms
     // update world AABBs for all mesh components whose transforms are dirty
-    Registry::getRegistry().group<TransformComponent, MeshComponent>().each(
+    Registry::getRegistry().view<TransformComponent, MeshComponent>().each(
         [&](auto entity, auto& transform, auto& meshData)
         {
             // auto  objectId  = static_cast<entt::id_type>(entity);
@@ -148,7 +148,7 @@ void Scene::freeMaterials()
 void Scene::gatherRenderables(GfxRenderables* currentFrameRenderables)
 {
     DUSK_PROFILE_FUNCTION;
-    Registry::getRegistry().group<TransformComponent, MeshComponent>().each(
+    Registry::getRegistry().view<TransformComponent, MeshComponent>().each(
         [&](auto entity, auto& transform, auto& meshData)
         {
             glm::vec3 center  = (meshData.worldAABB.min + meshData.worldAABB.max) * 0.5f;

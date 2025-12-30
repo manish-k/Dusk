@@ -125,6 +125,7 @@ private:
     DynamicArray<Material>   m_materials;
 
 public:
+    // TODO:: figure out a good system to manage scene meshes
     DynamicArray<GfxMeshData> m_sceneMeshes = {};
 };
 } // namespace dusk

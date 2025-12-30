@@ -51,7 +51,7 @@ void recordLightingCmds(
         nullptr);
 
     LightingPushConstant push {};
-    push.frameIdx = frameData.frameIndex;
+    push.globalUboIdx = frameData.frameIndex;
 
     // TODO: Need a better way to handle attachment indices
     push.albedoTextureIdx       = ctx.readAttachments[0].texture->id;

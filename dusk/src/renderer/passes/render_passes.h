@@ -11,6 +11,10 @@ struct VkGfxRenderPassContext;
 
 //////////////////////////////////////////////////////
 // G-Buffer Pass
+struct GbufferPushConstant
+{
+    uint32_t globalUboIdx;
+};
 
 void recordGBufferCmds(
     FrameData&              frameData,
@@ -21,7 +25,7 @@ void recordGBufferCmds(
 
 struct LightingPushConstant
 {
-    uint32_t frameIdx;
+    uint32_t globalUboIdx;
     int32_t  albedoTextureIdx       = -1;
     int32_t  normalTextureIdx       = -1;
     int32_t  aoRoughMetalTextureIdx = -1;
@@ -42,7 +46,7 @@ void recordLightingCmds(
 // Skybox Pass
 struct SkyBoxPushConstant
 {
-    uint32_t frameIdx           = 0u;
+    uint32_t globalUboIdx       = 0u;
     int32_t  skyColorTextureIdx = -1;
 };
 

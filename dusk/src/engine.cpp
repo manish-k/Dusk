@@ -526,8 +526,8 @@ void Engine::renderFrame(FrameData& frameData)
         .secondaryCmdBuffers   = m_renderer->getSecondayCmdBuffers(frameData.frameIndex)
     };
 
-    //renderGraph.setPassContext("skybox_pass", skyBoxCtx);
-    //renderGraph.addPass("skybox_pass", recordSkyBoxCmds);
+    renderGraph.setPassContext("skybox_pass", skyBoxCtx);
+    renderGraph.addPass("skybox_pass", recordSkyBoxCmds);
 
     // create presentation pass
     auto presentReadAttachments = {

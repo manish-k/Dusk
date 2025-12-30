@@ -3,8 +3,6 @@
 #extension GL_KHR_vulkan_glsl : enable
 #extension GL_EXT_nonuniform_qualifier : enable
 
-layout(location = 0) in vec3 position;
-
 layout(location = 0) out vec3 fragUVW;
 
 // Cube vertices
@@ -57,13 +55,13 @@ void main()
 {	
 	uint idx = indices[gl_VertexIndex];
 
-    fragUVW = positions[idx];
-
 	mat4 view = globalubo[nonuniformEXT(push.frameIdx)].view;
 	mat4 proj = globalubo[nonuniformEXT(push.frameIdx)].projection;
 
 	mat4 untranslatedView = mat4(mat3(view)); // remove translation
-	vec4 clipPos = proj * (untranslatedView * vec4(position, 1.0));
+	vec4 clipPos = proj * (untranslatedView * vec4(positions[idx], 1.0));
+
+	fragUVW = positions[idx];
 
 	// giving maximum depth
 	gl_Position = clipPos.xyww;

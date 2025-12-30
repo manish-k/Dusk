@@ -47,7 +47,7 @@ void recordSkyBoxCmds(
         nullptr);
 
     SkyBoxPushConstant push {};
-    push.frameIdx           = frameData.frameIndex;
+    push.globalUboIdx       = frameData.frameIndex;
     push.skyColorTextureIdx = environment.getSkyTextureId();
 
     vkCmdPushConstants(
@@ -57,21 +57,6 @@ void recordSkyBoxCmds(
         0,
         sizeof(SkyBoxPushConstant),
         &push);
-
-    //VkBuffer     buffers[] = { Engine::get().getVertexBuffer().vkBuffer.buffer };
-    //VkDeviceSize offsets[] = { 0 };
-
-    //vkCmdBindVertexBuffers(ctx.cmdBuffer, 0, 1, buffers, offsets);
-
-    //vkCmdBindIndexBuffer(ctx.cmdBuffer, Engine::get().getIndexBuffer().vkBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
-
-    //vkCmdDrawIndexed(
-    //    ctx.cmdBuffer, 
-    //    environment.getCubeMesh().getIndexCount(), 
-    //    1, 
-    //    environment.getCubeMesh().getIndexBufferIndex(),
-    //    environment.getCubeMesh().getVertexOffset(),
-    //    0);
 
     vkCmdDraw(ctx.cmdBuffer, 36, 1, 0, 0);
 }

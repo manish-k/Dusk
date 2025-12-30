@@ -85,7 +85,7 @@ bool IBLGenerator::start()
 
 void IBLGenerator::shutdown()
 {
-    m_cubeProjViewBuffer.free();
+    m_cubeProjViewBuffer.cleanup();
     m_cubeProjViewDescPool->resetPool();
     m_cubeProjViewDescLayout     = nullptr;
     m_cubeProjViewDescPool       = nullptr;

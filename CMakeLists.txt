@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.29)
 project(dusk_engine)
 set(CMAKE_CXX_STANDARD 20)
 
+set(CMAKE_BUILD_PARALLEL_LEVEL 8 CACHE STRING "Default number of parallel jobs")
+
 # search for Vulkan SDK
 find_package(Vulkan)
 

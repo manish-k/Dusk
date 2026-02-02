@@ -5,23 +5,25 @@
 #include "frame_data.h"
 #include "engine.h"
 #include "debug/profiler.h"
+#include "renderer/environment.h"
 
 namespace dusk
 {
-void recordLightingCmds(
-    FrameData&              frameData,
-    VkGfxRenderPassContext& ctx)
+void recordLightingCmds(const FrameData& frameData)
 {
     DUSK_PROFILE_FUNCTION;
 
     if (!frameData.scene) return;
 
     auto& resources = Engine::get().getRenderGraphResources();
+    auto& env       = Engine::get().getEnvironment();
 
-    resources.lightingPipeline->bind(ctx.cmdBuffer);
+    auto  cmdBuffer = frameData.commandBuffer;
+
+    resources.lightingPipeline->bind(cmdBuffer);
 
     vkCmdBindDescriptorSets(
-        ctx.cmdBuffer,
+        cmdBuffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
         resources.lightingPipelineLayout->get(),
         0,
@@ -31,7 +33,7 @@ void recordLightingCmds(
         nullptr);
 
     vkCmdBindDescriptorSets(
-        ctx.cmdBuffer,
+        cmdBuffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
         resources.lightingPipelineLayout->get(),
         1,
@@ -41,7 +43,7 @@ void recordLightingCmds(
         nullptr);
 
     vkCmdBindDescriptorSets(
-        ctx.cmdBuffer,
+        cmdBuffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
         resources.lightingPipelineLayout->get(),
         2,
@@ -53,20 +55,20 @@ void recordLightingCmds(
     LightingPushConstant push {};
     push.globalUboIdx = frameData.frameIndex;
 
-    // TODO: Need a better way to handle attachment indices
-    push.albedoTextureIdx       = ctx.readAttachments[0].texture->id;
-    push.normalTextureIdx       = ctx.readAttachments[1].texture->id;
-    push.aoRoughMetalTextureIdx = ctx.readAttachments[2].texture->id;
-    push.emissiveTextureIdx     = ctx.readAttachments[3].texture->id;
-    push.depthTextureIdx        = ctx.readAttachments[4].texture->id;
-    push.irradianceTextureIdx   = ctx.readAttachments[5].texture->id;
-    push.prefilteredTextureIdx  = ctx.readAttachments[6].texture->id;
-    push.maxPrefilteredLODs     = ctx.readAttachments[6].texture->numMipLevels;
-    push.brdfLUTIdx             = ctx.readAttachments[7].texture->id;
-    push.dirShadowMapTextureIdx = ctx.readAttachments[8].texture->id;
+    // TODO: Need a better way to handle attachment indices, too much indirection
+    push.albedoTextureIdx       = resources.gbuffRenderTextureIds[0];
+    push.normalTextureIdx       = resources.gbuffRenderTextureIds[1];
+    push.aoRoughMetalTextureIdx = resources.gbuffRenderTextureIds[2];
+    push.emissiveTextureIdx     = resources.gbuffRenderTextureIds[3];
+    push.depthTextureIdx        = resources.gbuffDepthTextureId;
+    push.irradianceTextureIdx   = env.getSkyIrradianceTextureId();
+    push.prefilteredTextureIdx  = env.getSkyPrefilteredTextureId();
+    push.maxPrefilteredLODs     = env.getSkyPrefilteredMaxLods();
+    push.brdfLUTIdx             = resources.brdfLUTextureId;
+    push.dirShadowMapTextureIdx = resources.dirShadowMapsTextureId;
 
     vkCmdPushConstants(
-        ctx.cmdBuffer,
+        cmdBuffer,
         resources.lightingPipelineLayout->get(),
         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
         0,
@@ -74,8 +76,8 @@ void recordLightingCmds(
         &push);
 
     {
-        DUSK_PROFILE_GPU_ZONE("lighting_draw", ctx.cmdBuffer);
-        vkCmdDraw(ctx.cmdBuffer, 3, 1, 0, 0);
+        DUSK_PROFILE_GPU_ZONE("lighting_draw", cmdBuffer);
+        vkCmdDraw(cmdBuffer, 3, 1, 0, 0);
     }
 }
 } // namespace dusk

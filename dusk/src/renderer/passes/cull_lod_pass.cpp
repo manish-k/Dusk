@@ -15,16 +15,14 @@
 
 namespace dusk
 {
-void dispatchIndirectDrawCompute(
-    FrameData&              frameData,
-    VkGfxRenderPassContext& ctx)
+void dispatchIndirectDrawCompute(const FrameData& frameData)
 {
     DUSK_PROFILE_FUNCTION;
 
     if (!frameData.scene) return;
 
     Scene&          scene         = *frameData.scene;
-    VkCommandBuffer commandBuffer = ctx.cmdBuffer;
+    VkCommandBuffer commandBuffer = frameData.commandBuffer;
     auto&           resources     = Engine::get().getRenderGraphResources();
 
     // gather all mesh instances in the scene and upload to GPU buffers along with indirect draw commands

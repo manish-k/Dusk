@@ -12,16 +12,14 @@
 
 namespace dusk
 {
-void recordShadow2DMapsCmds(
-    FrameData&              frameData,
-    VkGfxRenderPassContext& ctx)
+void recordShadow2DMapsCmds(const FrameData& frameData)
 {
     DUSK_PROFILE_FUNCTION;
 
     if (!frameData.scene) return;
 
     Scene&          scene         = *frameData.scene;
-    VkCommandBuffer commandBuffer = ctx.cmdBuffer;
+    VkCommandBuffer commandBuffer = frameData.commandBuffer;
 
     auto&           resources     = Engine::get().getRenderGraphResources();
     resources.shadow2DMapPipeline->bind(commandBuffer);

@@ -36,14 +36,14 @@ void Environment::initCubeTextureResources(
     // env cube map
     const std::string skyboxTexturePath = resPath + "night_01_env.ktx2";
     m_skyTextureId                      = m_textureDB.createTextureAsync(
-        skyboxTexturePath, 
+        skyboxTexturePath,
         TextureType::Cube,
         PixelFormat::R32G32B32A32_sfloat);
 
     // irradiance cubemap
     const std::string skyboxIrradianceTexturePath = resPath + "night_01_env_irradiance.ktx2";
     m_skyIrradianceTexId                          = m_textureDB.createTextureAsync(
-        skyboxIrradianceTexturePath, 
+        skyboxIrradianceTexturePath,
         TextureType::Cube,
         PixelFormat::R32G32B32A32_sfloat);
 
@@ -51,11 +51,12 @@ void Environment::initCubeTextureResources(
     const std::string skyboxPrefilteredTexturePath = resPath + "night_01_env_prefiltered.ktx2";
     m_skyPrefilteredTexId
         = m_textureDB.createTextureAsync(
-            skyboxPrefilteredTexturePath, 
+            skyboxPrefilteredTexturePath,
             TextureType::Cube,
             PixelFormat::R32G32B32A32_sfloat);
+    m_skyPrefilteredMaxLods = m_textureDB.getTexture2D(m_skyPrefilteredTexId).numMipLevels;
 
-    m_skyBoxPipelineLayout = VkGfxPipelineLayout::Builder(ctx)
+    m_skyBoxPipelineLayout  = VkGfxPipelineLayout::Builder(ctx)
                                  .addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(SkyBoxPushConstant))
                                  .addDescriptorSetLayout(globalDescSetLayout.layout)
                                  .addDescriptorSetLayout(m_textureDB.getTexturesDescriptorSetLayout().layout)

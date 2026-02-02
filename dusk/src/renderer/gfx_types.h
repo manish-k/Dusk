@@ -8,18 +8,13 @@
 
 namespace dusk
 {
+#define DEFAULT_COLOR_CLEAR_VALUE   { 0.f, 0.f, 0.f, 1.f }
+#define DEFAULT_DEPTH_STENCIL_VALUE { 1.0f, 0 }
+
 struct GfxBoundingBoxData
 {
     glm::vec3 center  = {};
     glm::vec3 extents = {};
-};
-
-struct GfxRenderingAttachment
-{
-    GfxTexture*       texture    = nullptr;
-    VkClearValue      clearValue = {};
-    GfxLoadOperation  loadOp     = GfxLoadOperation::DontCare;
-    GfxStoreOperation storeOp    = GfxStoreOperation::Store;
 };
 
 struct GfxMeshData

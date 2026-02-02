@@ -14,16 +14,14 @@
 
 namespace dusk
 {
-void recordGBufferCmds(
-    FrameData&              frameData,
-    VkGfxRenderPassContext& ctx)
+void recordGBufferCmds(const FrameData& frameData)
 {
     DUSK_PROFILE_FUNCTION;
 
     if (!frameData.scene) return;
 
     const Scene&    scene         = *frameData.scene;
-    VkCommandBuffer commandBuffer = ctx.cmdBuffer;
+    VkCommandBuffer commandBuffer = frameData.commandBuffer;
     auto&           resources     = Engine::get().getRenderGraphResources();
 
     resources.gbuffPipeline->bind(commandBuffer);

@@ -9,9 +9,7 @@
 
 namespace dusk
 {
-void recordPresentationCmds(
-    FrameData&              frameData,
-    VkGfxRenderPassContext& ctx)
+void recordPresentationCmds(const FrameData& frameData)
 {
     DUSK_PROFILE_FUNCTION;
 
@@ -19,10 +17,10 @@ void recordPresentationCmds(
 
     auto& resources = Engine::get().getRenderGraphResources();
 
-    resources.presentPipeline->bind(ctx.cmdBuffer);
+    resources.presentPipeline->bind(frameData.commandBuffer);
 
     vkCmdBindDescriptorSets(
-        ctx.cmdBuffer,
+        frameData.commandBuffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
         resources.presentPipelineLayout->get(),
         0,
@@ -32,17 +30,17 @@ void recordPresentationCmds(
         nullptr);
 
     PresentationPushConstant push {};
-    push.inputTextureIdx = ctx.readAttachments[0].texture->id;
+    push.inputTextureIdx = resources.lightingRenderTextureId;
 
     vkCmdPushConstants(
-        ctx.cmdBuffer,
+        frameData.commandBuffer,
         resources.presentPipelineLayout->get(),
         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
         0,
         sizeof(PresentationPushConstant),
         &push);
 
-    vkCmdDraw(ctx.cmdBuffer, 3, 1, 0, 0);
+    vkCmdDraw(frameData.commandBuffer, 3, 1, 0, 0);
 
     {
         DUSK_PROFILE_SECTION("editor_cmds_recording");
@@ -53,7 +51,7 @@ void recordPresentationCmds(
         editorUI.beginRendering();
         editorUI.renderCommonWidgets();
         editorUI.renderSceneWidgets(*frameData.scene);
-        editorUI.endRendering(ctx.cmdBuffer);
+        editorUI.endRendering(frameData.commandBuffer);
     }
 
     return;

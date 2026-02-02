@@ -2,8 +2,6 @@
 
 #include "dusk.h"
 
-#include "backend/vulkan/vk_pass.h"
-
 namespace dusk
 {
 struct FrameData;
@@ -16,9 +14,7 @@ struct GbufferPushConstant
     uint32_t globalUboIdx;
 };
 
-void recordGBufferCmds(
-    FrameData&              frameData,
-    VkGfxRenderPassContext& ctx);
+void recordGBufferCmds(const FrameData& frameData);
 
 //////////////////////////////////////////////////////
 // Lighting Pass
@@ -38,9 +34,7 @@ struct LightingPushConstant
     int32_t  dirShadowMapTextureIdx = -1;
 };
 
-void recordLightingCmds(
-    FrameData&              frameData,
-    VkGfxRenderPassContext& ctx);
+void recordLightingCmds(const FrameData& frameData);
 
 //////////////////////////////////////////////////////
 // Skybox Pass
@@ -50,9 +44,7 @@ struct SkyBoxPushConstant
     int32_t  skyColorTextureIdx = -1;
 };
 
-void recordSkyBoxCmds(
-    FrameData&              frameData,
-    VkGfxRenderPassContext& ctx);
+void recordSkyBoxCmds(const FrameData& frameData);
 
 //////////////////////////////////////////////////////
 // Presentation Pass
@@ -62,16 +54,12 @@ struct PresentationPushConstant
     int32_t inputTextureIdx = -1;
 };
 
-void recordPresentationCmds(
-    FrameData&              frameData,
-    VkGfxRenderPassContext& ctx);
+void recordPresentationCmds(const FrameData& frameData);
 
 //////////////////////////////////////////////////////
 // Shadow Pass
 
-void recordShadow2DMapsCmds(
-    FrameData&              frameData,
-    VkGfxRenderPassContext& ctx);
+void recordShadow2DMapsCmds(const FrameData& frameData);
 
 //////////////////////////////////////////////////////
 // Cull & LOD Pass
@@ -82,8 +70,6 @@ struct CullLodPushConstant
     uint32_t objectCount;
 };
 
-void dispatchIndirectDrawCompute(
-    FrameData&              frameData,
-    VkGfxRenderPassContext& ctx);
+void dispatchIndirectDrawCompute(const FrameData& frameData);
 
 } // namespace dusk

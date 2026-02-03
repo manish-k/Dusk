@@ -410,6 +410,7 @@ void Engine::renderFrame(FrameData& frameData)
     renderGraph.addWriteResource(cullPassId, indirectDrawCommandsBuffer);
     renderGraph.addWriteResource(cullPassId, indirectDrawCountBuffer);
     renderGraph.addReadResource(cullPassId, indirectDrawCountBuffer);
+    renderGraph.markAsCompute(cullPassId);
 
     // create shadow pass
     uint32_t dirLightsCount  = m_lightsSystem->getDirectionalLightsCount();

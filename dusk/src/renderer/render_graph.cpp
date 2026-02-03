@@ -103,7 +103,7 @@ void RenderGraph::execute(const FrameData& frameData)
     for (uint32_t passIdx = 0u; passIdx < passCount; ++passIdx)
     {
         auto& pass = m_passes[m_passExecutionOrder[passIdx]];
-        DUSK_DEBUG("executing pass: {}", pass.name);
+        //DUSK_DEBUG("executing pass: {}", pass.name);
 
         if (pass.isCompute)
         {
@@ -167,14 +167,14 @@ void RenderGraph::buildDependencyGraph()
     {
         // TODO:: RGNode struct is not cache-line friendly
         const auto& pass = m_passes[nodeIdx];
-        //DUSK_DEBUG("Creating edges for pass: {}({})", pass.name, pass.index);
+        // DUSK_DEBUG("Creating edges for pass: {}({})", pass.name, pass.index);
 
         for (const auto& readTexRes : pass.readTextureResources)
         {
             RGImageResource* resource = (RGImageResource*)readTexRes.ptr;
-            //DUSK_DEBUG("{} - pass:{}, last writer mask: {}", resource->name, std::countr_zero(readTexRes.lastWriterMask), readTexRes.lastWriterMask);
+            // DUSK_DEBUG("{} - pass:{}, last writer mask: {}", resource->name, std::countr_zero(readTexRes.lastWriterMask), readTexRes.lastWriterMask);
             m_inEdgesBitsets[nodeIdx] |= readTexRes.lastWriterMask;
-            //DUSK_DEBUG("in edges - {}", m_inEdgesBitsets[nodeIdx]);
+            // DUSK_DEBUG("in edges - {}", m_inEdgesBitsets[nodeIdx]);
         }
 
         // for (const auto& writeTexRes : pass.writeTextureResources)
@@ -340,11 +340,35 @@ void RenderGraph::beginPass(const FrameData& frameData, RGNode& pass)
     DynamicArray<VkRenderingAttachmentInfo> colorAttachmentInfos = {};
     VkRenderingAttachmentInfo               depthAttachmentInfo  = {};
 
-    colorAttachmentInfos.clear();
+    // depth attachment
+    bool     useDepth       = pass.depthResource.has_value();
+    uint32_t depthTextureId = 0u;
+
+    if (useDepth)
+    {
+        auto* depthTexture              = pass.depthResource.value()->texture;
+        depthTextureId                  = depthTexture->id;
+        const auto& lsState             = pass.resourceLoadStoreStates[depthTextureId];
+
+        depthAttachmentInfo             = { VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
+        depthAttachmentInfo.imageView   = depthTexture->imageView;
+        depthAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+        depthAttachmentInfo.loadOp      = vulkan::getLoadOp(lsState.loadOp);
+        depthAttachmentInfo.storeOp     = vulkan::getStoreOp(lsState.storeOp);
+        depthAttachmentInfo.clearValue  = DEFAULT_DEPTH_STENCIL_VALUE;
+
+        depthTexture->recordTransitionLayout(cmdBuffer, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    }
 
     for (const auto& attachment : pass.writeTextureResources)
     {
         const RGImageResource* resource = (RGImageResource*)attachment.ptr;
+
+        if (useDepth && resource->texture->id == depthTextureId)
+        {
+            // already handled as depth attachment
+            continue;
+        }
 
         DASSERT(resource != nullptr, "valid texture is required");
 
@@ -364,23 +388,6 @@ void RenderGraph::beginPass(const FrameData& frameData, RGNode& pass)
 
         // transition to color out layout
         texture->recordTransitionLayout(cmdBuffer, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-    }
-
-    bool useDepth = pass.depthResource.has_value();
-
-    if (useDepth)
-    {
-        auto*       depthTexture        = pass.depthResource.value()->texture;
-        const auto& lsState             = pass.resourceLoadStoreStates[depthTexture->id];
-
-        depthAttachmentInfo             = { VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
-        depthAttachmentInfo.imageView   = depthTexture->imageView;
-        depthAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-        depthAttachmentInfo.loadOp      = vulkan::getLoadOp(lsState.loadOp);
-        depthAttachmentInfo.storeOp     = vulkan::getStoreOp(lsState.storeOp);
-        depthAttachmentInfo.clearValue  = DEFAULT_DEPTH_STENCIL_VALUE;
-
-        depthTexture->recordTransitionLayout(cmdBuffer, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
     }
 
     renderingInfo                      = { VK_STRUCTURE_TYPE_RENDERING_INFO };

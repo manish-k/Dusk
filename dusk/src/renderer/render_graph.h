@@ -25,11 +25,16 @@ struct RGImageResource
     uint64_t    readers = {}; // Note: bitset assumption is max 64 passes
 };
 
+struct LoadStoreState
+{
+    GfxLoadOperation  loadOp  = GfxLoadOperation::DontCare;
+    GfxStoreOperation storeOp = GfxStoreOperation::Store;
+};
+
 struct RGImageState
 {
-    GfxLoadOperation  loadOp      = GfxLoadOperation::DontCare;
-    GfxStoreOperation storeOp     = GfxStoreOperation::Store;
-    int32_t           firstWriter = -1; // first pass index that writes to this resource
+    int32_t                firstWriter = -1; // first pass index that writes to this resource
+    DynamicArray<uint32_t> versions    = {}; // for tracking different versions of the same resource if written by multiple passes
 };
 
 struct RGBufferResource
@@ -40,74 +45,60 @@ struct RGBufferResource
     uint64_t    readers = {}; // Note: bitset assumption is max 64 passes
 };
 
+struct RGNodeResource
+{
+    void*    ptr            = nullptr; // can be RGImageResource* or RGBufferResource*
+    uint64_t lastWriterMask = 0u;      // bitset of the last writer
+};
+
 struct RGNode
 {
     std::string           name      = "";
+    uint32_t              index     = 0u; // index of the pass
     RecordCmdBuffFunction recordFn  = nullptr;
     bool                  isCompute = false;
 
     // TODO:: need to reserve space, max 64 passes for now
-    DynamicArray<RGImageResource*>  readTextureResources;
-    DynamicArray<RGImageResource*>  writeTextureResources;
-    DynamicArray<RGBufferResource*> readBufferResources;
-    DynamicArray<RGBufferResource*> writeBufferResources;
+    DynamicArray<RGNodeResource>      readTextureResources;
+    DynamicArray<RGNodeResource>      writeTextureResources;
+    DynamicArray<RGNodeResource>      readBufferResources;
+    DynamicArray<RGNodeResource>      writeBufferResources;
 
-    std::optional<RGImageResource*> depthResource;
+    std::optional<RGImageResource*>   depthResource;
 
-    uint32_t                        viewMask   = 0u; // only for multiview
-    uint32_t                        layerCount = 1u; // only for multiview
+    HashMap<uint32_t, LoadStoreState> resourceLoadStoreStates;
 
-    HashMap<uint32_t, RGImageState> imageResourceStates;
-
-    // helper functions for adding Resources
-    void addReadResource(RGImageResource& resource)
-    {
-        readTextureResources.push_back(&resource);
-    }
-
-    void addReadResource(RGBufferResource& resource)
-    {
-        readBufferResources.push_back(&resource);
-    }
-
-    void addWriteResource(RGImageResource& resource)
-    {
-        writeTextureResources.push_back(&resource);
-    }
-
-    void addWriteResource(RGBufferResource& resource)
-    {
-        writeBufferResources.push_back(&resource);
-    }
-
-    void addDepthResource(RGImageResource& resource)
-    {
-        depthResource = &resource;
-        writeTextureResources.push_back(&resource);
-        readTextureResources.push_back(&resource);
-    }
-
-    void markAsCompute()
-    {
-        isCompute = true;
-    }
-
-    void setMulitView(uint32_t viewMask_, uint32_t layerCount_)
-    {
-        viewMask   = viewMask_;
-        layerCount = layerCount_;
-    }
+    uint32_t                          viewMask   = 0u; // only for multiview
+    uint32_t                          layerCount = 1u; // only for multiview
 };
 
 class RenderGraph
 {
 public:
     RenderGraph();
-    RGNode& addPass(
+    uint32_t addPass(
         const std::string&           passName,
         const RecordCmdBuffFunction& recordFn);
 
     void execute(const FrameData& frameData);
+
+    // helper functions for adding Resources
+    void addReadResource(
+        uint32_t         passId,
+        RGImageResource& resource,
+        uint32_t         version = 0u);
+
+    void     addReadResource(uint32_t passId, RGBufferResource& resource);
+
+    uint32_t addWriteResource(uint32_t passId, RGImageResource& resource);
+
+    uint32_t addWriteResource(uint32_t passId, RGBufferResource& resource);
+
+    void     addDepthResource(uint32_t passId, RGImageResource& resource);
+
+    void     markAsCompute(uint32_t passId);
+
+    void     setMulitView(uint32_t passId, uint32_t mask, uint32_t numLayers);
 
 private:
     void buildDependencyGraph();
@@ -124,5 +115,8 @@ private:
 
     DynamicArray<uint64_t> m_inEdgesBitsets;
     DynamicArray<uint64_t> m_outEdgesBitsets;
+
+    // TODO:: versioning for buffers if needed, currently only images are tracked
+    HashMap<uint32_t, RGImageState> m_imageResourceStates;
 };
 } // namespace dusk

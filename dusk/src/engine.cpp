@@ -406,239 +406,65 @@ void Engine::renderFrame(FrameData& frameData)
         .buffer = &m_rgResources.frameIndirectDrawCountBuffers[frameData.frameIndex]
     };
 
-    // GfxTexture  swapImageTexture = m_renderer->getSwapChain().getCurrentSwapImageTexture();
-
-    //// create cull and LOD pass
-    // auto cullLodPassCtx = VkGfxRenderPassContext {
-    //     .writeColorAttachments = {},
-    //     .depthAttachment       = {},
-    //     .useDepth              = false,
-    //     .maxParallelism        = 1,
-    //     .secondaryCmdBuffers   = m_renderer->getSecondayCmdBuffers(frameData.frameIndex),
-    //     .isComputePass         = true,
-    // };
-
-    // renderGraph.setPassContext("cull_lod_pass", cullLodPassCtx);
-    auto& cullLODPass = renderGraph.addPass("cull_lod_pass", dispatchIndirectDrawCompute);
-    cullLODPass.addWriteResource(indirectDrawCommandsBuffer);
-    cullLODPass.addWriteResource(indirectDrawCountBuffer);
-    cullLODPass.addReadResource(indirectDrawCountBuffer);
+    auto cullPassId = renderGraph.addPass("cull_lod_pass", dispatchIndirectDrawCompute);
+    renderGraph.addWriteResource(cullPassId, indirectDrawCommandsBuffer);
+    renderGraph.addWriteResource(cullPassId, indirectDrawCountBuffer);
+    renderGraph.addReadResource(cullPassId, indirectDrawCountBuffer);
 
     // create shadow pass
-    uint32_t dirLightsCount = m_lightsSystem->getDirectionalLightsCount();
+    uint32_t dirLightsCount  = m_lightsSystem->getDirectionalLightsCount();
+    uint32_t dirShadowMapVer = 0u;
 
     if (dirLightsCount > 0)
     {
-        // GfxRenderingAttachment dirShadowMapAttachment = GfxRenderingAttachment {
-        //     .texture    = &m_textureDB->getTexture2D(m_rgResources.dirShadowMapsTextureId),
-        //     .clearValue = DEFAULT_DEPTH_STENCIL_VALUE,
-        //     .loadOp     = GfxLoadOperation::Clear,
-        //     .storeOp    = GfxStoreOperation::Store,
-        // };
+        auto shadowPassId = renderGraph.addPass("dir_shadow_pass", recordShadow2DMapsCmds);
 
-        // auto dirShadowMapPassCtx = VkGfxRenderPassContext {
-        //     .writeColorAttachments = {},
-        //     .depthAttachment       = dirShadowMapAttachment,
-        //     .useDepth              = true,
-        //     .maxParallelism        = 1,
-        //     .viewMask              = 0,
-        //     .layerCount            = 1,
-        //     .secondaryCmdBuffers   = m_renderer->getSecondayCmdBuffers(frameData.frameIndex)
-        // };
+        renderGraph.addDepthResource(shadowPassId, dirShadowMap);
 
-        // renderGraph.setPassContext("dir_shadow_pass", dirShadowMapPassCtx);
-        auto& shadowPass = renderGraph.addPass("dir_shadow_pass", recordShadow2DMapsCmds);
-        shadowPass.addDepthResource(dirShadowMap);
+        dirShadowMapVer = renderGraph.addWriteResource(shadowPassId, dirShadowMap);
     }
 
     // create g-buffer pass
-    /*GfxRenderingAttachment depthAttachment = GfxRenderingAttachment {
-        .texture    = &m_textureDB->getTexture2D(m_rgResources.gbuffDepthTextureId),
-        .clearValue = DEFAULT_DEPTH_STENCIL_VALUE,
-        .loadOp     = GfxLoadOperation::Clear,
-        .storeOp    = GfxStoreOperation::Store
-    };
+    auto gbuffPassId = renderGraph.addPass("gbuffer_pass", recordGBufferCmds);
+    renderGraph.addDepthResource(gbuffPassId, gbuffDepth);
 
-    auto gbuffCtx
-        = VkGfxRenderPassContext {
-              .writeColorAttachments = {
-                  GfxRenderingAttachment {
-                      .texture    = &m_textureDB->getTexture2D(m_rgResources.gbuffRenderTextureIds[0]),
-                      .clearValue = DEFAULT_COLOR_CLEAR_VALUE,
-                      .loadOp     = GfxLoadOperation::Clear,
-                      .storeOp    = GfxStoreOperation::Store },
-                  GfxRenderingAttachment {
-                      .texture    = &m_textureDB->getTexture2D(m_rgResources.gbuffRenderTextureIds[1]),
-                      .clearValue = DEFAULT_COLOR_CLEAR_VALUE,
-                      .loadOp     = GfxLoadOperation::Clear,
-                      .storeOp    = GfxStoreOperation::Store },
-                  GfxRenderingAttachment {
-                      .texture    = &m_textureDB->getTexture2D(m_rgResources.gbuffRenderTextureIds[2]),
-                      .clearValue = DEFAULT_COLOR_CLEAR_VALUE,
-                      .loadOp     = GfxLoadOperation::Clear,
-                      .storeOp    = GfxStoreOperation::Store },
-                  GfxRenderingAttachment {
-                      .texture    = &m_textureDB->getTexture2D(m_rgResources.gbuffRenderTextureIds[3]),
-                      .clearValue = DEFAULT_COLOR_CLEAR_VALUE,
-                      .loadOp     = GfxLoadOperation::Clear,
-                      .storeOp    = GfxStoreOperation::Store } },
-              .depthAttachment     = depthAttachment,
-              .useDepth            = true,
-              .maxParallelism      = 1,
-              .secondaryCmdBuffers = m_renderer->getSecondayCmdBuffers(frameData.frameIndex)
-          };
+    renderGraph.addReadResource(gbuffPassId, indirectDrawCommandsBuffer);
+    renderGraph.addReadResource(gbuffPassId, indirectDrawCountBuffer);
 
-    renderGraph.setPassContext("gbuffer_pass", gbuffCtx);*/
-    auto& gbuffPass = renderGraph.addPass("gbuffer_pass", recordGBufferCmds);
-    gbuffPass.addDepthResource(gbuffDepth);
-    gbuffPass.addReadResource(indirectDrawCommandsBuffer);
-    gbuffPass.addReadResource(indirectDrawCountBuffer);
-    gbuffPass.addWriteResource(gbuffAlbedo);
-    gbuffPass.addWriteResource(gbuffNormal);
-    gbuffPass.addWriteResource(gbuffAoMR);
-    gbuffPass.addWriteResource(gbuffEmissive);
+    uint32_t gbuffAlbedoVer   = renderGraph.addWriteResource(gbuffPassId, gbuffAlbedo);
+    uint32_t gbuffNormalVer   = renderGraph.addWriteResource(gbuffPassId, gbuffNormal);
+    uint32_t gbuffAoMRVer     = renderGraph.addWriteResource(gbuffPassId, gbuffAoMR);
+    uint32_t gbuffEmissiveVer = renderGraph.addWriteResource(gbuffPassId, gbuffEmissive);
+    uint32_t gbuffDepthVer    = renderGraph.addWriteResource(gbuffPassId, gbuffDepth);
 
     // create lighting pass
-    // auto lightingPassReadAttachments = {
-    //    // color attachment
-    //    GfxRenderingAttachment {
-    //        .texture    = &m_textureDB->getTexture2D(m_rgResources.gbuffRenderTextureIds[0]),
-    //        .clearValue = DEFAULT_COLOR_CLEAR_VALUE,
-    //        .loadOp     = GfxLoadOperation::Clear,
-    //        .storeOp    = GfxStoreOperation::Store },
-    //    // normal attachment
-    //    GfxRenderingAttachment {
-    //        .texture    = &m_textureDB->getTexture2D(m_rgResources.gbuffRenderTextureIds[1]),
-    //        .clearValue = DEFAULT_COLOR_CLEAR_VALUE,
-    //        .loadOp     = GfxLoadOperation::Clear,
-    //        .storeOp    = GfxStoreOperation::Store },
-    //    // ao-metallic-roughness attachment
-    //    GfxRenderingAttachment {
-    //        .texture    = &m_textureDB->getTexture2D(m_rgResources.gbuffRenderTextureIds[2]),
-    //        .clearValue = DEFAULT_COLOR_CLEAR_VALUE,
-    //        .loadOp     = GfxLoadOperation::Clear,
-    //        .storeOp    = GfxStoreOperation::Store },
-    //    // emissive color
-    //    GfxRenderingAttachment {
-    //        .texture    = &m_textureDB->getTexture2D(m_rgResources.gbuffRenderTextureIds[3]),
-    //        .clearValue = DEFAULT_COLOR_CLEAR_VALUE,
-    //        .loadOp     = GfxLoadOperation::Clear,
-    //        .storeOp    = GfxStoreOperation::Store },
-    //    // depth attachment
-    //    GfxRenderingAttachment {
-    //        .texture    = &m_textureDB->getTexture2D(m_rgResources.gbuffDepthTextureId),
-    //        .clearValue = DEFAULT_DEPTH_STENCIL_VALUE,
-    //        .loadOp     = GfxLoadOperation::Clear,
-    //        .storeOp    = GfxStoreOperation::Store },
-    //    // irradiance map
-    //    GfxRenderingAttachment {
-    //        .texture    = &m_textureDB->getTexture2D(m_environment->getSkyIrradianceTextureId()),
-    //        .clearValue = DEFAULT_COLOR_CLEAR_VALUE,
-    //        .loadOp     = GfxLoadOperation::Clear,
-    //        .storeOp    = GfxStoreOperation::Store },
-    //    // raidance map
-    //    GfxRenderingAttachment {
-    //        .texture    = &m_textureDB->getTexture2D(m_environment->getSkyPrefilteredTextureId()),
-    //        .clearValue = DEFAULT_COLOR_CLEAR_VALUE,
-    //        .loadOp     = GfxLoadOperation::Clear,
-    //        .storeOp    = GfxStoreOperation::Store },
-    //    // brdf lut map
-    //    GfxRenderingAttachment {
-    //        .texture    = &m_textureDB->getTexture2D(m_rgResources.brdfLUTextureId),
-    //        .clearValue = DEFAULT_COLOR_CLEAR_VALUE,
-    //        .loadOp     = GfxLoadOperation::Clear,
-    //        .storeOp    = GfxStoreOperation::Store },
-    //    // directional light shadow map
-    //    GfxRenderingAttachment {
-    //        .texture    = &m_textureDB->getTexture2D(m_rgResources.dirShadowMapsTextureId),
-    //        .clearValue = DEFAULT_COLOR_CLEAR_VALUE,
-    //        .loadOp     = GfxLoadOperation::Clear,
-    //        .storeOp    = GfxStoreOperation::Store }
-    //};
-    // auto lighingPassWriteAttachments = {
-    //    GfxRenderingAttachment {
-    //        .texture    = &m_textureDB->getTexture2D(m_rgResources.lightingRenderTextureId),
-    //        .clearValue = DEFAULT_COLOR_CLEAR_VALUE,
-    //        .loadOp     = GfxLoadOperation::Clear,
-    //        .storeOp    = GfxStoreOperation::Store }
-    //};
+    auto lightPassId = renderGraph.addPass("lighting_pass", recordLightingCmds);
+    renderGraph.addReadResource(lightPassId, gbuffAlbedo, gbuffAlbedoVer);
+    renderGraph.addReadResource(lightPassId, gbuffNormal, gbuffNormalVer);
+    renderGraph.addReadResource(lightPassId, gbuffAoMR, gbuffAoMRVer);
+    renderGraph.addReadResource(lightPassId, gbuffEmissive, gbuffEmissiveVer);
+    renderGraph.addReadResource(lightPassId, gbuffDepth, gbuffDepthVer);
+    renderGraph.addReadResource(lightPassId, irradianceCubemap);
+    renderGraph.addReadResource(lightPassId, prefilteredEnvironmentMap);
+    renderGraph.addReadResource(lightPassId, brdfLUT);
+    renderGraph.addReadResource(lightPassId, dirShadowMap, dirShadowMapVer);
 
-    // auto lightingCtx = VkGfxRenderPassContext {
-    //     .readAttachments       = lightingPassReadAttachments,
-    //     .writeColorAttachments = lighingPassWriteAttachments,
-    //     .useDepth              = false,
-    //     .secondaryCmdBuffers   = m_renderer->getSecondayCmdBuffers(frameData.frameIndex)
-    // };
-
-    // renderGraph.setPassContext("lighting_pass", lightingCtx);
-    auto& lightPass = renderGraph.addPass("lighting_pass", recordLightingCmds);
-    lightPass.addReadResource(gbuffAlbedo);
-    lightPass.addReadResource(gbuffNormal);
-    lightPass.addReadResource(gbuffAoMR);
-    lightPass.addReadResource(gbuffEmissive);
-    lightPass.addReadResource(irradianceCubemap);
-    lightPass.addReadResource(prefilteredEnvironmentMap);
-    lightPass.addReadResource(brdfLUT);
-    lightPass.addReadResource(dirShadowMap);
-    lightPass.addWriteResource(lightingOutput);
+    uint32_t lightOutputVer = renderGraph.addWriteResource(lightPassId, lightingOutput);
 
     // create skybox pass
-    /*auto skyBoxPassWriteAttachments = {
-        GfxRenderingAttachment {
-            .texture    = &m_textureDB->getTexture2D(m_rgResources.lightingRenderTextureId),
-            .clearValue = DEFAULT_COLOR_CLEAR_VALUE,
-            .loadOp     = GfxLoadOperation::Load,
-            .storeOp    = GfxStoreOperation::Store }
-    };
-    GfxRenderingAttachment skyDepthAttachment = GfxRenderingAttachment {
-        .texture    = &m_textureDB->getTexture2D(m_rgResources.gbuffDepthTextureId),
-        .clearValue = DEFAULT_DEPTH_STENCIL_VALUE,
-        .loadOp     = GfxLoadOperation::Load,
-        .storeOp    = GfxStoreOperation::Store
-    };
+    auto skyPassId = renderGraph.addPass("skybox_pass", recordSkyBoxCmds);
+    renderGraph.addDepthResource(skyPassId, gbuffDepth);
 
-    auto skyBoxCtx = VkGfxRenderPassContext {
-        .readAttachments       = {},
-        .writeColorAttachments = skyBoxPassWriteAttachments,
-        .depthAttachment       = skyDepthAttachment,
-        .useDepth              = true,
-        .secondaryCmdBuffers   = m_renderer->getSecondayCmdBuffers(frameData.frameIndex)
-    };
+    renderGraph.addReadResource(skyPassId, gbuffDepth);
+    renderGraph.addReadResource(skyPassId, lightingOutput, lightOutputVer);
 
-    renderGraph.setPassContext("skybox_pass", skyBoxCtx);*/
-    auto& skyPass = renderGraph.addPass("skybox_pass", recordSkyBoxCmds);
-    skyPass.addDepthResource(gbuffDepth);
-    skyPass.addReadResource(lightingOutput);
-    skyPass.addWriteResource(lightingOutput);
+    uint32_t skyOutputVer = renderGraph.addWriteResource(skyPassId, lightingOutput);
+    renderGraph.addWriteResource(skyPassId, gbuffDepth);
 
     // create presentation pass
-    /*auto presentReadAttachments = {
-        GfxRenderingAttachment {
-            .texture    = &m_textureDB->getTexture2D(m_rgResources.lightingRenderTextureId),
-            .clearValue = DEFAULT_COLOR_CLEAR_VALUE,
-            .loadOp     = GfxLoadOperation::Clear,
-            .storeOp    = GfxStoreOperation::Store }
-    };
-
-    auto presentWriteAttachments = {
-        GfxRenderingAttachment {
-            .texture    = &swapImageTexture,
-            .clearValue = DEFAULT_COLOR_CLEAR_VALUE,
-            .loadOp     = GfxLoadOperation::Clear,
-            .storeOp    = GfxStoreOperation::Store }
-    };
-
-    auto presentCtx = VkGfxRenderPassContext {
-        .readAttachments       = presentReadAttachments,
-        .writeColorAttachments = presentWriteAttachments,
-        .useDepth              = false,
-        .secondaryCmdBuffers   = m_renderer->getSecondayCmdBuffers(frameData.frameIndex)
-    };
-
-    renderGraph.setPassContext("present_pass", presentCtx);*/
-    auto& presentPass = renderGraph.addPass("present_pass", recordPresentationCmds);
-    presentPass.addReadResource(lightingOutput);
-    presentPass.addWriteResource(swapImage);
+    auto presentPassId = renderGraph.addPass("present_pass", recordPresentationCmds);
+    renderGraph.addReadResource(presentPassId, lightingOutput, skyOutputVer);
+    renderGraph.addWriteResource(presentPassId, swapImage);
 
     // execute render graph
     renderGraph.execute(frameData);

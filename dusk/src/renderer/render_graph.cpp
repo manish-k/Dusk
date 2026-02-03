@@ -12,6 +12,64 @@
 
 namespace dusk
 {
+
+void RenderGraph::addReadResource(
+    uint32_t         passId,
+    RGImageResource& resource,
+    uint32_t         version)
+{
+    auto& pass = m_passes[passId];
+    if (m_imageResourceStates[resource.texture->id].versions.size() > 0)
+    {
+        uint32_t writer = m_imageResourceStates[resource.texture->id].versions[version];
+        pass.readTextureResources.push_back({ (void*)&resource, (1ULL << writer) });
+        return;
+    }
+    pass.readTextureResources.push_back({ (void*)&resource, 0ULL });
+}
+
+void RenderGraph::addReadResource(uint32_t passId, RGBufferResource& resource)
+{
+    auto& pass = m_passes[passId];
+    pass.readBufferResources.push_back({ (void*)&resource, 0u });
+}
+
+uint32_t RenderGraph::addWriteResource(uint32_t passId, RGImageResource& resource)
+{
+    auto&    pass       = m_passes[passId];
+    auto&    versions   = m_imageResourceStates[resource.texture->id].versions;
+    uint32_t newVersion = static_cast<uint32_t>(versions.size());
+    versions.push_back(passId);
+    pass.writeTextureResources.push_back({ (void*)&resource, (1ULL << passId) });
+    return newVersion;
+}
+
+uint32_t RenderGraph::addWriteResource(uint32_t passId, RGBufferResource& resource)
+{
+    auto& pass = m_passes[passId];
+    pass.writeBufferResources.push_back({ (void*)&resource, 0u });
+    return 0u;
+}
+
+void RenderGraph::addDepthResource(uint32_t passId, RGImageResource& resource)
+{
+    auto& pass         = m_passes[passId];
+    pass.depthResource = &resource;
+}
+
+void RenderGraph::markAsCompute(uint32_t passId)
+{
+    auto& pass     = m_passes[passId];
+    pass.isCompute = true;
+}
+
+void RenderGraph::setMulitView(uint32_t passId, uint32_t mask, uint32_t numLayers)
+{
+    auto& pass      = m_passes[passId];
+    pass.viewMask   = mask;
+    pass.layerCount = numLayers;
+}
+
 RenderGraph::RenderGraph()
 {
     m_passes.reserve(MAX_RENDER_GRAPH_PASSES);
@@ -20,16 +78,17 @@ RenderGraph::RenderGraph()
     m_outEdgesBitsets.reserve(MAX_RENDER_GRAPH_PASSES);
 }
 
-RGNode& RenderGraph::addPass(
+uint32_t RenderGraph::addPass(
     const std::string&           passName,
     const RecordCmdBuffFunction& recordFn)
 {
     DASSERT(!m_addedPasses.has(passName));
 
     // add render node
-    m_passes.push_back({ passName, recordFn });
+    auto passId = static_cast<uint32_t>(m_passes.size());
+    m_passes.push_back({ passName, passId, recordFn });
 
-    return m_passes.back();
+    return passId;
 }
 
 void RenderGraph::execute(const FrameData& frameData)
@@ -44,6 +103,7 @@ void RenderGraph::execute(const FrameData& frameData)
     for (uint32_t passIdx = 0u; passIdx < passCount; ++passIdx)
     {
         auto& pass = m_passes[m_passExecutionOrder[passIdx]];
+        DUSK_DEBUG("executing pass: {}", pass.name);
 
         if (pass.isCompute)
         {
@@ -64,6 +124,10 @@ void RenderGraph::execute(const FrameData& frameData)
 
 void RenderGraph::buildDependencyGraph()
 {
+    // TODO: Add following validations and error reporting:
+    //  cycle detection and reporting
+    //  depth resources intent should be explicitly defined
+
     uint32_t nodeCount = static_cast<uint32_t>(m_passes.size());
 
     m_inEdgesBitsets.resize(nodeCount, 0ULL);
@@ -75,53 +139,58 @@ void RenderGraph::buildDependencyGraph()
         // TODO:: RGNode struct is not cache-line friendly
         const auto& pass = m_passes[nodeIdx];
 
-        for (auto* readTexRes : pass.readTextureResources)
+        for (auto& readTexRes : pass.readTextureResources)
         {
-            readTexRes->readers |= (1ULL << nodeIdx);
+            ((RGImageResource*)readTexRes.ptr)->readers |= (1ULL << nodeIdx);
         }
 
-        for (auto* writeTexRes : pass.writeTextureResources)
+        for (auto& writeTexRes : pass.writeTextureResources)
         {
-            writeTexRes->writers |= (1ULL << nodeIdx);
+            ((RGImageResource*)writeTexRes.ptr)->writers |= (1ULL << nodeIdx);
         }
 
-        for (auto* readBufRes : pass.readBufferResources)
+        for (auto& readBufRes : pass.readBufferResources)
         {
-            readBufRes->readers |= (1ULL << nodeIdx);
+            ((RGBufferResource*)readBufRes.ptr)->readers |= (1ULL << nodeIdx);
         }
 
-        for (auto* writeBufRes : pass.writeBufferResources)
+        for (auto& writeBufRes : pass.writeBufferResources)
         {
-            writeBufRes->writers |= (1ULL << nodeIdx);
+            ((RGBufferResource*)writeBufRes.ptr)->writers |= (1ULL << nodeIdx);
         }
     }
 
     // add incoming edges based on readers/writers
-    // writer -> reader edges
-    // writer -> writer edges
+    // writer -> reader edges (RAW hazards)
+    // writer -> reader -> writer edges
     for (uint32_t nodeIdx = 0; nodeIdx < nodeCount; ++nodeIdx)
     {
         // TODO:: RGNode struct is not cache-line friendly
         const auto& pass = m_passes[nodeIdx];
+        //DUSK_DEBUG("Creating edges for pass: {}({})", pass.name, pass.index);
 
-        for (const auto* readTexRes : pass.readTextureResources)
+        for (const auto& readTexRes : pass.readTextureResources)
         {
-            m_inEdgesBitsets[nodeIdx] |= readTexRes->writers;
+            RGImageResource* resource = (RGImageResource*)readTexRes.ptr;
+            //DUSK_DEBUG("{} - pass:{}, last writer mask: {}", resource->name, std::countr_zero(readTexRes.lastWriterMask), readTexRes.lastWriterMask);
+            m_inEdgesBitsets[nodeIdx] |= readTexRes.lastWriterMask;
+            //DUSK_DEBUG("in edges - {}", m_inEdgesBitsets[nodeIdx]);
         }
 
-        for (const auto* writeTexRes : pass.writeTextureResources)
+        // for (const auto& writeTexRes : pass.writeTextureResources)
+        //{
+        //     m_inEdgesBitsets[nodeIdx] |= writeTexRes->writers;
+        // }
+
+        // TODO:: version for buffers is not implemented yet
+        for (const auto& readBufRes : pass.readBufferResources)
         {
-            m_inEdgesBitsets[nodeIdx] |= writeTexRes->writers;
+            m_inEdgesBitsets[nodeIdx] |= ((RGBufferResource*)readBufRes.ptr)->writers;
         }
 
-        for (const auto* readBufRes : pass.readBufferResources)
+        for (const auto& writeBufRes : pass.writeBufferResources)
         {
-            m_inEdgesBitsets[nodeIdx] |= readBufRes->writers;
-        }
-
-        for (const auto* writeBufRes : pass.writeBufferResources)
-        {
-            m_inEdgesBitsets[nodeIdx] |= writeBufRes->writers;
+            m_inEdgesBitsets[nodeIdx] |= ((RGBufferResource*)writeBufRes.ptr)->writers;
         }
 
         // remove self-loop if any
@@ -209,47 +278,46 @@ void RenderGraph::generateLoadStoreOps()
     {
         uint32_t passIdx = m_passExecutionOrder[execIdx];
         auto&    pass    = m_passes[passIdx];
-        pass.imageResourceStates.clear();
 
         for (uint32_t resIdx = 0u; resIdx < pass.writeTextureResources.size(); ++resIdx)
         {
-            const auto* resource = pass.writeTextureResources[resIdx];
-            uint32_t    resId    = resource->texture->id;
+            const RGImageResource* resource = (RGImageResource*)pass.writeTextureResources[resIdx].ptr;
+            uint32_t               resId    = resource->texture->id;
 
-            if (!pass.imageResourceStates.has(resId))
+            if (!m_imageResourceStates.has(resId))
             {
-                pass.imageResourceStates[resId] = {};
+                m_imageResourceStates[resId] = {};
             }
 
-            auto& state = pass.imageResourceStates[resId];
+            auto& state = m_imageResourceStates[resId];
 
             if (state.firstWriter == -1)
             {
-                state.firstWriter = passIdx;
-                state.loadOp      = GfxLoadOperation::Clear; // TODO:: make configurable
+                state.firstWriter                          = passIdx;
+                pass.resourceLoadStoreStates[resId].loadOp = GfxLoadOperation::Clear; // TODO:: make configurable
             }
             else
             {
                 // already written before, so load existing content
-                state.loadOp = GfxLoadOperation::Load;
+                pass.resourceLoadStoreStates[resId].loadOp = GfxLoadOperation::Load;
             }
         }
 
+        // for read-only resources
         for (uint32_t resIdx = 0u; resIdx < pass.readTextureResources.size(); ++resIdx)
         {
-            auto*    resource = pass.readTextureResources[resIdx];
-            uint32_t resId    = resource->texture->id;
+            const RGImageResource* resource = (RGImageResource*)pass.readTextureResources[resIdx].ptr;
+            uint32_t               resId    = resource->texture->id;
 
-            if (!pass.imageResourceStates.has(resId))
+            if (m_imageResourceStates.has(resId))
             {
-                pass.imageResourceStates[resId] = {};
+                m_imageResourceStates[resId] = {};
             }
 
-            auto& state = pass.imageResourceStates[resId];
             if (resource->writers == 0)
             {
                 // resource is read-only throughout the graph, so we can assume its content is valid
-                state.loadOp = GfxLoadOperation::Load;
+                pass.resourceLoadStoreStates[resId].loadOp = GfxLoadOperation::Load;
             }
         }
     }
@@ -263,7 +331,8 @@ void RenderGraph::beginPass(const FrameData& frameData, RGNode& pass)
     for (const auto& attachment : pass.readTextureResources)
     {
         // transition to shader read layout
-        attachment->texture->recordTransitionLayout(cmdBuffer, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        const RGImageResource* resource = (RGImageResource*)attachment.ptr;
+        resource->texture->recordTransitionLayout(cmdBuffer, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     }
 
     VkRenderingInfo                         renderingInfo        = {};
@@ -275,16 +344,19 @@ void RenderGraph::beginPass(const FrameData& frameData, RGNode& pass)
 
     for (const auto& attachment : pass.writeTextureResources)
     {
-        DASSERT(attachment != nullptr, "valid texture is required");
+        const RGImageResource* resource = (RGImageResource*)attachment.ptr;
 
-        auto*                     texture    = attachment->texture;
-        auto&                     imageState = pass.imageResourceStates[texture->id];
+        DASSERT(resource != nullptr, "valid texture is required");
 
+        auto*       texture = resource->texture;
+        const auto& lsState = pass.resourceLoadStoreStates[texture->id];
+
+        // rendering info
         VkRenderingAttachmentInfo colorAttachment { VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
         colorAttachment.imageView   = texture->imageView;
         colorAttachment.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
-        colorAttachment.loadOp      = vulkan::getLoadOp(imageState.loadOp);
-        colorAttachment.storeOp     = vulkan::getStoreOp(imageState.storeOp);
+        colorAttachment.loadOp      = vulkan::getLoadOp(lsState.loadOp);
+        colorAttachment.storeOp     = vulkan::getStoreOp(lsState.storeOp);
         colorAttachment.clearValue  = DEFAULT_COLOR_CLEAR_VALUE;
         colorAttachmentInfos.push_back(colorAttachment);
 
@@ -298,14 +370,14 @@ void RenderGraph::beginPass(const FrameData& frameData, RGNode& pass)
 
     if (useDepth)
     {
-        auto* depthTexture              = pass.depthResource.value()->texture;
-        auto& imageState                = pass.imageResourceStates[depthTexture->id];
+        auto*       depthTexture        = pass.depthResource.value()->texture;
+        const auto& lsState             = pass.resourceLoadStoreStates[depthTexture->id];
 
         depthAttachmentInfo             = { VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
         depthAttachmentInfo.imageView   = depthTexture->imageView;
         depthAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-        depthAttachmentInfo.loadOp      = vulkan::getLoadOp(imageState.loadOp);
-        depthAttachmentInfo.storeOp     = vulkan::getStoreOp(imageState.storeOp);
+        depthAttachmentInfo.loadOp      = vulkan::getLoadOp(lsState.loadOp);
+        depthAttachmentInfo.storeOp     = vulkan::getStoreOp(lsState.storeOp);
         depthAttachmentInfo.clearValue  = DEFAULT_DEPTH_STENCIL_VALUE;
 
         depthTexture->recordTransitionLayout(cmdBuffer, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);

@@ -456,7 +456,7 @@ void Engine::renderFrame(FrameData& frameData)
     auto skyPassId = renderGraph.addPass("skybox_pass", recordSkyBoxCmds);
     renderGraph.addDepthResource(skyPassId, gbuffDepth);
 
-    renderGraph.addReadResource(skyPassId, gbuffDepth);
+    renderGraph.addReadResource(skyPassId, gbuffDepth, gbuffDepthVer);
     renderGraph.addReadResource(skyPassId, lightingOutput, lightOutputVer);
 
     uint32_t skyOutputVer = renderGraph.addWriteResource(skyPassId, lightingOutput);

@@ -309,7 +309,7 @@ void RenderGraph::generateLoadStoreOps()
             const RGImageResource* resource = (RGImageResource*)pass.readTextureResources[resIdx].ptr;
             uint32_t               resId    = resource->texture->id;
 
-            if (m_imageResourceStates.has(resId))
+            if (!m_imageResourceStates.has(resId))
             {
                 m_imageResourceStates[resId] = {};
             }

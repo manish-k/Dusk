@@ -76,47 +76,115 @@ class RenderGraph
 {
 public:
     RenderGraph();
+
+    /**
+     * @brief Adds a pass with the given name and associated command-recording function.
+     * @param passName The name for the pass.
+     * @param recordFn A callable invoked to record commands for the pass.
+     * @return Handle for the newly added pass.
+     */
     uint32_t addPass(
         const std::string&           passName,
         const RecordCmdBuffFunction& recordFn);
 
+    /**
+     * @brief Executes the render graph for the given frame data.
+     * @param frameData
+     */
     void execute(const FrameData& frameData);
 
-    // helper functions for adding Resources
+    /**
+     * @brief Registers an image resource as a read dependency for the specified pass.
+     * @param passId Handle of the pass to which the resource will be added.
+     * @param resource Reference to the RGImageResource to add as a read dependency.
+     * @param version Optional resource version to reference (defaults to 0).
+     */
     void addReadResource(
         uint32_t         passId,
         RGImageResource& resource,
         uint32_t         version = 0u);
 
-    void     addReadResource(uint32_t passId, RGBufferResource& resource);
+    /**
+     * @brief Adds a buffer resource to the specified pass as a read resource.
+     * @param passId Handle of the pass to which the resource will be added.
+     * @param resource Reference to the RGBufferResource to add as read dependency.
+     */
+    void addReadResource(uint32_t passId, RGBufferResource& resource);
 
+    /**
+     * @brief Registers an image write resource with the specified pass and returns the new version of that resource.
+     * @param passId Handle of the pass to which the write resource will be added.
+     * @param resource Reference to the RGImageResource to be added as a write target for the pass.
+     * @return New version for the newly added write resource.
+     */
     uint32_t addWriteResource(uint32_t passId, RGImageResource& resource);
 
+    /**
+     * @brief Adds a writable buffer resource to a pass.
+     * @param passId Handle of the pass to which the resource will be added.
+     * @param resource Reference to the buffer resource to add as a writable resource.
+     * @return New version for the newly added write resource.
+     */
     uint32_t addWriteResource(uint32_t passId, RGBufferResource& resource);
 
-    void     addDepthResource(uint32_t passId, RGImageResource& resource);
+    /**
+     * @brief Associates an image resource as the depth target for a specified pass.
+     * @param passId Handle of the pass to which the depth resource will be added.
+     * @param resource Reference to the image resource to register as the depth resource.
+     */
+    void addDepthResource(uint32_t passId, RGImageResource& resource);
 
-    void     markAsCompute(uint32_t passId);
+    /**
+     * @brief Marks a compute pass identified by the given pass ID.
+     * @param passId Handle of the compute pass to mark.
+     */
+    void markAsCompute(uint32_t passId);
 
-    void     setMulitView(uint32_t passId, uint32_t mask, uint32_t numLayers);
+    /**
+     * @brief Configures multiview settings for a specified pass.
+     * @param passId Handle of the pass to configure.
+     * @param mask View mask indicating which views to render.
+     * @param numLayers Number of layers to render.
+     */
+    void setMulitView(uint32_t passId, uint32_t mask, uint32_t numLayers);
 
 private:
+    /**
+     * @brief Builds the dependency graph.
+     */
     void buildDependencyGraph();
+
+    /**
+     * @brief Builds the execution order of the passes.
+     */
     void buildExecutionOrder();
+
+    /**
+     * @brief Generates load and store operations for individual resources in passes.
+     */
     void generateLoadStoreOps();
 
+    /**
+     * @brief Begins or initializes a rendering pass using the provided frame data.
+     * @param frameData
+     * @param pass Reference to the pass node to begin the pass.
+     */
     void beginPass(const FrameData& frameData, RGNode& pass);
+
+    /**
+     * @brief Ends the current ongoing rendering pass.
+     * @param frameData
+     */
     void endPass(const FrameData& frameData);
 
 private:
-    DynamicArray<RGNode>   m_passes;
-    HashSet<std::string>   m_addedPasses;
-    DynamicArray<uint32_t> m_passExecutionOrder;
+    DynamicArray<RGNode>            m_passes;
+    HashSet<std::string>            m_addedPasses;
+    DynamicArray<uint32_t>          m_passExecutionOrder;
 
-    DynamicArray<uint64_t> m_inEdgesBitsets;
-    DynamicArray<uint64_t> m_outEdgesBitsets;
+    DynamicArray<uint64_t>          m_inEdgesBitsets;
+    DynamicArray<uint64_t>          m_outEdgesBitsets;
 
-    // TODO:: versioning for buffers if needed, currently only images are tracked
     HashMap<uint32_t, RGImageState> m_imageResourceStates;
 };
 } // namespace dusk

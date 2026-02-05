@@ -199,17 +199,17 @@ Error VkGfxDevice::createDevice()
         VkPhysicalDeviceProperties deviceProperties;
 
         // set features info which have to be enabled
-        VkPhysicalDeviceFeatures2                deviceFeatures2         = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, &deviceFeaturesVk11 };
-        VkPhysicalDeviceVulkan11Features         deviceFeaturesVk11      = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES, &deviceFeaturesVk12 };
-        VkPhysicalDeviceVulkan12Features         deviceFeaturesVk12      = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES, &dynamicRenderingFeature };
-        VkPhysicalDeviceDynamicRenderingFeatures dynamicRenderingFeature = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR };
+        VkPhysicalDeviceFeatures2        deviceFeatures2    = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, &deviceFeaturesVk11 };
+        VkPhysicalDeviceVulkan11Features deviceFeaturesVk11 = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES, &deviceFeaturesVk12 };
+        VkPhysicalDeviceVulkan12Features deviceFeaturesVk12 = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES, &deviceFeaturesVk13 };
+        VkPhysicalDeviceVulkan13Features deviceFeaturesVk13 = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES, nullptr };
 
-        DynamicArray<const char*>                activeDeviceExtensions;
+        DynamicArray<const char*>        activeDeviceExtensions;
 
-        uint32_t                                 graphicsQueueIndex;
-        uint32_t                                 computeQueueIndex;
-        uint32_t                                 transferQueueIndex;
-        uint32_t                                 presentQueueIndex;
+        uint32_t                         graphicsQueueIndex;
+        uint32_t                         computeQueueIndex;
+        uint32_t                         transferQueueIndex;
+        uint32_t                         presentQueueIndex;
 
         // device is eligible for use
         bool isSupported = false;
@@ -231,7 +231,8 @@ Error VkGfxDevice::createDevice()
         DUSK_INFO("- driver version {}", deviceIndex, pDeviceInfo->deviceProperties.driverVersion);
 
         // pNext chaining to gather all the supported features
-        VkPhysicalDeviceVulkan12Features deviceFeaturesVk12 = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES };
+        VkPhysicalDeviceVulkan13Features deviceFeaturesVk13 = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES };
+        VkPhysicalDeviceVulkan12Features deviceFeaturesVk12 = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES, &deviceFeaturesVk13 };
         VkPhysicalDeviceVulkan11Features deviceFeaturesVk11 = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES, &deviceFeaturesVk12 };
         VkPhysicalDeviceFeatures2        deviceFeatures2    = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, &deviceFeaturesVk11 };
         const VkPhysicalDeviceFeatures&  deviceFeatures     = deviceFeatures2.features;
@@ -337,12 +338,12 @@ Error VkGfxDevice::createDevice()
         // Checking required features and enabling them for the current device
 
         // Enable dynamic rendering
-        if (!availableExtensionsSet.has(hash(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)))
+        if (deviceFeaturesVk13.dynamicRendering == VK_FALSE)
         {
-            DUSK_INFO("Skipping device because it does not support dynamic rendering {}", VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+            DUSK_INFO("Skipping device because it does not support dynamic rendering");
             continue;
         }
-        pDeviceInfo->dynamicRenderingFeature.dynamicRendering = VK_TRUE;
+        pDeviceInfo->deviceFeaturesVk13.dynamicRendering = VK_TRUE;
         pDeviceInfo->activeDeviceExtensions.push_back(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
 
         // Enabling multiview feature
@@ -357,8 +358,21 @@ Error VkGfxDevice::createDevice()
         pDeviceInfo->deviceFeatures2.features.samplerAnisotropy = VK_TRUE;
 
         // Enabling multiDrawIndirect
+        if (!deviceFeatures2.features.multiDrawIndirect)
+        {
+            DUSK_INFO("Skipping device because it does not support multiDrawIndirect");
+            continue;
+        }
         pDeviceInfo->deviceFeatures2.features.multiDrawIndirect = VK_TRUE;
         pDeviceInfo->deviceFeaturesVk12.drawIndirectCount       = VK_TRUE;
+
+        // Enabling synchronization2
+        if (!deviceFeaturesVk13.synchronization2)
+        {
+            DUSK_INFO("Skipping device because it does not support synchronization2");
+            continue;
+        }
+        pDeviceInfo->deviceFeaturesVk13.synchronization2 = VK_TRUE;
 
         // check for gpu profiling extension/features
 #ifdef DUSK_ENABLE_PROFILING

@@ -19,9 +19,9 @@ void RenderGraph::addReadResource(
     uint32_t         version)
 {
     auto& pass = m_passes[passId];
-    if (m_imageResourceStates[resource.texture->id].versions.size() > 0)
+    if (m_imageLifeTimeStates[resource.texture->id].versions.size() > 0)
     {
-        uint32_t writer = m_imageResourceStates[resource.texture->id].versions[version];
+        uint32_t writer = m_imageLifeTimeStates[resource.texture->id].versions[version];
         pass.readTextureResources.push_back({ (void*)&resource, (1ULL << writer) });
         return;
     }
@@ -37,7 +37,7 @@ void RenderGraph::addReadResource(uint32_t passId, RGBufferResource& resource)
 uint32_t RenderGraph::addWriteResource(uint32_t passId, RGImageResource& resource)
 {
     auto&    pass       = m_passes[passId];
-    auto&    versions   = m_imageResourceStates[resource.texture->id].versions;
+    auto&    versions   = m_imageLifeTimeStates[resource.texture->id].versions;
     uint32_t newVersion = static_cast<uint32_t>(versions.size());
     versions.push_back(passId);
     pass.writeTextureResources.push_back({ (void*)&resource, (1ULL << passId) });
@@ -97,13 +97,13 @@ void RenderGraph::execute(const FrameData& frameData)
 
     buildDependencyGraph();
     buildExecutionOrder();
-    generateLoadStoreOps();
+    buildResourceStates();
 
     uint32_t passCount = static_cast<uint32_t>(m_passExecutionOrder.size());
     for (uint32_t passIdx = 0u; passIdx < passCount; ++passIdx)
     {
         auto& pass = m_passes[m_passExecutionOrder[passIdx]];
-        //DUSK_DEBUG("executing pass: {}", pass.name);
+        // DUSK_DEBUG("executing pass: {}", pass.name);
 
         if (pass.isCompute)
         {
@@ -162,7 +162,6 @@ void RenderGraph::buildDependencyGraph()
 
     // add incoming edges based on readers/writers
     // writer -> reader edges (RAW hazards)
-    // writer -> reader -> writer edges
     for (uint32_t nodeIdx = 0; nodeIdx < nodeCount; ++nodeIdx)
     {
         // TODO:: RGNode struct is not cache-line friendly
@@ -271,7 +270,7 @@ void RenderGraph::buildExecutionOrder()
     }
 }
 
-void RenderGraph::generateLoadStoreOps()
+void RenderGraph::buildResourceStates()
 {
     uint32_t nodeCount = static_cast<uint32_t>(m_passExecutionOrder.size());
     for (uint32_t execIdx = 0u; execIdx < nodeCount; ++execIdx)
@@ -281,25 +280,27 @@ void RenderGraph::generateLoadStoreOps()
 
         for (uint32_t resIdx = 0u; resIdx < pass.writeTextureResources.size(); ++resIdx)
         {
-            const RGImageResource* resource = (RGImageResource*)pass.writeTextureResources[resIdx].ptr;
-            uint32_t               resId    = resource->texture->id;
+            const auto* resource = (RGImageResource*)pass.writeTextureResources[resIdx].ptr;
+            auto        resId    = resource->texture->id;
+            auto&       state    = m_imageExecStates[resId];
 
-            if (!m_imageResourceStates.has(resId))
-            {
-                m_imageResourceStates[resId] = {};
-            }
+            // deduce layout, access and stage flags
+            VkImageLayout         newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            VkPipelineStageFlags2 newStage  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            VkAccessFlags2        newAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
-            auto& state = m_imageResourceStates[resId];
+            // emit barrier if layout transition is needed
 
+            state.layout = newLayout;
+            state.stage  = newStage;
+            state.access = newAccess;
+
+            // deduce load store states
+            pass.resourceLoadStoreStates[resId].loadOp = GfxLoadOperation::Load;
             if (state.firstWriter == -1)
             {
                 state.firstWriter                          = passIdx;
                 pass.resourceLoadStoreStates[resId].loadOp = GfxLoadOperation::Clear; // TODO:: make configurable
-            }
-            else
-            {
-                // already written before, so load existing content
-                pass.resourceLoadStoreStates[resId].loadOp = GfxLoadOperation::Load;
             }
         }
 
@@ -308,12 +309,20 @@ void RenderGraph::generateLoadStoreOps()
         {
             const RGImageResource* resource = (RGImageResource*)pass.readTextureResources[resIdx].ptr;
             uint32_t               resId    = resource->texture->id;
+            auto&                  state    = m_imageExecStates[resId];
 
-            if (!m_imageResourceStates.has(resId))
-            {
-                m_imageResourceStates[resId] = {};
-            }
+            // deduce layout, access and stage flags
+            VkImageLayout         newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            VkPipelineStageFlags2 newStage  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            VkAccessFlags2        newAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
+            // emit barrier if layout transition is needed
+
+            state.layout = newLayout;
+            state.stage  = newStage;
+            state.access = newAccess;
+
+            // deduce load store states
             if (resource->writers == 0)
             {
                 // resource is read-only throughout the graph, so we can assume its content is valid

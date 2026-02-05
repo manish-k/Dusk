@@ -420,14 +420,13 @@ void Engine::renderFrame(FrameData& frameData)
     {
         auto shadowPassId = renderGraph.addPass("dir_shadow_pass", recordShadow2DMapsCmds);
 
-        renderGraph.addDepthResource(shadowPassId, dirShadowMap);
-
-        dirShadowMapVer = renderGraph.addWriteResource(shadowPassId, dirShadowMap);
+        dirShadowMapVer   = renderGraph.addDepthResource(shadowPassId, dirShadowMap);
     }
 
     // create g-buffer pass
-    auto gbuffPassId = renderGraph.addPass("gbuffer_pass", recordGBufferCmds);
-    renderGraph.addDepthResource(gbuffPassId, gbuffDepth);
+    auto     gbuffPassId   = renderGraph.addPass("gbuffer_pass", recordGBufferCmds);
+
+    uint32_t gbuffDepthVer = renderGraph.addDepthResource(gbuffPassId, gbuffDepth);
 
     renderGraph.addReadResource(gbuffPassId, indirectDrawCommandsBuffer);
     renderGraph.addReadResource(gbuffPassId, indirectDrawCountBuffer);
@@ -436,7 +435,6 @@ void Engine::renderFrame(FrameData& frameData)
     uint32_t gbuffNormalVer   = renderGraph.addWriteResource(gbuffPassId, gbuffNormal);
     uint32_t gbuffAoMRVer     = renderGraph.addWriteResource(gbuffPassId, gbuffAoMR);
     uint32_t gbuffEmissiveVer = renderGraph.addWriteResource(gbuffPassId, gbuffEmissive);
-    uint32_t gbuffDepthVer    = renderGraph.addWriteResource(gbuffPassId, gbuffDepth);
 
     // create lighting pass
     auto lightPassId = renderGraph.addPass("lighting_pass", recordLightingCmds);
@@ -454,13 +452,12 @@ void Engine::renderFrame(FrameData& frameData)
 
     // create skybox pass
     auto skyPassId = renderGraph.addPass("skybox_pass", recordSkyBoxCmds);
-    renderGraph.addDepthResource(skyPassId, gbuffDepth);
 
-    renderGraph.addReadResource(skyPassId, gbuffDepth, gbuffDepthVer);
+    renderGraph.addDepthResource(skyPassId, gbuffDepth, gbuffDepthVer);
+
     renderGraph.addReadResource(skyPassId, lightingOutput, lightOutputVer);
 
     uint32_t skyOutputVer = renderGraph.addWriteResource(skyPassId, lightingOutput);
-    renderGraph.addWriteResource(skyPassId, gbuffDepth);
 
     // create presentation pass
     auto presentPassId = renderGraph.addPass("present_pass", recordPresentationCmds);

@@ -162,6 +162,8 @@ GfxTexture VkGfxSwapChain::getCurrentSwapImageTexture()
     tex.imageView     = m_swapChainImageViews[m_currentFrame];
     tex.usage         = ColorTexture | TransferDstTexture;
     tex.format        = m_imageFormat;
+    tex.numLayers     = 1;
+    tex.numMipLevels  = 1;
 
     return tex;
 }

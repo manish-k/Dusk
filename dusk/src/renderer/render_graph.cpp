@@ -51,10 +51,31 @@ uint32_t RenderGraph::addWriteResource(uint32_t passId, RGBufferResource& resour
     return 0u;
 }
 
-void RenderGraph::addDepthResource(uint32_t passId, RGImageResource& resource)
+uint32_t RenderGraph::addDepthResource(
+    uint32_t         passId,
+    RGImageResource& depthResource,
+    uint32_t         version)
 {
     auto& pass         = m_passes[passId];
-    pass.depthResource = &resource;
+    pass.depthResource = &depthResource;
+
+    auto& versions     = m_imageLifeTimeStates[depthResource.texture->id].versions;
+
+    if (!versions.empty() && versions.size() > version)
+    {
+        uint32_t writer = versions[version];
+        pass.readTextureResources.push_back({ (void*)&depthResource, (1ULL << writer) });
+    }
+    else
+    {
+        pass.readTextureResources.push_back({ (void*)&depthResource, 0ULL });
+    }
+
+    uint32_t newVersion = static_cast<uint32_t>(versions.size());
+    versions.push_back(passId);
+    pass.writeTextureResources.push_back({ (void*)&depthResource, (1ULL << passId) });
+
+    return newVersion;
 }
 
 void RenderGraph::markAsCompute(uint32_t passId)
@@ -103,6 +124,9 @@ void RenderGraph::execute(const FrameData& frameData)
     for (uint32_t passIdx = 0u; passIdx < passCount; ++passIdx)
     {
         auto& pass = m_passes[m_passExecutionOrder[passIdx]];
+
+        insertPassBarriers(frameData, pass);
+
         // DUSK_DEBUG("executing pass: {}", pass.name);
 
         if (pass.isCompute)
@@ -275,8 +299,10 @@ void RenderGraph::buildResourceStates()
     uint32_t nodeCount = static_cast<uint32_t>(m_passExecutionOrder.size());
     for (uint32_t execIdx = 0u; execIdx < nodeCount; ++execIdx)
     {
-        uint32_t passIdx = m_passExecutionOrder[execIdx];
-        auto&    pass    = m_passes[passIdx];
+        uint32_t passIdx  = m_passExecutionOrder[execIdx];
+        auto&    pass     = m_passes[passIdx];
+
+        bool     useDepth = pass.depthResource.has_value();
 
         for (uint32_t resIdx = 0u; resIdx < pass.writeTextureResources.size(); ++resIdx)
         {
@@ -289,12 +315,6 @@ void RenderGraph::buildResourceStates()
             VkPipelineStageFlags2 newStage  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
             VkAccessFlags2        newAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
-            // emit barrier if layout transition is needed
-
-            state.layout = newLayout;
-            state.stage  = newStage;
-            state.access = newAccess;
-
             // deduce load store states
             pass.resourceLoadStoreStates[resId].loadOp = GfxLoadOperation::Load;
             if (state.firstWriter == -1)
@@ -302,6 +322,35 @@ void RenderGraph::buildResourceStates()
                 state.firstWriter                          = passIdx;
                 pass.resourceLoadStoreStates[resId].loadOp = GfxLoadOperation::Clear; // TODO:: make configurable
             }
+
+            // skip barriers for depth resource
+            if (useDepth && pass.depthResource.value()->texture->id == resId)
+            {
+                continue;
+            }
+
+            // emit barrier if layout transition is needed
+            if (state.layout != newLayout)
+            {
+                VkImageMemoryBarrier2 barrier { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2 };
+                barrier.srcStageMask                    = state.stage;
+                barrier.dstStageMask                    = newStage;
+                barrier.srcAccessMask                   = state.access;
+                barrier.dstAccessMask                   = newAccess;
+                barrier.oldLayout                       = state.layout;
+                barrier.newLayout                       = newLayout;
+                barrier.image                           = resource->texture->image.vkImage;
+                barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+                barrier.subresourceRange.baseMipLevel   = 0;
+                barrier.subresourceRange.levelCount     = resource->texture->numMipLevels;
+                barrier.subresourceRange.baseArrayLayer = 0;
+                barrier.subresourceRange.layerCount     = resource->texture->numLayers;
+                pass.imageBarriers.push_back(barrier);
+            }
+
+            state.layout = newLayout;
+            state.stage  = newStage;
+            state.access = newAccess;
         }
 
         // for read-only resources
@@ -312,15 +361,9 @@ void RenderGraph::buildResourceStates()
             auto&                  state    = m_imageExecStates[resId];
 
             // deduce layout, access and stage flags
-            VkImageLayout         newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-            VkPipelineStageFlags2 newStage  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-            VkAccessFlags2        newAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-
-            // emit barrier if layout transition is needed
-
-            state.layout = newLayout;
-            state.stage  = newStage;
-            state.access = newAccess;
+            VkImageLayout         newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            VkPipelineStageFlags2 newStage  = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+            VkAccessFlags2        newAccess = VK_ACCESS_SHADER_READ_BIT;
 
             // deduce load store states
             if (resource->writers == 0)
@@ -328,22 +371,91 @@ void RenderGraph::buildResourceStates()
                 // resource is read-only throughout the graph, so we can assume its content is valid
                 pass.resourceLoadStoreStates[resId].loadOp = GfxLoadOperation::Load;
             }
+
+            // skip barriers for depth resource
+            if (useDepth && pass.depthResource.value()->texture->id == resId)
+            {
+                continue;
+            }
+
+            // emit barrier if layout transition is needed
+            if (state.layout != newLayout)
+            {
+                VkImageMemoryBarrier2 barrier { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2 };
+                barrier.srcStageMask                    = state.stage;
+                barrier.dstStageMask                    = newStage;
+                barrier.srcAccessMask                   = state.access;
+                barrier.dstAccessMask                   = newAccess;
+                barrier.oldLayout                       = state.layout;
+                barrier.newLayout                       = newLayout;
+                barrier.image                           = resource->texture->image.vkImage;
+                barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+                barrier.subresourceRange.baseMipLevel   = 0;
+                barrier.subresourceRange.levelCount     = resource->texture->numMipLevels;
+                barrier.subresourceRange.baseArrayLayer = 0;
+                barrier.subresourceRange.layerCount     = resource->texture->numLayers;
+                pass.imageBarriers.push_back(barrier);
+            }
+
+            state.layout = newLayout;
+            state.stage  = newStage;
+            state.access = newAccess;
+        }
+
+        if (useDepth)
+        {
+            const auto& depthTexture   = pass.depthResource.value()->texture;
+            auto        depthTextureId = pass.depthResource.value()->texture->id;
+            auto&       state          = m_imageExecStates[depthTextureId];
+
+            // deduce layout, access and stage flags
+            VkImageLayout         newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+            VkPipelineStageFlags2 newStage  = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+            VkAccessFlags2        newAccess = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+            if (state.layout != newLayout)
+            {
+                VkImageMemoryBarrier2 barrier { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2 };
+                barrier.srcStageMask                    = state.stage;
+                barrier.dstStageMask                    = newStage;
+                barrier.srcAccessMask                   = state.access;
+                barrier.dstAccessMask                   = newAccess;
+                barrier.oldLayout                       = state.layout;
+                barrier.newLayout                       = newLayout;
+                barrier.image                           = depthTexture->image.vkImage;
+                barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+                barrier.subresourceRange.baseMipLevel   = 0;
+                barrier.subresourceRange.levelCount     = depthTexture->numMipLevels;
+                barrier.subresourceRange.baseArrayLayer = 0;
+                barrier.subresourceRange.layerCount     = depthTexture->numLayers;
+                pass.imageBarriers.push_back(barrier);
+
+                state.layout = newLayout;
+                state.stage  = newStage;
+                state.access = newAccess;
+            }
         }
     }
 }
 
-void RenderGraph::beginPass(const FrameData& frameData, RGNode& pass)
+void RenderGraph::insertPassBarriers(const FrameData& frameData, const RGNode& pass)
+{
+    VkCommandBuffer  cmdBuffer = frameData.commandBuffer;
+
+    VkDependencyInfo dependencyInfo { VK_STRUCTURE_TYPE_DEPENDENCY_INFO };
+    dependencyInfo.imageMemoryBarrierCount  = static_cast<uint32_t>(pass.imageBarriers.size());
+    dependencyInfo.pImageMemoryBarriers     = pass.imageBarriers.data();
+    dependencyInfo.bufferMemoryBarrierCount = static_cast<uint32_t>(pass.bufferBarriers.size());
+    dependencyInfo.pBufferMemoryBarriers    = pass.bufferBarriers.data();
+    vkCmdPipelineBarrier2(cmdBuffer, &dependencyInfo);
+}
+
+void RenderGraph::beginPass(const FrameData& frameData, RGNode& pass) const
 {
     DUSK_PROFILE_SECTION("begin_pass");
     VkCommandBuffer cmdBuffer = frameData.commandBuffer;
 
-    for (const auto& attachment : pass.readTextureResources)
-    {
-        // transition to shader read layout
-        const RGImageResource* resource = (RGImageResource*)attachment.ptr;
-        resource->texture->recordTransitionLayout(cmdBuffer, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    }
-
+    // TODO:: VkRenderingAttachmentInfo can be prepared earlier in buildResourceStates
     VkRenderingInfo                         renderingInfo        = {};
     DynamicArray<VkFormat>                  colorFormats         = {};
     DynamicArray<VkRenderingAttachmentInfo> colorAttachmentInfos = {};
@@ -365,8 +477,6 @@ void RenderGraph::beginPass(const FrameData& frameData, RGNode& pass)
         depthAttachmentInfo.loadOp      = vulkan::getLoadOp(lsState.loadOp);
         depthAttachmentInfo.storeOp     = vulkan::getStoreOp(lsState.storeOp);
         depthAttachmentInfo.clearValue  = DEFAULT_DEPTH_STENCIL_VALUE;
-
-        depthTexture->recordTransitionLayout(cmdBuffer, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
     }
 
     for (const auto& attachment : pass.writeTextureResources)
@@ -394,9 +504,6 @@ void RenderGraph::beginPass(const FrameData& frameData, RGNode& pass)
         colorAttachmentInfos.push_back(colorAttachment);
 
         colorFormats.push_back(texture->format);
-
-        // transition to color out layout
-        texture->recordTransitionLayout(cmdBuffer, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     }
 
     renderingInfo                      = { VK_STRUCTURE_TYPE_RENDERING_INFO };
@@ -430,7 +537,7 @@ void RenderGraph::beginPass(const FrameData& frameData, RGNode& pass)
     vkCmdSetScissor(cmdBuffer, 0, 1, &scissor);
 }
 
-void RenderGraph::endPass(const FrameData& frameData)
+void RenderGraph::endPass(const FrameData& frameData) const
 {
     DUSK_PROFILE_SECTION("end_pass");
 

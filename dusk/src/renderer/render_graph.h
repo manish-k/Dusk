@@ -34,7 +34,7 @@ struct RGImageExecState
 {
     int32_t               firstWriter = -1;
     VkImageLayout         layout      = VK_IMAGE_LAYOUT_UNDEFINED;
-    VkPipelineStageFlags2 stage      = VK_PIPELINE_STAGE_2_NONE;
+    VkPipelineStageFlags2 stage       = VK_PIPELINE_STAGE_2_NONE;
     VkAccessFlags2        access      = VK_ACCESS_2_NONE;
 };
 
@@ -62,23 +62,25 @@ struct RGNodeResource
 
 struct RGNode
 {
-    std::string           name      = "";
-    uint32_t              index     = 0u; // index of the pass
-    RecordCmdBuffFunction recordFn  = nullptr;
-    bool                  isCompute = false;
+    std::string                          name      = "";
+    uint32_t                             index     = 0u; // index of the pass
+    RecordCmdBuffFunction                recordFn  = nullptr;
+    bool                                 isCompute = false;
 
-    // TODO:: need to reserve space, max 64 passes for now
-    DynamicArray<RGNodeResource>      readTextureResources;
-    DynamicArray<RGNodeResource>      writeTextureResources;
-    DynamicArray<RGNodeResource>      readBufferResources;
-    DynamicArray<RGNodeResource>      writeBufferResources;
+    DynamicArray<RGNodeResource>         readTextureResources;
+    DynamicArray<RGNodeResource>         writeTextureResources;
+    DynamicArray<RGNodeResource>         readBufferResources;
+    DynamicArray<RGNodeResource>         writeBufferResources;
 
-    std::optional<RGImageResource*>   depthResource;
+    std::optional<RGImageResource*>      depthResource;
 
-    HashMap<uint32_t, LoadStoreState> resourceLoadStoreStates;
+    HashMap<uint32_t, LoadStoreState>    resourceLoadStoreStates;
 
-    uint32_t                          viewMask   = 0u; // only for multiview
-    uint32_t                          layerCount = 1u; // only for multiview
+    DynamicArray<VkImageMemoryBarrier2>  imageBarriers  = {};
+    DynamicArray<VkBufferMemoryBarrier2> bufferBarriers = {};
+
+    uint32_t                             viewMask       = 0u; // only for multiview
+    uint32_t                             layerCount     = 1u; // only for multiview
 };
 
 class RenderGraph
@@ -139,9 +141,14 @@ public:
     /**
      * @brief Associates an image resource as the depth target for a specified pass.
      * @param passId Handle of the pass to which the depth resource will be added.
-     * @param resource Reference to the image resource to register as the depth resource.
+     * @param depthResource Reference to the image resource to register as the depth resource.
+     * @param version Optional resource version to reference (defaults to 0).
+     * @return New version for the newly added depth resource.
      */
-    void addDepthResource(uint32_t passId, RGImageResource& resource);
+    uint32_t addDepthResource(
+        uint32_t         passId,
+        RGImageResource& depthResource,
+        uint32_t         version = 0u);
 
     /**
      * @brief Marks a compute pass identified by the given pass ID.
@@ -175,17 +182,24 @@ private:
     void buildResourceStates();
 
     /**
+     * @brief Inserts barriers in command buffer for the given pass
+     * @param frameData 
+     * @param pass
+     */
+    void insertPassBarriers(const FrameData& frameData, const RGNode& pass);
+
+    /**
      * @brief Begins or initializes a rendering pass using the provided frame data.
      * @param frameData
      * @param pass Reference to the pass node to begin the pass.
      */
-    void beginPass(const FrameData& frameData, RGNode& pass);
+    void beginPass(const FrameData& frameData, RGNode& pass) const;
 
     /**
      * @brief Ends the current ongoing rendering pass.
      * @param frameData
      */
-    void endPass(const FrameData& frameData);
+    void endPass(const FrameData& frameData) const;
 
 private:
     DynamicArray<RGNode>   m_passes;

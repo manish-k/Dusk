@@ -127,7 +127,7 @@ void RenderGraph::execute(const FrameData& frameData)
 
         insertPassBarriers(frameData, pass);
 
-        // DUSK_DEBUG("executing pass: {}", pass.name);
+        //DUSK_DEBUG("executing pass: {}", pass.name);
 
         if (pass.isCompute)
         {
@@ -381,6 +381,13 @@ void RenderGraph::buildResourceStates()
             // emit barrier if layout transition is needed
             if (state.layout != newLayout)
             {
+                VkImageAspectFlags imageAspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
+                if (resource->texture->usage & DepthStencilTexture)
+                {
+                    // if reading depth buffer
+                    imageAspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+                }
+
                 VkImageMemoryBarrier2 barrier { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2 };
                 barrier.srcStageMask                    = state.stage;
                 barrier.dstStageMask                    = newStage;
@@ -389,7 +396,7 @@ void RenderGraph::buildResourceStates()
                 barrier.oldLayout                       = state.layout;
                 barrier.newLayout                       = newLayout;
                 barrier.image                           = resource->texture->image.vkImage;
-                barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+                barrier.subresourceRange.aspectMask     = imageAspectFlags;
                 barrier.subresourceRange.baseMipLevel   = 0;
                 barrier.subresourceRange.levelCount     = resource->texture->numMipLevels;
                 barrier.subresourceRange.baseArrayLayer = 0;

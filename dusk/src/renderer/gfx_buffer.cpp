@@ -78,6 +78,8 @@ void GfxBuffer::init(
     bufferParams.debugName   = debugName; // TODO: string copy
 
     Engine::get().getGfxDevice().createBuffer(bufferParams, &vkBuffer);
+
+    this->usage = usage;
 }
 
 void GfxBuffer::cleanup()

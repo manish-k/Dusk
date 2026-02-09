@@ -46,6 +46,12 @@ struct RGImageResource
     uint64_t    readers = {}; // Note: bitset assumption is max 64 passes
 };
 
+struct RGBufferExecState
+{
+    VkPipelineStageFlags2 stage  = VK_PIPELINE_STAGE_2_NONE;
+    VkAccessFlags2        access = VK_ACCESS_2_NONE;
+};
+
 struct RGBufferResource
 {
     std::string name    = "";
@@ -183,10 +189,10 @@ private:
 
     /**
      * @brief Inserts barriers in command buffer for the given pass
-     * @param frameData 
+     * @param frameData
      * @param pass
      */
-    void insertPassBarriers(const FrameData& frameData, const RGNode& pass);
+    void insertPassBarriers(const FrameData& frameData, const RGNode& pass) const;
 
     /**
      * @brief Begins or initializes a rendering pass using the provided frame data.
@@ -213,6 +219,7 @@ private:
     HashMap<uint32_t, RGImageLifeTimeState> m_imageLifeTimeStates;
 
     // states for images during graph execution time
-    HashMap<uint32_t, RGImageExecState> m_imageExecStates;
+    HashMap<uint32_t, RGImageExecState>  m_imageExecStates;
+    HashMap<uint64_t, RGBufferExecState> m_bufferExecStates;
 };
 } // namespace dusk

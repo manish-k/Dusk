@@ -151,6 +151,8 @@ void RenderGraph::buildDependencyGraph()
     // TODO: Add following validations and error reporting:
     //  cycle detection and reporting
     //  depth resources intent should be explicitly defined
+    // TODO:: Hazard types assertions and reporting (RAW, WAW, WAR)
+    // TODO: graph prunning
 
     uint32_t nodeCount = static_cast<uint32_t>(m_passes.size());
 
@@ -194,18 +196,11 @@ void RenderGraph::buildDependencyGraph()
 
         for (const auto& readTexRes : pass.readTextureResources)
         {
-            RGImageResource* resource = (RGImageResource*)readTexRes.ptr;
-            // DUSK_DEBUG("{} - pass:{}, last writer mask: {}", resource->name, std::countr_zero(readTexRes.lastWriterMask), readTexRes.lastWriterMask);
             m_inEdgesBitsets[nodeIdx] |= readTexRes.lastWriterMask;
-            // DUSK_DEBUG("in edges - {}", m_inEdgesBitsets[nodeIdx]);
         }
 
-        // for (const auto& writeTexRes : pass.writeTextureResources)
-        //{
-        //     m_inEdgesBitsets[nodeIdx] |= writeTexRes->writers;
-        // }
-
-        // TODO:: version for buffers is not implemented yet
+        // TODO:: version for buffers is not implemented yet,
+        // possibility of WAW and WAR hazards exists, need to be handled and asserted properly
         for (const auto& readBufRes : pass.readBufferResources)
         {
             m_inEdgesBitsets[nodeIdx] |= ((RGBufferResource*)readBufRes.ptr)->writers;
@@ -259,7 +254,7 @@ void RenderGraph::buildExecutionOrder()
     {
         // TODO:: should we consider built-in functions for trailing zero counting?
         uint32_t nodeIdx = std::countr_zero(zeroInDegreeNodesBitset);
-        uint32_t nodeBit = (1U << nodeIdx);
+        uint64_t nodeBit = (1ULL << nodeIdx);
 
         // pop the node from zero in-degree bitset
         zeroInDegreeNodesBitset &= zeroInDegreeNodesBitset - 1ULL;
@@ -442,10 +437,88 @@ void RenderGraph::buildResourceStates()
                 state.access = newAccess;
             }
         }
+
+        for (uint32_t resIdx = 0u; resIdx < pass.writeBufferResources.size(); ++resIdx)
+        {
+            const auto* resource = (RGBufferResource*)pass.writeBufferResources[resIdx].ptr;
+            auto        resId    = resource->buffer->getId();
+            auto&       state    = m_bufferExecStates[resId];
+
+            // deduce stage and access flags
+            VkPipelineStageFlags2 newStage  = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+            VkAccessFlags2        newAccess = VK_ACCESS_2_SHADER_WRITE_BIT;
+
+            if (pass.isCompute)
+            {
+                newStage  = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+                newAccess = VK_ACCESS_2_SHADER_WRITE_BIT;
+
+                // if also being read by the pass
+                if (resource->readers & (1ULL << passIdx))
+                {
+                    newAccess |= VK_ACCESS_2_SHADER_READ_BIT;
+                }
+            }
+
+            // emit barrier if access or stage flags have changed
+            if (state.stage != newStage || state.access != newAccess)
+            {
+                VkBufferMemoryBarrier2 barrier { VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2 };
+                barrier.srcStageMask  = state.stage;
+                barrier.dstStageMask  = newStage;
+                barrier.srcAccessMask = state.access;
+                barrier.dstAccessMask = newAccess;
+                barrier.buffer        = resource->buffer->vkBuffer.buffer; // TODO: WTF is this?
+                barrier.offset        = 0;
+                barrier.size          = resource->buffer->vkBuffer.sizeInBytes;
+
+                pass.bufferBarriers.push_back(barrier);
+            }
+
+            state.stage  = newStage;
+            state.access = newAccess;
+        }
+
+        for (uint32_t resIdx = 0u; resIdx < pass.readBufferResources.size(); ++resIdx)
+        {
+            const auto* resource = (RGBufferResource*)pass.readBufferResources[resIdx].ptr;
+            auto        resId    = resource->buffer->getId();
+            auto&       state    = m_bufferExecStates[resId];
+
+            if (resource->writers & (1ULL << passIdx)) continue; // already handled in write resource loop
+
+            // deduce stage and access flags
+            VkPipelineStageFlags2 newStage  = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+            VkAccessFlags2        newAccess = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
+
+            if (resource->buffer->usage & GfxBufferUsageFlags::IndirectBuffer)
+            {
+                newStage  = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
+                newAccess = VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT;
+            }
+
+            // emit barrier if access or stage flags have changed
+            if (state.stage != newStage || state.access != newAccess)
+            {
+                VkBufferMemoryBarrier2 barrier { VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2 };
+                barrier.srcStageMask  = state.stage;
+                barrier.dstStageMask  = newStage;
+                barrier.srcAccessMask = state.access;
+                barrier.dstAccessMask = newAccess;
+                barrier.buffer        = resource->buffer->vkBuffer.buffer; // TODO: WTF is this?
+                barrier.offset        = 0;
+                barrier.size          = resource->buffer->vkBuffer.sizeInBytes;
+
+                pass.bufferBarriers.push_back(barrier);
+            }
+
+            state.stage  = newStage;
+            state.access = newAccess;
+        }
     }
 }
 
-void RenderGraph::insertPassBarriers(const FrameData& frameData, const RGNode& pass)
+void RenderGraph::insertPassBarriers(const FrameData& frameData, const RGNode& pass) const
 {
     VkCommandBuffer  cmdBuffer = frameData.commandBuffer;
 

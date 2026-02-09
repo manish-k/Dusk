@@ -48,6 +48,7 @@ struct GfxBuffer
     VulkanGfxBuffer vkBuffer;
     uint32_t        instanceAlignmentSize = 0u;
     uint32_t        instanceCount         = 0u;
+    uint32_t        usage                 = 0u;
 
     GfxBuffer()                           = default;
     ~GfxBuffer()                          = default;
@@ -69,6 +70,12 @@ struct GfxBuffer
      * @brief release the resources of the buffer
      */
     void cleanup();
+
+    /**
+     * @brief Get unique id for the buffer. This is temporary solution until a proper handle is implemented.
+     * @return unique id for the buffer
+     */
+    uint64_t getId() const { return reinterpret_cast<uint64_t>(vkBuffer.allocation); }
 
     /**
      * @brief Check if buffer was allocated

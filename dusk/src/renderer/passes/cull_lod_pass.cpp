@@ -122,24 +122,6 @@ void dispatchIndirectDrawCompute(const FrameData& frameData)
             workgroupCount,
             1,
             1);
-
-        // barrier to ensure compute shader writes are visible to subsequent draw calls
-        VkMemoryBarrier memoryBarrier {};
-        memoryBarrier.sType         = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
-        memoryBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-        memoryBarrier.dstAccessMask = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
-
-        vkCmdPipelineBarrier(
-            commandBuffer,
-            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-            VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
-            0,
-            1,
-            &memoryBarrier,
-            0,
-            nullptr,
-            0,
-            nullptr);
     }
 }
 } // namespace dusk

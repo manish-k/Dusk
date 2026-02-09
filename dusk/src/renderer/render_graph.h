@@ -36,6 +36,7 @@ struct RGImageExecState
     VkImageLayout         layout      = VK_IMAGE_LAYOUT_UNDEFINED;
     VkPipelineStageFlags2 stage       = VK_PIPELINE_STAGE_2_NONE;
     VkAccessFlags2        access      = VK_ACCESS_2_NONE;
+    uint32_t              queueFamily;
 };
 
 struct RGImageResource
@@ -46,10 +47,16 @@ struct RGImageResource
     uint64_t    readers = {}; // Note: bitset assumption is max 64 passes
 };
 
+struct RGBufferLifeTimeState
+{
+    DynamicArray<uint32_t> versions = {};
+};
+
 struct RGBufferExecState
 {
     VkPipelineStageFlags2 stage  = VK_PIPELINE_STAGE_2_NONE;
     VkAccessFlags2        access = VK_ACCESS_2_NONE;
+    uint32_t              queueFamily;
 };
 
 struct RGBufferResource
@@ -125,8 +132,12 @@ public:
      * @brief Adds a buffer resource to the specified pass as a read resource.
      * @param passId Handle of the pass to which the resource will be added.
      * @param resource Reference to the RGBufferResource to add as read dependency.
+     * @param version Optional resource version to reference (defaults to 0).
      */
-    void addReadResource(uint32_t passId, RGBufferResource& resource);
+    void addReadResource(
+        uint32_t          passId,
+        RGBufferResource& resource,
+        uint32_t          version = 0u);
 
     /**
      * @brief Registers an image write resource with the specified pass and returns the new version of that resource.
@@ -216,7 +227,8 @@ private:
     DynamicArray<uint64_t> m_outEdgesBitsets;
 
     // states for tracking lifetime of images
-    HashMap<uint32_t, RGImageLifeTimeState> m_imageLifeTimeStates;
+    HashMap<uint32_t, RGImageLifeTimeState>  m_imageLifeTimeStates;
+    HashMap<uint64_t, RGBufferLifeTimeState> m_bufferLifeTimeStates;
 
     // states for images during graph execution time
     HashMap<uint32_t, RGImageExecState>  m_imageExecStates;

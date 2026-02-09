@@ -406,9 +406,10 @@ void Engine::renderFrame(FrameData& frameData)
         .buffer = &m_rgResources.frameIndirectDrawCountBuffers[frameData.frameIndex]
     };
 
-    auto cullPassId = renderGraph.addPass("cull_lod_pass", dispatchIndirectDrawCompute);
-    renderGraph.addWriteResource(cullPassId, indirectDrawCommandsBuffer);
-    renderGraph.addWriteResource(cullPassId, indirectDrawCountBuffer);
+    auto     cullPassId                 = renderGraph.addPass("cull_lod_pass", dispatchIndirectDrawCompute);
+    uint32_t indirectBufferVersion      = renderGraph.addWriteResource(cullPassId, indirectDrawCommandsBuffer);
+    uint32_t indirectCountBufferVersion = renderGraph.addWriteResource(cullPassId, indirectDrawCountBuffer);
+    
     renderGraph.addReadResource(cullPassId, indirectDrawCountBuffer);
     renderGraph.markAsCompute(cullPassId);
 
@@ -428,8 +429,8 @@ void Engine::renderFrame(FrameData& frameData)
 
     uint32_t gbuffDepthVer = renderGraph.addDepthResource(gbuffPassId, gbuffDepth);
 
-    renderGraph.addReadResource(gbuffPassId, indirectDrawCommandsBuffer);
-    renderGraph.addReadResource(gbuffPassId, indirectDrawCountBuffer);
+    renderGraph.addReadResource(gbuffPassId, indirectDrawCommandsBuffer, indirectBufferVersion);
+    renderGraph.addReadResource(gbuffPassId, indirectDrawCountBuffer, indirectCountBufferVersion);
 
     uint32_t gbuffAlbedoVer   = renderGraph.addWriteResource(gbuffPassId, gbuffAlbedo);
     uint32_t gbuffNormalVer   = renderGraph.addWriteResource(gbuffPassId, gbuffNormal);

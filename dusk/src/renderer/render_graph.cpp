@@ -18,37 +18,59 @@ void RenderGraph::addReadResource(
     RGImageResource& resource,
     uint32_t         version)
 {
-    auto& pass = m_passes[passId];
-    if (m_imageLifeTimeStates[resource.texture->id].versions.size() > 0)
+    auto&       pass              = m_passes[passId];
+    auto        textureId         = resource.texture->id;
+    const auto& availableVersions = m_imageLifeTimeStates[textureId].versions;
+
+    if (availableVersions.size() > 0)
     {
-        uint32_t writer = m_imageLifeTimeStates[resource.texture->id].versions[version];
+        DASSERT(version < availableVersions.size(), "provided version doesn't exists");
+
+        uint32_t writer = availableVersions[version];
         pass.readTextureResources.push_back({ (void*)&resource, (1ULL << writer) });
         return;
     }
     pass.readTextureResources.push_back({ (void*)&resource, 0ULL });
 }
 
-void RenderGraph::addReadResource(uint32_t passId, RGBufferResource& resource)
+void RenderGraph::addReadResource(
+    uint32_t          passId,
+    RGBufferResource& resource,
+    uint32_t          version)
 {
-    auto& pass = m_passes[passId];
-    pass.readBufferResources.push_back({ (void*)&resource, 0u });
+    auto&       pass              = m_passes[passId];
+    auto        bufferId          = resource.buffer->getId();
+    const auto& availableVersions = m_bufferLifeTimeStates[bufferId].versions;
+
+    if (availableVersions.size() > 0)
+    {
+        DASSERT(version < availableVersions.size(), "provided version doesn't exists");
+
+        uint32_t writer = availableVersions[version];
+        pass.readBufferResources.push_back({ (void*)&resource, (1ULL << writer) });
+        return;
+    }
+    pass.readBufferResources.push_back({ (void*)&resource, 0ULL });
 }
 
 uint32_t RenderGraph::addWriteResource(uint32_t passId, RGImageResource& resource)
 {
-    auto&    pass       = m_passes[passId];
-    auto&    versions   = m_imageLifeTimeStates[resource.texture->id].versions;
-    uint32_t newVersion = static_cast<uint32_t>(versions.size());
-    versions.push_back(passId);
+    auto&    pass              = m_passes[passId];
+    auto&    availableVersions = m_imageLifeTimeStates[resource.texture->id].versions;
+    uint32_t newVersion        = static_cast<uint32_t>(availableVersions.size());
+    availableVersions.push_back(passId);
     pass.writeTextureResources.push_back({ (void*)&resource, (1ULL << passId) });
     return newVersion;
 }
 
 uint32_t RenderGraph::addWriteResource(uint32_t passId, RGBufferResource& resource)
 {
-    auto& pass = m_passes[passId];
-    pass.writeBufferResources.push_back({ (void*)&resource, 0u });
-    return 0u;
+    auto&    pass              = m_passes[passId];
+    auto&    availableVersions = m_bufferLifeTimeStates[resource.buffer->getId()].versions;
+    uint32_t newVersion        = static_cast<uint32_t>(availableVersions.size());
+    availableVersions.push_back(passId);
+    pass.writeBufferResources.push_back({ (void*)&resource, (1ULL << passId) });
+    return newVersion;
 }
 
 uint32_t RenderGraph::addDepthResource(
@@ -199,16 +221,9 @@ void RenderGraph::buildDependencyGraph()
             m_inEdgesBitsets[nodeIdx] |= readTexRes.lastWriterMask;
         }
 
-        // TODO:: version for buffers is not implemented yet,
-        // possibility of WAW and WAR hazards exists, need to be handled and asserted properly
-        for (const auto& readBufRes : pass.readBufferResources)
+        for (const auto& readBuffRes : pass.readBufferResources)
         {
-            m_inEdgesBitsets[nodeIdx] |= ((RGBufferResource*)readBufRes.ptr)->writers;
-        }
-
-        for (const auto& writeBufRes : pass.writeBufferResources)
-        {
-            m_inEdgesBitsets[nodeIdx] |= ((RGBufferResource*)writeBufRes.ptr)->writers;
+            m_inEdgesBitsets[nodeIdx] |= readBuffRes.lastWriterMask;
         }
 
         // remove self-loop if any
@@ -315,7 +330,7 @@ void RenderGraph::buildResourceStates()
             if (state.firstWriter == -1)
             {
                 state.firstWriter                          = passIdx;
-                pass.resourceLoadStoreStates[resId].loadOp = GfxLoadOperation::Clear; // TODO:: make configurable
+                pass.resourceLoadStoreStates[resId].loadOp = GfxLoadOperation::Clear; // TODO:: make configurable, Expose per-pass intent
             }
 
             // skip barriers for depth resource
@@ -592,7 +607,6 @@ void RenderGraph::beginPass(const FrameData& frameData, RGNode& pass) const
     renderingInfo.colorAttachmentCount = static_cast<uint32_t>(colorAttachmentInfos.size());
     renderingInfo.pColorAttachments    = colorAttachmentInfos.data();
     renderingInfo.pDepthAttachment     = useDepth ? &depthAttachmentInfo : nullptr;
-    renderingInfo.flags                = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT;
 
     if (pass.viewMask > 0)
     {

@@ -193,10 +193,36 @@ private:
     void buildExecutionOrder();
 
     /**
-     * @brief Generates barriers and load/store states for all resources
+     * @brief Generates barriers and load/store states for all resources.
      * as per execution order.
      */
-    void buildResourceStates();
+    void buildResourcesStates();
+
+    /**
+     * @brief Genrate barriers and load/store states for write image resources of the pass.
+     * @param pass reference
+     * @param useDepth when pass has depth resource
+     */
+    void buildWriteImageResourcesState(RGNode& pass, bool useDepth);
+
+    /**
+     * @brief Genrate barriers and load/store states for read image resources of the pass.
+     * @param pass reference
+     * @param useDepth when pass has depth resource
+     */
+    void buildReadImageResourcesState(RGNode& pass, bool useDepth);
+
+    /**
+     * @brief enrate barriers and load/store states for write buffer resources of the pass.
+     * @param pass reference
+     */
+    void buildWriteBufferResourcesState(RGNode& pass);
+
+    /**
+     * @brief enrate barriers and load/store states for read buffer resources of the pass.
+     * @param pass reference
+     */
+    void buildReadBufferResourcesState(RGNode& pass);
 
     /**
      * @brief Inserts barriers in command buffer for the given pass

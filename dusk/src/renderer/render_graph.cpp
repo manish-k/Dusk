@@ -140,7 +140,7 @@ void RenderGraph::execute(const FrameData& frameData)
 
     buildDependencyGraph();
     buildExecutionOrder();
-    buildResourceStates();
+    buildResourcesStates();
 
     uint32_t passCount = static_cast<uint32_t>(m_passExecutionOrder.size());
     for (uint32_t passIdx = 0u; passIdx < passCount; ++passIdx)
@@ -304,7 +304,7 @@ void RenderGraph::buildExecutionOrder()
     }
 }
 
-void RenderGraph::buildResourceStates()
+void RenderGraph::buildResourcesStates()
 {
     uint32_t nodeCount = static_cast<uint32_t>(m_passExecutionOrder.size());
     for (uint32_t execIdx = 0u; execIdx < nodeCount; ++execIdx)
@@ -314,222 +314,231 @@ void RenderGraph::buildResourceStates()
 
         bool     useDepth = pass.depthResource.has_value();
 
-        for (uint32_t resIdx = 0u; resIdx < pass.writeTextureResources.size(); ++resIdx)
+        buildWriteImageResourcesState(pass, useDepth);
+        buildReadImageResourcesState(pass, useDepth);
+        buildWriteBufferResourcesState(pass);
+        buildReadBufferResourcesState(pass);
+    }
+}
+
+void RenderGraph::buildWriteImageResourcesState(RGNode& pass, bool useDepth)
+{
+    for (uint32_t resIdx = 0u; resIdx < pass.writeTextureResources.size(); ++resIdx)
+    {
+        const auto* resource = (RGImageResource*)pass.writeTextureResources[resIdx].ptr;
+        auto        resId    = resource->texture->id;
+        auto&       state    = m_imageExecStates[resId];
+
+        // deduce layout, access and stage flags
+        VkImageLayout         newLayout;
+        VkPipelineStageFlags2 newStage;
+        VkAccessFlags2        newAccess;
+
+        // deduce load store states
+        pass.resourceLoadStoreStates[resId].loadOp = GfxLoadOperation::Load;
+        if (state.firstWriter == -1)
         {
-            const auto* resource = (RGImageResource*)pass.writeTextureResources[resIdx].ptr;
-            auto        resId    = resource->texture->id;
-            auto&       state    = m_imageExecStates[resId];
+            state.firstWriter                          = pass.index;
+            pass.resourceLoadStoreStates[resId].loadOp = GfxLoadOperation::Clear; // TODO:: make configurable, Expose per-pass intent
+        }
 
-            // deduce layout, access and stage flags
-            VkImageLayout         newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-            VkPipelineStageFlags2 newStage  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-            VkAccessFlags2        newAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        VkImageAspectFlags imageAspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
 
-            // deduce load store states
+        if (useDepth && resource->texture->usage & DepthStencilTexture)
+        {
+            // if writing depth buffer
+            newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+            newStage  = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+            newAccess = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+            // if reading depth buffer in the same pass
+            if (resource->readers & (1ULL << pass.index))
+            {
+                newAccess |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+            }
+        }
+        else
+        {
+            newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            newStage  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            newAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        }
+
+        if (resource->texture->usage & DepthStencilTexture)
+        {
+            // if reading depth buffer
+            imageAspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+        }
+
+        // emit barrier if layout transition is needed
+        if (state.layout != newLayout)
+        {
+            VkImageMemoryBarrier2 barrier { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2 };
+            barrier.srcStageMask                    = state.stage;
+            barrier.dstStageMask                    = newStage;
+            barrier.srcAccessMask                   = state.access;
+            barrier.dstAccessMask                   = newAccess;
+            barrier.oldLayout                       = state.layout;
+            barrier.newLayout                       = newLayout;
+            barrier.image                           = resource->texture->image.vkImage;
+            barrier.subresourceRange.aspectMask     = imageAspectFlags;
+            barrier.subresourceRange.baseMipLevel   = 0;
+            barrier.subresourceRange.levelCount     = resource->texture->numMipLevels;
+            barrier.subresourceRange.baseArrayLayer = 0;
+            barrier.subresourceRange.layerCount     = resource->texture->numLayers;
+            pass.imageBarriers.push_back(barrier);
+        }
+
+        state.layout = newLayout;
+        state.stage  = newStage;
+        state.access = newAccess;
+    }
+}
+
+void RenderGraph::buildReadImageResourcesState(RGNode& pass, bool useDepth)
+{
+    for (uint32_t resIdx = 0u; resIdx < pass.readTextureResources.size(); ++resIdx)
+    {
+        const RGImageResource* resource = (RGImageResource*)pass.readTextureResources[resIdx].ptr;
+        uint32_t               resId    = resource->texture->id;
+        auto&                  state    = m_imageExecStates[resId];
+
+        // deduce layout, access and stage flags
+        VkImageLayout         newLayout;
+        VkPipelineStageFlags2 newStage;
+        VkAccessFlags2        newAccess;
+
+        // deduce load store states
+        if (resource->writers == 0)
+        {
+            // resource is read-only throughout the graph, so we can assume its content is valid
             pass.resourceLoadStoreStates[resId].loadOp = GfxLoadOperation::Load;
-            if (state.firstWriter == -1)
-            {
-                state.firstWriter                          = passIdx;
-                pass.resourceLoadStoreStates[resId].loadOp = GfxLoadOperation::Clear; // TODO:: make configurable, Expose per-pass intent
-            }
-
-            // skip barriers for depth resource
-            if (useDepth && pass.depthResource.value()->texture->id == resId)
-            {
-                continue;
-            }
-
-            // emit barrier if layout transition is needed
-            if (state.layout != newLayout)
-            {
-                VkImageMemoryBarrier2 barrier { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2 };
-                barrier.srcStageMask                    = state.stage;
-                barrier.dstStageMask                    = newStage;
-                barrier.srcAccessMask                   = state.access;
-                barrier.dstAccessMask                   = newAccess;
-                barrier.oldLayout                       = state.layout;
-                barrier.newLayout                       = newLayout;
-                barrier.image                           = resource->texture->image.vkImage;
-                barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
-                barrier.subresourceRange.baseMipLevel   = 0;
-                barrier.subresourceRange.levelCount     = resource->texture->numMipLevels;
-                barrier.subresourceRange.baseArrayLayer = 0;
-                barrier.subresourceRange.layerCount     = resource->texture->numLayers;
-                pass.imageBarriers.push_back(barrier);
-            }
-
-            state.layout = newLayout;
-            state.stage  = newStage;
-            state.access = newAccess;
         }
 
-        // for read-only resources
-        for (uint32_t resIdx = 0u; resIdx < pass.readTextureResources.size(); ++resIdx)
+        if (useDepth && resource->texture->usage & DepthStencilTexture)
         {
-            const RGImageResource* resource = (RGImageResource*)pass.readTextureResources[resIdx].ptr;
-            uint32_t               resId    = resource->texture->id;
-            auto&                  state    = m_imageExecStates[resId];
-
-            // deduce layout, access and stage flags
-            VkImageLayout         newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            VkPipelineStageFlags2 newStage  = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-            VkAccessFlags2        newAccess = VK_ACCESS_SHADER_READ_BIT;
-
-            // deduce load store states
-            if (resource->writers == 0)
-            {
-                // resource is read-only throughout the graph, so we can assume its content is valid
-                pass.resourceLoadStoreStates[resId].loadOp = GfxLoadOperation::Load;
-            }
-
-            // skip barriers for depth resource
-            if (useDepth && pass.depthResource.value()->texture->id == resId)
-            {
-                continue;
-            }
-
-            VkImageAspectFlags imageAspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
-            if (resource->texture->usage & DepthStencilTexture)
-            {
-                // if reading depth buffer
-                imageAspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-            }
-
-            // emit barrier if layout transition is needed
-            if (state.layout != newLayout)
-            {
-                VkImageMemoryBarrier2 barrier { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2 };
-                barrier.srcStageMask                    = state.stage;
-                barrier.dstStageMask                    = newStage;
-                barrier.srcAccessMask                   = state.access;
-                barrier.dstAccessMask                   = newAccess;
-                barrier.oldLayout                       = state.layout;
-                barrier.newLayout                       = newLayout;
-                barrier.image                           = resource->texture->image.vkImage;
-                barrier.subresourceRange.aspectMask     = imageAspectFlags;
-                barrier.subresourceRange.baseMipLevel   = 0;
-                barrier.subresourceRange.levelCount     = resource->texture->numMipLevels;
-                barrier.subresourceRange.baseArrayLayer = 0;
-                barrier.subresourceRange.layerCount     = resource->texture->numLayers;
-                pass.imageBarriers.push_back(barrier);
-            }
-
-            state.layout = newLayout;
-            state.stage  = newStage;
-            state.access = newAccess;
+            continue;
         }
-
-        if (useDepth)
+        else
         {
-            const auto& depthTexture   = pass.depthResource.value()->texture;
-            auto        depthTextureId = pass.depthResource.value()->texture->id;
-            auto&       state          = m_imageExecStates[depthTextureId];
-
-            // deduce layout, access and stage flags
-            VkImageLayout         newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-            VkPipelineStageFlags2 newStage  = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-            VkAccessFlags2        newAccess = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-
-            if (state.layout != newLayout)
-            {
-                VkImageMemoryBarrier2 barrier { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2 };
-                barrier.srcStageMask                    = state.stage;
-                barrier.dstStageMask                    = newStage;
-                barrier.srcAccessMask                   = state.access;
-                barrier.dstAccessMask                   = newAccess;
-                barrier.oldLayout                       = state.layout;
-                barrier.newLayout                       = newLayout;
-                barrier.image                           = depthTexture->image.vkImage;
-                barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-                barrier.subresourceRange.baseMipLevel   = 0;
-                barrier.subresourceRange.levelCount     = depthTexture->numMipLevels;
-                barrier.subresourceRange.baseArrayLayer = 0;
-                barrier.subresourceRange.layerCount     = depthTexture->numLayers;
-                pass.imageBarriers.push_back(barrier);
-
-                state.layout = newLayout;
-                state.stage  = newStage;
-                state.access = newAccess;
-            }
+            newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            newStage  = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+            newAccess = VK_ACCESS_SHADER_READ_BIT;
         }
 
-        for (uint32_t resIdx = 0u; resIdx < pass.writeBufferResources.size(); ++resIdx)
+        VkImageAspectFlags imageAspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
+        if (resource->texture->usage & DepthStencilTexture)
         {
-            const auto* resource = (RGBufferResource*)pass.writeBufferResources[resIdx].ptr;
-            auto        resId    = resource->buffer->getId();
-            auto&       state    = m_bufferExecStates[resId];
-
-            // deduce stage and access flags
-            VkPipelineStageFlags2 newStage  = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
-            VkAccessFlags2        newAccess = VK_ACCESS_2_SHADER_WRITE_BIT;
-
-            if (pass.isCompute)
-            {
-                newStage  = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
-                newAccess = VK_ACCESS_2_SHADER_WRITE_BIT;
-
-                // if also being read by the pass
-                if (resource->readers & (1ULL << passIdx))
-                {
-                    newAccess |= VK_ACCESS_2_SHADER_READ_BIT;
-                }
-            }
-
-            // emit barrier if access or stage flags have changed
-            if (state.stage != newStage || state.access != newAccess)
-            {
-                VkBufferMemoryBarrier2 barrier { VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2 };
-                barrier.srcStageMask  = state.stage;
-                barrier.dstStageMask  = newStage;
-                barrier.srcAccessMask = state.access;
-                barrier.dstAccessMask = newAccess;
-                barrier.buffer        = resource->buffer->vkBuffer.buffer; // TODO: WTF is this?
-                barrier.offset        = 0;
-                barrier.size          = resource->buffer->vkBuffer.sizeInBytes;
-
-                pass.bufferBarriers.push_back(barrier);
-            }
-
-            state.stage  = newStage;
-            state.access = newAccess;
+            // if reading depth buffer
+            imageAspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
         }
 
-        for (uint32_t resIdx = 0u; resIdx < pass.readBufferResources.size(); ++resIdx)
+        // emit barrier if layout transition is needed
+        if (state.layout != newLayout)
         {
-            const auto* resource = (RGBufferResource*)pass.readBufferResources[resIdx].ptr;
-            auto        resId    = resource->buffer->getId();
-            auto&       state    = m_bufferExecStates[resId];
-
-            if (resource->writers & (1ULL << passIdx)) continue; // already handled in write resource loop
-
-            // deduce stage and access flags
-            VkPipelineStageFlags2 newStage  = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
-            VkAccessFlags2        newAccess = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
-
-            if (resource->buffer->usage & GfxBufferUsageFlags::IndirectBuffer)
-            {
-                newStage  = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
-                newAccess = VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT;
-            }
-
-            // emit barrier if access or stage flags have changed
-            if (state.stage != newStage || state.access != newAccess)
-            {
-                VkBufferMemoryBarrier2 barrier { VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2 };
-                barrier.srcStageMask  = state.stage;
-                barrier.dstStageMask  = newStage;
-                barrier.srcAccessMask = state.access;
-                barrier.dstAccessMask = newAccess;
-                barrier.buffer        = resource->buffer->vkBuffer.buffer; // TODO: WTF is this?
-                barrier.offset        = 0;
-                barrier.size          = resource->buffer->vkBuffer.sizeInBytes;
-
-                pass.bufferBarriers.push_back(barrier);
-            }
-
-            state.stage  = newStage;
-            state.access = newAccess;
+            VkImageMemoryBarrier2 barrier { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2 };
+            barrier.srcStageMask                    = state.stage;
+            barrier.dstStageMask                    = newStage;
+            barrier.srcAccessMask                   = state.access;
+            barrier.dstAccessMask                   = newAccess;
+            barrier.oldLayout                       = state.layout;
+            barrier.newLayout                       = newLayout;
+            barrier.image                           = resource->texture->image.vkImage;
+            barrier.subresourceRange.aspectMask     = imageAspectFlags;
+            barrier.subresourceRange.baseMipLevel   = 0;
+            barrier.subresourceRange.levelCount     = resource->texture->numMipLevels;
+            barrier.subresourceRange.baseArrayLayer = 0;
+            barrier.subresourceRange.layerCount     = resource->texture->numLayers;
+            pass.imageBarriers.push_back(barrier);
         }
+
+        state.layout = newLayout;
+        state.stage  = newStage;
+        state.access = newAccess;
+    }
+}
+
+void RenderGraph::buildWriteBufferResourcesState(RGNode& pass)
+{
+    for (uint32_t resIdx = 0u; resIdx < pass.writeBufferResources.size(); ++resIdx)
+    {
+        const auto* resource = (RGBufferResource*)pass.writeBufferResources[resIdx].ptr;
+        auto        resId    = resource->buffer->getId();
+        auto&       state    = m_bufferExecStates[resId];
+
+        // deduce stage and access flags
+        VkPipelineStageFlags2 newStage  = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+        VkAccessFlags2        newAccess = VK_ACCESS_2_SHADER_WRITE_BIT;
+
+        if (pass.isCompute)
+        {
+            newStage  = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+            newAccess = VK_ACCESS_2_SHADER_WRITE_BIT;
+
+            // if also being read by the pass
+            if (resource->readers & (1ULL << pass.index))
+            {
+                newAccess |= VK_ACCESS_2_SHADER_READ_BIT;
+            }
+        }
+
+        // emit barrier if access or stage flags have changed
+        if (state.stage != newStage || state.access != newAccess)
+        {
+            VkBufferMemoryBarrier2 barrier { VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2 };
+            barrier.srcStageMask  = state.stage;
+            barrier.dstStageMask  = newStage;
+            barrier.srcAccessMask = state.access;
+            barrier.dstAccessMask = newAccess;
+            barrier.buffer        = resource->buffer->vkBuffer.buffer; // TODO: WTF is this?
+            barrier.offset        = 0;
+            barrier.size          = resource->buffer->vkBuffer.sizeInBytes;
+
+            pass.bufferBarriers.push_back(barrier);
+        }
+
+        state.stage  = newStage;
+        state.access = newAccess;
+    }
+}
+
+void RenderGraph::buildReadBufferResourcesState(RGNode& pass)
+{
+    for (uint32_t resIdx = 0u; resIdx < pass.readBufferResources.size(); ++resIdx)
+    {
+        const auto* resource = (RGBufferResource*)pass.readBufferResources[resIdx].ptr;
+        auto        resId    = resource->buffer->getId();
+        auto&       state    = m_bufferExecStates[resId];
+
+        if (resource->writers & (1ULL << pass.index)) continue; // already handled in write resource loop
+
+        // deduce stage and access flags
+        VkPipelineStageFlags2 newStage  = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+        VkAccessFlags2        newAccess = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
+
+        if (resource->buffer->usage & GfxBufferUsageFlags::IndirectBuffer)
+        {
+            newStage  = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
+            newAccess = VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT;
+        }
+
+        // emit barrier if access or stage flags have changed
+        if (state.stage != newStage || state.access != newAccess)
+        {
+            VkBufferMemoryBarrier2 barrier { VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2 };
+            barrier.srcStageMask  = state.stage;
+            barrier.dstStageMask  = newStage;
+            barrier.srcAccessMask = state.access;
+            barrier.dstAccessMask = newAccess;
+            barrier.buffer        = resource->buffer->vkBuffer.buffer; // TODO: WTF is this?
+            barrier.offset        = 0;
+            barrier.size          = resource->buffer->vkBuffer.sizeInBytes;
+
+            pass.bufferBarriers.push_back(barrier);
+        }
+
+        state.stage  = newStage;
+        state.access = newAccess;
     }
 }
 

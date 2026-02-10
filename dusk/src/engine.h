@@ -188,8 +188,8 @@ private:
 
     Scene*                                   m_currentScene      = nullptr;
 
-    TimePoint                                m_lastFrameTime {};
-    TimeStep                                 m_deltaTime {};
+    TimePoint                                m_lastFrameTime     = {};
+    TimeStep                                 m_deltaTime         = {};
 
     GfxBuffer                                m_vertexBuffer;
     GfxBuffer                                m_indexBuffer;

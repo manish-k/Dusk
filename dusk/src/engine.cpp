@@ -146,6 +146,8 @@ void Engine::stop() { m_running = false; }
 
 void Engine::shutdown()
 {
+    m_renderer->deviceWaitIdle();
+
     m_basicRenderSystem = nullptr;
 
     m_lightsSystem      = nullptr;
@@ -260,11 +262,6 @@ void Engine::onUpdate(TimeStep dt)
         m_frameRenderables[currentFrameIndex].boundingBoxes.clear();
         m_frameRenderables[currentFrameIndex].meshIds.clear();
         m_frameRenderables[currentFrameIndex].materialIds.clear();
-    }
-
-    {
-        DUSK_PROFILE_SECTION("wait_idle");
-        m_renderer->deviceWaitIdle();
     }
 }
 
@@ -409,7 +406,7 @@ void Engine::renderFrame(FrameData& frameData)
     auto     cullPassId                 = renderGraph.addPass("cull_lod_pass", dispatchIndirectDrawCompute);
     uint32_t indirectBufferVersion      = renderGraph.addWriteResource(cullPassId, indirectDrawCommandsBuffer);
     uint32_t indirectCountBufferVersion = renderGraph.addWriteResource(cullPassId, indirectDrawCountBuffer);
-    
+
     renderGraph.addReadResource(cullPassId, indirectDrawCountBuffer);
     renderGraph.markAsCompute(cullPassId);
 

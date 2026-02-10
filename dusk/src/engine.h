@@ -36,8 +36,8 @@ struct VkGfxDescriptorPool;
 struct VkGfxDescriptorSetLayout;
 struct VkGfxDescriptorSet;
 
-constexpr uint32_t MAX_MATERIALS_COUNT   = 1000;
-constexpr uint32_t MAX_RENDERABLES_COUNT = 10000;
+static constexpr uint32_t    MAX_MATERIALS_COUNT   = 1000;
+static constexpr uint32_t    MAX_RENDERABLES_COUNT = 10000;
 
 struct RenderGraphResources
 {

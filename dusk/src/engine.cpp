@@ -86,8 +86,7 @@ bool Engine::start(Shared<Application> app)
         return false;
     }
 
-    bool globalsStatus = setupGlobals();
-    if (!globalsStatus) return false;
+    if (!setupGlobals()) return false;
 
     m_lightsSystem      = createUnique<LightsSystem>();
 
@@ -173,12 +172,13 @@ void Engine::onUpdate(TimeStep dt)
 {
     DUSK_PROFILE_FUNCTION;
 
-    uint32_t currentFrameIndex = m_renderer->getCurrentFrameIndex();
+    const uint32_t currentFrameIndex = m_renderer->getCurrentFrameIndex();
+
+    const std::string sectionName = std::format("frame_in_flight_{}", currentFrameIndex);
+    ZoneName(sectionName.c_str(), sectionName.size());
 
     if (VkCommandBuffer commandBuffer = m_renderer->beginFrame())
     {
-        DUSK_PROFILE_SECTION("frame_update");
-
         auto      extent = m_renderer->getSwapChain().getCurrentExtent();
 
         FrameData frameData {

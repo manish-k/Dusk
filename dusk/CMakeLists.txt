@@ -10,8 +10,10 @@ set(ENGINE_FILES
 	# Header files
 	"${ENGINE_DIR}/dusk.h"
 	"${ENGINE_DIR}/engine.h"
+	"${ENGINE_DIR}/stats_recorder.h"
 	# Source files
 	"${ENGINE_DIR}/engine.cpp"
+	"${ENGINE_DIR}/stats_recorder.cpp"
 )
 
 set(BACKEND_DIR "${PROJECT_SOURCE_DIR}/src/backend")

@@ -19,4 +19,9 @@ using TimePoint = std::chrono::time_point<std::chrono::high_resolution_clock>;
  * @brief Duration in seconds
  */
 using TimeStep = std::chrono::duration<float, std::chrono::seconds::period>;
+
+/**
+ * @brief Duration in nano seconds
+ */
+using TimeStepNs = std::chrono::duration<float, std::chrono::nanoseconds::period>;
 } // namespace dusk

@@ -24,8 +24,7 @@ void StatsRecorder::init(uint32_t maxFramesInFlightCount)
         queryPoolCreateInfo.flags      = 0;
 
         VkDevice     device            = VkGfxDevice::getSharedVulkanContext().device;
-        VkQueryPool  queryPool;
-        VulkanResult result = vkCreateQueryPool(device, &queryPoolCreateInfo, nullptr, &m_queryPool);
+        VulkanResult result            = vkCreateQueryPool(device, &queryPoolCreateInfo, nullptr, &m_queryPool);
 
         if (result.hasError())
         {
@@ -48,7 +47,7 @@ void StatsRecorder::cleanup()
     vkDestroyQueryPool(device, m_queryPool, nullptr);
 }
 
-void StatsRecorder::retrieveStats()
+void StatsRecorder::retrieveQueryStats()
 {
     uint64_t queryResults[MAX_QUERIES_PER_FRAME] = {};
 
@@ -136,7 +135,7 @@ void StatsRecorder::beginPass(VkCommandBuffer cmdBuffer, const std::string& pass
         m_queryPool,
         queryIndex); // write gpu timestamp for pass begin
 
-    m_frameStatsHistory[m_frameCounter % MAX_FRAMES_HISTORY].passStats.push_back({ passName, TimeStepNs(0) });
+    m_frameStatsHistory[m_frameCounter % MAX_FRAMES_HISTORY].passStats.emplace_back(passName, TimeStepNs(0));
 }
 
 void StatsRecorder::endPass(VkCommandBuffer cmdBuffer)
@@ -155,5 +154,26 @@ void StatsRecorder::recordCpuFrameTime(TimeStepNs cpuFrameTime)
 {
     m_frameStatsHistory[m_frameCounter % MAX_FRAMES_HISTORY].cpuFrameTime = cpuFrameTime;
 }
+
+void StatsRecorder::recordGpuMemoryUsage(const VulkanGPUAllocator& gpuAllocator)
+{
+    auto&     frameStats = m_frameStatsHistory[m_frameCounter % MAX_FRAMES_HISTORY];
+
+    VmaBudget budgets[VK_MAX_MEMORY_HEAPS];
+    vmaGetHeapBudgets(gpuAllocator.vmaAllocator, budgets);
+
+    uint64_t totalHeapBudgetBytes = 0;
+    uint64_t totalHeapUsageBytes  = 0;
+
+    for (uint32_t heapIndex = 0; heapIndex < VK_MAX_MEMORY_HEAPS; ++heapIndex)
+    {
+        totalHeapBudgetBytes += budgets[heapIndex].budget;
+        totalHeapUsageBytes += budgets[heapIndex].usage;
+    }
+
+    frameStats.totalVramUsedBytes       = totalHeapUsageBytes;
+    frameStats.totalVramBudgetBytes     = totalHeapBudgetBytes;
+    frameStats.totalVramBufferUsedBytes = gpuAllocator.allocatedBufferBytes;
+    frameStats.totalVramImageUsedBytes  = gpuAllocator.allocatedImageBytes;
 
 } // namespace dusk

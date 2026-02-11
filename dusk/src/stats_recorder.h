@@ -18,15 +18,16 @@ struct PassStats
 
 struct FrameStats
 {
-    TimeStepNs              cpuFrameTime     = {};
-    TimeStepNs              gpuFrameTime     = {};
+    TimeStepNs              cpuFrameTime             = {};
+    TimeStepNs              gpuFrameTime             = {};
 
-    DynamicArray<PassStats> passStats        = {}; // preserving execution order
+    DynamicArray<PassStats> passStats                = {}; // preserving execution order
 
-    uint32_t                drawCalls        = 0;
-    uint64_t                verticesCount    = 0;
-    uint64_t                vramUsedBytes    = 0;
-    uint32_t                renderablesCount = 0;
+    uint64_t                verticesCount            = 0;
+    uint64_t                totalVramUsedBytes       = 0;
+    uint64_t                totalVramBudgetBytes     = 0;
+    uint64_t                totalVramBufferUsedBytes = 0;
+    uint64_t                totalVramImageUsedBytes  = 0;
 };
 
 class StatsRecorder
@@ -37,7 +38,7 @@ public:
 
     void init(uint32_t maxFramesInFlightCount);
     void cleanup();
-    void retrieveStats();
+    void retrieveQueryStats();
 
     void beginFrame(VkCommandBuffer cmdBuffer);
     void endFrame(VkCommandBuffer cmdBuffer);
@@ -45,7 +46,7 @@ public:
     void endPass(VkCommandBuffer cmdBuffer);
 
     void recordCpuFrameTime(TimeStepNs cpuFrameTime);
-    void recordGpuMemoryUsage();
+    void recordGpuMemoryUsage(const VulkanGPUAllocator& gpuAllocator);
 
 private:
     Array<FrameStats, MAX_FRAMES_HISTORY> m_frameStatsHistory      = { {} };

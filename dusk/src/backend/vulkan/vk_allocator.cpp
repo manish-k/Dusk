@@ -102,6 +102,7 @@ VulkanResult vulkan::allocateGPUBuffer(
         pBufferResult->mappedMemory = allocationInfo.pMappedData;
     }
     pBufferResult->sizeInBytes = allocationInfo.size;
+    gpuAllocator.allocatedBufferBytes += allocationInfo.size;
 
     return result;
 }
@@ -114,6 +115,7 @@ void vulkan::freeGPUBuffer(
     if (pGfxBuffer->buffer != VK_NULL_HANDLE)
     {
         vmaDestroyBuffer(gpuAllocator.vmaAllocator, pGfxBuffer->buffer, pGfxBuffer->allocation);
+        gpuAllocator.allocatedBufferBytes -= pGfxBuffer->sizeInBytes;
     }
 }
 
@@ -161,6 +163,7 @@ VulkanResult vulkan::allocateGPUImage(
         &allocationInfo);
 
     pImageResult->sizeInBytes = allocationInfo.size;
+    gpuAllocator.allocatedImageBytes += allocationInfo.size;
 
     return result;
 }
@@ -171,6 +174,7 @@ void vulkan::freeGPUImage(VulkanGPUAllocator& gpuAllocator, VulkanGfxImage* pGfx
     if (pGfxImage->vkImage)
     {
         vmaDestroyImage(gpuAllocator.vmaAllocator, pGfxImage->vkImage, pGfxImage->allocation);
+        gpuAllocator.allocatedImageBytes -= pGfxImage->sizeInBytes;
     }
 }
 

@@ -9,6 +9,8 @@ namespace dusk
 struct VulkanGPUAllocator
 {
     VmaAllocator vmaAllocator;
+    size_t       allocatedBufferBytes = 0u;
+    size_t       allocatedImageBytes  = 0u;
 };
 
 struct VulkanGfxBuffer

@@ -1,5 +1,7 @@
 #include "render_graph.h"
 
+#include "stats_recorder.h"
+
 #include "renderer/frame_data.h"
 #include "renderer/gfx_types.h"
 
@@ -142,10 +144,14 @@ void RenderGraph::execute(const FrameData& frameData)
     buildExecutionOrder();
     buildResourcesStates();
 
-    uint32_t passCount = static_cast<uint32_t>(m_passExecutionOrder.size());
+    auto*    statsRecorder = StatsRecorder::get();
+
+    uint32_t passCount     = static_cast<uint32_t>(m_passExecutionOrder.size());
     for (uint32_t passIdx = 0u; passIdx < passCount; ++passIdx)
     {
         auto& pass = m_passes[m_passExecutionOrder[passIdx]];
+
+        statsRecorder->beginPass(frameData.commandBuffer, pass.name);
 
         insertPassBarriers(frameData, pass);
 
@@ -165,6 +171,8 @@ void RenderGraph::execute(const FrameData& frameData)
             endPass(frameData);
             vkdebug::cmdEndLabel(frameData.commandBuffer);
         }
+
+        statsRecorder->endPass(frameData.commandBuffer);
     }
 }
 

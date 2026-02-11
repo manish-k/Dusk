@@ -2,49 +2,55 @@
 
 #include "renderer/render_graph.h"
 
-#include "backend/vulkan/vk_device.h"
-
 namespace dusk
 {
+
+StatsRecorder* StatsRecorder::s_instance = nullptr;
+
 StatsRecorder::StatsRecorder(VulkanContext ctx) :
     m_device(ctx.device),
     m_gpuAllocator(ctx.gpuAllocator)
 {
+    DASSERT(!s_instance, "Stats recorder instance already exists");
+    s_instance = this;
 }
 
-void StatsRecorder::init(uint32_t maxFramesInFlightCount)
+bool StatsRecorder::init(uint32_t maxFramesInFlightCount)
 {
+    m_maxFramesInFlightCount = maxFramesInFlightCount;
+
     m_frameStatsHistory.fill({});
 
     for (uint32_t i = 0; i < maxFramesInFlightCount; ++i)
     {
         VkQueryPoolCreateInfo queryPoolCreateInfo { VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO };
         queryPoolCreateInfo.queryType  = VK_QUERY_TYPE_TIMESTAMP;
-        queryPoolCreateInfo.queryCount = MAX_QUERIES_PER_FRAME;
+        queryPoolCreateInfo.queryCount = MAX_QUERIES_PER_FRAME * maxFramesInFlightCount;
         queryPoolCreateInfo.flags      = 0;
 
-        VkDevice     device            = VkGfxDevice::getSharedVulkanContext().device;
-        VulkanResult result            = vkCreateQueryPool(device, &queryPoolCreateInfo, nullptr, &m_queryPool);
+        VulkanResult result            = vkCreateQueryPool(m_device, &queryPoolCreateInfo, nullptr, &m_queryPool);
 
         if (result.hasError())
         {
             DUSK_ERROR("Failed to create query pool for stats recorder: {}", result.toString());
+            return false;
         }
 
 #ifdef VK_RENDERER_DEBUG
         vkdebug::setObjectName(
-            device,
+            m_device,
             VK_OBJECT_TYPE_QUERY_POOL,
             (uint64_t)m_queryPool,
             "stats_recorder_timestamp_query_pool");
 #endif // VK_RENDERER_DEBUG
+
+        return true;
     }
 }
 
 void StatsRecorder::cleanup()
 {
-    VkDevice device = VkGfxDevice::getSharedVulkanContext().device;
-    vkDestroyQueryPool(device, m_queryPool, nullptr);
+    vkDestroyQueryPool(m_device, m_queryPool, nullptr);
 }
 
 void StatsRecorder::retrieveQueryStats()
@@ -53,14 +59,12 @@ void StatsRecorder::retrieveQueryStats()
 
     if (m_frameCounter >= m_maxFramesInFlightCount)
     {
-        VkDevice device          = VkGfxDevice::getSharedVulkanContext().device;
-
         uint32_t frameToRetrieve = (m_frameCounter - m_maxFramesInFlightCount);
         uint32_t queryIndex      = (frameToRetrieve % m_maxFramesInFlightCount) * MAX_QUERIES_PER_FRAME;
 
         // Retrieve query results for the frame that has completed GPU execution
-        VulkanResult result = vkGetQueryPoolResults(
-            device,
+        VkResult result = vkGetQueryPoolResults(
+            m_device,
             m_queryPool,
             queryIndex,            // start index of the queries for the current frame
             MAX_QUERIES_PER_FRAME, // count of queries for the frame
@@ -69,9 +73,9 @@ void StatsRecorder::retrieveQueryStats()
             sizeof(uint64_t),      // stride between results
             VK_QUERY_RESULT_64_BIT);
 
-        if (result.hasError())
+        if (result != VK_SUCCESS && result != VK_NOT_READY)
         {
-            DUSK_ERROR("Failed to retrieve query results for stats recorder at frame {}: {}", m_frameCounter, result.toString());
+            DUSK_ERROR("Failed to retrieve query results for stats recorder at frame {}", m_frameCounter);
             return;
         }
 
@@ -83,7 +87,7 @@ void StatsRecorder::retrieveQueryStats()
 
         // Pass times
         uint32_t totalPasses = m_frameStatsHistory[ringBufferIndex].passStats.size();
-        for (uint32_t index; index < totalPasses; ++index)
+        for (uint32_t index = 0u; index < totalPasses; ++index)
         {
             auto&    passStats      = m_frameStatsHistory[ringBufferIndex].passStats[index];
             uint32_t passQueryIndex = 2 + index * 2;
@@ -175,5 +179,6 @@ void StatsRecorder::recordGpuMemoryUsage(const VulkanGPUAllocator& gpuAllocator)
     frameStats.totalVramBudgetBytes     = totalHeapBudgetBytes;
     frameStats.totalVramBufferUsedBytes = gpuAllocator.allocatedBufferBytes;
     frameStats.totalVramImageUsedBytes  = gpuAllocator.allocatedImageBytes;
+}
 
 } // namespace dusk

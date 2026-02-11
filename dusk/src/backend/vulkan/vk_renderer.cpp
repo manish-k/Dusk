@@ -1,5 +1,7 @@
 #pragma once
 
+#include "stats_recorder.h"
+
 #include "vk_renderer.h"
 #include "debug/profiler.h"
 
@@ -72,6 +74,9 @@ VkCommandBuffer VulkanRenderer::beginFrame()
         DUSK_ERROR("beginFrame Failed to acquire swap chain image! {}", result.toString());
         return VK_NULL_HANDLE;
     }
+
+    // collect stats from N - MAX_FRAMES_IN_FLIGHT frames ago, as those should have finished GPU execution by now
+    StatsRecorder::get()->retrieveQueryStats();
 
     m_isFrameStarted              = true;
     VkCommandBuffer commandBuffer = getCurrentCommandBuffer();

@@ -98,6 +98,7 @@ public:
     void                  freeImageSampler(VulkanSampler* sampler) const;
 
     static VulkanContext& getSharedVulkanContext() { return s_sharedVkContext; }
+    VulkanGPUAllocator&   getGPUAllocator() { return m_gpuAllocator; }
 
 #ifdef VK_RENDERER_DEBUG
     static VKAPI_ATTR VkBool32 VKAPI_CALL vulkanDebugMessengerCallback(

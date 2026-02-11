@@ -1,4 +1,5 @@
 #include "engine.h"
+#include "stats_recorder.h"
 
 #include "core/application.h"
 #include "platform/window.h"
@@ -76,6 +77,13 @@ bool Engine::start(Shared<Application> app)
         return false;
     }
 
+    m_statsRecorder = createUnique<StatsRecorder>(m_gfxDevice->getSharedVulkanContext());
+    if (!m_statsRecorder->init(m_renderer->getMaxFramesCount()))
+    {
+        DUSK_ERROR("Stats recorder initialization failed");
+        return false;
+    }
+
     m_running   = true;
     m_paused    = false;
 
@@ -97,7 +105,6 @@ bool Engine::start(Shared<Application> app)
         m_lightsSystem->getLightsDescriptorSetLayout());
 
     prepareRenderGraphResources();
-    // executeBRDFLUTcomputePipeline();
 
     m_editorUI = createUnique<EditorUI>();
     if (!m_editorUI->init(*m_window))
@@ -147,6 +154,9 @@ void Engine::shutdown()
 {
     m_renderer->deviceWaitIdle();
 
+    m_statsRecorder->cleanup();
+    m_statsRecorder     = nullptr;
+
     m_basicRenderSystem = nullptr;
 
     m_lightsSystem      = nullptr;
@@ -172,13 +182,17 @@ void Engine::onUpdate(TimeStep dt)
 {
     DUSK_PROFILE_FUNCTION;
 
-    const uint32_t currentFrameIndex = m_renderer->getCurrentFrameIndex();
+    m_statsRecorder->recordCpuFrameTime(m_deltaTime);
 
-    const std::string sectionName = std::format("frame_in_flight_{}", currentFrameIndex);
+    const uint32_t    currentFrameIndex = m_renderer->getCurrentFrameIndex();
+
+    const std::string sectionName       = std::format("frame_in_flight_{}", currentFrameIndex);
     ZoneName(sectionName.c_str(), sectionName.size());
 
     if (VkCommandBuffer commandBuffer = m_renderer->beginFrame())
     {
+        m_statsRecorder->beginFrame(commandBuffer);
+
         auto      extent = m_renderer->getSwapChain().getCurrentExtent();
 
         FrameData frameData {
@@ -254,6 +268,9 @@ void Engine::onUpdate(TimeStep dt)
         }
 
         renderFrame(frameData);
+
+        m_statsRecorder->recordGpuMemoryUsage(m_gfxDevice->getGPUAllocator());
+        m_statsRecorder->endFrame(commandBuffer);
 
         m_renderer->endFrame();
 

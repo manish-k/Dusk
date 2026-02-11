@@ -30,14 +30,15 @@ class LightsSystem;
 class TextureDB;
 class VulkanRenderer;
 class VkGfxDevice;
+class StatsRecorder;
 
 struct Material;
 struct VkGfxDescriptorPool;
 struct VkGfxDescriptorSetLayout;
 struct VkGfxDescriptorSet;
 
-static constexpr uint32_t    MAX_MATERIALS_COUNT   = 1000;
-static constexpr uint32_t    MAX_RENDERABLES_COUNT = 10000;
+static constexpr uint32_t MAX_MATERIALS_COUNT   = 1000;
+static constexpr uint32_t MAX_RENDERABLES_COUNT = 10000;
 
 struct RenderGraphResources
 {
@@ -178,6 +179,7 @@ private:
     Unique<Environment>                      m_environment       = nullptr;
     Unique<BasicRenderSystem>                m_basicRenderSystem = nullptr;
     Unique<LightsSystem>                     m_lightsSystem      = nullptr;
+    Unique<StatsRecorder>                    m_statsRecorder     = nullptr;
 
     Unique<TextureDB>                        m_textureDB         = nullptr;
 

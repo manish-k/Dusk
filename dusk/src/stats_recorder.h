@@ -4,6 +4,7 @@
 
 #include "core/dtime.h"
 #include "backend/vulkan/vk.h"
+#include "renderer/render_graph.h"
 
 namespace dusk
 {
@@ -36,7 +37,7 @@ public:
     StatsRecorder(VulkanContext ctx);
     ~StatsRecorder() = default;
 
-    void init(uint32_t maxFramesInFlightCount);
+    bool init(uint32_t maxFramesInFlightCount);
     void cleanup();
     void retrieveQueryStats();
 
@@ -48,6 +49,9 @@ public:
     void recordCpuFrameTime(TimeStepNs cpuFrameTime);
     void recordGpuMemoryUsage(const VulkanGPUAllocator& gpuAllocator);
 
+public:
+    static StatsRecorder* get() { return s_instance; };
+
 private:
     Array<FrameStats, MAX_FRAMES_HISTORY> m_frameStatsHistory      = { {} };
 
@@ -57,5 +61,8 @@ private:
     VkDevice                              m_device                 = VK_NULL_HANDLE;
     VulkanGPUAllocator                    m_gpuAllocator           = {};
     VkQueryPool                           m_queryPool              = VK_NULL_HANDLE;
+
+private:
+    static StatsRecorder* s_instance;
 };
 } // namespace dusk

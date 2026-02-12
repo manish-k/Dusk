@@ -1,16 +1,19 @@
 #include "stats_recorder.h"
 
 #include "renderer/render_graph.h"
+#include "backend/vulkan/vk_device.h"
 
 namespace dusk
 {
 
 StatsRecorder* StatsRecorder::s_instance = nullptr;
 
-StatsRecorder::StatsRecorder(VulkanContext ctx) :
-    m_device(ctx.device),
-    m_gpuAllocator(ctx.gpuAllocator)
+StatsRecorder::StatsRecorder()
 {
+    auto& vkContext = VkGfxDevice::getSharedVulkanContext();
+
+    m_device        = vkContext.device;
+
     DASSERT(!s_instance, "Stats recorder instance already exists");
     s_instance = this;
 }

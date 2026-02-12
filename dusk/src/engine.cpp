@@ -77,7 +77,7 @@ bool Engine::start(Shared<Application> app)
         return false;
     }
 
-    m_statsRecorder = createUnique<StatsRecorder>(m_gfxDevice->getSharedVulkanContext());
+    m_statsRecorder = createUnique<StatsRecorder>();
     if (!m_statsRecorder->init(m_renderer->getMaxFramesCount()))
     {
         DUSK_ERROR("Stats recorder initialization failed");

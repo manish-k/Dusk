@@ -47,8 +47,9 @@ struct AggregateStats
 class StatsRecorder
 {
 public:
-    StatsRecorder(VulkanContext ctx);
+    StatsRecorder();
     ~StatsRecorder() = default;
+
     /**
      * @brief Initialize the StatsRecorder
      * @param total frames in flight
@@ -134,7 +135,6 @@ private:
     uint32_t                              m_maxFramesInFlightCount = 0;
 
     VkDevice                              m_device                 = VK_NULL_HANDLE;
-    VulkanGPUAllocator                    m_gpuAllocator           = {};
     VkQueryPool                           m_queryPool              = VK_NULL_HANDLE;
 
     // Aggregate stats based on history buffer

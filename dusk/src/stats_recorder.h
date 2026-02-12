@@ -10,6 +10,7 @@ namespace dusk
 {
 static constexpr uint32_t MAX_FRAMES_HISTORY    = 100;
 static constexpr uint32_t MAX_QUERIES_PER_FRAME = 2 + MAX_RENDER_GRAPH_PASSES * 2; // 2 queries for frame begin/end + 2 queries per pass (begin/end)
+static constexpr float    EMA_ALPHA             = 0.2f;                            // Smoothing factor for Exponential Moving Average
 
 struct PassStats
 {
@@ -31,6 +32,18 @@ struct FrameStats
     uint64_t                totalVramImageUsedBytes  = 0;
 };
 
+struct AggregateStats
+{
+    TimeStepNs rollingSumCpuTimeNs = {};
+    TimeStepNs avgCpuTimeNs        = {};
+    TimeStepNs maxCpuTimeNs        = {};
+    TimeStepNs emaCpuTimeNs        = {};
+    TimeStepNs rollingSumGpuTimeNs = {};
+    TimeStepNs avgGpuTimeNs        = {};
+    TimeStepNs maxGpuTimeNs        = {};
+    TimeStepNs emaGpuTimeNs        = {};
+};
+
 class StatsRecorder
 {
 public:
@@ -43,11 +56,17 @@ public:
 
     void beginFrame(VkCommandBuffer cmdBuffer);
     void endFrame(VkCommandBuffer cmdBuffer);
-    void beginPass(VkCommandBuffer cmdBuffer, const std::string& passName);
-    void endPass(VkCommandBuffer cmdBuffer);
+    void beginPass(
+        VkCommandBuffer    cmdBuffer,
+        const std::string& passName,
+        uint32_t           passOrderedIndex);
+    void           endPass(VkCommandBuffer cmdBuffer, uint32_t passOrderedIndex);
 
-    void recordCpuFrameTime(TimeStepNs cpuFrameTime);
-    void recordGpuMemoryUsage(const VulkanGPUAllocator& gpuAllocator);
+    void           recordCpuFrameTime(TimeStepNs cpuFrameTime);
+    void           recordGpuMemoryUsage(const VulkanGPUAllocator& gpuAllocator);
+
+    AggregateStats getAggregateStats() const { return m_aggregateStats; }
+    FrameStats     getThirdLastFrameStats() const { return m_frameStatsHistory[(m_frameCounter + MAX_FRAMES_HISTORY - 3) % MAX_FRAMES_HISTORY]; }
 
 public:
     static StatsRecorder* get() { return s_instance; };
@@ -61,6 +80,8 @@ private:
     VkDevice                              m_device                 = VK_NULL_HANDLE;
     VulkanGPUAllocator                    m_gpuAllocator           = {};
     VkQueryPool                           m_queryPool              = VK_NULL_HANDLE;
+
+    AggregateStats                        m_aggregateStats         = {};
 
 private:
     static StatsRecorder* s_instance;

@@ -147,11 +147,11 @@ void RenderGraph::execute(const FrameData& frameData)
     auto*    statsRecorder = StatsRecorder::get();
 
     uint32_t passCount     = static_cast<uint32_t>(m_passExecutionOrder.size());
-    for (uint32_t passIdx = 0u; passIdx < passCount; ++passIdx)
+    for (uint32_t passExecutionIdx = 0u; passExecutionIdx < passCount; ++passExecutionIdx)
     {
-        auto& pass = m_passes[m_passExecutionOrder[passIdx]];
+        auto& pass = m_passes[m_passExecutionOrder[passExecutionIdx]];
 
-        statsRecorder->beginPass(frameData.commandBuffer, pass.name);
+        statsRecorder->beginPass(frameData.commandBuffer, pass.name, passExecutionIdx);
 
         insertPassBarriers(frameData, pass);
 
@@ -172,7 +172,7 @@ void RenderGraph::execute(const FrameData& frameData)
             vkdebug::cmdEndLabel(frameData.commandBuffer);
         }
 
-        statsRecorder->endPass(frameData.commandBuffer);
+        statsRecorder->endPass(frameData.commandBuffer, passExecutionIdx);
     }
 }
 

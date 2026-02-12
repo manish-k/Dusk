@@ -73,6 +73,8 @@ void StatsRecorder::retrieveQueryStats()
             sizeof(uint64_t),      // stride between results
             VK_QUERY_RESULT_64_BIT);
 
+        // Note: VK_NOT_READY will be return always because we are using single query pool
+        // for all frames in flight querries . Multiple query pools can be considered to avoid this.
         if (result != VK_SUCCESS && result != VK_NOT_READY)
         {
             DUSK_ERROR("Failed to retrieve query results for stats recorder at frame {}", m_frameCounter);
@@ -113,6 +115,17 @@ void StatsRecorder::beginFrame(VkCommandBuffer cmdBuffer)
         VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
         m_queryPool,
         queryIndex); // write gpu timestamp for frame begin at the first index
+
+    // reset frame stats for the current frame
+    auto& frameStats                    = m_frameStatsHistory[m_frameCounter % MAX_FRAMES_HISTORY];
+    frameStats.cpuFrameTime             = {};
+    frameStats.gpuFrameTime             = {};
+    frameStats.verticesCount            = 0;
+    frameStats.totalVramUsedBytes       = 0;
+    frameStats.totalVramBudgetBytes     = 0;
+    frameStats.totalVramBufferUsedBytes = 0;
+    frameStats.totalVramImageUsedBytes  = 0;
+    frameStats.passStats.clear();
 }
 
 void StatsRecorder::endFrame(VkCommandBuffer cmdBuffer)
@@ -125,13 +138,40 @@ void StatsRecorder::endFrame(VkCommandBuffer cmdBuffer)
         m_queryPool,
         queryIndex + 1); // write gpu timestamp for frame end at the second index
 
+    // Aggregate stats calculation
+    if (m_frameCounter > 0)
+    {
+        uint32_t currentFrameIndex = m_frameCounter % MAX_FRAMES_HISTORY;
+        uint32_t oldestFrameIndex  = (m_frameCounter + MAX_FRAMES_HISTORY - 1) % MAX_FRAMES_HISTORY;
+        if (m_frameCounter < MAX_FRAMES_HISTORY)
+        {
+            oldestFrameIndex = 0;
+        }
+
+        uint32_t    windowSize        = std::min(m_frameCounter + 1, MAX_FRAMES_HISTORY);
+        const auto& oldestFrameStats  = m_frameStatsHistory[oldestFrameIndex];
+        const auto& currentFrameStats = m_frameStatsHistory[currentFrameIndex];
+
+        m_aggregateStats.rollingSumCpuTimeNs += currentFrameStats.cpuFrameTime - oldestFrameStats.cpuFrameTime;
+        m_aggregateStats.avgCpuTimeNs = m_aggregateStats.rollingSumCpuTimeNs / windowSize;
+        m_aggregateStats.maxCpuTimeNs = std::max(m_aggregateStats.maxCpuTimeNs, currentFrameStats.cpuFrameTime);
+        m_aggregateStats.emaCpuTimeNs = (EMA_ALPHA * currentFrameStats.cpuFrameTime) + ((1.0f - EMA_ALPHA) * m_aggregateStats.emaCpuTimeNs);
+
+        m_aggregateStats.rollingSumGpuTimeNs += currentFrameStats.gpuFrameTime - oldestFrameStats.gpuFrameTime;
+        m_aggregateStats.avgGpuTimeNs = m_aggregateStats.rollingSumGpuTimeNs / windowSize;
+        m_aggregateStats.maxGpuTimeNs = std::max(m_aggregateStats.maxGpuTimeNs, currentFrameStats.gpuFrameTime);
+        m_aggregateStats.emaGpuTimeNs = (EMA_ALPHA * currentFrameStats.gpuFrameTime) + ((1.0f - EMA_ALPHA) * m_aggregateStats.emaGpuTimeNs);
+    }
+
     m_frameCounter++;
 }
 
-void StatsRecorder::beginPass(VkCommandBuffer cmdBuffer, const std::string& passName)
+void StatsRecorder::beginPass(
+    VkCommandBuffer    cmdBuffer,
+    const std::string& passName,
+    uint32_t           passOrderedIndex)
 {
-    uint32_t passCount  = m_frameStatsHistory[m_frameCounter % MAX_FRAMES_HISTORY].passStats.size();
-    uint32_t queryIndex = (m_frameCounter % m_maxFramesInFlightCount) * MAX_QUERIES_PER_FRAME + 2 + passCount * 2;
+    uint32_t queryIndex = (m_frameCounter % m_maxFramesInFlightCount) * MAX_QUERIES_PER_FRAME + 2 + passOrderedIndex * 2;
 
     vkCmdWriteTimestamp(
         cmdBuffer,
@@ -142,16 +182,15 @@ void StatsRecorder::beginPass(VkCommandBuffer cmdBuffer, const std::string& pass
     m_frameStatsHistory[m_frameCounter % MAX_FRAMES_HISTORY].passStats.emplace_back(passName, TimeStepNs(0));
 }
 
-void StatsRecorder::endPass(VkCommandBuffer cmdBuffer)
+void StatsRecorder::endPass(VkCommandBuffer cmdBuffer, uint32_t passOrderedIndex)
 {
-    uint32_t passCount  = m_frameStatsHistory[m_frameCounter % MAX_FRAMES_HISTORY].passStats.size();
-    uint32_t queryIndex = (m_frameCounter % m_maxFramesInFlightCount) * MAX_QUERIES_PER_FRAME + 2 + (passCount - 1) * 2 + 1;
+    uint32_t queryIndex = (m_frameCounter % m_maxFramesInFlightCount) * MAX_QUERIES_PER_FRAME + 2 + passOrderedIndex * 2;
 
     vkCmdWriteTimestamp(
         cmdBuffer,
         VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
         m_queryPool,
-        queryIndex); // write gpu timestamp for pass end
+        queryIndex + 1); // write gpu timestamp for pass end
 }
 
 void StatsRecorder::recordCpuFrameTime(TimeStepNs cpuFrameTime)

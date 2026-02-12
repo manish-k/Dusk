@@ -182,8 +182,6 @@ void Engine::onUpdate(TimeStep dt)
 {
     DUSK_PROFILE_FUNCTION;
 
-    m_statsRecorder->recordCpuFrameTime(m_deltaTime);
-
     const uint32_t    currentFrameIndex = m_renderer->getCurrentFrameIndex();
 
     const std::string sectionName       = std::format("frame_in_flight_{}", currentFrameIndex);
@@ -192,6 +190,8 @@ void Engine::onUpdate(TimeStep dt)
     if (VkCommandBuffer commandBuffer = m_renderer->beginFrame())
     {
         m_statsRecorder->beginFrame(commandBuffer);
+
+        m_statsRecorder->recordCpuFrameTime(m_deltaTime);
 
         auto      extent = m_renderer->getSwapChain().getCurrentExtent();
 
@@ -269,7 +269,8 @@ void Engine::onUpdate(TimeStep dt)
 
         renderFrame(frameData);
 
-        m_statsRecorder->recordGpuMemoryUsage(m_gfxDevice->getGPUAllocator());
+        const auto* gpuAllocator = m_gfxDevice->getGPUAllocator();
+        m_statsRecorder->recordGpuMemoryUsage(gpuAllocator);
         m_statsRecorder->endFrame(commandBuffer);
 
         m_renderer->endFrame();

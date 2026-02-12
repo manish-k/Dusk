@@ -10,9 +10,10 @@ StatsRecorder* StatsRecorder::s_instance = nullptr;
 
 StatsRecorder::StatsRecorder()
 {
-    auto& vkContext = VkGfxDevice::getSharedVulkanContext();
+    auto& vkContext  = VkGfxDevice::getSharedVulkanContext();
 
-    m_device        = vkContext.device;
+    m_device         = vkContext.device;
+    m_physicalDevice = vkContext.physicalDevice;
 
     DASSERT(!s_instance, "Stats recorder instance already exists");
     s_instance = this;
@@ -144,26 +145,35 @@ void StatsRecorder::endFrame(VkCommandBuffer cmdBuffer)
     // Aggregate stats calculation
     if (m_frameCounter > 0)
     {
-        uint32_t currentFrameIndex = m_frameCounter % MAX_FRAMES_HISTORY;
-        uint32_t oldestFrameIndex  = (m_frameCounter + MAX_FRAMES_HISTORY - 1) % MAX_FRAMES_HISTORY;
+        uint32_t    currentFrameIndex         = m_frameCounter % MAX_FRAMES_HISTORY;
+        uint32_t    lastRecordedGPUFrameIndex = (m_frameCounter + MAX_FRAMES_HISTORY - m_maxFramesInFlightCount) % MAX_FRAMES_HISTORY;
+
+        const auto& currentFrameStats         = m_frameStatsHistory[currentFrameIndex];
+        const auto& lastRecordedGPUFrameStats = m_frameStatsHistory[lastRecordedGPUFrameIndex];
+        uint32_t    windowSize                = std::min(m_frameCounter + 1, MAX_FRAMES_HISTORY);
+
+        // TODO:: rolling sum calculations are buggy
         if (m_frameCounter < MAX_FRAMES_HISTORY)
         {
-            oldestFrameIndex = 0;
+            m_aggregateStats.rollingSumCpuTimeNs += currentFrameStats.cpuFrameTime;
+            m_aggregateStats.rollingSumGpuTimeNs += lastRecordedGPUFrameStats.gpuFrameTime;
+        }
+        else
+        {
+            uint32_t    oldestFrameIndex = (m_frameCounter + MAX_FRAMES_HISTORY - 1) % MAX_FRAMES_HISTORY;
+            const auto& oldestFrameStats = m_frameStatsHistory[oldestFrameIndex];
+
+            m_aggregateStats.rollingSumCpuTimeNs += currentFrameStats.cpuFrameTime - oldestFrameStats.cpuFrameTime;
+            m_aggregateStats.rollingSumGpuTimeNs += lastRecordedGPUFrameStats.gpuFrameTime - oldestFrameStats.gpuFrameTime;
         }
 
-        uint32_t    windowSize        = std::min(m_frameCounter + 1, MAX_FRAMES_HISTORY);
-        const auto& oldestFrameStats  = m_frameStatsHistory[oldestFrameIndex];
-        const auto& currentFrameStats = m_frameStatsHistory[currentFrameIndex];
-
-        m_aggregateStats.rollingSumCpuTimeNs += currentFrameStats.cpuFrameTime - oldestFrameStats.cpuFrameTime;
         m_aggregateStats.avgCpuTimeNs = m_aggregateStats.rollingSumCpuTimeNs / windowSize;
         m_aggregateStats.maxCpuTimeNs = std::max(m_aggregateStats.maxCpuTimeNs, currentFrameStats.cpuFrameTime);
         m_aggregateStats.emaCpuTimeNs = (EMA_ALPHA * currentFrameStats.cpuFrameTime) + ((1.0f - EMA_ALPHA) * m_aggregateStats.emaCpuTimeNs);
 
-        m_aggregateStats.rollingSumGpuTimeNs += currentFrameStats.gpuFrameTime - oldestFrameStats.gpuFrameTime;
         m_aggregateStats.avgGpuTimeNs = m_aggregateStats.rollingSumGpuTimeNs / windowSize;
-        m_aggregateStats.maxGpuTimeNs = std::max(m_aggregateStats.maxGpuTimeNs, currentFrameStats.gpuFrameTime);
-        m_aggregateStats.emaGpuTimeNs = (EMA_ALPHA * currentFrameStats.gpuFrameTime) + ((1.0f - EMA_ALPHA) * m_aggregateStats.emaGpuTimeNs);
+        m_aggregateStats.maxGpuTimeNs = std::max(m_aggregateStats.maxGpuTimeNs, lastRecordedGPUFrameStats.gpuFrameTime);
+        m_aggregateStats.emaGpuTimeNs = (EMA_ALPHA * lastRecordedGPUFrameStats.gpuFrameTime) + ((1.0f - EMA_ALPHA) * m_aggregateStats.emaGpuTimeNs);
     }
 
     m_frameCounter++;
@@ -201,26 +211,43 @@ void StatsRecorder::recordCpuFrameTime(TimeStepNs cpuFrameTime)
     m_frameStatsHistory[m_frameCounter % MAX_FRAMES_HISTORY].cpuFrameTime = cpuFrameTime;
 }
 
-void StatsRecorder::recordGpuMemoryUsage(const VulkanGPUAllocator& gpuAllocator)
+void StatsRecorder::recordGpuMemoryUsage(const VulkanGPUAllocator* gpuAllocator)
 {
     auto&     frameStats = m_frameStatsHistory[m_frameCounter % MAX_FRAMES_HISTORY];
 
+    VkPhysicalDeviceMemoryProperties props;
+    vkGetPhysicalDeviceMemoryProperties(m_physicalDevice, &props);
+
     VmaBudget budgets[VK_MAX_MEMORY_HEAPS];
-    vmaGetHeapBudgets(gpuAllocator.vmaAllocator, budgets);
+    vmaGetHeapBudgets(gpuAllocator->vmaAllocator, budgets);
 
-    uint64_t totalHeapBudgetBytes = 0;
-    uint64_t totalHeapUsageBytes  = 0;
+    uint64_t used   = 0;
+    uint64_t budget = 0;
+    uint64_t total  = 0;
 
-    for (uint32_t heapIndex = 0; heapIndex < VK_MAX_MEMORY_HEAPS; ++heapIndex)
+    for (uint32_t i = 0; i < props.memoryHeapCount; ++i)
     {
-        totalHeapBudgetBytes += budgets[heapIndex].budget;
-        totalHeapUsageBytes += budgets[heapIndex].usage;
+        if (props.memoryHeaps[i].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT)
+        {
+            used += budgets[i].usage;
+            budget += budgets[i].budget;
+            total += props.memoryHeaps[i].size;
+        }
     }
+    frameStats.totalVramUsedBytes       = used;
+    frameStats.totalVramBudgetBytes     = budget;
+    frameStats.totalVram                = total;
+    frameStats.totalVramBufferUsedBytes = gpuAllocator->allocatedBufferBytes;
+    frameStats.totalVramImageUsedBytes  = gpuAllocator->allocatedImageBytes;
+}
 
-    frameStats.totalVramUsedBytes       = totalHeapUsageBytes;
-    frameStats.totalVramBudgetBytes     = totalHeapBudgetBytes;
-    frameStats.totalVramBufferUsedBytes = gpuAllocator.allocatedBufferBytes;
-    frameStats.totalVramImageUsedBytes  = gpuAllocator.allocatedImageBytes;
+FrameStats StatsRecorder::getThirdLastFrameStats() const
+{
+    if (m_frameCounter < 3)
+    {
+        return FrameStats {};
+    }
+    return m_frameStatsHistory[(m_frameCounter + MAX_FRAMES_HISTORY - 3) % MAX_FRAMES_HISTORY];
 }
 
 } // namespace dusk

@@ -10,7 +10,7 @@ namespace dusk
 {
 static constexpr uint32_t MAX_FRAMES_HISTORY    = 100;
 static constexpr uint32_t MAX_QUERIES_PER_FRAME = 2 + MAX_RENDER_GRAPH_PASSES * 2; // 2 queries for frame begin/end + 2 queries per pass (begin/end)
-static constexpr float    EMA_ALPHA             = 0.2f;                            // Smoothing factor for Exponential Moving Average
+static constexpr float    EMA_ALPHA             = 0.05f;                           // Smoothing factor for Exponential Moving Average
 
 struct PassStats
 {
@@ -23,11 +23,12 @@ struct FrameStats
     TimeStepNs              cpuFrameTime             = {};
     TimeStepNs              gpuFrameTime             = {};
 
-    uint64_t                verticesCount            = 0;
-    uint64_t                totalVramUsedBytes       = 0;
-    uint64_t                totalVramBudgetBytes     = 0;
-    uint64_t                totalVramBufferUsedBytes = 0;
-    uint64_t                totalVramImageUsedBytes  = 0;
+    uint64_t                verticesCount            = 0LLU;
+    uint64_t                totalVramUsedBytes       = 0LLU;
+    uint64_t                totalVramBudgetBytes     = 0LLU;
+    uint64_t                totalVram                = 0LLU;
+    uint64_t                totalVramBufferUsedBytes = 0LLU;
+    uint64_t                totalVramImageUsedBytes  = 0LLU;
 
     DynamicArray<PassStats> passStats                = {}; // preserving execution order
 };
@@ -68,7 +69,7 @@ public:
     void retrieveQueryStats();
 
     /**
-     * @brief Begins collection of current frame stats
+     * @brief Begins collection of current frame stats. All record commands should be called after this.
      * @param command buffer for the current frame
      */
     void beginFrame(VkCommandBuffer cmdBuffer);
@@ -105,9 +106,9 @@ public:
 
     /**
      * @brief Record GPU memory usage for the current session
-     * @param GPU allocator
+     * @param GPU allocator pointer
      */
-    void recordGpuMemoryUsage(const VulkanGPUAllocator& gpuAllocator);
+    void recordGpuMemoryUsage(const VulkanGPUAllocator* gpuAllocator);
 
     /**
      * @brief Get aggregate stats based on the defined window size
@@ -119,7 +120,7 @@ public:
      * @brief Returns the FrameStats for the frame that occurred three frames ago
      * @return A FrameStats object containing stats of the frame
      */
-    FrameStats getThirdLastFrameStats() const { return m_frameStatsHistory[(m_frameCounter + MAX_FRAMES_HISTORY - 3) % MAX_FRAMES_HISTORY]; }
+    FrameStats getThirdLastFrameStats() const;
 
 public:
     /**
@@ -135,6 +136,7 @@ private:
     uint32_t                              m_maxFramesInFlightCount = 0;
 
     VkDevice                              m_device                 = VK_NULL_HANDLE;
+    VkPhysicalDevice                      m_physicalDevice         = VK_NULL_HANDLE;
     VkQueryPool                           m_queryPool              = VK_NULL_HANDLE;
 
     // Aggregate stats based on history buffer

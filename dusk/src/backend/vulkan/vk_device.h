@@ -98,7 +98,7 @@ public:
     void                  freeImageSampler(VulkanSampler* sampler) const;
 
     static VulkanContext& getSharedVulkanContext() { return s_sharedVkContext; }
-    VulkanGPUAllocator&   getGPUAllocator() { return m_gpuAllocator; }
+    VulkanGPUAllocator*   getGPUAllocator() { return &m_gpuAllocator; }
 
 #ifdef VK_RENDERER_DEBUG
     static VKAPI_ATTR VkBool32 VKAPI_CALL vulkanDebugMessengerCallback(
@@ -115,22 +115,22 @@ public:
 private:
     GLFWVulkanWindow&  m_window;
 
-    VkInstance         m_instance            = VK_NULL_HANDLE;
-    VkPhysicalDevice   m_physicalDevice      = VK_NULL_HANDLE;
-    VkDevice           m_device              = VK_NULL_HANDLE;
-    VkCommandPool      m_commandPool         = VK_NULL_HANDLE;
-    VkCommandPool      m_transferCommandPool = VK_NULL_HANDLE;
-    VkSurfaceKHR       m_surface             = VK_NULL_HANDLE;
+    VkInstance         m_instance              = VK_NULL_HANDLE;
+    VkPhysicalDevice   m_physicalDevice        = VK_NULL_HANDLE;
+    VkDevice           m_device                = VK_NULL_HANDLE;
+    VkCommandPool      m_commandPool           = VK_NULL_HANDLE;
+    VkCommandPool      m_transferCommandPool   = VK_NULL_HANDLE;
+    VkSurfaceKHR       m_surface               = VK_NULL_HANDLE;
 
-    VulkanGPUAllocator m_gpuAllocator {};
+    VulkanGPUAllocator m_gpuAllocator          = {};
 
-    HashSet<size_t>    m_instanceExtensionsSet {};
-    HashSet<size_t>    m_layersSet {};
+    HashSet<size_t>    m_instanceExtensionsSet = {};
+    HashSet<size_t>    m_layersSet             = {};
 
-    VkQueue            m_graphicsQueue = VK_NULL_HANDLE;
-    VkQueue            m_presentQueue  = VK_NULL_HANDLE;
-    VkQueue            m_computeQueue  = VK_NULL_HANDLE;
-    VkQueue            m_transferQueue = VK_NULL_HANDLE;
+    VkQueue            m_graphicsQueue         = VK_NULL_HANDLE;
+    VkQueue            m_presentQueue          = VK_NULL_HANDLE;
+    VkQueue            m_computeQueue          = VK_NULL_HANDLE;
+    VkQueue            m_transferQueue         = VK_NULL_HANDLE;
 
 #ifdef VK_RENDERER_DEBUG
     VkDebugUtilsMessengerEXT m_debugMessenger = VK_NULL_HANDLE;

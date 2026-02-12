@@ -55,7 +55,7 @@ struct VulkanContext
     VkQueue                    computeQueue;
     VkQueue                    transferQueue;
 
-    VulkanGPUAllocator         gpuAllocator;
+    VulkanGPUAllocator*        gpuAllocator;
 };
 
 struct VulkanSampler

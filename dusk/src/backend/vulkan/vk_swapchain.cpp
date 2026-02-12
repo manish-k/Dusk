@@ -18,7 +18,7 @@ Error VkGfxSwapChain::create(VulkanContext& vkContext, VkGfxSwapChainParams& par
 
     m_oldSwapChain   = oldSwapChain;
 
-    m_gpuAllocator   = &vkContext.gpuAllocator;
+    m_gpuAllocator   = vkContext.gpuAllocator;
 
     Error err        = createSwapChain(params);
     if (err != Error::Ok)
@@ -428,7 +428,7 @@ Error VkGfxSwapChain::createDepthResources()
 
         // create image
         VulkanResult result = vulkan::allocateGPUImage(
-            *m_gpuAllocator,
+            m_gpuAllocator,
             imageInfo,
             VMA_MEMORY_USAGE_AUTO,
             VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
@@ -472,7 +472,7 @@ void VkGfxSwapChain::destroyDepthResources()
 
     for (auto& depthImage : m_depthImages)
     {
-        vulkan::freeGPUImage(*m_gpuAllocator, &depthImage);
+        vulkan::freeGPUImage(m_gpuAllocator, &depthImage);
     }
     m_depthImages.clear();
 }

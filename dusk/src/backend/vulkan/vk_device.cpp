@@ -60,13 +60,13 @@ Error VkGfxDevice::initGfxDevice()
     }
 
     // create GPU allocator using vma
-    result = vulkan::createGPUAllocator(s_sharedVkContext, m_gpuAllocator);
+    result = vulkan::createGPUAllocator(s_sharedVkContext, &m_gpuAllocator);
     if (result.hasError())
     {
         DUSK_ERROR("Error in creating vma gpu allocator {}", result.toString());
         return Error::InitializationFailed;
     }
-    VkGfxDevice::s_sharedVkContext.gpuAllocator = m_gpuAllocator;
+    VkGfxDevice::s_sharedVkContext.gpuAllocator = &m_gpuAllocator;
 
     return Error::Ok;
 }
@@ -75,7 +75,7 @@ void VkGfxDevice::cleanupGfxDevice()
 {
     vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
 
-    vulkan::destroyGPUAllocator(m_gpuAllocator);
+    vulkan::destroyGPUAllocator(&m_gpuAllocator);
 
     destroyDevice();
     destroyInstance();
@@ -789,7 +789,7 @@ VulkanResult VkGfxDevice::createBuffer(const GfxBufferParams& params, VulkanGfxB
     bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     // allocation
-    VulkanResult result = vulkan::allocateGPUBuffer(m_gpuAllocator, bufferCreateInfo, VMA_MEMORY_USAGE_AUTO, vulkan::getVmaAllocationCreateFlagBits(params.memoryType), pOutBuffer);
+    VulkanResult result = vulkan::allocateGPUBuffer(&m_gpuAllocator, bufferCreateInfo, VMA_MEMORY_USAGE_AUTO, vulkan::getVmaAllocationCreateFlagBits(params.memoryType), pOutBuffer);
 
     if (result.hasError())
     {
@@ -811,7 +811,7 @@ VulkanResult VkGfxDevice::createBuffer(const GfxBufferParams& params, VulkanGfxB
 
 void VkGfxDevice::freeBuffer(VulkanGfxBuffer* buffer)
 {
-    vulkan::freeGPUBuffer(m_gpuAllocator, buffer);
+    vulkan::freeGPUBuffer(&m_gpuAllocator, buffer);
 }
 
 void VkGfxDevice::copyBuffer(
@@ -834,27 +834,27 @@ void VkGfxDevice::copyBuffer(
 
 void VkGfxDevice::mapBuffer(VulkanGfxBuffer* buffer)
 {
-    vulkan::mapGPUMemory(m_gpuAllocator, buffer->allocation, &buffer->mappedMemory);
+    vulkan::mapGPUMemory(&m_gpuAllocator, buffer->allocation, &buffer->mappedMemory);
 }
 
 void VkGfxDevice::unmapBuffer(VulkanGfxBuffer* buffer)
 {
-    vulkan::unmapGPUMemory(m_gpuAllocator, buffer->allocation);
+    vulkan::unmapGPUMemory(&m_gpuAllocator, buffer->allocation);
 }
 
 void VkGfxDevice::flushBuffer(VulkanGfxBuffer* buffer)
 {
-    vulkan::flushCPUMemory(m_gpuAllocator, { buffer->allocation }, { 0 }, { buffer->sizeInBytes });
+    vulkan::flushCPUMemory(&m_gpuAllocator, { buffer->allocation }, { 0 }, { buffer->sizeInBytes });
 }
 
 void VkGfxDevice::flushBufferOffset(VulkanGfxBuffer* buffer, uint32_t offset, size_t size)
 {
-    vulkan::flushCPUMemory(m_gpuAllocator, { buffer->allocation }, { offset }, { size });
+    vulkan::flushCPUMemory(&m_gpuAllocator, { buffer->allocation }, { offset }, { size });
 }
 
 void VkGfxDevice::writeToBuffer(VulkanGfxBuffer* buffer, void* hostBlock, VkDeviceSize offset, VkDeviceSize size)
 {
-    vulkan::writeToAllocation(m_gpuAllocator, hostBlock, buffer->allocation, offset, size);
+    vulkan::writeToAllocation(&m_gpuAllocator, hostBlock, buffer->allocation, offset, size);
 }
 
 void VkGfxDevice::copyBufferToImage(

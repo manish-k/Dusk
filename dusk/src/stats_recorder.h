@@ -23,13 +23,13 @@ struct FrameStats
     TimeStepNs              cpuFrameTime             = {};
     TimeStepNs              gpuFrameTime             = {};
 
-    DynamicArray<PassStats> passStats                = {}; // preserving execution order
-
     uint64_t                verticesCount            = 0;
     uint64_t                totalVramUsedBytes       = 0;
     uint64_t                totalVramBudgetBytes     = 0;
     uint64_t                totalVramBufferUsedBytes = 0;
     uint64_t                totalVramImageUsedBytes  = 0;
+
+    DynamicArray<PassStats> passStats                = {}; // preserving execution order
 };
 
 struct AggregateStats
@@ -49,26 +49,82 @@ class StatsRecorder
 public:
     StatsRecorder(VulkanContext ctx);
     ~StatsRecorder() = default;
-
+    /**
+     * @brief Initialize the StatsRecorder
+     * @param total frames in flight
+     * @return true if initialization is successful, false otherwise
+     */
     bool init(uint32_t maxFramesInFlightCount);
+
+    /**
+     * @brief cleanup vulkan resources
+     */
     void cleanup();
+
+    /**
+     * @brief Retrieve query results from the GPU for N - total frames in flight
+     */
     void retrieveQueryStats();
 
+    /**
+     * @brief Begins collection of current frame stats
+     * @param command buffer for the current frame
+     */
     void beginFrame(VkCommandBuffer cmdBuffer);
+
+    /**
+     * @brief Ends collection of current frame stats
+     * @param command buffer for the current frame
+     */
     void endFrame(VkCommandBuffer cmdBuffer);
+
+    /**
+     * @brief Begins collection of pass stats in render graph execution
+     * @param command buffer for the current frame
+     * @param name of the pass
+     * @param index of pass in execution order of the render graph
+     */
     void beginPass(
         VkCommandBuffer    cmdBuffer,
         const std::string& passName,
         uint32_t           passOrderedIndex);
-    void           endPass(VkCommandBuffer cmdBuffer, uint32_t passOrderedIndex);
 
-    void           recordCpuFrameTime(TimeStepNs cpuFrameTime);
-    void           recordGpuMemoryUsage(const VulkanGPUAllocator& gpuAllocator);
+    /**
+     * @brief Ends collection of pass stats in render graph execution
+     * @param command buffer for the current frame
+     * @param index of pass in execution order of the render graph
+     */
+    void endPass(VkCommandBuffer cmdBuffer, uint32_t passOrderedIndex);
 
+    /**
+     * @brief Record CPU frame time for the current frame
+     * @param frame time in nanoseconds for the current frame
+     */
+    void recordCpuFrameTime(TimeStepNs cpuFrameTime);
+
+    /**
+     * @brief Record GPU memory usage for the current session
+     * @param GPU allocator
+     */
+    void recordGpuMemoryUsage(const VulkanGPUAllocator& gpuAllocator);
+
+    /**
+     * @brief Get aggregate stats based on the defined window size
+     * @return AggregateStats structure containing average, max, and EMA of CPU and GPU frame times
+     */
     AggregateStats getAggregateStats() const { return m_aggregateStats; }
-    FrameStats     getThirdLastFrameStats() const { return m_frameStatsHistory[(m_frameCounter + MAX_FRAMES_HISTORY - 3) % MAX_FRAMES_HISTORY]; }
+
+    /**
+     * @brief Returns the FrameStats for the frame that occurred three frames ago
+     * @return A FrameStats object containing stats of the frame
+     */
+    FrameStats getThirdLastFrameStats() const { return m_frameStatsHistory[(m_frameCounter + MAX_FRAMES_HISTORY - 3) % MAX_FRAMES_HISTORY]; }
 
 public:
+    /**
+     * @brief Get static instance of StatsRecorder
+     * @return Pointer to the StatsRecorder instance
+     */
     static StatsRecorder* get() { return s_instance; };
 
 private:
@@ -81,7 +137,8 @@ private:
     VulkanGPUAllocator                    m_gpuAllocator           = {};
     VkQueryPool                           m_queryPool              = VK_NULL_HANDLE;
 
-    AggregateStats                        m_aggregateStats         = {};
+    // Aggregate stats based on history buffer
+    AggregateStats m_aggregateStats = {};
 
 private:
     static StatsRecorder* s_instance;

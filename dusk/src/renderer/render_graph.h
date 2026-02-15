@@ -15,7 +15,7 @@ struct FrameData;
 struct GfxTexture;
 struct GfxBuffer;
 
-constexpr uint32_t MAX_RENDER_GRAPH_PASSES = 64;
+constexpr uint32_t MAX_RENDER_GRAPH_PASSES = 64u;
 
 using RecordCmdBuffFunction                = std::function<void(const FrameData&)>;
 
@@ -25,14 +25,10 @@ struct LoadStoreState
     GfxStoreOperation storeOp = GfxStoreOperation::Store;
 };
 
-struct RGImageLifeTimeState
-{
-    DynamicArray<uint32_t> versions = {}; // for tracking different versions of the same resource if written by multiple passes
-};
-
 struct RGImageExecState
 {
     int32_t               firstWriter = -1;
+    int32_t               lastWriter  = -1;
     VkImageLayout         layout      = VK_IMAGE_LAYOUT_UNDEFINED;
     VkPipelineStageFlags2 stage       = VK_PIPELINE_STAGE_2_NONE;
     VkAccessFlags2        access      = VK_ACCESS_2_NONE;
@@ -47,15 +43,12 @@ struct RGImageResource
     uint64_t    readers = {}; // Note: bitset assumption is max 64 passes
 };
 
-struct RGBufferLifeTimeState
-{
-    DynamicArray<uint32_t> versions = {};
-};
-
 struct RGBufferExecState
 {
-    VkPipelineStageFlags2 stage  = VK_PIPELINE_STAGE_2_NONE;
-    VkAccessFlags2        access = VK_ACCESS_2_NONE;
+    int32_t               firstWriter = -1;
+    int32_t               lastWriter  = -1;
+    VkPipelineStageFlags2 stage       = VK_PIPELINE_STAGE_2_NONE;
+    VkAccessFlags2        access      = VK_ACCESS_2_NONE;
     uint32_t              queueFamily;
 };
 
@@ -252,9 +245,8 @@ private:
     DynamicArray<uint64_t> m_inEdgesBitsets;
     DynamicArray<uint64_t> m_outEdgesBitsets;
 
-    // states for tracking lifetime of images
-    HashMap<uint32_t, RGImageLifeTimeState>  m_imageLifeTimeStates;
-    HashMap<uint64_t, RGBufferLifeTimeState> m_bufferLifeTimeStates;
+    HashMap<uint32_t, DynamicArray<uint32_t>> m_imageVersions;
+    HashMap<uint64_t, DynamicArray<uint32_t>> m_bufferVersions;
 
     // states for images during graph execution time
     HashMap<uint32_t, RGImageExecState>  m_imageExecStates;

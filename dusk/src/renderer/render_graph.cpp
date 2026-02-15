@@ -22,7 +22,7 @@ void RenderGraph::addReadResource(
 {
     auto&       pass              = m_passes[passId];
     auto        textureId         = resource.texture->id;
-    const auto& availableVersions = m_imageLifeTimeStates[textureId].versions;
+    const auto& availableVersions = m_imageVersions[textureId];
 
     if (availableVersions.size() > 0)
     {
@@ -42,7 +42,7 @@ void RenderGraph::addReadResource(
 {
     auto&       pass              = m_passes[passId];
     auto        bufferId          = resource.buffer->getId();
-    const auto& availableVersions = m_bufferLifeTimeStates[bufferId].versions;
+    const auto& availableVersions = m_bufferVersions[bufferId];
 
     if (availableVersions.size() > 0)
     {
@@ -58,7 +58,7 @@ void RenderGraph::addReadResource(
 uint32_t RenderGraph::addWriteResource(uint32_t passId, RGImageResource& resource)
 {
     auto&    pass              = m_passes[passId];
-    auto&    availableVersions = m_imageLifeTimeStates[resource.texture->id].versions;
+    auto&    availableVersions = m_imageVersions[resource.texture->id];
     uint32_t newVersion        = static_cast<uint32_t>(availableVersions.size());
     availableVersions.push_back(passId);
     pass.writeTextureResources.push_back({ (void*)&resource, (1ULL << passId) });
@@ -68,7 +68,7 @@ uint32_t RenderGraph::addWriteResource(uint32_t passId, RGImageResource& resourc
 uint32_t RenderGraph::addWriteResource(uint32_t passId, RGBufferResource& resource)
 {
     auto&    pass              = m_passes[passId];
-    auto&    availableVersions = m_bufferLifeTimeStates[resource.buffer->getId()].versions;
+    auto&    availableVersions = m_bufferVersions[resource.buffer->getId()];
     uint32_t newVersion        = static_cast<uint32_t>(availableVersions.size());
     availableVersions.push_back(passId);
     pass.writeBufferResources.push_back({ (void*)&resource, (1ULL << passId) });
@@ -83,7 +83,7 @@ uint32_t RenderGraph::addDepthResource(
     auto& pass         = m_passes[passId];
     pass.depthResource = &depthResource;
 
-    auto& versions     = m_imageLifeTimeStates[depthResource.texture->id].versions;
+    auto& versions     = m_imageVersions[depthResource.texture->id];
 
     if (!versions.empty() && versions.size() > version)
     {
@@ -349,6 +349,7 @@ void RenderGraph::buildWriteImageResourcesState(RGNode& pass, bool useDepth)
             state.firstWriter                          = pass.index;
             pass.resourceLoadStoreStates[resId].loadOp = GfxLoadOperation::Clear; // TODO:: make configurable, Expose per-pass intent
         }
+        state.lastWriter                    = pass.index;
 
         VkImageAspectFlags imageAspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
 
@@ -477,6 +478,12 @@ void RenderGraph::buildWriteBufferResourcesState(RGNode& pass)
         // deduce stage and access flags
         VkPipelineStageFlags2 newStage  = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
         VkAccessFlags2        newAccess = VK_ACCESS_2_SHADER_WRITE_BIT;
+
+        if (state.firstWriter == -1)
+        {
+            state.firstWriter = pass.index;
+        }
+        state.lastWriter = pass.index;
 
         if (pass.isCompute)
         {

@@ -76,11 +76,11 @@ Dusk is built around the following principles:
 **GPU:** RTX 3060  
 **CPU:** AMD Ryzen 7 5700X 8-Core Processor 
 
-![](docs / test - pbr.png)
+![](docs/test-pbr.png)
 
-![](docs / helmet - sample.png)
+![](docs/helmet-sample.png)
 
-![](docs / sponza - sample.png)
+![](docs/sponza-sample.png)
 
 
 ## Work In Progress

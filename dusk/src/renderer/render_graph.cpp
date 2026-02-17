@@ -32,6 +32,10 @@ void RenderGraph::addReadResource(
         pass.readTextureResources.push_back({ (void*)&resource, (1ULL << writer) });
         return;
     }
+
+    // add current layout to exec state
+    m_imageExecStates[resource.texture->id].layout = resource.texture->currentLayout;
+
     pass.readTextureResources.push_back({ (void*)&resource, 0ULL });
 }
 

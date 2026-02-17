@@ -22,8 +22,12 @@ This project is intended as a **technical renderer framework** for experimentati
 ## Key Features
 
 ### Rendering Architecture
-- Modern **RenderGraph system**
-- Fully **GPU-driven rendering**
+- **RenderGraph system**
+	- Synchronization handling
+	- Topological sort for scheduling
+	- Resource lifetime & usage tracking
+	- Graph visualization using Graphviz  
+- **GPU-driven rendering**
 - Fully **bindless resource system**
 - Multithreaded command buffer recording
 - Deferred rendering pipeline
@@ -38,6 +42,7 @@ This project is intended as a **technical renderer framework** for experimentati
 
 ### Rendering Features
 - PBR metallic-roughness workflow
+- Image based lighting
 - Directional, point and spot lights support
 - Basic shadow rendering
 - HDR Skybox

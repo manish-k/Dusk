@@ -87,7 +87,8 @@ Dusk is built around the following principles:
 
 ![](docs/sponza-sample.png)
 
-![Rendergraph for deferred rendering system](docs/render-graph.svg)
+![Rendergraph](docs/render-graph.svg)
+*Rendergraph for deferred rendering system in Dusk*
 
 ## Work In Progress
 

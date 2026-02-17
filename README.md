@@ -87,11 +87,11 @@ Dusk is built around the following principles:
 
 ![](docs/sponza-sample.png)
 
+![Rendergraph for deferred rendering system](docs/render-graph.svg)
 
 ## Work In Progress
 
 - RenderGraph texture aliasing
-- Graph visualization tooling (Graphviz integration)
 - Expanded RenderGraph pass support
 - Improved async compute scheduling
 

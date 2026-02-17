@@ -1,5 +1,6 @@
-#include "render_graph.h"
+﻿#include "render_graph.h"
 
+#include "engine.h"
 #include "stats_recorder.h"
 
 #include "renderer/frame_data.h"
@@ -11,6 +12,8 @@
 #include "debug/profiler.h"
 
 #include <bit>
+#include <iostream>
+#include <fstream>
 
 namespace dusk
 {
@@ -131,8 +134,6 @@ uint32_t RenderGraph::addPass(
     const std::string&           passName,
     const RecordCmdBuffFunction& recordFn)
 {
-    DASSERT(!m_addedPasses.has(passName));
-
     // add render node
     auto passId = static_cast<uint32_t>(m_passes.size());
     m_passes.push_back({ passName, passId, recordFn });
@@ -265,13 +266,16 @@ void RenderGraph::buildExecutionOrder()
     uint32_t nodeCount = static_cast<uint32_t>(m_passes.size());
 
     // represent all nodes as bitset eg: for 5 nodes 0b11111
-    uint64_t allNodesBitset = (1ULL << nodeCount) - 1ULL;
+    uint64_t               allNodesBitset = (1ULL << nodeCount) - 1ULL;
+
+    // copying, avoiding modifications on original array
+    DynamicArray<uint64_t> inEdgeBitsets  = m_inEdgesBitsets;
 
     // track initial zero in-degree nodes
     uint64_t zeroInDegreeNodesBitset = 0ULL;
     for (uint32_t nodeIdx = 0; nodeIdx < nodeCount; ++nodeIdx)
     {
-        zeroInDegreeNodesBitset |= (uint64_t)(!m_inEdgesBitsets[nodeIdx]) << nodeIdx;
+        zeroInDegreeNodesBitset |= (uint64_t)(!inEdgeBitsets[nodeIdx]) << nodeIdx;
     }
 
     // Kahn's algorithm for topological sorting
@@ -302,12 +306,12 @@ void RenderGraph::buildExecutionOrder()
             // remove outgoing edge
             outEdges &= outEdges - 1;
 
-            uint64_t beforeState = m_inEdgesBitsets[otherNodeIdx];
+            uint64_t beforeState = inEdgeBitsets[otherNodeIdx];
 
             // remove incoming edge
-            m_inEdgesBitsets[otherNodeIdx] &= ~nodeBit;
+            inEdgeBitsets[otherNodeIdx] &= ~nodeBit;
 
-            uint64_t newState = m_inEdgesBitsets[otherNodeIdx];
+            uint64_t newState = inEdgeBitsets[otherNodeIdx];
 
             // update zero in-degree nodes bitset if other node has become zero
             // in-degree after removing the edge
@@ -664,6 +668,125 @@ void RenderGraph::endPass(const FrameData& frameData) const
     DUSK_PROFILE_SECTION("end_pass");
 
     vkCmdEndRendering(frameData.commandBuffer);
+}
+
+void RenderGraph::dumpDebugGraph(const std::string& path) const
+{
+    DASSERT(m_passExecutionOrder.size() > 0);
+
+    HashMap<uint32_t, uint32_t> passIdxtoOrderMap = {};
+    DebugGraph                  graph             = {};
+
+    for (uint32_t orderIdx = 0u; orderIdx < m_passExecutionOrder.size(); ++orderIdx)
+    {
+        passIdxtoOrderMap[m_passExecutionOrder[orderIdx]] = orderIdx;
+    }
+
+    for (uint32_t orderIdx = 0u; orderIdx < m_passExecutionOrder.size(); ++orderIdx)
+    {
+        const auto&      pass = m_passes[m_passExecutionOrder[orderIdx]];
+
+        DebugGraph::Node node { pass.name };
+        node.isCompute = pass.isCompute;
+
+        for (uint32_t readIdx = 0u; readIdx < pass.readTextureResources.size(); ++readIdx)
+        {
+            const RGImageResource* resource = (RGImageResource*)pass.readTextureResources[readIdx].ptr;
+            node.reads.push_back(resource->name);
+        }
+
+        for (uint32_t readIdx = 0u; readIdx < pass.readBufferResources.size(); ++readIdx)
+        {
+            const RGBufferResource* resource = (RGBufferResource*)pass.readBufferResources[readIdx].ptr;
+            node.reads.push_back(resource->name);
+        }
+
+        for (uint32_t readIdx = 0u; readIdx < pass.writeTextureResources.size(); ++readIdx)
+        {
+            const RGImageResource* resource = (RGImageResource*)pass.writeTextureResources[readIdx].ptr;
+            node.writes.push_back(resource->name);
+        }
+
+        for (uint32_t readIdx = 0u; readIdx < pass.writeBufferResources.size(); ++readIdx)
+        {
+            const RGBufferResource* resource = (RGBufferResource*)pass.writeBufferResources[readIdx].ptr;
+            node.writes.push_back(resource->name);
+        }
+
+        graph.nodes.emplace_back(node);
+
+        uint64_t inEdges      = m_inEdgesBitsets[pass.index];
+        uint32_t passOrderIdx = passIdxtoOrderMap[pass.index];
+        while (inEdges)
+        {
+            uint32_t inNodeIdx = std::countr_zero(inEdges);
+
+            inEdges &= inEdges - 1;
+
+            DebugGraph::Edge e = {};
+            e.dst              = passOrderIdx;
+            e.src              = passIdxtoOrderMap[inNodeIdx];
+
+            graph.edges.emplace_back(e);
+        }
+    }
+
+    auto& executor = Engine::get().getTfExecutor();
+    executor.silent_async(
+        [path, graph]()
+        {
+            graph.exportDot(path.c_str());
+        });
+}
+
+void DebugGraph::exportDot(const char* path) const
+{
+    std::ofstream dotFile(path);
+
+    dotFile << "digraph RenderGraph {\n";
+    dotFile << "rankdir=TD;\n";
+    dotFile << "node [shape=box, style=filled];\n\n";
+
+    dotFile << "subgraph cluster_graphics {\n";
+    dotFile << "label=\"Graphic Queue\";\n";
+    dotFile << "style = dotted; \n";
+
+    for (uint32_t nodeIdx = 0u; nodeIdx < nodes.size(); ++nodeIdx)
+    {
+        const auto& node  = nodes[nodeIdx];
+        const char* color = node.isCompute ? "lightblue" : "palegreen";
+
+        std::stringstream label;
+        label << node.name << "\\n";
+
+        if (!node.reads.empty())
+        {
+            label << "R: ";
+            for (auto& r : node.reads) label << r << " ";
+            label << "\\n";
+        }
+
+        if (!node.writes.empty())
+        {
+            label << "W: ";
+            for (auto& w : node.writes) label << w << " ";
+        }
+
+        dotFile << "node_" << nodeIdx
+                << " [label=\"" << label.str() << "\""
+                << ", fillcolor=\"" << color << "\"]; \n";
+    }
+
+    dotFile << "}\n";
+    dotFile << "\n";
+
+    for (uint32_t edgeIdx = 0u; edgeIdx < edges.size(); ++edgeIdx)
+    {
+        const auto& edge = edges[edgeIdx];
+        dotFile << "node_" << edge.src << " -> node_" << edge.dst << ";\n";
+    }
+
+    dotFile << "}\n";
 }
 
 } // namespace dusk

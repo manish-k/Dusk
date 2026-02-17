@@ -89,6 +89,28 @@ struct RGNode
     uint32_t                             layerCount     = 1u; // only for multiview
 };
 
+struct DebugGraph
+{
+    struct Node
+    {
+        std::string               name      = "";
+        DynamicArray<std::string> reads     = {};
+        DynamicArray<std::string> writes    = {};
+        bool                      isCompute = false;
+    };
+
+    struct Edge
+    {
+        uint32_t    src  = 0u;
+        uint32_t    dst  = 0u;
+    };
+
+    DynamicArray<Node> nodes = {};
+    DynamicArray<Edge> edges = {};
+
+    void               exportDot(const char* path) const;
+};
+
 class RenderGraph
 {
 public:
@@ -174,6 +196,8 @@ public:
      */
     void setMulitView(uint32_t passId, uint32_t mask, uint32_t numLayers);
 
+    void dumpDebugGraph(const std::string& path) const;
+
 private:
     /**
      * @brief Builds the dependency graph.
@@ -238,15 +262,14 @@ private:
     void endPass(const FrameData& frameData) const;
 
 private:
-    DynamicArray<RGNode>   m_passes;
-    HashSet<std::string>   m_addedPasses;
-    DynamicArray<uint32_t> m_passExecutionOrder;
+    DynamicArray<RGNode>                      m_passes             = {};
+    DynamicArray<uint32_t>                    m_passExecutionOrder = {};
 
-    DynamicArray<uint64_t> m_inEdgesBitsets;
-    DynamicArray<uint64_t> m_outEdgesBitsets;
+    DynamicArray<uint64_t>                    m_inEdgesBitsets     = {};
+    DynamicArray<uint64_t>                    m_outEdgesBitsets    = {};
 
-    HashMap<uint32_t, DynamicArray<uint32_t>> m_imageVersions;
-    HashMap<uint64_t, DynamicArray<uint32_t>> m_bufferVersions;
+    HashMap<uint32_t, DynamicArray<uint32_t>> m_imageVersions      = {};
+    HashMap<uint64_t, DynamicArray<uint32_t>> m_bufferVersions     = {};
 
     // states for images during graph execution time
     HashMap<uint32_t, RGImageExecState>  m_imageExecStates;

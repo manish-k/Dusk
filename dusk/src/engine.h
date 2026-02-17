@@ -170,28 +170,29 @@ public:
 private:
     Config                                   m_config;
 
-    Unique<VkGfxDevice>                      m_gfxDevice         = nullptr;
-    Unique<VulkanRenderer>                   m_renderer          = nullptr;
+    Unique<VkGfxDevice>                      m_gfxDevice            = nullptr;
+    Unique<VulkanRenderer>                   m_renderer             = nullptr;
 
-    Shared<Window>                           m_window            = nullptr;
-    Shared<Application>                      m_app               = nullptr;
+    Shared<Window>                           m_window               = nullptr;
+    Shared<Application>                      m_app                  = nullptr;
 
-    Unique<Environment>                      m_environment       = nullptr;
-    Unique<BasicRenderSystem>                m_basicRenderSystem = nullptr;
-    Unique<LightsSystem>                     m_lightsSystem      = nullptr;
-    Unique<StatsRecorder>                    m_statsRecorder     = nullptr;
+    Unique<Environment>                      m_environment          = nullptr;
+    Unique<BasicRenderSystem>                m_basicRenderSystem    = nullptr;
+    Unique<LightsSystem>                     m_lightsSystem         = nullptr;
+    Unique<StatsRecorder>                    m_statsRecorder        = nullptr;
 
-    Unique<TextureDB>                        m_textureDB         = nullptr;
+    Unique<TextureDB>                        m_textureDB            = nullptr;
 
-    Unique<EditorUI>                         m_editorUI          = nullptr;
+    Unique<EditorUI>                         m_editorUI             = nullptr;
 
-    bool                                     m_running           = false;
-    bool                                     m_paused            = false;
+    bool                                     m_running              = false;
+    bool                                     m_paused               = false;
+    bool                                     m_dumpFrameRenderGraph = false;
 
-    Scene*                                   m_currentScene      = nullptr;
+    Scene*                                   m_currentScene         = nullptr;
 
-    TimePoint                                m_lastFrameTime     = {};
-    TimeStep                                 m_deltaTime         = {};
+    TimePoint                                m_lastFrameTime        = {};
+    TimeStep                                 m_deltaTime            = {};
 
     GfxBuffer                                m_vertexBuffer;
     GfxBuffer                                m_indexBuffer;

@@ -65,6 +65,7 @@ inline void drawStatsWidget()
 
     ImGui::SeparatorText("Controls");
     ImGui::Text("F4 to enable/disable UI");
+    ImGui::Text("F6 to dump render graph dot file");
     ImGui::Text("RMB to look around");
     ImGui::Text("W/S/A/D/Q/E with RMB to move camera");
 

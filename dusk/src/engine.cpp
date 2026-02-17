@@ -287,6 +287,17 @@ void Engine::onEvent(Event& ev)
 {
     EventDispatcher dispatcher(ev);
 
+        dispatcher.dispatch<KeyPressedEvent>(
+        [this](KeyPressedEvent& ev)
+        {
+            if (ev.getKeyCode() == Key::F6)
+            {
+                m_dumpFrameRenderGraph = true;
+            }
+
+            return false;
+        });
+
     dispatcher.dispatch<WindowCloseEvent>(
         [this](WindowCloseEvent ev)
         {
@@ -395,18 +406,6 @@ void Engine::renderFrame(FrameData& frameData)
         .name    = "gbuff_emissive",
         .texture = &m_textureDB->getTexture2D(m_rgResources.gbuffRenderTextureIds[3])
     };
-    RGImageResource brdfLUT = {
-        .name    = "brdf_lut",
-        .texture = &m_textureDB->getTexture2D(m_rgResources.brdfLUTextureId)
-    };
-    RGImageResource irradianceCubemap = {
-        .name    = "irradiance_environment_cubemap",
-        .texture = &m_textureDB->getTexture2D(m_environment->getSkyIrradianceTextureId())
-    };
-    RGImageResource prefilteredEnvironmentMap = {
-        .name    = "prefiltered_environment_map",
-        .texture = &m_textureDB->getTexture2D(m_environment->getSkyPrefilteredTextureId())
-    };
     RGImageResource lightingOutput = {
         .name    = "lighting_output",
         .texture = &m_textureDB->getTexture2D(m_rgResources.lightingRenderTextureId)
@@ -459,9 +458,6 @@ void Engine::renderFrame(FrameData& frameData)
     renderGraph.addReadResource(lightPassId, gbuffAoMR, gbuffAoMRVer);
     renderGraph.addReadResource(lightPassId, gbuffEmissive, gbuffEmissiveVer);
     renderGraph.addReadResource(lightPassId, gbuffDepth, gbuffDepthVer);
-    renderGraph.addReadResource(lightPassId, irradianceCubemap);
-    renderGraph.addReadResource(lightPassId, prefilteredEnvironmentMap);
-    renderGraph.addReadResource(lightPassId, brdfLUT);
     renderGraph.addReadResource(lightPassId, dirShadowMap, dirShadowMapVer);
 
     uint32_t lightOutputVer = renderGraph.addWriteResource(lightPassId, lightingOutput);
@@ -482,6 +478,12 @@ void Engine::renderFrame(FrameData& frameData)
 
     // execute render graph
     renderGraph.execute(frameData);
+
+    if (m_dumpFrameRenderGraph)
+    {
+        renderGraph.dumpDebugGraph("render_graph.dot");
+        m_dumpFrameRenderGraph = false;
+    }
 }
 
 bool Engine::setupGlobals()

@@ -5,7 +5,7 @@
 
 #include "scene/scene.h"
 #include "scene/components/transform.h"
-#include "scene/components/mesh.h"
+#include "scene/components/renderable.h"
 
 #include "renderer/texture.h"
 #include "renderer/material.h"
@@ -127,7 +127,7 @@ void AssimpLoader::traverseSceneNodes(Scene& scene, const aiNode* node, const ai
 
     if (node->mNumMeshes > 0)
     {
-        auto& meshComponent = gameObject->addComponent<MeshComponent>();
+        auto& meshComponent = gameObject->addComponent<RenderableComponent>();
 
         // calculate AABB for the whole mesh model
         auto modelAABB = AABB {};

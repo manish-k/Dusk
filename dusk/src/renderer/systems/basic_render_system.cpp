@@ -6,7 +6,7 @@
 
 #include "scene/scene.h"
 #include "scene/components/transform.h"
-#include "scene/components/mesh.h"
+#include "scene/components/renderable.h"
 #include "scene/components/camera.h"
 
 #include "renderer/frame_data.h"
@@ -170,7 +170,7 @@ void BasicRenderSystem::renderGameObjects(const FrameData& frameData)
         0,
         nullptr);
 
-    auto renderablesView = scene.GetGameObjectsWith<TransformComponent, MeshComponent>();
+    auto renderablesView = scene.GetGameObjectsWith<TransformComponent, RenderableComponent>();
 
     // possiblity of cache unfriendliness here. Only first component is
     // cache friendly. https://gamedev.stackexchange.com/a/212879

@@ -5,7 +5,7 @@
 #include "scene/camera_controller.h"
 
 #include "components/camera.h"
-#include "components/mesh.h"
+#include "components/renderable.h"
 #include "components/lights.h"
 #include "components/transform.h"
 
@@ -52,11 +52,11 @@ inline void       drawGameObjectSubTree(Scene& scene, EntityId objectId)
             drawGameObjectSubTree(scene, childId);
         }
 
-        if (gObject.hasComponent<MeshComponent>())
+        if (gObject.hasComponent<RenderableComponent>())
         {
-            MeshComponent& mesh = gObject.getComponent<MeshComponent>();
+            RenderableComponent& renderable = gObject.getComponent<RenderableComponent>();
 
-            for (uint32_t index = 0u; index < mesh.meshes.size(); ++index)
+            for (uint32_t index = 0u; index < renderable.meshes.size(); ++index)
             {
                 // TODO: manage string allocation
                 std::string id   = gObject.getName() + "_" + std::to_string(index);
@@ -111,7 +111,7 @@ inline void drawSceneGraphWidget(Scene& scene)
 
         if (sceneState.selectedMeshId >= 0)
         {
-            MeshComponent& mesh = selectedGameObject.getComponent<MeshComponent>();
+            RenderableComponent& mesh = selectedGameObject.getComponent<RenderableComponent>();
 
             ImGui::SeparatorText("Material");
 

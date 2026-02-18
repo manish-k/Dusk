@@ -8,7 +8,7 @@
 
 #include "components/camera.h"
 #include "components/transform.h"
-#include "components/mesh.h"
+#include "components/renderable.h"
 
 #include "debug/profiler.h"
 
@@ -63,7 +63,7 @@ void Scene::onUpdate(TimeStep dt)
 
     // TODO:: this can be optimized further by maintaining a list of dirty transforms
     // update world AABBs for all mesh components whose transforms are dirty
-    Registry::getRegistry().view<TransformComponent, MeshComponent>().each(
+    Registry::getRegistry().view<TransformComponent, RenderableComponent>().each(
         [&](auto entity, auto& transform, auto& meshData)
         {
             // auto  objectId  = static_cast<entt::id_type>(entity);
@@ -148,13 +148,13 @@ void Scene::freeMaterials()
 void Scene::gatherRenderables(GfxRenderables* currentFrameRenderables)
 {
     DUSK_PROFILE_FUNCTION;
-    Registry::getRegistry().view<TransformComponent, MeshComponent>().each(
-        [&](auto entity, auto& transform, auto& meshData)
+    Registry::getRegistry().view<TransformComponent, RenderableComponent>().each(
+        [&](auto entity, auto& transform, auto& renderableData)
         {
-            glm::vec3 center  = (meshData.worldAABB.min + meshData.worldAABB.max) * 0.5f;
-            glm::vec3 extents = (meshData.worldAABB.max - meshData.worldAABB.min) * 0.5f;
+            glm::vec3 center  = (renderableData.worldAABB.min + renderableData.worldAABB.max) * 0.5f;
+            glm::vec3 extents = (renderableData.worldAABB.max - renderableData.worldAABB.min) * 0.5f;
 
-            for (uint32_t index = 0u; index < meshData.meshes.size(); ++index)
+            for (uint32_t index = 0u; index < renderableData.meshes.size(); ++index)
             {
                 currentFrameRenderables->modelMatrices.push_back(transform.mat4());
                 currentFrameRenderables->normalMatrices.push_back(transform.normalMat4());
@@ -163,8 +163,8 @@ void Scene::gatherRenderables(GfxRenderables* currentFrameRenderables)
                         .center  = center,
                         .extents = extents,
                     });
-                currentFrameRenderables->meshIds.push_back(meshData.meshes[index]);
-                currentFrameRenderables->materialIds.push_back(meshData.materials[index]);
+                currentFrameRenderables->meshIds.push_back(renderableData.meshes[index]);
+                currentFrameRenderables->materialIds.push_back(renderableData.materials[index]);
             }
         });
 }

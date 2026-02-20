@@ -45,7 +45,9 @@ struct TransformStorage
     DynamicArray<uint8_t> dirtyList;
 
     TransformStorage() = default;
+
     TransformHandle allocate();
+    void            recomputeLocal(TransformHandle handle);
 };
 
 class TransformSystem
@@ -57,7 +59,7 @@ public:
     bool init(size_t maxTransformCount);
     void cleanup();
     void resrveStorageCapacity(size_t maxTransformsCount);
-    void update();
+    void updateMatrices();
 
 public:
     static TransformHandle   create(EntityId entityId, EntityId parentId = NULL_ENTITY);

@@ -28,6 +28,37 @@ TransformHandle  TransformStorage::allocate()
     return handle;
 }
 
+void TransformStorage::recomputeLocal(TransformHandle handle)
+{
+    auto& t       = translation[handle];
+    auto& r       = rotation[handle];
+    auto& s       = scale[handle];
+
+    local[handle] = glm::mat4 {
+        {
+            s.x * (1 - 2 * (r.y * r.y + r.z * r.z)),
+            s.x * (2 * (r.x * r.y + r.w * r.z)),
+            s.x * (2 * (r.x * r.z - r.w * r.y)),
+            0.0f,
+        },
+        {
+            s.y * (2 * (r.x * r.y - r.w * r.z)),
+            s.y * (1 - 2 * (r.x * r.x + r.z * r.z)),
+            s.y * (2 * (r.y * r.z + r.w * r.x)),
+            0.0f,
+        },
+        {
+            s.z * (2 * (r.x * r.z + r.w * r.y)),
+            s.z * (2 * (r.y * r.z - r.w * r.x)),
+            s.z * (1 - 2 * (r.y * r.y + r.x * r.x)),
+            0.0f,
+        },
+        { t.x, t.y, t.z, 1.0f }
+    };
+
+    normal[handle] = glm::transpose(glm::inverse(glm::mat3(local[handle])));
+}
+
 TransformSystem::TransformSystem()
 {
     DASSERT(!s_instance, "Transform system's instance already exists");
@@ -68,8 +99,25 @@ void TransformSystem::resrveStorageCapacity(size_t maxTransformsCount)
     m_storage->dirtyList.reserve(maxTransformsCount);
 }
 
-void TransformSystem::update()
+void TransformSystem::updateMatrices()
 {
+    uint32_t transformsCount = m_storage->count;
+    for (TransformHandle handle = 0u; handle < transformsCount; ++handle)
+    {
+        if (!m_storage->dirtyList[handle])
+        {
+            // we can skip whole subtree
+            handle = m_storage->subtreeEnd[handle] + 1;
+        }
+
+        // recompute new local
+        m_storage->recomputeLocal(handle);
+
+        TransformHandle parent       = m_storage->parent[handle];
+        m_storage->world[handle]     = m_storage->world[parent] * m_storage->local[handle];
+
+        m_storage->dirtyList[handle] = 0u;
+    }
 }
 
 TransformHandle TransformSystem::create(EntityId entityId, EntityId parentId)

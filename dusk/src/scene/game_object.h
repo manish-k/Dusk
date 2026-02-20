@@ -46,10 +46,10 @@ public:
      * @brief Set parent id for a game object
      * @param parentId
      */
-    void setParent(EntityId parentId) { m_parent = parentId; }
+    void                    setParent(EntityId parentId) { m_parent = parentId; }
 
     DynamicArray<EntityId>& getChildren() { return m_children; }
-    std::string            getName() { return m_name; }
+    std::string             getName() { return m_name; }
     const char*             getCName() { return m_name.c_str(); }
 
 private:

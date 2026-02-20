@@ -8,6 +8,10 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/quaternion.hpp>
 
+// Note: Nodes should be added in DFS order to ensure parent id < children id. This helps in
+// tracking end point of subtrees which helps in rejecting non-dirty nodes and dirty propogation
+// in subtree range
+
 // TODO: consider using exclusive allocated single memory block for transform system
 
 namespace dusk
@@ -23,9 +27,9 @@ struct TransformStorage
     uint32_t count;
 
     // transforms hierarchy
-    DynamicArray<uint32_t> parent;
-    DynamicArray<uint32_t> firstChild;
-    DynamicArray<uint32_t> nextSibling;
+    DynamicArray<TransformHandle> parent;
+    DynamicArray<TransformHandle> subtreeEnd;
+    DynamicArray<uint16_t>        depth;
 
     // transform data
     DynamicArray<glm::vec3> translation;
@@ -38,7 +42,10 @@ struct TransformStorage
     DynamicArray<glm::mat4> normal;
 
     // TODO:: use dynamic bitset
-    DynamicArray<bool> dirtyList;
+    DynamicArray<uint8_t> dirtyList;
+
+    TransformStorage() = default;
+    TransformHandle allocate();
 };
 
 class TransformSystem
@@ -53,23 +60,22 @@ public:
     void update();
 
 public:
-    static TransformHandle create(EntityId entityId);
-    static void            setParent(TransformHandle handle, TransformHandle parent);
-    static void            setNextSibling(TransformHandle handle, TransformHandle sibling);
+    static TransformHandle   create(EntityId entityId, EntityId parentId = NULL_ENTITY);
+    static TransformStorage* getStorage();
 
-    static void            setTranslation(TransformHandle handle, const glm::vec3& newTranslation);
-    static void            setRotation(TransformHandle handle, const glm::quat& newRotation);
-    static void            setScale(TransformHandle handle, const glm::vec3& newScale);
+    static void              setTranslation(TransformHandle handle, const glm::vec3& newTranslation);
+    static void              setRotation(TransformHandle handle, const glm::quat& newRotation);
+    static void              setScale(TransformHandle handle, const glm::vec3& newScale);
 
-    static glm::mat4       getWorldMatrix(TransformHandle handle);
-    static glm::mat4       getLocalMatrix(TransformHandle handle);
-    static glm::mat4       getNormalMatrix(TransformHandle handle);
+    static glm::mat4         getWorldMatrix(TransformHandle handle);
+    static glm::mat4         getLocalMatrix(TransformHandle handle);
+    static glm::mat4         getNormalMatrix(TransformHandle handle);
 
 private:
-    Unique<TransformStorage>           m_storage        = nullptr;
+    Unique<TransformStorage>                      m_storage        = nullptr;
 
-    HashMap<EntityId, TransformHandle> m_entityToHandle = {};
-    HashMap<TransformHandle, EntityId> m_handleToEntity = {};
+    std::unordered_map<EntityId, TransformHandle> m_entityToHandle = {};
+    std::unordered_map<TransformHandle, EntityId> m_handleToEntity = {};
 
 private:
     static TransformSystem* s_instance;

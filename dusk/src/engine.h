@@ -31,6 +31,7 @@ class TextureDB;
 class VulkanRenderer;
 class VkGfxDevice;
 class StatsRecorder;
+class TransformSystem;
 
 struct Material;
 struct VkGfxDescriptorPool;
@@ -180,6 +181,7 @@ private:
     Unique<BasicRenderSystem>                m_basicRenderSystem    = nullptr;
     Unique<LightsSystem>                     m_lightsSystem         = nullptr;
     Unique<StatsRecorder>                    m_statsRecorder        = nullptr;
+    Unique<TransformSystem>                  m_transformSystem      = nullptr;
 
     Unique<TextureDB>                        m_textureDB            = nullptr;
 

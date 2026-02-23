@@ -9,6 +9,7 @@
 #include "debug/profiler.h"
 
 #include "scene/scene.h"
+#include "scene/transform_system.h"
 #include "scene/components/camera.h"
 
 #include "events/event.h"
@@ -74,6 +75,13 @@ bool Engine::start(Shared<Application> app)
     if (!m_renderer->init())
     {
         DUSK_ERROR("Renderer initialization failed");
+        return false;
+    }
+
+    m_transformSystem = createUnique<TransformSystem>();
+    if (!m_transformSystem->init(maxRenderableMeshes))
+    {
+        DUSK_ERROR("Transforms system initialization failed");
         return false;
     }
 
@@ -153,6 +161,9 @@ void Engine::stop() { m_running = false; }
 void Engine::shutdown()
 {
     m_renderer->deviceWaitIdle();
+
+    m_transformSystem->cleanup();
+    m_transformSystem = nullptr;
 
     m_statsRecorder->cleanup();
     m_statsRecorder     = nullptr;
@@ -287,7 +298,7 @@ void Engine::onEvent(Event& ev)
 {
     EventDispatcher dispatcher(ev);
 
-        dispatcher.dispatch<KeyPressedEvent>(
+    dispatcher.dispatch<KeyPressedEvent>(
         [this](KeyPressedEvent& ev)
         {
             if (ev.getKeyCode() == Key::F6)

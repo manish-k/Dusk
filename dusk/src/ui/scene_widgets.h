@@ -7,7 +7,6 @@
 #include "components/camera.h"
 #include "components/renderable.h"
 #include "components/lights.h"
-#include "components/transform.h"
 
 #include "renderer/material.h"
 
@@ -98,15 +97,24 @@ inline void drawSceneGraphWidget(Scene& scene)
 
         ImGui::SeparatorText("Transform");
 
-        auto& transform = selectedGameObject.getComponent<TransformComponent>();
+        // auto& transform = selectedGameObject.getComponent<TransformComponent>();
 
-        ImGui::DragFloat3("Position", (float*)&transform.translation, 0.005f, -FLT_MAX, FLT_MAX);
-        ImGui::DragFloat3("Scale", (float*)&transform.scale);
+        glm::vec3 translation = selectedGameObject.getPosition();
+        if (ImGui::DragFloat3("Position", (float*)&translation, 0.005f, -FLT_MAX, FLT_MAX))
+        {
+            selectedGameObject.setPosition(translation);
+        }
 
-        glm::vec3 eulerRotation = glm::degrees(glm::eulerAngles(transform.rotation));
+        glm::vec3 scale = selectedGameObject.getScale();
+        if (ImGui::DragFloat3("Scale", (float*)&scale))
+        {
+            selectedGameObject.setScale(scale);
+        }
+
+        glm::vec3 eulerRotation = glm::degrees(glm::eulerAngles(selectedGameObject.getRotation()));
         if (ImGui::DragFloat3("Rotation", (float*)&eulerRotation, 0.5f))
         {
-            transform.setRotation(glm::quat(eulerRotation));
+            selectedGameObject.setRotation(glm::quat(eulerRotation));
         }
 
         if (sceneState.selectedMeshId >= 0)

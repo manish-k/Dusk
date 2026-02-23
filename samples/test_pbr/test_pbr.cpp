@@ -36,10 +36,9 @@ bool TestPBR::start()
     // adding point light
     auto pointLight = dusk::createUnique<GameObject>();
     pointLight->setName("point_light_0");
-    auto& pointTransform       = pointLight->getComponent<TransformComponent>();
-    pointTransform.translation = glm::vec3(0.f, 3.f, 0.f);
-    auto& pLight               = pointLight->addComponent<PointLightComponent>();
-    pLight.color               = glm::vec4(1.f, 1.f, 1.f, 0.6);
+    pointLight->setPosition(glm::vec3(0.f, 3.f, 0.f));
+    auto& pLight = pointLight->addComponent<PointLightComponent>();
+    pLight.color = glm::vec4(1.f, 1.f, 1.f, 0.6);
     m_testPBR->addGameObject(std::move(pointLight), m_testPBR->getRootId());
 
     if (m_testPBR)

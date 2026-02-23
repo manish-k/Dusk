@@ -43,30 +43,28 @@ bool TestLights::start()
     // adding point light
     /*auto pointLight = dusk::createUnique<GameObject>();
     pointLight->setName("point_light_0");
-    auto& pointTransform       = pointLight->getComponent<TransformComponent>();
-    pointTransform.translation = glm::vec3(0.f, 3.f, 0.f);
+    pointLight->setPosition(glm::vec3(0.f, 3.f, 0.f));
     auto& pLight               = pointLight->addComponent<PointLightComponent>();
     pLight.color               = glm::vec4(1.f, 1.f, 1.f, 0.6);
     m_testScene->addGameObject(std::move(pointLight), m_testScene->getRootId());*/
 
     // adding spot light
-    //auto spotLight = dusk::createUnique<GameObject>();
-    //spotLight->setName("spot_light_0");
-    //auto& spotTransform       = spotLight->getComponent<TransformComponent>();
-    //spotTransform.translation = glm::vec3(3.f, 1.5f, 0.f);
-    //auto& sLight              = spotLight->addComponent<SpotLightComponent>();
-    //sLight.color              = glm::vec4(1.f, 1.f, 1.f, 0.8);
-    //sLight.direction          = glm::vec3(0.f, -2.f, 0.f);
-    //sLight.innerCutOff        = 0.86f; // 30 degrees
-    //sLight.outerCutOff        = 0.8f;  // ~35 degrees
-    //m_testScene->addGameObject(std::move(spotLight), m_testScene->getRootId());
+    // auto spotLight = dusk::createUnique<GameObject>();
+    // spotLight->setName("spot_light_0");
+    // spotLight->setPosition(glm::vec3(3.f, 1.5f, 0.f));
+    // auto& sLight              = spotLight->addComponent<SpotLightComponent>();
+    // sLight.color              = glm::vec4(1.f, 1.f, 1.f, 0.8);
+    // sLight.direction          = glm::vec3(0.f, -2.f, 0.f);
+    // sLight.innerCutOff        = 0.86f; // 30 degrees
+    // sLight.outerCutOff        = 0.8f;  // ~35 degrees
+    // m_testScene->addGameObject(std::move(spotLight), m_testScene->getRootId());
 
     Engine::get().loadScene(m_testScene.get());
 
     auto& cameraController = m_testScene.get()->getMainCameraController();
-    //cameraController.setViewTarget({ 0.05f, -0.3f, -0.25f }, { 0.f, 0.f, 0.f });
-    cameraController.setPosition({-2.f, 0.5f, -1.6f});
-    cameraController.setViewDirection({0.7f, -0.3f, 0.5f});
+    // cameraController.setViewTarget({ 0.05f, -0.3f, -0.25f }, { 0.f, 0.f, 0.f });
+    cameraController.setPosition({ -2.f, 0.5f, -1.6f });
+    cameraController.setViewDirection({ 0.7f, -0.3f, 0.5f });
 
     return true;
 }

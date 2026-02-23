@@ -110,8 +110,6 @@ void TransformSystem::updateMatrices()
     {
         if (!m_storage->dirtyList[handle])
         {
-            // we can skip whole subtree
-            handle = m_storage->subtreeEnd[handle] + 1;
             continue;
         }
 
@@ -130,7 +128,7 @@ void TransformSystem::markDirty(TransformHandle handle)
     m_storage->dirtyList[handle] = 1u;
 
     // mark all children
-    for (uint32_t childHandle = handle + 1; childHandle < m_storage->subtreeEnd[handle]; ++childHandle)
+    for (uint32_t childHandle = handle + 1; childHandle <= m_storage->subtreeEnd[handle]; ++childHandle)
     {
         m_storage->dirtyList[childHandle] = 1u;
     }
@@ -149,6 +147,8 @@ TransformHandle TransformSystem::create(EntityId entityId, EntityId parentId)
         TransformHandle parentHandle = s_instance->m_entityToHandle[parentId];
         storage->parent[handle]      = parentHandle;
     }
+
+    storage->subtreeEnd[handle] = handle;
 
     return handle;
 }

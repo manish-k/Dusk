@@ -22,9 +22,9 @@ Unique<dusk::Application> dusk::createApplication(int argc, char** argv)
 bool TestScene::start()
 {
     // std::string scenePath = "assets/scenes/EnvironmentTest.gltf";
-    //std::string scenePath = "assets/scenes/2_cubes.gltf";
-    std::string scenePath = "assets/scenes/Cube.gltf";
-    //std::string scenePath = "D:/resources/scene/bistro_ext_gltf/bistro.gltf";
+    // std::string scenePath = "assets/scenes/2_cubes.gltf";
+    // std::string scenePath = "assets/scenes/Cube.gltf";
+    std::string scenePath = "D:/resources/scene/bistro_ext_gltf/bistro.gltf";
     //std::string scenePath
     //    = "assets/scenes/tea_cup/DiffuseTransmissionTeacup.gltf";
     m_testScene = Scene::createSceneFromGLTF(scenePath);
@@ -40,8 +40,7 @@ bool TestScene::start()
     // adding point light
     /*auto pointLight = dusk::createUnique<GameObject>();
     pointLight->setName("point_light_0");
-    auto& pointTransform       = pointLight->getComponent<TransformComponent>();
-    pointTransform.translation = glm::vec3(0.f, 3.f, 0.f);
+    pointLight->setPosition(glm::vec3(0.f, 3.f, 0.f));
     auto& pLight               = pointLight->addComponent<PointLightComponent>();
     pLight.color               = glm::vec4(1.f, 1.f, 1.f, 0.6);
     m_testScene->addGameObject(std::move(pointLight), m_testScene->getRootId());*/

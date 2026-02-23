@@ -50,7 +50,7 @@ void recordPresentationCmds(const FrameData& frameData)
 
         editorUI.beginRendering();
         editorUI.renderCommonWidgets();
-        //editorUI.renderSceneWidgets(*frameData.scene);
+        editorUI.renderSceneWidgets(*frameData.scene);
         editorUI.endRendering(frameData.commandBuffer);
     }
 

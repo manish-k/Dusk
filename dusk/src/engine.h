@@ -24,7 +24,6 @@ class Event;
 class EditorUI;
 class Scene;
 class Environment;
-class BasicRenderSystem;
 class GridRenderSystem;
 class LightsSystem;
 class TextureDB;
@@ -40,6 +39,16 @@ struct VkGfxDescriptorSet;
 
 static constexpr uint32_t MAX_MATERIALS_COUNT   = 1000;
 static constexpr uint32_t MAX_RENDERABLES_COUNT = 10000;
+
+struct DrawData
+{
+    uint32_t cameraBufferIdx;
+    uint32_t materialIdx;
+    uint32_t modelIdx;
+    uint32_t directionalLightsCount;
+    uint32_t pointLightsCount;
+    uint32_t spotLightsCount;
+};
 
 struct RenderGraphResources
 {
@@ -178,7 +187,6 @@ private:
     Shared<Application>                      m_app                  = nullptr;
 
     Unique<Environment>                      m_environment          = nullptr;
-    Unique<BasicRenderSystem>                m_basicRenderSystem    = nullptr;
     Unique<LightsSystem>                     m_lightsSystem         = nullptr;
     Unique<StatsRecorder>                    m_statsRecorder        = nullptr;
     Unique<TransformSystem>                  m_transformSystem      = nullptr;

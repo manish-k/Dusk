@@ -13,7 +13,7 @@ CameraController::CameraController(
     uint32_t    width,
     uint32_t    height,
     glm::vec3   up) :
-    m_cameraTransform(camera.getComponent<TransformComponent>()), m_cameraComponent(camera.getComponent<CameraComponent>()),
+    m_camera(camera), m_cameraComponent(camera.getComponent<CameraComponent>()),
     m_width(width), m_height(height), m_upDir(glm::normalize(up))
 {
     m_rightDir = glm::normalize(glm::cross(m_upDir, m_forwardDir));
@@ -100,20 +100,21 @@ void CameraController::onEvent(Event& ev)
                 // Also we will be using -world up and -camera right because
                 // in projection y will be flipped,this will make sure our fps
                 // movements are aligned properly
-                glm::quat quatPitch        = glm::angleAxis(pitch, -m_rightDir);
-                glm::quat quatYaw          = glm::angleAxis(yaw, glm::vec3(0.f, -1.f, 0.f));
+                glm::quat quatPitch = glm::angleAxis(pitch, -m_rightDir);
+                glm::quat quatYaw   = glm::angleAxis(yaw, glm::vec3(0.f, -1.f, 0.f));
 
-                m_cameraTransform.rotation = quatYaw * quatPitch * m_cameraTransform.rotation;
+                glm::quat rotation  = m_camera.rotate(quatYaw * quatPitch);
+                // m_cameraTransform.rotation = quatYaw * quatPitch * m_cameraTransform.rotation;
 
-                glm::mat3 rotationMat      = glm::mat3_cast(m_cameraTransform.rotation);
-                m_rightDir                 = rotationMat[0];
-                m_upDir                    = rotationMat[1];
-                m_forwardDir               = rotationMat[2];
+                glm::mat3 rotationMat = glm::mat3_cast(rotation);
+                m_rightDir            = rotationMat[0];
+                m_upDir               = rotationMat[1];
+                m_forwardDir          = rotationMat[2];
 
-                m_mouseX                   = ev.getX();
-                m_mouseY                   = ev.getY();
+                m_mouseX              = ev.getX();
+                m_mouseY              = ev.getY();
 
-                m_changed                  = true;
+                m_changed             = true;
             }
 
             return false;
@@ -218,39 +219,44 @@ void CameraController::onUpdate(TimeStep dt)
         if (m_isEPressed) moveDirection += m_upDir;
         if (m_isQPressed) moveDirection -= m_upDir;
 
-        m_cameraTransform.translation += m_cameraMoveSpeed * dt.count() * moveDirection;
+        // m_cameraTransform.translation += m_cameraMoveSpeed * dt.count() * moveDirection;
+        m_camera.move(m_cameraMoveSpeed * dt.count() * moveDirection);
     }
-    m_cameraComponent.setView(m_cameraTransform.translation, m_cameraTransform.rotation);
+    m_cameraComponent.setView(m_camera.getPosition(), m_camera.getRotation());
 }
 
 void CameraController::setViewDirection(glm::vec3 position, glm::vec3 direction)
 {
-    m_cameraTransform.translation = position;
+    // m_cameraTransform.translation = position;
+    glm::vec3 currentPos = m_camera.setPosition(position);
 
     // reversing the direction to align with camera's forward direction
     // we are looking in the direction of -z in camera space
-    direction                     = -direction;
+    direction             = -direction;
 
-    m_forwardDir                  = glm::normalize(direction);
-    m_rightDir                    = glm::normalize(glm::cross(m_upDir, m_forwardDir));
-    m_upDir                       = glm::cross(m_forwardDir, m_rightDir);
+    m_forwardDir          = glm::normalize(direction);
+    m_rightDir            = glm::normalize(glm::cross(m_upDir, m_forwardDir));
+    m_upDir               = glm::cross(m_forwardDir, m_rightDir);
 
-    glm::mat3 rotationMat         = { 1.0f };
-    rotationMat[0]                = m_rightDir;
-    rotationMat[1]                = m_upDir;
-    rotationMat[2]                = m_forwardDir;
+    glm::mat3 rotationMat = { 1.0f };
+    rotationMat[0]        = m_rightDir;
+    rotationMat[1]        = m_upDir;
+    rotationMat[2]        = m_forwardDir;
 
-    m_cameraTransform.rotation    = glm::quat_cast(rotationMat);
+    // m_cameraTransform.rotation = glm::quat_cast(rotationMat);
+    glm::quat currentRot = m_camera.setRotation(glm::quat_cast(rotationMat));
 
     m_cameraComponent.setView(
-        m_cameraTransform.translation,
-        m_cameraTransform.rotation);
-    m_startTransform = m_cameraTransform;
+        currentPos,
+        currentRot);
+
+    m_startPos = currentPos;
+    m_startRot = currentRot;
 }
 
 void CameraController::setViewDirection(glm::vec3 direction)
 {
-    setViewDirection(m_cameraTransform.translation, direction);
+    setViewDirection(m_camera.getPosition(), direction);
 }
 
 void CameraController::setViewTarget(glm::vec3 position, glm::vec3 target)
@@ -265,18 +271,20 @@ void CameraController::setViewTarget(glm::vec3 position, glm::vec3 target)
 
 void CameraController::setViewTarget(glm::vec3 target)
 {
-    setViewTarget(m_cameraTransform.translation, target);
+    setViewTarget(m_camera.getPosition(), target);
 }
 
 void CameraController::resetCamera()
 {
-    m_cameraTransform = m_startTransform; // copy back
-    m_cameraComponent.setView(m_cameraTransform.translation, m_cameraTransform.rotation);
+    // copy back
+    m_camera.setPosition(m_startPos);
+    m_camera.setRotation(m_startRot);
+    m_cameraComponent.setView(m_camera.getPosition(), m_camera.getRotation());
 }
 
 void CameraController::setPosition(glm::vec3 position)
 {
-    m_cameraTransform.translation = position;
-    m_cameraComponent.setView(m_cameraTransform.translation, m_cameraTransform.rotation);
+    m_camera.setPosition(position);
+    m_cameraComponent.setView(m_camera.getPosition(), m_camera.getRotation());
 }
 } // namespace dusk

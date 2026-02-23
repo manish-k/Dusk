@@ -5,8 +5,6 @@
 #include "registry.h"
 
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtx/quaternion.hpp>
 
 // Note: Nodes should be added in DFS order to ensure parent id < children id. This helps in
 // tracking end point of subtrees which helps in rejecting non-dirty nodes and dirty propogation
@@ -60,18 +58,32 @@ public:
     void cleanup();
     void resrveStorageCapacity(size_t maxTransformsCount);
     void updateMatrices();
+    void markDirty(TransformHandle handle);
 
 public:
     static TransformHandle   create(EntityId entityId, EntityId parentId = NULL_ENTITY);
     static TransformStorage* getStorage();
 
-    static void              setTranslation(TransformHandle handle, const glm::vec3& newTranslation);
-    static void              setRotation(TransformHandle handle, const glm::quat& newRotation);
-    static void              setScale(TransformHandle handle, const glm::vec3& newScale);
+    static void              setParent(EntityId id, EntityId parentId);
+
+    static glm::vec3         setTranslation(TransformHandle handle, const glm::vec3& newTranslation);
+    static glm::quat         setRotation(TransformHandle handle, const glm::quat& newRotation);
+    static glm::vec3         setScale(TransformHandle handle, const glm::vec3& newScale);
+
+    static glm::vec3         getPosition(TransformHandle handle);
+    static glm::vec3         getPosition(EntityId id);
+    static glm::quat         getRotation(TransformHandle handle);
+    static glm::quat         getRotation(EntityId id);
+    static glm::vec3         getScale(TransformHandle handle);
+    static glm::vec3         getScale(EntityId id);
 
     static glm::mat4         getWorldMatrix(TransformHandle handle);
+    static glm::mat4         getWorldMatrix(EntityId id);
     static glm::mat4         getLocalMatrix(TransformHandle handle);
+    static glm::mat4         getLocalMatrix(EntityId id);
     static glm::mat4         getNormalMatrix(TransformHandle handle);
+    static glm::mat4         getNormalMatrix(EntityId id);
+    static TransformHandle   getEntityHandle(EntityId id);
 
 private:
     Unique<TransformStorage>                      m_storage        = nullptr;

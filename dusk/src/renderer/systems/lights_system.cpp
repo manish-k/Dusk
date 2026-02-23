@@ -1,8 +1,8 @@
 #include "lights_system.h"
 
 #include "scene/scene.h"
+#include "scene/transform_system.h"
 #include "scene/components/lights.h"
-#include "scene/components/transform.h"
 
 #include "renderer/frame_data.h"
 
@@ -196,14 +196,12 @@ void LightsSystem::updateLights(Scene& scene, GlobalUbo& ubo)
     ubo.directionalLightsCount = m_directionalLightsCount;
 
     // TODO: maybe not the efficient data oriented desgin
-    auto pointLightList = scene.GetGameObjectsWith<PointLightComponent, TransformComponent>();
+    auto pointLightList = scene.GetGameObjectsWith<PointLightComponent>();
     counter             = 0u;
     for (auto& entity : pointLightList)
     {
-        auto& light     = pointLightList.get<PointLightComponent>(entity);
-        auto& transform = pointLightList.get<TransformComponent>(entity);
-
-        light.position  = transform.translation;
+        auto& light    = pointLightList.get<PointLightComponent>(entity);
+        light.position = TransformSystem::getPosition(entity);
 
         if (light.id == -1) continue;
 
@@ -214,14 +212,12 @@ void LightsSystem::updateLights(Scene& scene, GlobalUbo& ubo)
     }
     ubo.pointLightsCount = m_pointLightsCount;
 
-    auto spotLightList   = scene.GetGameObjectsWith<SpotLightComponent, TransformComponent>();
+    auto spotLightList   = scene.GetGameObjectsWith<SpotLightComponent>();
     counter              = 0u;
     for (auto& entity : spotLightList)
     {
-        auto& light     = spotLightList.get<SpotLightComponent>(entity);
-        auto& transform = pointLightList.get<TransformComponent>(entity);
-
-        light.position  = transform.translation;
+        auto& light    = spotLightList.get<SpotLightComponent>(entity);
+        light.position = TransformSystem::getPosition(entity);
 
         if (light.id == -1) continue;
 

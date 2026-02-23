@@ -4,7 +4,7 @@
 #include "debug/profiler.h"
 
 #include "scene/scene.h"
-#include "scene/components/transform.h"
+#include "scene/transform_system.h"
 #include "scene/components/renderable.h"
 
 #include "renderer/texture.h"
@@ -116,18 +116,20 @@ Unique<Scene> AssimpLoader::parseScene(const aiScene* assimpScene)
     return newScene;
 }
 
-void AssimpLoader::traverseSceneNodes(Scene& scene, const aiNode* node, const aiScene* aiScene, EntityId parentId)
+EntityId AssimpLoader::traverseSceneNodes(Scene& scene, const aiNode* node, const aiScene* aiScene, EntityId parentId)
 {
     DUSK_PROFILE_FUNCTION;
 
-    auto gameObject   = createUnique<GameObject>(parseAssimpNode(node));
+    auto gameObject   = createUnique<GameObject>();
     auto gameObjectId = gameObject->getId();
+    auto handle       = gameObject->getTransformHandle();
 
     gameObject->setName(node->mName.C_Str());
+    gameObject->setTransformHandle(handle);
 
     if (node->mNumMeshes > 0)
     {
-        auto& meshComponent = gameObject->addComponent<RenderableComponent>();
+        auto& renderable = gameObject->addComponent<RenderableComponent>();
 
         // calculate AABB for the whole mesh model
         auto modelAABB = AABB {};
@@ -137,8 +139,8 @@ void AssimpLoader::traverseSceneNodes(Scene& scene, const aiNode* node, const ai
         for (uint32_t index = 0u; index < node->mNumMeshes; ++index)
         {
             uint32_t sceneMeshIndex = node->mMeshes[index];
-            meshComponent.meshes.push_back(sceneMeshIndex);
-            meshComponent.materials.push_back(aiScene->mMeshes[sceneMeshIndex]->mMaterialIndex);
+            renderable.meshes.push_back(sceneMeshIndex);
+            renderable.materials.push_back(aiScene->mMeshes[sceneMeshIndex]->mMaterialIndex);
 
             aiVector3D meshMin = aiScene->mMeshes[sceneMeshIndex]->mAABB.mMin;
             aiVector3D meshMax = aiScene->mMeshes[sceneMeshIndex]->mAABB.mMax;
@@ -148,30 +150,13 @@ void AssimpLoader::traverseSceneNodes(Scene& scene, const aiNode* node, const ai
         }
 
         // object space model AABB
-        meshComponent.objectAABB = modelAABB;
+        renderable.objectAABB = modelAABB;
     }
 
     // attach object to the scene
     scene.addGameObject(std::move(gameObject), parentId);
 
-    // traverse children
-    if (node->mNumChildren > 0)
-    {
-        for (uint32_t childIndex = 0u; childIndex < node->mNumChildren; ++childIndex)
-        {
-            traverseSceneNodes(scene, node->mChildren[childIndex], aiScene, gameObjectId);
-        }
-    }
-}
-
-GameObject AssimpLoader::parseAssimpNode(const aiNode* node)
-{
-    DUSK_PROFILE_FUNCTION;
-
-    GameObject newGameObject;
-    auto&      transform = newGameObject.getComponent<TransformComponent>();
-
-    // get transform from assimp node
+    // update transform
     glm::mat4 transformation { 1.0f };
 
     transformation[0][0] = node->mTransformation.a1;
@@ -201,11 +186,28 @@ GameObject AssimpLoader::parseAssimpNode(const aiNode* node)
     glm::vec4 perspective;
     glm::decompose(transformation, scale, rotation, translation, skew, perspective);
 
-    transform.setTranslation(translation);
-    transform.setScale(scale);
-    transform.setRotation(rotation);
+    auto storage                 = TransformSystem::getStorage();
 
-    return newGameObject;
+    storage->translation[handle] = translation;
+    storage->rotation[handle]    = rotation;
+    storage->scale[handle]       = scale;
+
+    // traverse children
+    uint32_t subTreeEndIndex = handle;
+    if (node->mNumChildren > 0)
+    {
+        for (uint32_t childIndex = 0u; childIndex < node->mNumChildren; ++childIndex)
+        {
+            EntityId childId = traverseSceneNodes(scene, node->mChildren[childIndex], aiScene, gameObjectId);
+
+            subTreeEndIndex  = TransformSystem::getEntityHandle(childId);
+        }
+    }
+
+    storage->subtreeEnd[handle] = subTreeEndIndex;
+    storage->dirtyList[handle]  = 1u;
+
+    return gameObjectId;
 }
 
 void AssimpLoader::parseMeshes(Scene& scene, const aiScene* aiScene)
@@ -243,7 +245,7 @@ void AssimpLoader::parseMeshes(Scene& scene, const aiScene* aiScene)
 
             if (mesh->HasTangentsAndBitangents())
             {
-                v.tangent   = glm::vec3(mesh->mTangents[vertexIndex].x, mesh->mTangents[vertexIndex].y, mesh->mTangents[vertexIndex].z);
+                v.tangent      = glm::vec3(mesh->mTangents[vertexIndex].x, mesh->mTangents[vertexIndex].y, mesh->mTangents[vertexIndex].z);
 
                 auto bitangent = glm::vec3(mesh->mBitangents[vertexIndex].x, mesh->mBitangents[vertexIndex].y, mesh->mBitangents[vertexIndex].z);
 

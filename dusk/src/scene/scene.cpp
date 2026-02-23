@@ -2,12 +2,12 @@
 
 #include "engine.h"
 #include "camera_controller.h"
+#include "transform_system.h"
 #include "events/event.h"
 
 #include "loaders/assimp_loader.h"
 
 #include "components/camera.h"
-#include "components/transform.h"
 #include "components/renderable.h"
 
 #include "debug/profiler.h"
@@ -30,15 +30,17 @@ Scene::Scene(const std::string_view name) :
     auto camera = createUnique<GameObject>();
     camera->setName("Camera");
 
-    TransformComponent& cameraTransform = camera->getComponent<TransformComponent>();
-    auto&               cameraComponent = camera->addComponent<CameraComponent>();
-    const auto&         currentExtent   = Engine::get().getRenderer().getSwapChain().getCurrentExtent();
+    const auto& currentExtent   = Engine::get().getRenderer().getSwapChain().getCurrentExtent();
+    auto&       cameraComponent = camera->addComponent<CameraComponent>();
     cameraComponent.setPerspectiveProjection(glm::radians(50.f), static_cast<float>(currentExtent.width) / static_cast<float>(currentExtent.height), 0.5f, 10000.f);
-    cameraComponent.setView(cameraTransform.translation, cameraTransform.rotation);
 
-    m_cameraController = createUnique<CameraController>(*camera, currentExtent.width, currentExtent.height, glm::vec3(0.f, 1.f, 0.f));
+    m_cameraController = createUnique<CameraController>(
+        *camera,
+        currentExtent.width,
+        currentExtent.height,
+        glm::vec3(0.f, 1.f, 0.f));
 
-    m_cameraId         = camera->getId();
+    m_cameraId = camera->getId();
     addGameObject(std::move(camera), rootId);
 }
 
@@ -63,18 +65,18 @@ void Scene::onUpdate(TimeStep dt)
 
     // TODO:: this can be optimized further by maintaining a list of dirty transforms
     // update world AABBs for all mesh components whose transforms are dirty
-    Registry::getRegistry().view<TransformComponent, RenderableComponent>().each(
-        [&](auto entity, auto& transform, auto& meshData)
-        {
-            // auto  objectId  = static_cast<entt::id_type>(entity);
-            if (!transform.dirty)
-            {
-                return;
-            }
+    // Registry::getRegistry().view<RenderableComponent>().each(
+    //    [&](auto entity, auto& meshData)
+    //    {
+    //        // auto  objectId  = static_cast<entt::id_type>(entity);
+    //        if (!transform.dirty)
+    //        {
+    //            return;
+    //        }
 
-            meshData.worldAABB = recomputeAABB(meshData.objectAABB, transform.mat4());
-            transform.markClean();
-        });
+    //        meshData.worldAABB = recomputeAABB(meshData.objectAABB, TransformSystem::getWorldMatrix(entity));
+    //        transform.markClean();
+    //    });
 }
 
 void Scene::addGameObject(
@@ -89,6 +91,8 @@ void Scene::addGameObject(
 
     auto& parent = getGameObject(parentId);
     parent.addChild(getGameObject(objectId));
+
+    TransformSystem::setParent(objectId, parentId);
 }
 
 void Scene::destroyGameObject(GameObject& object)
@@ -121,11 +125,6 @@ CameraController& Scene::getMainCameraController()
     return *m_cameraController;
 }
 
-TransformComponent& Scene::getMainCameraTransform()
-{
-    return Registry::getRegistry().get<TransformComponent>(m_cameraId);
-}
-
 Unique<Scene> Scene::createSceneFromGLTF(const std::string& fileName)
 {
     DUSK_PROFILE_FUNCTION;
@@ -148,16 +147,16 @@ void Scene::freeMaterials()
 void Scene::gatherRenderables(GfxRenderables* currentFrameRenderables)
 {
     DUSK_PROFILE_FUNCTION;
-    Registry::getRegistry().view<TransformComponent, RenderableComponent>().each(
-        [&](auto entity, auto& transform, auto& renderableData)
+    Registry::getRegistry().view<RenderableComponent>().each(
+        [&](auto entity, auto& renderableData)
         {
             glm::vec3 center  = (renderableData.worldAABB.min + renderableData.worldAABB.max) * 0.5f;
             glm::vec3 extents = (renderableData.worldAABB.max - renderableData.worldAABB.min) * 0.5f;
 
             for (uint32_t index = 0u; index < renderableData.meshes.size(); ++index)
             {
-                currentFrameRenderables->modelMatrices.push_back(transform.mat4());
-                currentFrameRenderables->normalMatrices.push_back(transform.normalMat4());
+                currentFrameRenderables->modelMatrices.push_back(TransformSystem::getWorldMatrix(entity));
+                currentFrameRenderables->normalMatrices.push_back(TransformSystem::getNormalMatrix(entity));
                 currentFrameRenderables->boundingBoxes.push_back(
                     GfxBoundingBoxData {
                         .center  = center,

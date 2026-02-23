@@ -28,9 +28,7 @@ private:
     void                  parseMeshes(Scene& scene, const aiScene* aiScene);
     void                  parseMaterials(Scene& scene, const aiScene* aiScene);
 
-    void                  traverseSceneNodes(Scene& scene, const aiNode* node, const aiScene* aiScene, EntityId parentId);
-
-    GameObject            parseAssimpNode(const aiNode* node);
+    EntityId              traverseSceneNodes(Scene& scene, const aiNode* node, const aiScene* aiScene, EntityId parentId);
 
     std::filesystem::path getGltfTexturePath(aiMaterial* mat);
     std::filesystem::path getTexturePath(aiMaterial* mat, aiTextureType type);
@@ -38,13 +36,13 @@ private:
     int32_t               read2DTexture(std::filesystem::path texPath, PixelFormat format) const;
 
 private:
-    Assimp::Importer          m_importer;
+    Assimp::Importer       m_importer     = {};
 
-    std::filesystem::path     m_sceneDir     = "";
+    std::filesystem::path  m_sceneDir     = "";
 
-    bool                      m_isGltf       = false;
+    bool                   m_isGltf       = false;
 
-    DynamicArray<Vertex>      m_tempVertices = {};
-    DynamicArray<uint32_t>    m_tempIndices  = {};
+    DynamicArray<Vertex>   m_tempVertices = {};
+    DynamicArray<uint32_t> m_tempIndices  = {};
 };
 } // namespace dusk

@@ -1,5 +1,8 @@
 #include "transform_system.h"
 
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/quaternion.hpp>
+
 namespace dusk
 {
 
@@ -30,9 +33,9 @@ TransformHandle  TransformStorage::allocate()
 
 void TransformStorage::recomputeLocal(TransformHandle handle)
 {
-    auto& t       = translation[handle];
-    auto& r       = rotation[handle];
-    auto& s       = scale[handle];
+    const auto& t = translation[handle];
+    const auto& r = rotation[handle];
+    const auto& s = scale[handle];
 
     local[handle] = glm::mat4 {
         {
@@ -67,6 +70,7 @@ TransformSystem::TransformSystem()
 
 TransformSystem::~TransformSystem()
 {
+    m_storage = nullptr;
 }
 
 bool TransformSystem::init(size_t maxTransformsCount)
@@ -108,6 +112,7 @@ void TransformSystem::updateMatrices()
         {
             // we can skip whole subtree
             handle = m_storage->subtreeEnd[handle] + 1;
+            continue;
         }
 
         // recompute new local
@@ -120,9 +125,20 @@ void TransformSystem::updateMatrices()
     }
 }
 
+void TransformSystem::markDirty(TransformHandle handle)
+{
+    m_storage->dirtyList[handle] = 1u;
+
+    // mark all children
+    for (uint32_t childHandle = handle + 1; childHandle < m_storage->subtreeEnd[handle]; ++childHandle)
+    {
+        m_storage->dirtyList[childHandle] = 1u;
+    }
+}
+
 TransformHandle TransformSystem::create(EntityId entityId, EntityId parentId)
 {
-    auto&           storage                = s_instance->m_storage;
+    const auto&     storage                = s_instance->m_storage;
     TransformHandle handle                 = storage->allocate();
 
     s_instance->m_entityToHandle[entityId] = handle;
@@ -142,26 +158,81 @@ TransformStorage* TransformSystem::getStorage()
     return s_instance->m_storage.get();
 }
 
-void TransformSystem::setTranslation(TransformHandle handle, const glm::vec3& newTranslation)
+void TransformSystem::setParent(EntityId id, EntityId parentId)
+{
+    auto handle       = s_instance->m_entityToHandle[id];
+    auto parentHandle = s_instance->m_entityToHandle[parentId];
+
+    // set and mark dirty
+    s_instance->m_storage->parent[handle] = parentHandle;
+    s_instance->markDirty(handle);
+}
+
+glm::vec3 TransformSystem::setTranslation(TransformHandle handle, const glm::vec3& newTranslation)
 {
     s_instance->m_storage->translation[handle] = newTranslation;
-    s_instance->m_storage->dirtyList[handle]   = true;
+    s_instance->markDirty(handle);
+
+    return s_instance->m_storage->translation[handle];
 }
 
-void TransformSystem::setRotation(TransformHandle handle, const glm::quat& newRotation)
+glm::quat TransformSystem::setRotation(TransformHandle handle, const glm::quat& newRotation)
 {
-    s_instance->m_storage->rotation[handle]  = newRotation;
-    s_instance->m_storage->dirtyList[handle] = true;
+    s_instance->m_storage->rotation[handle] = newRotation;
+    s_instance->markDirty(handle);
+
+    return s_instance->m_storage->rotation[handle];
 }
 
-void TransformSystem::setScale(TransformHandle handle, const glm::vec3& newScale)
+glm::vec3 TransformSystem::setScale(TransformHandle handle, const glm::vec3& newScale)
 {
-    s_instance->m_storage->scale[handle]     = newScale;
-    s_instance->m_storage->dirtyList[handle] = true;
+    s_instance->m_storage->scale[handle] = newScale;
+    s_instance->markDirty(handle);
+
+    return s_instance->m_storage->scale[handle];
+}
+
+glm::vec3 TransformSystem::getPosition(TransformHandle handle)
+{
+    return s_instance->m_storage->translation[handle];
+}
+
+glm::vec3 TransformSystem::getPosition(EntityId id)
+{
+    auto handle = s_instance->m_entityToHandle[id];
+    return s_instance->m_storage->translation[handle];
+}
+
+glm::quat TransformSystem::getRotation(TransformHandle handle)
+{
+    return s_instance->m_storage->rotation[handle];
+}
+
+glm::quat TransformSystem::getRotation(EntityId id)
+{
+    auto handle = s_instance->m_entityToHandle[id];
+    return s_instance->m_storage->rotation[handle];
+}
+
+glm::vec3 TransformSystem::getScale(TransformHandle handle)
+{
+    return s_instance->m_storage->scale[handle];
+}
+
+glm::vec3 TransformSystem::getScale(EntityId id)
+{
+    auto handle = s_instance->m_entityToHandle[id];
+    return s_instance->m_storage->scale[handle];
 }
 
 glm::mat4 TransformSystem::getWorldMatrix(TransformHandle handle)
 {
+    return s_instance->m_storage->world[handle];
+}
+
+glm::mat4 TransformSystem::getWorldMatrix(EntityId id)
+{
+    auto handle = s_instance->m_entityToHandle[id];
     return s_instance->m_storage->world[handle];
 }
 
@@ -170,9 +241,26 @@ glm::mat4 TransformSystem::getLocalMatrix(TransformHandle handle)
     return s_instance->m_storage->local[handle];
 }
 
+glm::mat4 TransformSystem::getLocalMatrix(EntityId id)
+{
+    auto handle = s_instance->m_entityToHandle[id];
+    return s_instance->m_storage->local[handle];
+}
+
 glm::mat4 TransformSystem::getNormalMatrix(TransformHandle handle)
 {
     return s_instance->m_storage->normal[handle];
+}
+
+glm::mat4 TransformSystem::getNormalMatrix(EntityId id)
+{
+    auto handle = s_instance->m_entityToHandle[id];
+    return s_instance->m_storage->normal[handle];
+}
+
+TransformHandle TransformSystem::getEntityHandle(EntityId id)
+{
+    return s_instance->m_entityToHandle[id];
 }
 
 } // namespace dusk

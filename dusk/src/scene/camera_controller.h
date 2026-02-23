@@ -28,7 +28,6 @@
 #include "game_object.h"
 #include "events/event.h"
 #include "core/dtime.h"
-#include "components/transform.h"
 #include "components/camera.h"
 
 #include <glm/glm.hpp>
@@ -42,10 +41,10 @@ class CameraController
 {
 public:
     CameraController(
-        GameObject& camera, 
-        uint32_t width, 
-        uint32_t height,
-        glm::vec3 up);
+        GameObject& camera,
+        uint32_t    width,
+        uint32_t    height,
+        glm::vec3   up);
     ~CameraController() = default;
 
     void onEvent(Event& ev);
@@ -57,57 +56,59 @@ public:
      * @param direction The forward direction vector that the view should point toward.
      */
     void setViewDirection(glm::vec3 position, glm::vec3 direction);
-    
+
     /**
      * @brief Sets the current view direction.
      * @param direction The new view direction as a 3D vector (glm::vec3).
      */
     void setViewDirection(glm::vec3 direction);
-    
+
     /**
      * @brief Sets the view by specifying the camera position and the point to look at.
      * @param position The camera position in world coordinates.
      * @param target The point in world coordinates that the camera should look at.
      */
     void setViewTarget(glm::vec3 position, glm::vec3 target);
-    
+
     /**
      * @brief Sets the view to look at a target point from the current camera position.
      * @param target The point in world coordinates that the camera should look at.
      */
     void setViewTarget(glm::vec3 target);
-    
+
     /**
      * @brief Sets the camera's position in world space.
      * @param position The new position of the camera as a 3D vector (glm::vec3).
      */
     void setPosition(glm::vec3 position);
-    
+
     /**
      * @brief Resets the camera to its default state provided by set view functions.
      */
-    void resetCamera();
+    void      resetCamera();
 
     glm::vec3 getRightDirection() const { return m_rightDir; };
     glm::vec3 getUpDirection() const { return m_upDir; };
     glm::vec3 getForwardDirection() const { return m_forwardDir; };
 
 private:
-    TransformComponent& m_cameraTransform;
-    CameraComponent&    m_cameraComponent;
-    TransformComponent  m_startTransform   = {};
+    GameObject&      m_camera;
+    CameraComponent& m_cameraComponent;
 
-    float               m_width            = 0.0f;
-    float               m_height           = 0.0f;
+    glm::vec3        m_startPos         = {};
+    glm::quat        m_startRot         = {};
 
-    glm::vec3           m_rightDir         = glm::vec3(1.f, 0.f, 0.f);
-    glm::vec3           m_upDir            = glm::vec3(0.f, 1.f, 0.f);
-    glm::vec3           m_forwardDir       = glm::vec3(0.f, 0.f, -1.f);
+    float            m_width            = 0.0f;
+    float            m_height           = 0.0f;
 
-    bool                m_changed          = false; // TODO:: might not be required
+    glm::vec3        m_rightDir         = glm::vec3(1.f, 0.f, 0.f);
+    glm::vec3        m_upDir            = glm::vec3(0.f, 1.f, 0.f);
+    glm::vec3        m_forwardDir       = glm::vec3(0.f, 0.f, -1.f);
 
-    float               m_cameraMoveSpeed  = 20.0f;
-    float               m_mouseSensitivity = 0.002f;
+    bool             m_changed          = false; // TODO:: might not be required
+
+    float            m_cameraMoveSpeed  = 20.0f;
+    float            m_mouseSensitivity = 0.002f;
 
     // TODO:: create input state controller to track such states
     bool  m_isRMBpressed       = false;

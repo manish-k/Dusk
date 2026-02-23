@@ -115,7 +115,6 @@ set(RENDERER_FILES
 	"${RENDERER_DIR}/texture_db.h"
 	"${RENDERER_DIR}/gfx_types.h"
 	"${RENDERER_DIR}/environment.h"
-	"${RENDERER_SYSTEMS_DIR}/basic_render_system.h"
 	"${RENDERER_SYSTEMS_DIR}/grid_render_system.h"
 	"${RENDERER_SYSTEMS_DIR}/lights_system.h"
 	"${RENDERER_PASSES_DIR}/render_passes.h"
@@ -129,7 +128,6 @@ set(RENDERER_FILES
 	"${RENDERER_DIR}/render_graph.cpp"
 	"${RENDERER_DIR}/texture_db.cpp"
 	"${RENDERER_DIR}/environment.cpp"
-	"${RENDERER_SYSTEMS_DIR}/basic_render_system.cpp"
 	"${RENDERER_SYSTEMS_DIR}/grid_render_system.cpp"
 	"${RENDERER_SYSTEMS_DIR}/lights_system.cpp"
 	"${RENDERER_PASSES_DIR}/g_buffer_pass.cpp"
@@ -144,7 +142,6 @@ set(SCENE_DIR "${PROJECT_SOURCE_DIR}/src/scene")
 set(COMPONENTS_DIR "${SCENE_DIR}/components")
 set(SCENE_FILES
 	# Header files
-	"${COMPONENTS_DIR}/transform.h"
 	"${COMPONENTS_DIR}/camera.h"
 	"${COMPONENTS_DIR}/renderable.h"
 	"${COMPONENTS_DIR}/lights.h"

@@ -23,7 +23,6 @@
 #include "renderer/texture.h"
 #include "renderer/texture_db.h"
 #include "renderer/environment.h"
-#include "renderer/systems/basic_render_system.h"
 #include "renderer/systems/lights_system.h"
 #include "renderer/render_graph.h"
 #include "renderer/passes/render_passes.h"
@@ -79,7 +78,7 @@ bool Engine::start(Shared<Application> app)
     }
 
     m_transformSystem = createUnique<TransformSystem>();
-    if (!m_transformSystem->init(maxRenderableMeshes))
+    if (!m_transformSystem->init(MAX_RENDERABLES_COUNT))
     {
         DUSK_ERROR("Transforms system initialization failed");
         return false;
@@ -105,12 +104,6 @@ bool Engine::start(Shared<Application> app)
     if (!setupGlobals()) return false;
 
     m_lightsSystem      = createUnique<LightsSystem>();
-
-    m_basicRenderSystem = createUnique<BasicRenderSystem>(
-        *m_gfxDevice,
-        *m_globalDescriptorSetLayout,
-        *m_materialDescriptorSetLayout,
-        m_lightsSystem->getLightsDescriptorSetLayout());
 
     prepareRenderGraphResources();
 
@@ -167,8 +160,6 @@ void Engine::shutdown()
 
     m_statsRecorder->cleanup();
     m_statsRecorder     = nullptr;
-
-    m_basicRenderSystem = nullptr;
 
     m_lightsSystem      = nullptr;
 
@@ -227,6 +218,8 @@ void Engine::onUpdate(TimeStep dt)
             DUSK_PROFILE_SECTION("scene_updates");
 
             m_currentScene->onUpdate(dt);
+
+            m_transformSystem->updateMatrices();
 
             m_currentScene->gatherRenderables(&m_frameRenderables[currentFrameIndex]);
 

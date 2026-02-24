@@ -65,18 +65,16 @@ void Scene::onUpdate(TimeStep dt)
 
     // TODO:: this can be optimized further by maintaining a list of dirty transforms
     // update world AABBs for all mesh components whose transforms are dirty
-    // Registry::getRegistry().view<RenderableComponent>().each(
-    //    [&](auto entity, auto& meshData)
-    //    {
-    //        // auto  objectId  = static_cast<entt::id_type>(entity);
-    //        if (!transform.dirty)
-    //        {
-    //            return;
-    //        }
+    Registry::getRegistry().view<RenderableComponent>().each(
+        [&](auto entity, auto& meshData)
+        {
+            if (!TransformSystem::isDirty(entity))
+            {
+                return;
+            }
 
-    //        meshData.worldAABB = recomputeAABB(meshData.objectAABB, TransformSystem::getWorldMatrix(entity));
-    //        transform.markClean();
-    //    });
+            meshData.worldAABB = recomputeAABB(meshData.objectAABB, TransformSystem::getWorldMatrix(entity));
+        });
 }
 
 void Scene::addGameObject(

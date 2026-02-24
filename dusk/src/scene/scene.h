@@ -82,11 +82,11 @@ public:
         return Registry::getRegistry().view<Components...>();
     }
 
-    CameraComponent&    getMainCamera();
+    CameraComponent&  getMainCamera();
 
-    CameraController&   getMainCameraController();
+    CameraController& getMainCameraController();
 
-    void                initMaterialCache(uint32_t materialCount)
+    void              initMaterialCache(uint32_t materialCount)
     {
         m_materials.reserve(materialCount);
     };

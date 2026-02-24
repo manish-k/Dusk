@@ -8,7 +8,7 @@ namespace dusk
 
 TransformSystem* TransformSystem::s_instance = nullptr;
 
-uint32_t  TransformStorage::allocate()
+uint32_t         TransformStorage::allocate()
 {
     uint32_t handle = count;
     ++count;
@@ -116,7 +116,7 @@ void TransformSystem::updateMatrices()
         // recompute new local
         m_storage->recomputeLocal(handle);
 
-        uint32_t parent       = m_storage->parent[handle];
+        uint32_t parent              = m_storage->parent[handle];
         m_storage->world[handle]     = m_storage->world[parent] * m_storage->local[handle];
 
         m_storage->dirtyList[handle] = 0u;
@@ -136,16 +136,16 @@ void TransformSystem::markDirty(uint32_t handle)
 
 uint32_t TransformSystem::create(EntityId entityId, EntityId parentId)
 {
-    const auto&     storage                = s_instance->m_storage;
-    uint32_t handle                 = storage->allocate();
+    const auto& storage                    = s_instance->m_storage;
+    uint32_t    handle                     = storage->allocate();
 
     s_instance->m_entityToHandle[entityId] = handle;
     s_instance->m_handleToEntity[handle]   = entityId;
 
     if (parentId != NULL_ENTITY)
     {
-        uint32_t parentHandle = s_instance->m_entityToHandle[parentId];
-        storage->parent[handle]      = parentHandle;
+        uint32_t parentHandle   = s_instance->m_entityToHandle[parentId];
+        storage->parent[handle] = parentHandle;
     }
 
     storage->subtreeEnd[handle] = handle;
@@ -261,6 +261,12 @@ glm::mat4 TransformSystem::getNormalMatrix(EntityId id)
 uint32_t TransformSystem::getEntityHandle(EntityId id)
 {
     return s_instance->m_entityToHandle[id];
+}
+
+bool TransformSystem::isDirty(EntityId id)
+{
+    auto handle = s_instance->m_entityToHandle[id];
+    return s_instance->m_storage->dirtyList[handle];
 }
 
 } // namespace dusk

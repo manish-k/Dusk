@@ -45,6 +45,7 @@ struct TransformStorage
     void     recomputeLocal(uint32_t handle);
 };
 
+// TODO:: Pointer chasing in getter/setters, need refactoring
 class TransformSystem
 {
 public:
@@ -81,6 +82,8 @@ public:
     static glm::mat4         getNormalMatrix(uint32_t handle);
     static glm::mat4         getNormalMatrix(EntityId id);
     static uint32_t          getEntityHandle(EntityId id);
+
+    static bool              isDirty(EntityId id);
 
 private:
     Unique<TransformStorage>               m_storage        = nullptr;

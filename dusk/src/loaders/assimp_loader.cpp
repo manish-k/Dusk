@@ -126,10 +126,9 @@ EntityId AssimpLoader::traverseSceneNodes(Scene& scene, const aiNode* node, cons
 
     auto gameObject   = createUnique<GameObject>();
     auto gameObjectId = gameObject->getId();
-    auto handle       = gameObject->getuint32_t();
+    auto handle       = gameObject->getTransformHandle();
 
     gameObject->setName(node->mName.C_Str());
-    gameObject->setuint32_t(handle);
 
     if (node->mNumMeshes > 0)
     {

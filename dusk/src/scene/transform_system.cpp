@@ -103,7 +103,7 @@ void TransformSystem::resrveStorageCapacity(size_t maxTransformsCount)
     m_storage->dirtyList.reserve(maxTransformsCount);
 }
 
-void TransformSystem::updateMatrices()
+void TransformSystem::updateDirtyMatrices()
 {
     uint32_t transformsCount = m_storage->count;
     for (uint32_t handle = 0u; handle < transformsCount; ++handle)

@@ -219,7 +219,7 @@ void Engine::onUpdate(TimeStep dt)
 
             m_currentScene->onUpdate(dt);
 
-            m_transformSystem->updateMatrices();
+            m_transformSystem->updateDirtyMatrices();
 
             m_currentScene->gatherRenderables(&m_frameRenderables[currentFrameIndex]);
 

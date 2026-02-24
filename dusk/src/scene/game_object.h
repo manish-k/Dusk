@@ -46,26 +46,91 @@ public:
      * @brief Set parent id for a game object
      * @param parentId
      */
-    void                    setParent(EntityId parentId) { m_parent = parentId; }
+    void setParent(EntityId parentId) { m_parent = parentId; }
+
+    /**
+     * @brief Get children list of the game object
+     * @return Array of children ids
+     */
     DynamicArray<EntityId>& getChildren() { return m_children; }
 
-    void                    setuint32_t(uint32_t handle) { m_transformHandle = handle; };
-    uint32_t                getuint32_t() const { return m_transformHandle; };
+    /**
+     * @brief Get name of the game object
+     * @return Name string
+     */
+    std::string getName() const { return m_name; }
 
-    std::string             getName() { return m_name; }
-    const char*             getCName() { return m_name.c_str(); }
+    /**
+     * @brief Get name of the game object
+     * @return Name c string
+     */
+    const char* getCName() const { return m_name.c_str(); }
 
-    glm::vec3               setPosition(glm::vec3 newPosition);
-    glm::vec3               getPosition();
-    glm::vec3               move(glm::vec3 direction);
+    /**
+     * @brief Get transform handle of the game object
+     * @return Transform handle
+     */
+    uint32_t getTransformHandle() const { return m_transformHandle; }
 
-    glm::quat               getRotation();
-    glm::quat               setRotation(glm::quat newRotation);
-    glm::quat               rotate(glm::quat rotation);
+    /**
+     * @brief Set position of the game object
+     * @param New position vector
+     * @return new position vector
+     */
+    glm::vec3 setPosition(glm::vec3 newPosition) const;
 
-    glm::vec3               getScale();
-    glm::vec3               setScale(glm::vec3 newScale);
-    glm::vec3               scale(float mulitplier);
+    /**
+     * @brief Get position of the game object
+     * @return Current position vector
+     */
+    glm::vec3 getPosition() const;
+
+    /**
+     * @brief Move game object in a given direction
+     * @param direction vector
+     * @return New position of the game object
+     */
+    glm::vec3 move(glm::vec3 direction) const;
+
+    /**
+     * @brief Get rotation of the game object
+     * @return Rotation quaternion
+     */
+    glm::quat getRotation() const;
+
+    /**
+     * @brief Set rotation of the game object
+     * @param rotation quaternion
+     * @return Current rotation quaternion
+     */
+    glm::quat setRotation(glm::quat newRotation) const;
+
+    /**
+     * @brief Rotate the game object by given rotation
+     * @param Rotation quaternion
+     * @return New rotation of the game object
+     */
+    glm::quat rotate(glm::quat rotation) const;
+
+    /**
+     * @brief Get current scale of the game object
+     * @return Scale vector
+     */
+    glm::vec3 getScale() const;
+
+    /**
+     * @brief Set scale of the game object
+     * @param New scale vector
+     * @return Scale vector
+     */
+    glm::vec3 setScale(glm::vec3 newScale) const;
+
+    /**
+     * @brief Scale the game object by given multiplier
+     * @param mulitplier
+     * @return New scale of the game object
+     */
+    glm::vec3 scale(float mulitplier) const;
 
 private:
     std::string            m_name   = "GameObject";

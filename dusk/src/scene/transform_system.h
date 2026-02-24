@@ -40,9 +40,18 @@ struct TransformStorage
     DynamicArray<uint8_t> dirtyList;
 
     TransformStorage() = default;
-
+    /**
+     * @brief Allocate a new transform
+     * @return Handle of allocated transform
+     */
     uint32_t allocate();
-    void     recomputeLocal(uint32_t handle);
+
+    /**
+     * @brief Recompute local transform matrix based on translation, rotation and
+     * scale values
+     * @param Handle of transform
+     */
+    void recomputeLocal(uint32_t handle);
 };
 
 // TODO:: Pointer chasing in getter/setters, need refactoring
@@ -52,38 +61,177 @@ public:
     TransformSystem();
     ~TransformSystem();
 
+    /**
+     * @brief Initialize the transform system and storage
+     * @param Total transforms to support
+     * @return true if init successful else false
+     */
     bool init(size_t maxTransformCount);
+
+    /**
+     * @brief Clean transform storage
+     */
     void cleanup();
+
+    /**
+     * @brief Reserve storage capacity of transform storage
+     * @param total transform for which storage should be reserved
+     */
     void resrveStorageCapacity(size_t maxTransformsCount);
-    void updateMatrices();
+
+    /**
+     * @brief Update dirty transforms matrices
+     */
+    void updateDirtyMatrices();
+
+    /**
+     * @brief Mark transform and its subtree as dirty
+     * @param Handle of the transform
+     */
     void markDirty(uint32_t handle);
 
-public:
-    static uint32_t          create(EntityId entityId, EntityId parentId = NULL_ENTITY);
+    /**
+     * @brief Allocate transform in the storage
+     * @param Entity id for which storage should be allocated
+     * @param Parent's entity id
+     * @return Handle for the transform
+     */
+    static uint32_t create(EntityId entityId, EntityId parentId = NULL_ENTITY);
+
+    /**
+     * @brief Get underlying storage for direct access
+     * @return Transform storage's pointer
+     */
     static TransformStorage* getStorage();
 
-    static void              setParent(EntityId id, EntityId parentId);
+    /**
+     * @brief Set parent for the given entity
+     * @param id
+     * @param parent id
+     */
+    static void setParent(EntityId id, EntityId parentId);
 
-    static glm::vec3         setTranslation(uint32_t handle, const glm::vec3& newTranslation);
-    static glm::quat         setRotation(uint32_t handle, const glm::quat& newRotation);
-    static glm::vec3         setScale(uint32_t handle, const glm::vec3& newScale);
+    /**
+     * @brief Set translation for given hanle
+     * @param Handle
+     * @param New translation vector
+     * @return Updated translation vector
+     */
+    static glm::vec3 setTranslation(uint32_t handle, const glm::vec3& newTranslation);
 
-    static glm::vec3         getPosition(uint32_t handle);
-    static glm::vec3         getPosition(EntityId id);
-    static glm::quat         getRotation(uint32_t handle);
-    static glm::quat         getRotation(EntityId id);
-    static glm::vec3         getScale(uint32_t handle);
-    static glm::vec3         getScale(EntityId id);
+    /**
+     * @brief Set rotation for given hanle
+     * @param Handle
+     * @param New rotation quaternion
+     * @return Updated rotation quaternion
+     */
+    static glm::quat setRotation(uint32_t handle, const glm::quat& newRotation);
 
-    static glm::mat4         getWorldMatrix(uint32_t handle);
-    static glm::mat4         getWorldMatrix(EntityId id);
-    static glm::mat4         getLocalMatrix(uint32_t handle);
-    static glm::mat4         getLocalMatrix(EntityId id);
-    static glm::mat4         getNormalMatrix(uint32_t handle);
-    static glm::mat4         getNormalMatrix(EntityId id);
-    static uint32_t          getEntityHandle(EntityId id);
+    /**
+     * @brief Set scale for given hanle
+     * @param Handle
+     * @param New scale vector
+     * @return Updated scale vector
+     */
+    static glm::vec3 setScale(uint32_t handle, const glm::vec3& newScale);
 
-    static bool              isDirty(EntityId id);
+    /**
+     * @brief Get position for given handle
+     * @param Handle
+     * @return Position vector
+     */
+    static glm::vec3 getPosition(uint32_t handle);
+
+    /**
+     * @brief Get position for given entity
+     * @param Entity Id
+     * @return Position vector
+     */
+    static glm::vec3 getPosition(EntityId id);
+
+    /**
+     * @brief Get rotaion for given handle
+     * @param Handle
+     * @return Rotation quaternion
+     */
+    static glm::quat getRotation(uint32_t handle);
+
+    /**
+     * @brief Get rotation for given entity id
+     * @param Entity id
+     * @return Rotation quaternion
+     */
+    static glm::quat getRotation(EntityId id);
+
+    /**
+     * @brief Get scale for given handle
+     * @param Handle
+     * @return Scale vector
+     */
+    static glm::vec3 getScale(uint32_t handle);
+
+    /**
+     * @brief Get scale for given entity id
+     * @param Entity id
+     * @return Scale vector
+     */
+    static glm::vec3 getScale(EntityId id);
+
+    /**
+     * @brief Get world transform matrix for given transform handle
+     * @param Handle
+     * @return World space transform matrix
+     */
+    static glm::mat4 getWorldMatrix(uint32_t handle);
+
+    /**
+     * @brief Get world transform matrix for given entity
+     * @param Entity id
+     * @return World space transform matrix
+     */
+    static glm::mat4 getWorldMatrix(EntityId id);
+
+    /**
+     * @brief Get local transform matrix for given transform handle
+     * @param Handle
+     * @return Local space transform matrix
+     */
+    static glm::mat4 getLocalMatrix(uint32_t handle);
+
+    /**
+     * @brief Get local transform matrix for given entity
+     * @param Entity id
+     * @return Local space transform matrix
+     */
+    static glm::mat4 getLocalMatrix(EntityId id);
+
+    /**
+     * @brief Get normal transform matrix for given transform handle
+     * @param Handle
+     * @return Normal transform matrix
+     */
+    static glm::mat4 getNormalMatrix(uint32_t handle);
+
+    /**
+     * @brief Get normal transform matrix for given entity
+     * @param Entity id
+     * @return Normal transform matrix
+     */
+    static glm::mat4 getNormalMatrix(EntityId id);
+
+    /**
+     * @brief Get transform handle for a given entity
+     * @param Entity id
+     * @return Transform handle
+     */
+    static uint32_t getEntityHandle(EntityId id);
+
+    /**
+     * @brief Check if given entity's transform is dirty or not
+     * @param Entity id
+     * @return True if entity's transform is dirty else false
+     */
+    static bool isDirty(EntityId id);
 
 private:
     Unique<TransformStorage>               m_storage        = nullptr;

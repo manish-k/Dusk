@@ -14,6 +14,9 @@
 
 namespace dusk
 {
+
+// TODO:: Need hierarchy edits when adding/removing nodes
+// TODO:: dirty update parallelization using depth/level of tree
 struct TransformStorage
 {
     CLASS_UNCOPYABLE(TransformStorage);
@@ -24,7 +27,6 @@ struct TransformStorage
     // transforms hierarchy
     DynamicArray<uint32_t> parent;
     DynamicArray<uint32_t> subtreeEnd;
-    DynamicArray<uint16_t> depth;
 
     // transform data
     DynamicArray<glm::vec3> translation;
@@ -34,7 +36,7 @@ struct TransformStorage
     // transform matrices
     DynamicArray<glm::mat4> local;
     DynamicArray<glm::mat4> world;
-    DynamicArray<glm::mat4> normal;
+    DynamicArray<glm::mat4> normal; // TODO:: glm::mat3 is sufficient here
 
     // TODO:: use dynamic bitset
     DynamicArray<uint8_t> dirtyList;

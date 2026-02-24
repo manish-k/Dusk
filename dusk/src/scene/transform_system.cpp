@@ -16,7 +16,6 @@ uint32_t         TransformStorage::allocate()
     // add defaults
     parent.push_back(0u);
     subtreeEnd.push_back(0u);
-    depth.push_back(0u);
 
     translation.emplace_back(0.f);
     rotation.emplace_back(1.0f, 0.f, 0.f, 0.f);

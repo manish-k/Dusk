@@ -54,7 +54,6 @@ void Environment::initCubeTextureResources(
             skyboxPrefilteredTexturePath,
             TextureType::Cube,
             PixelFormat::R32G32B32A32_sfloat);
-    m_skyPrefilteredMaxLods = m_textureDB.getTexture2D(m_skyPrefilteredTexId).numMipLevels;
 
     m_skyBoxPipelineLayout  = VkGfxPipelineLayout::Builder(ctx)
                                  .addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(SkyBoxPushConstant))

@@ -6,6 +6,7 @@
 #include "engine.h"
 #include "debug/profiler.h"
 #include "renderer/environment.h"
+#include "renderer/texture_db.h"
 
 namespace dusk
 {
@@ -61,11 +62,12 @@ void recordLightingCmds(const FrameData& frameData)
     push.aoRoughMetalTextureIdx = resources.gbuffRenderTextureIds[2];
     push.emissiveTextureIdx     = resources.gbuffRenderTextureIds[3];
     push.depthTextureIdx        = resources.gbuffDepthTextureId;
-    push.irradianceTextureIdx   = env.getSkyIrradianceTextureId();
-    push.prefilteredTextureIdx  = env.getSkyPrefilteredTextureId();
-    push.maxPrefilteredLODs     = env.getSkyPrefilteredMaxLods();
     push.brdfLUTIdx             = resources.brdfLUTextureId;
     push.dirShadowMapTextureIdx = resources.dirShadowMapsTextureId;
+
+    push.irradianceTextureIdx   = env.getSkyIrradianceTextureId();
+    push.prefilteredTextureIdx  = env.getSkyPrefilteredTextureId();
+    push.maxPrefilteredLODs     = TextureDB::cache()->getTexture2D(push.prefilteredTextureIdx).numMipLevels;
 
     vkCmdPushConstants(
         cmdBuffer,

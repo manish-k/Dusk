@@ -49,8 +49,8 @@ public:
     void                    setParent(EntityId parentId) { m_parent = parentId; }
     DynamicArray<EntityId>& getChildren() { return m_children; }
 
-    void                    setTransformHandle(uint32_t handle) { m_transformHandle = handle; };
-    uint32_t                getTransformHandle() const { return m_transformHandle; };
+    void                    setuint32_t(uint32_t handle) { m_transformHandle = handle; };
+    uint32_t                getuint32_t() const { return m_transformHandle; };
 
     std::string             getName() { return m_name; }
     const char*             getCName() { return m_name.c_str(); }

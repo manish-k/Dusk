@@ -24,7 +24,7 @@ bool TestScene::start()
     // std::string scenePath = "assets/scenes/EnvironmentTest.gltf";
     // std::string scenePath = "assets/scenes/2_cubes.gltf";
     // std::string scenePath = "assets/scenes/Cube.gltf";
-    std::string scenePath = "D:/resources/scene/bistro_ext_gltf/bistro.gltf";
+    std::string scenePath = "D:/resources/scene/bistro_gltf/bistro.gltf";
     //std::string scenePath
     //    = "assets/scenes/tea_cup/DiffuseTransmissionTeacup.gltf";
     m_testScene = Scene::createSceneFromGLTF(scenePath);
@@ -33,8 +33,8 @@ bool TestScene::start()
     auto directionalLight = dusk::createUnique<GameObject>();
     directionalLight->setName("directional_light_0");
     auto& dLight     = directionalLight->addComponent<DirectionalLightComponent>();
-    dLight.direction = glm::vec3(4.f, -2.f, -6.f);
-    dLight.color     = glm::vec4(1.f, 1.f, 1.f, 0.2);
+    dLight.direction = glm::vec3(0.22f, -3.15f, -6.f);
+    dLight.color     = glm::vec4(1.f, 1.f, 1.f, 3.2);
     m_testScene->addGameObject(std::move(directionalLight), m_testScene->getRootId());
 
     // adding point light

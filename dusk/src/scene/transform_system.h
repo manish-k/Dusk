@@ -14,20 +14,17 @@
 
 namespace dusk
 {
-
-using TransformHandle = uint32_t;
-
 struct TransformStorage
 {
     CLASS_UNCOPYABLE(TransformStorage);
 
     // total transforms
-    uint32_t count;
+    uint32_t count = 0u;
 
     // transforms hierarchy
-    DynamicArray<TransformHandle> parent;
-    DynamicArray<TransformHandle> subtreeEnd;
-    DynamicArray<uint16_t>        depth;
+    DynamicArray<uint32_t> parent;
+    DynamicArray<uint32_t> subtreeEnd;
+    DynamicArray<uint16_t> depth;
 
     // transform data
     DynamicArray<glm::vec3> translation;
@@ -44,8 +41,8 @@ struct TransformStorage
 
     TransformStorage() = default;
 
-    TransformHandle allocate();
-    void            recomputeLocal(TransformHandle handle);
+    uint32_t allocate();
+    void     recomputeLocal(uint32_t handle);
 };
 
 class TransformSystem
@@ -58,38 +55,38 @@ public:
     void cleanup();
     void resrveStorageCapacity(size_t maxTransformsCount);
     void updateMatrices();
-    void markDirty(TransformHandle handle);
+    void markDirty(uint32_t handle);
 
 public:
-    static TransformHandle   create(EntityId entityId, EntityId parentId = NULL_ENTITY);
+    static uint32_t          create(EntityId entityId, EntityId parentId = NULL_ENTITY);
     static TransformStorage* getStorage();
 
     static void              setParent(EntityId id, EntityId parentId);
 
-    static glm::vec3         setTranslation(TransformHandle handle, const glm::vec3& newTranslation);
-    static glm::quat         setRotation(TransformHandle handle, const glm::quat& newRotation);
-    static glm::vec3         setScale(TransformHandle handle, const glm::vec3& newScale);
+    static glm::vec3         setTranslation(uint32_t handle, const glm::vec3& newTranslation);
+    static glm::quat         setRotation(uint32_t handle, const glm::quat& newRotation);
+    static glm::vec3         setScale(uint32_t handle, const glm::vec3& newScale);
 
-    static glm::vec3         getPosition(TransformHandle handle);
+    static glm::vec3         getPosition(uint32_t handle);
     static glm::vec3         getPosition(EntityId id);
-    static glm::quat         getRotation(TransformHandle handle);
+    static glm::quat         getRotation(uint32_t handle);
     static glm::quat         getRotation(EntityId id);
-    static glm::vec3         getScale(TransformHandle handle);
+    static glm::vec3         getScale(uint32_t handle);
     static glm::vec3         getScale(EntityId id);
 
-    static glm::mat4         getWorldMatrix(TransformHandle handle);
+    static glm::mat4         getWorldMatrix(uint32_t handle);
     static glm::mat4         getWorldMatrix(EntityId id);
-    static glm::mat4         getLocalMatrix(TransformHandle handle);
+    static glm::mat4         getLocalMatrix(uint32_t handle);
     static glm::mat4         getLocalMatrix(EntityId id);
-    static glm::mat4         getNormalMatrix(TransformHandle handle);
+    static glm::mat4         getNormalMatrix(uint32_t handle);
     static glm::mat4         getNormalMatrix(EntityId id);
-    static TransformHandle   getEntityHandle(EntityId id);
+    static uint32_t          getEntityHandle(EntityId id);
 
 private:
-    Unique<TransformStorage>                      m_storage        = nullptr;
+    Unique<TransformStorage>               m_storage        = nullptr;
 
-    std::unordered_map<EntityId, TransformHandle> m_entityToHandle = {};
-    std::unordered_map<TransformHandle, EntityId> m_handleToEntity = {};
+    std::unordered_map<EntityId, uint32_t> m_entityToHandle = {};
+    std::unordered_map<uint32_t, EntityId> m_handleToEntity = {};
 
 private:
     static TransformSystem* s_instance;

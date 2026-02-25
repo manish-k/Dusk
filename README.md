@@ -1,3 +1,6 @@
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Track on https://trello.com/b/OOKowW4p/dusk](https://img.shields.io/badge/track-on_trello-007BC2.svg?logo=trello&logoColor=ffffff&labelColor=026AA7)](https://trello.com/b/ciujzpUT) 
+
 # Dusk Rendering Engine
 
 **Dusk** is a modern experimental real-time rendering engine built with a focus on GPU-driven architecture, explicit control, and modern Vulkan techniques. It serves as a research workbench for building applications for learning advanced rendering systems and engine architecture design.
@@ -156,13 +159,13 @@ cmake -B build
 - Sponza GLTF model. [Link](https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/Sponza)
 - Damaged Helmet GLTF model. [Link](https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/DamagedHelmet)
 - Amazon Lumberyard Bistro. [Link](https://developer.nvidia.com/orca/amazon-lumberyard-bistro)
-- Models and HDR environment.[Link](https://polyhaven.com)
+- Models and HDR environment. [Link](https://polyhaven.com)
 - HDR sky. [Link](https://ambientcg.com)
 
 ## Development Status
 
 This project is under active development and architecture may evolve frequently.  
-Feedback, ideas, and technical discussion are welcome.
+Feedback, ideas, and technical discussion are welcome. Track development [here](https://trello.com/b/OOKowW4p/dusk) at Trello board.
 
 ## License
 

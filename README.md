@@ -104,7 +104,7 @@ Dusk is built around the following principles:
 - Tone mapping
 - Cascaded shadow maps
 - Anti-aliasing techniques
-- Forward+ transparency
+- Forward/OIT transparency
 - Ray tracing pipeline support
 
 ### GPU Systems
@@ -147,9 +147,17 @@ cmake -B build
 
 
 ## Resources
+- Writing an efficient Vuklan renderer. [Link](https://zeux.io/2020/02/27/writing-an-efficient-vulkan-renderer/)
+- Keen games Vulkan backend. [Link](https://github.com/keengames/vulkan_backend)
+- Frostbite's FrameGraph. [Link](https://www.gdcvault.com/play/1024612/FrameGraph-Extensible-Rendering-Architecture-in)
+- LearnOpenGL articles. [Link](https://learnopengl.com/)
 
 ## Assets Credits
-
+- Sponza GLTF model. [Link](https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/Sponza)
+- Damaged Helmet GLTF model. [Link](https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/DamagedHelmet)
+- Amazon Lumberyard Bistro. [Link](https://developer.nvidia.com/orca/amazon-lumberyard-bistro)
+- Models and HDR environment.[Link](https://polyhaven.com)
+- HDR sky. [Link](https://ambientcg.com)
 
 ## Development Status
 

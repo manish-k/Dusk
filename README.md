@@ -126,25 +126,24 @@ Dusk is built around the following principles:
 
 ```bash
 git clone <repo>
-cd dusk
+cd dusk/<choose sample>
 cmake -B build
-cmake --build build
 ```
 
 ## Dependencies
-- Vulkan 1.3
-- Assimp
-- Entt
-- Excalibur Hash
-- GLFW
-- GLM
-- Imgui
-- KTX
-- Spdlog
-- Taskflow
-- Tracy
-- VMA
-- VOLK
+- [Vulkan 1.3](https://www.vulkan.org/)
+- [Assimp](https://github.com/assimp/assimp)
+- [Entt](https://github.com/skypjack/entt)
+- [Excalibur Hash](https://github.com/SergeyMakeev/ExcaliburHash)
+- [GLFW](https://github.com/glfw/glfw)
+- [GLM](https://github.com/g-truc/glm)
+- [Imgui](https://github.com/ocornut/imgui)
+- [KTX](https://github.com/KhronosGroup/KTX-Software)
+- [Spdlog](https://github.com/gabime/spdlog)
+- [Taskflow](https://github.com/taskflow/taskflow)
+- [Tracy](https://github.com/wolfpld/tracy)
+- [VMA](https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator)
+- [VOLK](https://github.com/zeux/volk)
 
 
 ## Resources

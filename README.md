@@ -1,5 +1,5 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Track on https://trello.com/b/OOKowW4p/dusk](https://img.shields.io/badge/track-on_trello-007BC2.svg?logo=trello&logoColor=ffffff&labelColor=026AA7)](https://trello.com/b/ciujzpUT) 
+[![Track on](https://img.shields.io/badge/track-on_trello-007BC2.svg?logo=trello&logoColor=ffffff&labelColor=026AA7)](https://trello.com/b/OOKowW4p/dusk) 
 
 # Dusk Rendering Engine
 
@@ -165,7 +165,7 @@ cmake -B build
 ## Development Status
 
 This project is under active development and architecture may evolve frequently.  
-Feedback, ideas, and technical discussion are welcome. Track development [here](https://trello.com/b/OOKowW4p/dusk) at Trello board.
+Feedback, ideas, and technical discussion are welcome. Track development [here](https://trello.com/b/OOKowW4p/dusk) on Trello.
 
 ## License
 

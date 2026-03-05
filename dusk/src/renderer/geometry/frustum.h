@@ -16,6 +16,8 @@ struct Frustum
     Plane far    = {};
 };
 
+// Extract frustum planes from view-projection matrix using the Gribb-Hartmann method. 
+// The planes are in world space where normal is pointing towards inside of frustum.
 inline Frustum extractFrustumFromMatrix(const glm::mat4& vpMatrix)
 {
     Frustum frustum = {};

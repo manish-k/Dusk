@@ -78,13 +78,14 @@ layout (local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
 
 bool isAABBinFrustum(uint meshInstanceIdx)
 {
-	// this are already in view space
+	// These are in world space
 	vec4 center = aabb[meshInstanceIdx].center;
 	vec4 extents = aabb[meshInstanceIdx].extents;
 
 	// Test AABB against frustum planes
 	for (int i = 0; i < 6; ++i)
 	{
+		// world space frustumPlanes
 		vec4 p = globalubo[push.globalUBOIdx].frustumPlanes[i];
 		
 		float d = dot(center, p);

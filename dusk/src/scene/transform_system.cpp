@@ -61,6 +61,15 @@ void TransformStorage::recomputeLocal(uint32_t handle)
     normal[handle] = glm::transpose(glm::inverse(glm::mat3(local[handle])));
 }
 
+void TransformStorage::recomputeWorld(uint32_t handle)
+{
+    // recompute new local
+    recomputeLocal(handle);
+
+    uint32_t parentHandle = parent[handle];
+    world[handle]         = world[parentHandle] * local[handle];
+}
+
 TransformSystem::TransformSystem()
 {
     DASSERT(!s_instance, "Transform system's instance already exists");
@@ -112,11 +121,8 @@ void TransformSystem::updateDirtyMatrices()
             continue;
         }
 
-        // recompute new local
-        m_storage->recomputeLocal(handle);
-
-        uint32_t parent              = m_storage->parent[handle];
-        m_storage->world[handle]     = m_storage->world[parent] * m_storage->local[handle];
+        // based on DFS we are sure that parent already has it's world mat recomputed
+        m_storage->recomputeWorld(handle);
 
         m_storage->dirtyList[handle] = 0u;
     }

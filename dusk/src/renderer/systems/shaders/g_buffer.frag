@@ -72,6 +72,7 @@ void main()
 {
 	uint guboIdx = nonuniformEXT(push.cameraIdx);
 	uint materialIdx = nonuniformEXT(materialIds[fragInstanceId]);
+	vec3 cameraPos = globalubo[guboIdx].inverseView[3].xyz;
 	
 	// pull and cache
 	Material m = materials[materialIdx].mat;
@@ -102,11 +103,10 @@ void main()
         emissiveSample = texture(textures[emissiveTexIdx], fragUV).rgb;
 
     if (normalTexIdx >= 0)
-        normalSample = texture(textures[normalTexIdx], fragUV).xyz * 2.0 - 1.0;
+        normalSample = texture(textures[normalTexIdx], fragUV).xyz;
 
 	vec3 emissiveColor = texture(textures[emissiveTexIdx], fragUV).rgb;
 	
-	vec3 cameraPos = globalubo[guboIdx].inverseView[3].xyz;
 	vec3 viewDirection = normalize(cameraPos - fragWorldPos);
 
 	vec4 baseColor = m.albedoColor;
@@ -121,6 +121,8 @@ void main()
 	vec3 surfaceNormal = normalize(fragNormal);
 	if (normalTexIdx >= 0)
 	{
+		normalSample = normalSample * 2.0 - 1.0; // remap from [0,1] to [-1,1]
+
 		vec3 tangent = normalize(fragTangent);
 	
 		// Gram-Schmidt orthogonalize

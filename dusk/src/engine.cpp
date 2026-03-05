@@ -103,7 +103,7 @@ bool Engine::start(Shared<Application> app)
 
     if (!setupGlobals()) return false;
 
-    m_lightsSystem      = createUnique<LightsSystem>();
+    m_lightsSystem = createUnique<LightsSystem>();
 
     prepareRenderGraphResources();
 
@@ -159,9 +159,9 @@ void Engine::shutdown()
     m_transformSystem = nullptr;
 
     m_statsRecorder->cleanup();
-    m_statsRecorder     = nullptr;
+    m_statsRecorder = nullptr;
 
-    m_lightsSystem      = nullptr;
+    m_lightsSystem  = nullptr;
 
     m_environment->cleanup();
     m_environment = nullptr;

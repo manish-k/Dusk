@@ -54,6 +54,12 @@ struct TransformStorage
      * @param Handle of transform
      */
     void recomputeLocal(uint32_t handle);
+
+    /**
+     * @brief Recompute world transform matrix based on parent transform
+     * @param handle
+     */
+    void recomputeWorld(uint32_t handle);
 };
 
 // TODO:: Pointer chasing in getter/setters, need refactoring

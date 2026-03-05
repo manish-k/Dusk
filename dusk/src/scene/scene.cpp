@@ -73,7 +73,8 @@ void Scene::onUpdate(TimeStep dt)
                 return;
             }
 
-            meshData.worldAABB = recomputeAABB(meshData.objectAABB, TransformSystem::getWorldMatrix(entity));
+            glm::mat4 worldMatrix = TransformSystem::getWorldMatrix(entity);
+            meshData.worldAABB    = recomputeAABB(meshData.objectAABB, worldMatrix);
         });
 }
 
@@ -157,9 +158,8 @@ void Scene::gatherRenderables(GfxRenderables* currentFrameRenderables)
                 currentFrameRenderables->normalMatrices.push_back(TransformSystem::getNormalMatrix(entity));
                 currentFrameRenderables->boundingBoxes.push_back(
                     GfxBoundingBoxData {
-                        .center  = center,
-                        .extents = extents,
-                    });
+                        .center  = glm::vec4(center, 1.f),
+                        .extents = glm::vec4(extents, 0.f) });
                 currentFrameRenderables->meshIds.push_back(renderableData.meshes[index]);
                 currentFrameRenderables->materialIds.push_back(renderableData.materials[index]);
             }

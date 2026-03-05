@@ -90,11 +90,17 @@ Unique<Scene> AssimpLoader::parseScene(const aiScene* assimpScene)
 
     if (assimpScene->mRootNode)
     {
-        auto rootId                              = traverseSceneNodes(*newScene, assimpScene->mRootNode, assimpScene, newScene->getRootId());
+        auto rootId                       = traverseSceneNodes(*newScene, assimpScene->mRootNode, assimpScene, newScene->getRootId());
 
-        auto storage                             = TransformSystem::getStorage();
+        auto storage                      = TransformSystem::getStorage();
         auto rootuint32_t                 = TransformSystem::getEntityHandle(rootId);
         storage->subtreeEnd[rootuint32_t] = storage->count - 1;
+
+        uint32_t transformsCount          = storage->count;
+        for (uint32_t handle = 0u; handle < transformsCount; ++handle)
+        {
+            storage->recomputeWorld(handle);
+        }
     }
 
     // TODO: uploading temp mesh data to GPU here currently. Need a better place for this
@@ -209,6 +215,8 @@ EntityId AssimpLoader::traverseSceneNodes(Scene& scene, const aiNode* node, cons
 
     storage->subtreeEnd[handle] = subTreeEndIndex;
     storage->dirtyList[handle]  = 1u;
+
+    storage->recomputeLocal(handle);
 
     return gameObjectId;
 }

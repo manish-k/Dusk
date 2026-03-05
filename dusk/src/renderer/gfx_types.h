@@ -13,8 +13,8 @@ namespace dusk
 
 struct GfxBoundingBoxData
 {
-    glm::vec3 center  = {};
-    glm::vec3 extents = {};
+    glm::vec4 center  = {};
+    glm::vec4 extents = {};
 };
 
 struct GfxMeshData

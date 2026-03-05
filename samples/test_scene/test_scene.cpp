@@ -23,18 +23,18 @@ bool TestScene::start()
 {
     // std::string scenePath = "assets/scenes/EnvironmentTest.gltf";
     // std::string scenePath = "assets/scenes/2_cubes.gltf";
-    // std::string scenePath = "assets/scenes/Cube.gltf";
+    // std::string scenePath = "assets/scenes/Scene.gltf";
     std::string scenePath = "D:/resources/scene/bistro_gltf/bistro.gltf";
-    //std::string scenePath
-    //    = "assets/scenes/tea_cup/DiffuseTransmissionTeacup.gltf";
+    // std::string scenePath
+    //     = "assets/scenes/tea_cup/DiffuseTransmissionTeacup.gltf";
     m_testScene = Scene::createSceneFromGLTF(scenePath);
 
     // adding directional light
     auto directionalLight = dusk::createUnique<GameObject>();
     directionalLight->setName("directional_light_0");
     auto& dLight     = directionalLight->addComponent<DirectionalLightComponent>();
-    dLight.direction = glm::vec3(0.22f, -3.15f, -6.f);
-    dLight.color     = glm::vec4(1.f, 1.f, 1.f, 3.2);
+    dLight.direction = glm::vec3(3.3f, -4.2f, 1.685f);
+    dLight.color     = glm::vec4(1.f, 1.f, 1.f, 5.2);
     m_testScene->addGameObject(std::move(directionalLight), m_testScene->getRootId());
 
     // adding point light
@@ -45,10 +45,9 @@ bool TestScene::start()
     pLight.color               = glm::vec4(1.f, 1.f, 1.f, 0.6);
     m_testScene->addGameObject(std::move(pointLight), m_testScene->getRootId());*/
 
-    
-    //auto& cameraController = m_testScene.get()->getMainCameraController();
-    //cameraController.setPosition({ -1500.f, 565.f,-50.f });
-    //cameraController.setViewDirection({ 1.f, -0.2f, -0.1f });
+     auto& cameraController = m_testScene.get()->getMainCameraController();
+     cameraController.setPosition({ -21.58f, 10.19f,-6.78f });
+     cameraController.setViewDirection({ -0.83f, 0.364f, -0.148f });
 
     Engine::get().loadScene(m_testScene.get());
 

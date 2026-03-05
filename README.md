@@ -90,6 +90,9 @@ Dusk is built around the following principles:
 
 ![](docs/sponza-sample.png)
 
+![](docs/bistro-sample.png)
+*Amazon Lumberyard Bistro scene with 4M triangles*
+
 ![Rendergraph](docs/render-graph.svg)
 *Rendergraph for deferred rendering system in Dusk*
 

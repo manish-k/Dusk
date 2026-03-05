@@ -94,8 +94,9 @@ void EditorUI::beginRendering()
 void EditorUI::renderCommonWidgets()
 {
     drawStatsWidget();
+#ifdef DDEBUG
     drawRendererWidget();
-    // ImGui::ShowDemoWindow();
+#endif
 }
 
 void EditorUI::endRendering(VkCommandBuffer cb)
@@ -108,7 +109,9 @@ void EditorUI::endRendering(VkCommandBuffer cb)
 
 void EditorUI::renderSceneWidgets(Scene& scene)
 {
+#ifdef DDEBUG
     drawSceneGraphWidget(scene);
+#endif
 }
 
 void EditorUI::onEvent(Event& ev)

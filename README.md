@@ -86,11 +86,11 @@ Dusk is built around the following principles:
 
 ![](docs/test-pbr.png)
 
-![](docs/helmet-sample.png)
+![](docs/helmet-sample-01.png)
 
-![](docs/sponza-sample.png)
+![](docs/sponza-sample-01.png)
 
-![](docs/bistro-sample.png)
+![](docs/bistro-sample-00.png)
 *Amazon Lumberyard Bistro scene with 4M triangles*
 
 ![Rendergraph](docs/render-graph.svg)

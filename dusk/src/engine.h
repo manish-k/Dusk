@@ -81,6 +81,10 @@ struct RenderGraphResources
 
     Unique<VkGfxComputePipeline>             cullLodPipeline                  = nullptr;
     Unique<VkGfxPipelineLayout>              cullLodPipelineLayout            = nullptr;
+
+    uint32_t                                 toneMappedRenderTextureId        = {};
+    Unique<VkGfxRenderPipeline>              toneMapPipeline                  = nullptr;
+    Unique<VkGfxPipelineLayout>              toneMapPipelineLayout            = nullptr;
 };
 
 struct BRDFLUTPushConstant

@@ -47,6 +47,17 @@ struct SkyBoxPushConstant
 void recordSkyBoxCmds(const FrameData& frameData);
 
 //////////////////////////////////////////////////////
+// Tonemap Pass
+
+struct ToneMapPushConstant
+{
+    int32_t inputTextureIdx = -1;
+    float   exposure        = 1.f;
+};
+
+void recordTonemapCmds(const FrameData& frameData);
+
+//////////////////////////////////////////////////////
 // Presentation Pass
 
 struct PresentationPushConstant

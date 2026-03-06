@@ -19,19 +19,20 @@ layout(push_constant) uniform PushConstant
 //  Source: Academy S-2014-003 spec
 // ============================================================
 
-// sRGB (D65) → ACES AP0 (D60)
+// Linear sRGB (Rec.709, D65) → ACES AP0
 const mat3 ACESInputMat = mat3(
-    0.59719, 0.35458, 0.04823,
-    0.07600, 0.90834, 0.01566,
-    0.02840, 0.13383, 0.83777
+    vec3(0.59719, 0.07600, 0.02840),  // col 0
+    vec3(0.35458, 0.90834, 0.13383),  // col 1
+    vec3(0.04823, 0.01566, 0.83777)   // col 2
 );
 
-// ACES AP1 → sRGB (D65)
+// ACES AP1 → linear sRGB
 const mat3 ACESOutputMat = mat3(
-     1.60475, -0.53108, -0.07367,
-    -0.10208,  1.10813, -0.00605,
-    -0.00327, -0.07276,  1.07602
+    vec3( 1.60475, -0.10208, -0.00327),  // col 0
+    vec3(-0.53108,  1.10813, -0.07276),  // col 1
+    vec3(-0.07367, -0.00605,  1.07602)   // col 2
 );
+
 
 // ============================================================
 //  RRT + ODT (Reference Rendering Transform + Output Device)
@@ -50,6 +51,13 @@ vec3 ACESFilmic(vec3 color) {
     return clamp(color, 0.0, 1.0);
 }
 
+vec3 ReinhardJodie(vec3 color) {
+    float luma    = dot(color, vec3(0.2126, 0.7152, 0.0722));
+    vec3  tv      = color / (1.0 + color);           // per-channel
+    float lumaOut = luma  / (1.0 + luma);            // luminance
+    return mix(color / (1.0 + luma), tv, tv);        // blend
+}
+
 void main()
 {
     int hdrTextureIdx = nonuniformEXT(push.inputTextureIdx);
@@ -60,6 +68,7 @@ void main()
     hdrColor *= push.exposure;
 
     // tonemap
+    // hdrColor = ReinhardJodie(hdrColor);
     hdrColor = ACESFilmic(hdrColor);
 
     outColor = vec4(hdrColor, 1.0);

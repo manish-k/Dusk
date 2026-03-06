@@ -379,8 +379,5 @@ void main() {
 		finalColor += texture(textures[emissiveTexIdx], fragUV).rgb;
 	}
 
-	// tone mapping
-	finalColor = finalColor / (finalColor + vec3(1.0));
-
 	outColor = vec4(finalColor.rgb, 1.0);
 }

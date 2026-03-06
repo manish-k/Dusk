@@ -414,6 +414,10 @@ void Engine::renderFrame(FrameData& frameData)
         .name    = "lighting_output",
         .texture = &m_textureDB->getTexture2D(m_rgResources.lightingRenderTextureId)
     };
+    RGImageResource toneMappedOutput = {
+        .name    = "tonemap_output",
+        .texture = &m_textureDB->getTexture2D(m_rgResources.toneMappedRenderTextureId)
+    };
 
     RGBufferResource indirectDrawCommandsBuffer = {
         .name   = "indirect_draw_commands_buffer",
@@ -475,9 +479,16 @@ void Engine::renderFrame(FrameData& frameData)
 
     uint32_t skyOutputVer = renderGraph.addWriteResource(skyPassId, lightingOutput);
 
+    // create tonemapping pass
+    auto tonemapPassId = renderGraph.addPass("tonemap_pass", recordTonemapCmds);
+
+    renderGraph.addReadResource(tonemapPassId, lightingOutput, skyOutputVer);
+
+    uint32_t tonemapOutputVer = renderGraph.addWriteResource(tonemapPassId, toneMappedOutput);
+
     // create presentation pass
     auto presentPassId = renderGraph.addPass("present_pass", recordPresentationCmds);
-    renderGraph.addReadResource(presentPassId, lightingOutput, skyOutputVer);
+    renderGraph.addReadResource(presentPassId, toneMappedOutput, tonemapOutputVer);
     renderGraph.addWriteResource(presentPassId, swapImage);
 
     // execute render graph
@@ -931,6 +942,38 @@ void Engine::prepareRenderGraphResources()
         "gbuff_pipeline");
 #endif // VK_RENDERER_DEBUG
 
+    // tonemapping pass
+    m_rgResources.toneMappedRenderTextureId = m_textureDB->createColorTexture(
+        "tonemap_pass_color",
+        extent.width,
+        extent.height,
+        VK_FORMAT_B8G8R8A8_SRGB);
+
+    m_rgResources.toneMapPipelineLayout = VkGfxPipelineLayout::Builder(ctx)
+                                              .addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(ToneMapPushConstant))
+                                              .addDescriptorSetLayout(m_textureDB->getTexturesDescriptorSetLayout().layout)
+                                              .build();
+
+#ifdef VK_RENDERER_DEBUG
+    vkdebug::setObjectName(
+        ctx.device,
+        VK_OBJECT_TYPE_PIPELINE_LAYOUT,
+        (uint64_t)m_rgResources.toneMapPipelineLayout->get(),
+        "tonemap_pipeline_layout");
+#endif // VK_RENDERER_DEBUG
+
+    auto toneMapVertShaderCode    = FileSystem::readFileBinary(shaderPath / "triangle.vert.spv");
+    auto toneMapFragShaderCode    = FileSystem::readFileBinary(shaderPath / "tonemap.frag.spv");
+
+    m_rgResources.toneMapPipeline = VkGfxRenderPipeline::Builder(ctx)
+                                        .setVertexShaderCode(toneMapVertShaderCode)
+                                        .setFragmentShaderCode(toneMapFragShaderCode)
+                                        .setPipelineLayout(*m_rgResources.toneMapPipelineLayout)
+                                        .addColorAttachmentFormat(VK_FORMAT_B8G8R8A8_SRGB)
+                                        .removeVertexInputState()
+                                        .setDebugName("tonemap_pipeline")
+                                        .build();
+
     // presentation pass
     m_rgResources.presentPipelineLayout = VkGfxPipelineLayout::Builder(ctx)
                                               .addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PresentationPushConstant))
@@ -971,7 +1014,7 @@ void Engine::prepareRenderGraphResources()
         "light_pass_color",
         extent.width,
         extent.height,
-        VK_FORMAT_R8G8B8A8_SRGB);
+        VK_FORMAT_R16G16B16A16_SFLOAT);
 
     m_rgResources.lightingPipelineLayout = VkGfxPipelineLayout::Builder(ctx)
                                                .addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(LightingPushConstant))
@@ -996,7 +1039,7 @@ void Engine::prepareRenderGraphResources()
                                          .setVertexShaderCode(lightingVertShaderCode)
                                          .setFragmentShaderCode(lightingFragShaderCode)
                                          .setPipelineLayout(*m_rgResources.lightingPipelineLayout)
-                                         .addColorAttachmentFormat(VK_FORMAT_R8G8B8A8_SRGB)
+                                         .addColorAttachmentFormat(VK_FORMAT_R16G16B16A16_SFLOAT)
                                          .removeVertexInputState()
                                          .setDebugName("lighting_pipeline")
                                          .build();
@@ -1168,6 +1211,9 @@ void Engine::releaseRenderGraphResources()
 
     m_rgResources.gbuffPipeline                   = nullptr;
     m_rgResources.gbuffPipelineLayout             = nullptr;
+
+    m_rgResources.toneMapPipeline                 = nullptr;
+    m_rgResources.toneMapPipelineLayout           = nullptr;
 
     m_rgResources.presentPipeline                 = nullptr;
     m_rgResources.presentPipelineLayout           = nullptr;

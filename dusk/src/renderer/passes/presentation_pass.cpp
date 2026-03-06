@@ -30,7 +30,7 @@ void recordPresentationCmds(const FrameData& frameData)
         nullptr);
 
     PresentationPushConstant push {};
-    push.inputTextureIdx = resources.lightingRenderTextureId;
+    push.inputTextureIdx = resources.toneMappedRenderTextureId;
 
     vkCmdPushConstants(
         frameData.commandBuffer,

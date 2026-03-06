@@ -77,7 +77,7 @@ void Environment::initCubeTextureResources(
                            .setVertexShaderCode(skyBoxVertShaderCode)
                            .setFragmentShaderCode(skyBoxFragShaderCode)
                            .setPipelineLayout(*m_skyBoxPipelineLayout)
-                           .addColorAttachmentFormat(VK_FORMAT_R8G8B8A8_SRGB)
+                           .addColorAttachmentFormat(VK_FORMAT_R16G16B16A16_SFLOAT)
                            .setDepthWrite(false)
                            .setCullMode(VK_CULL_MODE_FRONT_BIT)
                            .removeVertexInputState()

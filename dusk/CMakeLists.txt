@@ -136,6 +136,7 @@ set(RENDERER_FILES
 	"${RENDERER_PASSES_DIR}/skybox_pass.cpp"
 	"${RENDERER_PASSES_DIR}/shadow_pass.cpp"
 	"${RENDERER_PASSES_DIR}/cull_lod_pass.cpp"
+	"${RENDERER_PASSES_DIR}/tonemap_pass.cpp"
 )
 
 set(SCENE_DIR "${PROJECT_SOURCE_DIR}/src/scene")

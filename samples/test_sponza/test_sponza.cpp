@@ -25,6 +25,13 @@ bool TestSponza::start()
 
     m_testSponza          = Scene::createSceneFromGLTF(scenePath);
 
+    // adding ambient light
+    auto ambientLight = dusk::createUnique<GameObject>();
+    ambientLight->setName("ambient_light_0");
+    auto& aLight     = ambientLight->addComponent<AmbientLightComponent>();
+    aLight.color     = glm::vec4(1.f, 1.f, 1.f, 0.5);
+    m_testSponza->addGameObject(std::move(ambientLight), m_testSponza->getRootId());
+
     // adding directional light
     auto directionalLight = dusk::createUnique<GameObject>();
     directionalLight->setName("directional_light_0");

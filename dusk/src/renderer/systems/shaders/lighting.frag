@@ -314,8 +314,8 @@ void main() {
     f0 = mix(f0, albedo, metallic);
 	
 	// reflectance from direct light
-	//vec3 lightColor = vec3(0.03) * ambientColor * albedo; // non IBL ambience
-	vec3 lightColor = vec3(0.0); 
+	vec3 lightColor = vec3(0.03) * ambientColor * albedo; // non IBL ambience
+	//vec3 lightColor = vec3(0.0); 
 
 	// compute contribution of all directional light
 	uint dirCount  = globalubo[guboIdx].directionalLightsCount;

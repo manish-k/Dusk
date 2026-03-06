@@ -945,7 +945,7 @@ void Engine::prepareRenderGraphResources()
         "presentation_pipeline_layout");
 #endif // VK_RENDERER_DEBUG
 
-    auto presentVertShaderCode    = FileSystem::readFileBinary(shaderPath / "present.vert.spv");
+    auto presentVertShaderCode    = FileSystem::readFileBinary(shaderPath / "triangle.vert.spv");
 
     auto presentFragShaderCode    = FileSystem::readFileBinary(shaderPath / "present.frag.spv");
 

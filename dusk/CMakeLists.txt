@@ -72,6 +72,26 @@ set(DEBUG_FILES
 	"${DEBUG_DIR}/debug.cpp"
 )
 
+set(EVENTS_DIR "${PROJECT_SOURCE_DIR}/src/events")
+set(EVENT_FILES
+	# Header files
+	"${EVENTS_DIR}/app_event.h"
+	"${EVENTS_DIR}/event.h"
+	"${EVENTS_DIR}/event_bus.h"
+	"${EVENTS_DIR}/key_event.h"
+	"${EVENTS_DIR}/mouse_event.h"
+	# Source files
+)
+
+set(EXTRAS_DIR "${PROJECT_SOURCE_DIR}/src/extras")
+set(EXTRA_FILES
+	# Header files
+	"${EXTRAS_DIR}/hw_skymodel/ArHosekSkyModel.h"
+	"${EXTRAS_DIR}/hw_skymodel/ArHosekSkyModelData_RGB.h"
+	# Source files
+	"${EXTRAS_DIR}/hw_skymodel/ArHosekSkyModel.cpp"
+)
+
 set(LOADERS_DIR "${PROJECT_SOURCE_DIR}/src/loaders")
 set(LOADERS_FILES
 	# Header files

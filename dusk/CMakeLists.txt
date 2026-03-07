@@ -10,10 +10,8 @@ set(ENGINE_FILES
 	# Header files
 	"${ENGINE_DIR}/dusk.h"
 	"${ENGINE_DIR}/engine.h"
-	"${ENGINE_DIR}/stats_recorder.h"
 	# Source files
 	"${ENGINE_DIR}/engine.cpp"
-	"${ENGINE_DIR}/stats_recorder.cpp"
 )
 
 set(BACKEND_DIR "${PROJECT_SOURCE_DIR}/src/backend")
@@ -88,8 +86,10 @@ set(EXTRA_FILES
 	# Header files
 	"${EXTRAS_DIR}/hw_skymodel/ArHosekSkyModel.h"
 	"${EXTRAS_DIR}/hw_skymodel/ArHosekSkyModelData_RGB.h"
+	"${EXTRAS_DIR}/stats_recorder.h"
 	# Source files
 	"${EXTRAS_DIR}/hw_skymodel/ArHosekSkyModel.cpp"
+	"${EXTRAS_DIR}/stats_recorder.cpp"
 )
 
 set(LOADERS_DIR "${PROJECT_SOURCE_DIR}/src/loaders")
@@ -208,6 +208,7 @@ source_group("backend/vulkan\\" FILES ${VULKAN_BACKEND_FILES})
 source_group("core\\" FILES ${CORE_FILES})
 source_group("debug\\" FILES ${DEBUG_FILES})
 source_group("events\\" FILES ${EVENTS_FILES})
+source_group("extras\\" FILES ${EXTRA_FILES})
 source_group("renderer\\" FILES ${RENDERER_FILES})
 source_group("renderer/systems\\" FILES ${RENDERER_SYSTEMS_DIR})
 source_group("renderer/passes\\" FILES ${RENDERER_PASSES_DIR})
@@ -224,6 +225,7 @@ set(PROJECT_FILES
 	${CORE_FILES}
 	${DEBUG_FILES}
 	${EVENTS_FILES}
+	${EXTRA_FILES}
 	${LOADERS_FILES}
 	${RENDERER_FILES}
 	${SCENE_FILES}
@@ -240,6 +242,7 @@ target_include_directories(
 	${DEBUG_DIR}
 	${VULKAN_BACKEND_DIR}
 	${EVENTS_DIR}
+	${EXTRAS_DIR}
 	${LOADERS_DIR}
 	${RENDERER_DIR}
 	${COMPONENTS_DIR}

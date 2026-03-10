@@ -39,14 +39,14 @@ void Environment::computeHosekWilkieParams(float turbidity, float albedo, glm::v
             -1.0f,
             1.0f));
 
-    m_hwParams.sunDirection = DEFAULT_DAY_SUN_DIRECTION;
+    m_hwParams.sunDirection.xyz = glm::normalize(DEFAULT_DAY_SUN_DIRECTION);
 
-    auto* hwSkyState        = arhosek_rgb_skymodelstate_alloc_init(
+    auto* hwSkyState            = arhosek_rgb_skymodelstate_alloc_init(
         turbidity,
         albedo,
         solar_elevation);
 
-    // Copy the Hosek-Wilkie parameters from the C struct to our HosekWilkieParams struct
+    // Copy the Hosek-Wilkie parameters from the C struct to our HosekWilkieSkyParams struct
     m_hwParams.A = glm::vec3(hwSkyState->configs[0][0], hwSkyState->configs[1][0], hwSkyState->configs[2][0]);
     m_hwParams.B = glm::vec3(hwSkyState->configs[0][1], hwSkyState->configs[1][1], hwSkyState->configs[2][1]);
     m_hwParams.C = glm::vec3(hwSkyState->configs[0][2], hwSkyState->configs[1][2], hwSkyState->configs[2][2]);
@@ -95,10 +95,10 @@ void Environment::initCubeTextureResources(
             PixelFormat::R32G32B32A32_sfloat);
 
     m_skyBoxRenderPipelineLayout = VkGfxPipelineLayout::Builder(ctx)
-                                 .addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(SkyBoxPushConstant))
-                                 .addDescriptorSetLayout(globalDescSetLayout.layout)
-                                 .addDescriptorSetLayout(m_textureDB.getTexturesDescriptorSetLayout().layout)
-                                 .build();
+                                       .addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(SkyBoxPushConstant))
+                                       .addDescriptorSetLayout(globalDescSetLayout.layout)
+                                       .addDescriptorSetLayout(m_textureDB.getTexturesDescriptorSetLayout().layout)
+                                       .build();
 
 #ifdef VK_RENDERER_DEBUG
     vkdebug::setObjectName(
@@ -112,16 +112,16 @@ void Environment::initCubeTextureResources(
 
     auto skyBoxFragShaderCode = FileSystem::readFileBinary(shaderPath + "/" + "skybox.frag.spv");
 
-    m_skyBoxRenderPipeline          = VkGfxRenderPipeline::Builder(ctx)
-                           .setVertexShaderCode(skyBoxVertShaderCode)
-                           .setFragmentShaderCode(skyBoxFragShaderCode)
-                           .setPipelineLayout(*m_skyBoxRenderPipelineLayout)
-                           .addColorAttachmentFormat(VK_FORMAT_R16G16B16A16_SFLOAT)
-                           .setDepthWrite(false)
-                           .setCullMode(VK_CULL_MODE_FRONT_BIT)
-                           .removeVertexInputState()
-                           .setDebugName("skybox_pipeline")
-                           .build();
+    m_skyBoxRenderPipeline    = VkGfxRenderPipeline::Builder(ctx)
+                                 .setVertexShaderCode(skyBoxVertShaderCode)
+                                 .setFragmentShaderCode(skyBoxFragShaderCode)
+                                 .setPipelineLayout(*m_skyBoxRenderPipelineLayout)
+                                 .addColorAttachmentFormat(VK_FORMAT_R16G16B16A16_SFLOAT)
+                                 .setDepthWrite(false)
+                                 .setCullMode(VK_CULL_MODE_FRONT_BIT)
+                                 .removeVertexInputState()
+                                 .setDebugName("skybox_pipeline")
+                                 .build();
 #ifdef VK_RENDERER_DEBUG
     vkdebug::setObjectName(
         ctx.device,

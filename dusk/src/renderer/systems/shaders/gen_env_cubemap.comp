@@ -1,0 +1,111 @@
+#version 450
+
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shading_language_include : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+
+struct HWSkyParams
+{
+	vec3 A;
+    vec3 B;
+    vec3 C;
+    vec3 D;
+    vec3 E;
+    vec3 F;
+    vec3 G;
+    vec3 H;
+    vec3 I;
+    vec3 zenithColor ;
+    vec4 sunDirection;
+};
+
+layout(set = 0, binding = 0, std430) buffer FrameHWSkyParams
+{
+	HWSkyParams skyParams[];
+};
+
+layout (local_size_x = 16, local_size_y = 16) in;
+
+layout (binding = 1, rgba16f) writeonly uniform image2D irradianceCube;
+
+layout (push_constant) uniform PushConstant 
+{
+	int frameIdx;
+} push;
+
+// Hosek-Wilkie radiance distribution function F(theta, gamma)
+// Code corresponding to ArHosekSkyModel_GetRadianceInternal function in ArHoseSkyModel.cpp
+vec3 getHWRadianceInternal(float cos_theta, float cos_gamma, float gamma) 
+{
+    HWSkyParams sky = skyParams[push.frameIdx];
+    
+    vec3 A = sky.A.xyz, B = sky.B.xyz, C = sky.C.xyz;
+    vec3 D = sky.D.xyz, E = sky.E.xyz, F = sky.F.xyz;
+    vec3 G = sky.G.xyz, H = sky.H.xyz, I = sky.I.xyz;
+
+    vec3 expBT  = exp(B / max(cos_theta, 1e-4));   // B/cos_theta term
+    vec3 expEG  = exp(E * gamma);                
+    float rayM  = cos_gamma * cos_gamma;
+    vec3 mieM   = (1.0 + rayM) /
+                   pow(vec3(1.0) + H * H - 2.0 * H * cos_gamma, vec3(1.5));
+    
+    float zenith = sqrt(max(cos_theta, 0.0));
+
+    return (1.0 + A * expBT)
+         * (C + D * expEG + F * rayM + G * mieM + I * zenith);
+}
+
+// Code corresponding to arhosek_tristim_skymodel_radiance function in ArHoseSkyModel.cpp
+vec3 getHosekWilkieSkyRadiance(vec3 viewDir) 
+{
+    HWSkyParams sky = skyParams[push.frameIdx];
+
+    vec3  sun       = sky.sunDirection.xyz;
+    float cos_theta = max(viewDir.y, 1e-4);
+    float cos_gamma = clamp(dot(viewDir, sun), -1.0, 1.0);
+    float gamma     = acos(cos_gamma);
+
+    return sky.zenithColor.xyz * getHWRadianceInternal(cos_theta, cos_gamma, gamma);
+}
+
+// Test code
+vec3 includeSolarDisk(vec3 viewDir, vec3 skyRadiance) {
+    HWSkyParams sky = skyParams[push.frameIdx];
+        
+    float cos_sun_radius = sky.sunDirection.w;
+    float cos_angle      = dot(viewDir, sky.sunDirection.xyz);
+
+    // Soft edge over ~0.05 degrees
+    float edge  = cos_sun_radius - 0.0008;
+    float disk  = smoothstep(edge, cos_sun_radius, cos_angle);
+
+    // Solar limb darkening (simple polynomial approximation)
+    float mu          = clamp((cos_angle - edge) / (1.0 - edge), 0.0, 1.0);
+    float limb        = 1.0 - 0.6 * (1.0 - sqrt(mu));
+    float sun_radiance = 1.2e9; // W/m²/sr — scale to taste
+
+    return skyRadiance + disk * limb * vec3(sun_radiance);
+}
+
+vec3 getGroundColor(vec3 viewDir)
+{
+    float t = clamp(-viewDir.y * 8.0, 0.0, 1.0); // sharp transition at horizon
+    vec3  horizonSample = getHosekWilkieSkyRadiance(vec3(viewDir.x, 1e-4, viewDir.z));
+    vec3  ground        = vec3(0.02, 0.015, 0.008); // dark earth
+
+    return mix(horizonSample * 0.1, ground, t);
+}
+
+vec3 getHWSkyColor(vec3 viewDir)
+{   
+    if (viewDir.y > 0.0)
+    {
+        vec3 skyRadiance = getHosekWilkieSkyRadiance(viewDir);
+        //return includeSolarDisk(viewDir, skyRadiance);
+        return skyRadiance;
+    }
+    else
+    {
+        return getGroundColor(viewDir);
+    }
+}

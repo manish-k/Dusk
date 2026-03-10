@@ -16,7 +16,7 @@ struct VkGfxDescriptorSetLayout;
 const glm::vec3 DEFAULT_DAY_SUN_DIRECTION   = glm::normalize(glm::vec3(0.0f, 1.0f, 0.0f));
 const glm::vec3 DEFAULT_NIGHT_SUN_DIRECTION = glm::normalize(glm::vec3(0.0f, -1.0f, 0.0f));
 
-struct alignas(16) HosekWilkieParams
+struct alignas(16) HosekWilkieSkyParams
 {
     glm::vec3 A = {};
     glm::vec3 B = {};
@@ -30,9 +30,7 @@ struct alignas(16) HosekWilkieParams
 
     // Additional parameters for sun and sky
     glm::vec3 zenithColor  = {};
-    glm::vec3 sunDirection = {};
-
-    float     sunSize      = 0.0f;
+    glm::vec4 sunDirection = {}; // w component is for sun disk radius
 };
 
 class Environment
@@ -65,15 +63,15 @@ private:
 private:
     TextureDB&                  m_textureDB;
 
-    HosekWilkieParams           m_hwParams                        = {};
+    HosekWilkieSkyParams        m_hwParams                        = {};
     bool                        m_hwParamsDirty                   = true;
 
     uint32_t                    m_skyTextureId                    = 0u;
     uint32_t                    m_skyIrradianceTexId              = 0u;
     uint32_t                    m_skyPrefilteredTexId             = 0u;
 
-    Unique<VkGfxRenderPipeline> m_skyBoxRenderPipeline                  = nullptr;
-    Unique<VkGfxPipelineLayout> m_skyBoxRenderPipelineLayout            = nullptr;
+    Unique<VkGfxRenderPipeline> m_skyBoxRenderPipeline            = nullptr;
+    Unique<VkGfxPipelineLayout> m_skyBoxRenderPipelineLayout      = nullptr;
 
     Unique<VkGfxRenderPipeline> m_genEnvCubeMapPipeline           = nullptr;
     Unique<VkGfxPipelineLayout> m_genEnvCubeMapPipelineLayout     = nullptr;

@@ -31,7 +31,7 @@ layout (binding = 1, rgba16f) writeonly uniform image3D envCubeMap;
 layout(push_constant) uniform PushConstant 
 {
     uint frameIdx;
-	uint cubeMapSize;
+	uint resolution;
 } push;
 
 // Hosek-Wilkie radiance distribution function F(theta, gamma)
@@ -117,10 +117,10 @@ void main()
     ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
     int face    = int(gl_GlobalInvocationID.z);
 
-    if(pixel.x >= int(push.cubeMapSize) || pixel.y >= int(push.cubeMapSize))
+    if(pixel.x >= int(push.resolution) || pixel.y >= int(push.resolution))
         return;
 
-    vec2 uv = (vec2(pixel) + 0.5) / float(push.cubeMapSize);
+    vec2 uv = (vec2(pixel) + 0.5) / float(push.resolution);
 
     vec3 dir = getCubeDirection(uv, face);
 

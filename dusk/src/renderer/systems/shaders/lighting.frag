@@ -88,13 +88,6 @@ layout(push_constant) uniform PushConstant
 	int dirShadowMapIdx;
 } push;
 
-vec2 directionToEquirectangular(vec3 dir) {
-    vec2 uv;
-    uv.x = atan(dir.z, dir.x) / (2.0 * PI) + 0.5;
-    uv.y = asin(dir.y) / PI + 0.5;
-    return uv;
-}
-
 vec3 computeDirLightsNonPBR(vec3 viewDirection, vec3 normal)
 {
     vec3 lightDirection = normalize(-dirLights.direction);

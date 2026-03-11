@@ -4,6 +4,8 @@
 #extension GL_ARB_shading_language_include : enable
 #extension GL_EXT_nonuniform_qualifier : enable
 
+#include "common.glsl"
+
 struct HWSkyParams
 {
 	vec3 A;
@@ -24,13 +26,12 @@ layout(set = 0, binding = 0, std430) buffer FrameHWSkyParams
 	HWSkyParams skyParams[];
 };
 
-layout (local_size_x = 16, local_size_y = 16) in;
+layout (binding = 1, rgba16f) writeonly uniform image3D envCubeMap;
 
-layout (binding = 1, rgba16f) writeonly uniform image2D irradianceCube;
-
-layout (push_constant) uniform PushConstant 
+layout(push_constant) uniform PushConstant 
 {
-	int frameIdx;
+    uint frameIdx;
+	uint cubeMapSize;
 } push;
 
 // Hosek-Wilkie radiance distribution function F(theta, gamma)
@@ -68,7 +69,6 @@ vec3 getHosekWilkieSkyRadiance(vec3 viewDir)
     return sky.zenithColor.xyz * getHWRadianceInternal(cos_theta, cos_gamma, gamma);
 }
 
-// Test code
 vec3 includeSolarDisk(vec3 viewDir, vec3 skyRadiance) {
     HWSkyParams sky = skyParams[push.frameIdx];
         
@@ -108,4 +108,23 @@ vec3 getHWSkyColor(vec3 viewDir)
     {
         return getGroundColor(viewDir);
     }
+}
+
+layout (local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+
+void main()
+{
+    ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
+    int face    = int(gl_GlobalInvocationID.z);
+
+    if(pixel.x >= int(push.cubeMapSize) || pixel.y >= int(push.cubeMapSize))
+        return;
+
+    vec2 uv = (vec2(pixel) + 0.5) / float(push.cubeMapSize);
+
+    vec3 dir = getCubeDirection(uv, face);
+
+    vec3 color = getHWSkyColor(dir);
+
+    imageStore(envCubeMap, ivec3(pixel, face), vec4(color,1.0));
 }

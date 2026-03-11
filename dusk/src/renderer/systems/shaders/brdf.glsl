@@ -1,6 +1,8 @@
 // https://learnopengl.com/PBR/Lighting
 
-const float PI = 3.14159265359;
+#ifndef PI
+#define PI 3.14159265359
+#endif
 
 vec3 fresnelSchlick(float cosTheta, vec3 F0)
 {

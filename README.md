@@ -93,6 +93,12 @@ Dusk is built around the following principles:
 ![](docs/bistro-sample-00.png)
 *Amazon Lumberyard Bistro scene with 4M triangles*
 
+![Architecture](docs/dusk-arch.svg)
+*High level architecture of Dusk*
+
+![Rendergraph](docs/frame-flow.svg)
+*Frame flow in Dusk*
+
 ![Rendergraph](docs/render-graph.svg)
 *Rendergraph for deferred rendering system in Dusk*
 

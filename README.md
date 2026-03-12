@@ -79,6 +79,23 @@ Dusk is built around the following principles:
 - Design for debugging first
 - Keep systems modular and inspectable
 
+## Architecture Diagrams
+
+<p align="left">
+  <img src="docs/dusk-arch.svg" height="400"><br>
+  <em>High level architecture of Dusk</em>
+</p>
+
+<p align="left">
+  <img src="docs/frame-flow.svg" height="600"><br>
+  <em>Frame flow in Dusk</em>
+</p>
+
+<p align="left">
+  <img src="docs//render-graph.svg" height="400"><br>
+  <em>Rendergraph for deferred rendering system in Dusk</em>
+</p>
+
 ## Gallery
 
 **GPU:** RTX 3060  
@@ -92,15 +109,6 @@ Dusk is built around the following principles:
 
 ![](docs/bistro-sample-00.png)
 *Amazon Lumberyard Bistro scene with 4M triangles*
-
-![Architecture](docs/dusk-arch.svg)
-*High level architecture of Dusk*
-
-![Rendergraph](docs/frame-flow.svg)
-*Frame flow in Dusk*
-
-![Rendergraph](docs/render-graph.svg)
-*Rendergraph for deferred rendering system in Dusk*
 
 ## Work In Progress
 

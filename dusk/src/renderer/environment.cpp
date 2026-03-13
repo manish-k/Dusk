@@ -341,4 +341,19 @@ void Environment::cleanup()
     cleanupHWSkyResources();
 }
 
+void Environment::updateHosekWilkieSkyParams(float turbidity, float albedo, glm::vec3 sunDirection)
+{
+    computeHosekWilkieParams(turbidity, albedo, sunDirection);
+}
+
+void Environment::update(FrameData& frameData)
+{
+    // Update the Hosek-Wilkie parameters buffer if they are dirty
+    if (m_hwParamsDirty)
+    {
+        m_hwParamsBuffer.writeAndFlushAtIndex(frameData.frameIndex, &m_hwParams, sizeof(HosekWilkieSkyParams));
+        markHosekWilkieParamsClean();
+        m_needToGenerateEnvMaps = true;
+    }
+
 } // namespace dusk

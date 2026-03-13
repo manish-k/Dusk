@@ -3,6 +3,7 @@
 #include "dusk.h"
 
 #include "renderer/gfx_buffer.h"
+#include "renderer/frame_data.h"
 
 #include <glm/glm.hpp>
 
@@ -76,7 +77,10 @@ public:
     uint32_t             getSkyIrradianceTextureId() const { return m_skyIrradianceTexId; };
 
     void                 updateHosekWilkieSkyParams(float turbidity, float albedo, glm::vec3 sunDirection);
-    void                 updateHWBuffer(FrameData& frameData);
+    void                 update(FrameData& frameData);
+
+    bool                 needToGenerateEnvMaps() const { return m_needToGenerateEnvMaps; }
+    void                 markEnvMapsGenerated() { m_needToGenerateEnvMaps = false; }
 
 private:
     void initCubeTextureResources(
@@ -94,6 +98,7 @@ private:
 
     HosekWilkieSkyParams             m_hwParams                        = {};
     bool                             m_hwParamsDirty                   = true;
+    bool                             m_needToGenerateEnvMaps           = true;
 
     uint32_t                         m_skyTextureId                    = 0u;
     uint32_t                         m_skyIrradianceTexId              = 0u;

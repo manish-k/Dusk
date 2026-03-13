@@ -16,7 +16,7 @@
 namespace dusk
 {
 
-bool Environment::init(VkGfxDescriptorSetLayout& globalDescSetLayout)
+bool Environment::init(VkGfxDescriptorSetLayout& globalDescSetLayout, uint32_t maxFramesCount)
 {
     std::string basePath   = STRING(DUSK_BUILD_PATH);
 
@@ -27,6 +27,8 @@ bool Environment::init(VkGfxDescriptorSetLayout& globalDescSetLayout)
 
     // Initialize Hosek-Wilkie parameters with default values for day time
     computeHosekWilkieParams(2.0f, 0.1f, DEFAULT_DAY_SUN_DIRECTION);
+
+    setupHWSkyResources(shaderPath, maxFramesCount);
 
     return true;
 }
@@ -63,6 +65,173 @@ void Environment::computeHosekWilkieParams(float turbidity, float albedo, glm::v
     m_hwParamsDirty        = true;
 
     arhosekskymodelstate_free(hwSkyState);
+}
+
+void Environment::setupHWSkyResources(const std::string& shaderPath, uint32_t maxFramesCount)
+{
+    auto& vkCtx = VkGfxDevice::getSharedVulkanContext();
+
+    // setup textures for Hosek-Wilkie sky model
+    uint32_t numMipLevels = static_cast<uint32_t>(
+                                std::floor(std::log2(
+                                    std::max(
+                                        ENV_RENDER_WIDTH,
+                                        ENV_RENDER_HEIGHT))))
+        + 1;
+
+    m_skyTextureId
+        = m_textureDB.createStorageTexture(
+            "skybox_texture",
+            ENV_RENDER_WIDTH,
+            ENV_RENDER_HEIGHT,
+            numMipLevels,
+            VK_FORMAT_R16G16B16A16_SFLOAT);
+
+    m_skyIrradianceTexId = m_textureDB.createStorageTexture(
+        "skybox_irradiance_texture",
+        IRRADIANCE_RENDER_WIDTH,
+        IRRADIANCE_RENDER_HEIGHT,
+        1,
+        VK_FORMAT_R16G16B16A16_SFLOAT);
+
+    m_skyPrefilteredTexId = m_textureDB.createStorageTexture(
+        "skybox_prefiltered_texture",
+        PREFILTERED_RENDER_WIDTH,
+        PREFILTERED_RENDER_HEIGHT,
+        5,
+        VK_FORMAT_R16G16B16A16_SFLOAT);
+
+    // setup descriptors
+    m_genCubeDescPool = VkGfxDescriptorPool::Builder(vkCtx)
+                            .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3)
+                            .addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1)
+                            .setDebugName("hw_sky_desc_pool")
+                            .build(1);
+
+    m_genCubeDescLayout = VkGfxDescriptorSetLayout::Builder(vkCtx)
+                              .addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 1)
+                              .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_COMPUTE_BIT, 1)
+                              .addBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_COMPUTE_BIT, 1)
+                              .addBinding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_COMPUTE_BIT, 1)
+                              .setDebugName("hw_sky_desc_layout")
+                              .build();
+
+    m_genCubeDescSet = m_genCubeDescPool->allocateDescriptorSet(*m_genCubeDescLayout, "hw_sky_desc_set");
+
+    GfxBuffer::createHostWriteBuffer(
+        GfxBufferUsageFlags::StorageBuffer,
+        sizeof(HosekWilkieSkyParams),
+        maxFramesCount,
+        "hw_sky_params_buffer",
+        &m_hwParamsBuffer);
+
+    auto bufferInfo = m_hwParamsBuffer.getDescriptorInfo();
+    m_genCubeDescSet->configureBuffer(0, 0, 1, &bufferInfo);
+    m_genCubeDescSet->applyConfiguration();
+
+    // setup environment map generation pipeline
+    m_genEnvCubeMapPipelineLayout = VkGfxPipelineLayout::Builder(vkCtx)
+                                        .addPushConstantRange(VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(IBLPushConstant))
+                                        .addDescriptorSetLayout(m_genCubeDescLayout->layout)
+                                        .build();
+
+#ifdef VK_RENDERER_DEBUG
+    vkdebug::setObjectName(
+        vkCtx.device,
+        VK_OBJECT_TYPE_PIPELINE_LAYOUT,
+        (uint64_t)m_genEnvCubeMapPipelineLayout->get(),
+        "gen_env_cubemap_pipeline_layout");
+#endif // VK_RENDERER_DEBUG
+
+    auto genEnvShader       = FileSystem::readFileBinary(shaderPath + "/" + "gen_env_cubemap.comp.spv");
+
+    m_genEnvCubeMapPipeline = VkGfxComputePipeline::Builder(vkCtx)
+                                  .setComputeShaderCode(genEnvShader)
+                                  .setPipelineLayout(*m_genEnvCubeMapPipelineLayout)
+                                  .setDebugName("gen_env_cubemap_pipeline")
+                                  .build();
+
+#ifdef VK_RENDERER_DEBUG
+    vkdebug::setObjectName(
+        vkCtx.device,
+        VK_OBJECT_TYPE_PIPELINE,
+        (uint64_t)m_genEnvCubeMapPipeline->get(),
+        "gen_env_cubemap_pipeline");
+#endif // VK_RENDERER_DEBUG
+
+    // setup irradiance map generation pipeline
+    m_genEnvIrradiancePipelineLayout = VkGfxPipelineLayout::Builder(vkCtx)
+                                           .addPushConstantRange(VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(IBLPushConstant))
+                                           .addDescriptorSetLayout(m_genCubeDescLayout->layout)
+                                           .build();
+
+#ifdef VK_RENDERER_DEBUG
+    vkdebug::setObjectName(
+        vkCtx.device,
+        VK_OBJECT_TYPE_PIPELINE_LAYOUT,
+        (uint64_t)m_genEnvIrradiancePipelineLayout->get(),
+        "gen_env_irrad_cubemap_pipeline_layout");
+#endif // VK_RENDERER_DEBUG
+
+    auto genEnvIrradShader     = FileSystem::readFileBinary(shaderPath + "/" + "gen_env_irrad_cubemap.comp.spv");
+
+    m_genEnvIrradiancePipeline = VkGfxComputePipeline::Builder(vkCtx)
+                                     .setComputeShaderCode(genEnvIrradShader)
+                                     .setPipelineLayout(*m_genEnvIrradiancePipelineLayout)
+                                     .setDebugName("gen_env_irrad_cubemap_pipeline")
+                                     .build();
+
+#ifdef VK_RENDERER_DEBUG
+    vkdebug::setObjectName(
+        vkCtx.device,
+        VK_OBJECT_TYPE_PIPELINE,
+        (uint64_t)m_genEnvIrradiancePipeline->get(),
+        "gen_env_irrad_cubemap_pipeline");
+#endif // VK_RENDERER_DEBUG
+
+    // setup prefiltered map generation pipeline
+    m_genEnvPrefilteredPipelineLayout = VkGfxPipelineLayout::Builder(vkCtx)
+                                            .addPushConstantRange(VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(IBLPushConstant))
+                                            .addDescriptorSetLayout(m_genCubeDescLayout->layout)
+                                            .build();
+
+#ifdef VK_RENDERER_DEBUG
+    vkdebug::setObjectName(
+        vkCtx.device,
+        VK_OBJECT_TYPE_PIPELINE_LAYOUT,
+        (uint64_t)m_genEnvPrefilteredPipelineLayout->get(),
+        "gen_env_prefil_cubemap_pipeline_layout");
+#endif // VK_RENDERER_DEBUG
+
+    auto genEnvPrefilterShader  = FileSystem::readFileBinary(shaderPath + "/" + "gen_env_prefil_cubemap.comp.spv");
+
+    m_genEnvPrefilteredPipeline = VkGfxComputePipeline::Builder(vkCtx)
+                                      .setComputeShaderCode(genEnvPrefilterShader)
+                                      .setPipelineLayout(*m_genEnvPrefilteredPipelineLayout)
+                                      .setDebugName("gen_env_prefil_cubemap_pipeline")
+                                      .build();
+
+#ifdef VK_RENDERER_DEBUG
+    vkdebug::setObjectName(
+        vkCtx.device,
+        VK_OBJECT_TYPE_PIPELINE,
+        (uint64_t)m_genEnvPrefilteredPipeline->get(),
+        "gen_env_prefil_cubemap_pipeline");
+#endif // VK_RENDERER_DEBUG
+}
+
+void Environment::cleanupHWSkyResources()
+{
+    m_hwParamsBuffer.cleanup();
+
+    m_genEnvCubeMapPipeline           = nullptr;
+    m_genEnvCubeMapPipelineLayout     = nullptr;
+
+    m_genEnvIrradiancePipeline        = nullptr;
+    m_genEnvIrradiancePipelineLayout  = nullptr;
+
+    m_genEnvPrefilteredPipeline       = nullptr;
+    m_genEnvPrefilteredPipelineLayout = nullptr;
 }
 
 void Environment::initCubeTextureResources(
@@ -135,6 +304,8 @@ void Environment::cleanup()
 {
     m_skyBoxRenderPipeline       = nullptr;
     m_skyBoxRenderPipelineLayout = nullptr;
+
+    cleanupHWSkyResources();
 }
 
 } // namespace dusk

@@ -1,5 +1,5 @@
 #include "engine.h"
-#include "stats_recorder.h"
+#include "extras/stats_recorder.h"
 
 #include "core/application.h"
 #include "platform/window.h"
@@ -115,7 +115,7 @@ bool Engine::start(Shared<Application> app)
     }
 
     m_environment = createUnique<Environment>(*m_textureDB);
-    if (!m_environment->init(*m_globalDescriptorSetLayout))
+    if (!m_environment->init(*m_globalDescriptorSetLayout, m_renderer->getMaxFramesCount()))
     {
         DUSK_ERROR("Unable to init environment");
         return false;

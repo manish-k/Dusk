@@ -41,7 +41,7 @@ public:
      * @brief Get Texture for the given Id
      * @params texture id
      */
-    GfxTexture& getTexture2D(uint32_t texId) { return m_textures[texId]; };
+    GfxTexture& getTexture(uint32_t texId) { return m_textures[texId]; };
 
     /**
      * @brief Get default texture
@@ -145,6 +145,22 @@ public:
         const std::string& name,
         uint32_t           width,
         uint32_t           height,
+        VkFormat           format);
+
+    /**
+     * @brief Create a storage cube texture for compute pipeline
+     * @param name of the texture
+     * @param width of the texture
+     * @param height of the texture
+     * @param mipLevels of the texture
+     * @param format of the texture
+     * @return id of the texture
+     */
+    uint32_t createCubeStorageTexture(
+        const std::string& name,
+        uint32_t           width,
+        uint32_t           height,
+        uint32_t           mipLevels,
         VkFormat           format);
 
     /**

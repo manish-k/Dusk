@@ -149,7 +149,7 @@ bool TextureDB::setupDescriptors()
                                        .addBinding(
                                            COLOR_BINDING_INDEX,
                                            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                           VK_SHADER_STAGE_FRAGMENT_BIT,
+                                           VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
                                            maxAllowedTextures,
                                            true)
                                        .setDebugName("texture_desc_set_layout")
@@ -535,6 +535,65 @@ uint32_t TextureDB::createStorageTexture(
 
     return newId;
 }
+
+uint32_t TextureDB::createCubeStorageTexture(
+    const std::string& name,
+    uint32_t           width,
+    uint32_t           height,
+    uint32_t           mipLevels,
+    VkFormat           format)
+{
+    std::lock_guard<std::mutex> updateLock(m_mutex);
+
+    // initialize texture for render target
+    uint32_t   newId = m_textures.size();
+
+    GfxTexture newTex { newId };
+    newTex.init(
+        TextureType::Cube,
+        width,
+        height,
+        mipLevels,
+        6,
+        format,
+        SampledTexture | ColorTexture | TransferDstTexture | StorageTexture,
+        name.c_str());
+
+    newTex.sampler = m_defaultSampler.sampler;
+
+    m_textures.push_back(newTex);
+
+    // update corrosponding combined image sampler descriptor with new
+    // image so that we can sample images used as storage.
+    VkDescriptorImageInfo texDescInfos {};
+    texDescInfos.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    texDescInfos.imageView   = newTex.imageView;
+    texDescInfos.sampler     = newTex.sampler;
+
+    m_textureDescriptorSet->configureImage(
+        COLOR_BINDING_INDEX,
+        newTex.id,
+        1,
+        &texDescInfos);
+
+    m_textureDescriptorSet->applyConfiguration();
+
+    // update corrosponding storage descriptor with new image
+    VkDescriptorImageInfo storageTexDescInfos {};
+    storageTexDescInfos.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    storageTexDescInfos.imageView   = newTex.imageView;
+
+    m_storageTextureDescriptorSet->configureImage(
+        STORAGE_BINDING_INDEX,
+        newTex.id,
+        1,
+        &storageTexDescInfos);
+
+    m_storageTextureDescriptorSet->applyConfiguration();
+
+    return newId;
+}
+
 
 uint32_t TextureDB::createDepthTexture(
     const std::string& name,

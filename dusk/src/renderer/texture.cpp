@@ -246,7 +246,7 @@ Error GfxTexture::init(
         {
             device.createImageView(
                 &image,
-                VK_IMAGE_VIEW_TYPE_2D_ARRAY,
+                imageViewType,
                 format,
                 imageAspectFlags,
                 level,

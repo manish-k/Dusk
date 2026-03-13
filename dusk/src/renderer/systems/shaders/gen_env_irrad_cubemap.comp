@@ -7,11 +7,12 @@
 
 #include "common.glsl"
 
-layout (set = 0, binding = 1) uniform samplerCube envCubeMap;
+layout (set = 0, binding = 0) uniform samplerCube textures[];
 
-layout (set = 0, binding = 2, rgba16f) writeonly uniform image3D irradianceCubeMap;
+layout (set = 1, binding = 2, rgba16f) writeonly uniform image3D irradianceCubeMap;
 
 layout(push_constant) uniform IBLPushConstant {
+    uint envCubeMapTexId;
     uint sampleCount;
     float roughness;
     uint resolution;
@@ -21,6 +22,8 @@ layout (local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
 void main()
 {
+    uint envCubeMapTexIdx = nonuniformEXT(push.envCubeMapTexId);
+
     ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
     int face    = int(gl_GlobalInvocationID.z);
 
@@ -50,7 +53,7 @@ void main()
             // tangent space to world
             vec3 sampleVec = tangentSample.x * right + tangentSample.y * up + tangentSample.z * normal; 
 
-            irradiance += texture(envCubeMap, sampleVec).rgb * cos(theta) * sin(theta);
+            irradiance += texture(textures[envCubeMapTexIdx], sampleVec).rgb * cos(theta) * sin(theta);
             nrSamples++;
         }
     }

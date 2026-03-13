@@ -80,21 +80,21 @@ void Environment::setupHWSkyResources(const std::string& shaderPath, uint32_t ma
         + 1;
 
     m_skyTextureId
-        = m_textureDB.createStorageTexture(
+        = m_textureDB.createCubeStorageTexture(
             "skybox_texture",
             ENV_RENDER_WIDTH,
             ENV_RENDER_HEIGHT,
             numMipLevels,
             VK_FORMAT_R16G16B16A16_SFLOAT);
 
-    m_skyIrradianceTexId = m_textureDB.createStorageTexture(
+    m_skyIrradianceTexId = m_textureDB.createCubeStorageTexture(
         "skybox_irradiance_texture",
         IRRADIANCE_RENDER_WIDTH,
         IRRADIANCE_RENDER_HEIGHT,
         1,
         VK_FORMAT_R16G16B16A16_SFLOAT);
 
-    m_skyPrefilteredTexId = m_textureDB.createStorageTexture(
+    m_skyPrefilteredTexId = m_textureDB.createCubeStorageTexture(
         "skybox_prefiltered_texture",
         PREFILTERED_RENDER_WIDTH,
         PREFILTERED_RENDER_HEIGHT,
@@ -110,9 +110,9 @@ void Environment::setupHWSkyResources(const std::string& shaderPath, uint32_t ma
 
     m_genCubeDescLayout = VkGfxDescriptorSetLayout::Builder(vkCtx)
                               .addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 1)
-                              .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_COMPUTE_BIT, 1)
-                              .addBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_COMPUTE_BIT, 1)
-                              .addBinding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_COMPUTE_BIT, 1)
+                              .addBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 1)
+                              .addBinding(2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 1)
+                              .addBinding(3, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT, 1)
                               .setDebugName("hw_sky_desc_layout")
                               .build();
 
@@ -127,6 +127,37 @@ void Environment::setupHWSkyResources(const std::string& shaderPath, uint32_t ma
 
     auto bufferInfo = m_hwParamsBuffer.getDescriptorInfo();
     m_genCubeDescSet->configureBuffer(0, 0, 1, &bufferInfo);
+
+    auto&                 tex = m_textureDB.getTexture(m_skyTextureId);
+
+    VkDescriptorImageInfo texDescInfos {};
+    texDescInfos.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    texDescInfos.imageView   = tex.imageView;
+
+    m_genCubeDescSet->configureImage(
+        1,
+        0,
+        1,
+        &texDescInfos);
+
+    tex                      = m_textureDB.getTexture(m_skyIrradianceTexId);
+    texDescInfos.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    texDescInfos.imageView   = tex.imageView;
+    m_genCubeDescSet->configureImage(
+        2,
+        0,
+        1,
+        &texDescInfos);
+
+    tex                      = m_textureDB.getTexture(m_skyPrefilteredTexId);
+    texDescInfos.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    texDescInfos.imageView   = tex.imageView;
+    m_genCubeDescSet->configureImage(
+        3,
+        0,
+        1,
+        &texDescInfos);
+
     m_genCubeDescSet->applyConfiguration();
 
     // setup environment map generation pipeline
@@ -162,6 +193,7 @@ void Environment::setupHWSkyResources(const std::string& shaderPath, uint32_t ma
     // setup irradiance map generation pipeline
     m_genEnvIrradiancePipelineLayout = VkGfxPipelineLayout::Builder(vkCtx)
                                            .addPushConstantRange(VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(IBLPushConstant))
+                                           .addDescriptorSetLayout(m_textureDB.getTexturesDescriptorSetLayout().layout)
                                            .addDescriptorSetLayout(m_genCubeDescLayout->layout)
                                            .build();
 
@@ -192,6 +224,7 @@ void Environment::setupHWSkyResources(const std::string& shaderPath, uint32_t ma
     // setup prefiltered map generation pipeline
     m_genEnvPrefilteredPipelineLayout = VkGfxPipelineLayout::Builder(vkCtx)
                                             .addPushConstantRange(VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(IBLPushConstant))
+                                            .addDescriptorSetLayout(m_textureDB.getTexturesDescriptorSetLayout().layout)
                                             .addDescriptorSetLayout(m_genCubeDescLayout->layout)
                                             .build();
 

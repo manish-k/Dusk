@@ -7,9 +7,9 @@
 
 #include "common.glsl"
 
-layout (set = 0, binding = 1) uniform samplerCube envCubeMap;
+layout (set = 0, binding = 0) uniform samplerCube textures[];
 
-layout (set = 0, binding = 3, rgba16f) writeonly uniform image3D prefilteredCubeMap;
+layout (set = 1, binding = 3, rgba16f) writeonly uniform image3D prefilteredCubeMap;
 
 layout(push_constant) uniform IBLPushConstant {
     uint envCubeMapTexId;
@@ -75,6 +75,8 @@ layout (local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
 void main()
 {
+	uint envCubeMapTexIdx = nonuniformEXT(push.envCubeMapTexId);
+
     ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
     int face    = int(gl_GlobalInvocationID.z);
 
@@ -117,7 +119,7 @@ void main()
 
             float mipLevel = roughness == 0.0 ? 0.0 : 0.5 * log2(saSample / saTexel); 
             
-            prefilteredColor += textureLod(envCubeMap, L, mipLevel).rgb * NdotL;
+            prefilteredColor += textureLod(textures[envCubeMapTexIdx], L, mipLevel).rgb * NdotL;
             totalWeight      += NdotL;
         }
     }

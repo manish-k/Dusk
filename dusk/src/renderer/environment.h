@@ -64,7 +64,8 @@ public:
         m_textureDB(db) { };
     ~Environment() = default;
 
-    bool                 init(VkGfxDescriptorSetLayout& globalDescSetLayout, uint32_t maxFramesCount);
+    bool                 init(VkGfxDescriptorSetLayout& globalDescSetLayout);
+    bool                 initHW(VkGfxDescriptorSetLayout& globalDescSetLayout, uint32_t maxFramesCount);
     void                 cleanup();
 
     bool                 areHosekWilkieParamsDirty() const { return m_hwParamsDirty; }
@@ -83,9 +84,8 @@ public:
     void                 markEnvMapsGenerated() { m_needToGenerateEnvMaps = false; }
 
 private:
-    void initCubeTextureResources(
+    void initSkyBoxPipeline(
         std::string&              shaderPath,
-        std::string&              resPath,
         VkGfxDescriptorSetLayout& globalDescSetLayout);
 
     void computeHosekWilkieParams(float turbidity, float albedo, glm::vec3 sunDirection);

@@ -16,14 +16,46 @@
 namespace dusk
 {
 
-bool Environment::init(VkGfxDescriptorSetLayout& globalDescSetLayout, uint32_t maxFramesCount)
+bool Environment::init(VkGfxDescriptorSetLayout& globalDescSetLayout)
+{
+    std::string       basePath          = STRING(DUSK_BUILD_PATH);
+
+    std::string       shaderPath        = basePath + "/shaders/";
+    std::string       resPath           = basePath + "/textures/skybox/";
+
+    const std::string skyboxTexturePath = resPath + "night_01_env.ktx2";
+    m_skyTextureId                      = m_textureDB.createTextureAsync(
+        skyboxTexturePath,
+        TextureType::Cube,
+        PixelFormat::R32G32B32A32_sfloat);
+
+    // irradiance cubemap
+    const std::string skyboxIrradianceTexturePath = resPath + "night_01_env_irradiance.ktx2";
+    m_skyIrradianceTexId                          = m_textureDB.createTextureAsync(
+        skyboxIrradianceTexturePath,
+        TextureType::Cube,
+        PixelFormat::R32G32B32A32_sfloat);
+
+    // prefiltered cubemap
+    const std::string skyboxPrefilteredTexturePath = resPath + "night_01_env_prefiltered.ktx2";
+    m_skyPrefilteredTexId
+        = m_textureDB.createTextureAsync(
+            skyboxPrefilteredTexturePath,
+            TextureType::Cube,
+            PixelFormat::R32G32B32A32_sfloat);
+
+    initSkyBoxPipeline(shaderPath, globalDescSetLayout);
+
+    return true;
+}
+
+bool Environment::initHW(VkGfxDescriptorSetLayout& globalDescSetLayout, uint32_t maxFramesCount)
 {
     std::string basePath   = STRING(DUSK_BUILD_PATH);
 
     std::string shaderPath = basePath + "/shaders/";
-    std::string resPath    = basePath + "/textures/skybox/";
 
-    initCubeTextureResources(shaderPath, resPath, globalDescSetLayout);
+    initSkyBoxPipeline(shaderPath, globalDescSetLayout);
 
     // Initialize Hosek-Wilkie parameters with default values for day time
     computeHosekWilkieParams(2.0f, 0.1f, DEFAULT_DAY_SUN_DIRECTION);
@@ -128,7 +160,7 @@ void Environment::setupHWSkyResources(const std::string& shaderPath, uint32_t ma
     auto bufferInfo = m_hwParamsBuffer.getDescriptorInfo();
     m_genCubeDescSet->configureBuffer(0, 0, 1, &bufferInfo);
 
-    auto&                 tex = m_textureDB.getTexture(m_skyTextureId);
+    auto                  tex = m_textureDB.getTexture(m_skyTextureId);
 
     VkDescriptorImageInfo texDescInfos {};
     texDescInfos.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -267,35 +299,11 @@ void Environment::cleanupHWSkyResources()
     m_genEnvPrefilteredPipelineLayout = nullptr;
 }
 
-void Environment::initCubeTextureResources(
+void Environment::initSkyBoxPipeline(
     std::string&              shaderPath,
-    std::string&              resPath,
     VkGfxDescriptorSetLayout& globalDescSetLayout)
 {
-    auto& ctx = VkGfxDevice::getSharedVulkanContext();
-
-    // env cube map
-    const std::string skyboxTexturePath = resPath + "night_01_env.ktx2";
-    m_skyTextureId                      = m_textureDB.createTextureAsync(
-        skyboxTexturePath,
-        TextureType::Cube,
-        PixelFormat::R32G32B32A32_sfloat);
-
-    // irradiance cubemap
-    const std::string skyboxIrradianceTexturePath = resPath + "night_01_env_irradiance.ktx2";
-    m_skyIrradianceTexId                          = m_textureDB.createTextureAsync(
-        skyboxIrradianceTexturePath,
-        TextureType::Cube,
-        PixelFormat::R32G32B32A32_sfloat);
-
-    // prefiltered cubemap
-    const std::string skyboxPrefilteredTexturePath = resPath + "night_01_env_prefiltered.ktx2";
-    m_skyPrefilteredTexId
-        = m_textureDB.createTextureAsync(
-            skyboxPrefilteredTexturePath,
-            TextureType::Cube,
-            PixelFormat::R32G32B32A32_sfloat);
-
+    auto& ctx                    = VkGfxDevice::getSharedVulkanContext();
     m_skyBoxRenderPipelineLayout = VkGfxPipelineLayout::Builder(ctx)
                                        .addPushConstantRange(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(SkyBoxPushConstant))
                                        .addDescriptorSetLayout(globalDescSetLayout.layout)
@@ -355,5 +363,6 @@ void Environment::update(FrameData& frameData)
         markHosekWilkieParamsClean();
         m_needToGenerateEnvMaps = true;
     }
+}
 
 } // namespace dusk

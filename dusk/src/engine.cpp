@@ -115,7 +115,8 @@ bool Engine::start(Shared<Application> app)
     }
 
     m_environment = createUnique<Environment>(*m_textureDB);
-    if (!m_environment->init(*m_globalDescriptorSetLayout, m_renderer->getMaxFramesCount()))
+    if (!m_environment->initHW(*m_globalDescriptorSetLayout, m_renderer->getMaxFramesCount()))
+    //if (!m_environment->init(*m_globalDescriptorSetLayout))
     {
         DUSK_ERROR("Unable to init environment");
         return false;

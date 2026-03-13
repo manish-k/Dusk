@@ -41,7 +41,7 @@ public:
      * @brief Get Texture for the given Id
      * @params texture id
      */
-    GfxTexture& getTexture(uint32_t texId) { return m_textures[texId]; };
+    GfxTexture* getTexture(uint32_t texId) { return &m_textures[texId]; };
 
     /**
      * @brief Get default texture

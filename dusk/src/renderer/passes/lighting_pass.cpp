@@ -67,7 +67,7 @@ void recordLightingCmds(const FrameData& frameData)
 
     push.irradianceTextureIdx   = env.getSkyIrradianceTextureId();
     push.prefilteredTextureIdx  = env.getSkyPrefilteredTextureId();
-    push.maxPrefilteredLODs     = TextureDB::cache()->getTexture(push.prefilteredTextureIdx).numMipLevels;
+    push.maxPrefilteredLODs     = TextureDB::cache()->getTexture(push.prefilteredTextureIdx)->numMipLevels;
 
     vkCmdPushConstants(
         cmdBuffer,

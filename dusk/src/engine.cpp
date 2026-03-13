@@ -389,35 +389,35 @@ void Engine::renderFrame(FrameData& frameData)
     };
     RGImageResource dirShadowMap = {
         .name    = "dir_shadow_map",
-        .texture = &m_textureDB->getTexture(m_rgResources.dirShadowMapsTextureId)
+        .texture = m_textureDB->getTexture(m_rgResources.dirShadowMapsTextureId)
     };
     RGImageResource gbuffDepth = {
         .name    = "gbuff_depth",
-        .texture = &m_textureDB->getTexture(m_rgResources.gbuffDepthTextureId)
+        .texture = m_textureDB->getTexture(m_rgResources.gbuffDepthTextureId)
     };
     RGImageResource gbuffAlbedo = {
         .name    = "gbuff_albedo",
-        .texture = &m_textureDB->getTexture(m_rgResources.gbuffRenderTextureIds[0])
+        .texture = m_textureDB->getTexture(m_rgResources.gbuffRenderTextureIds[0])
     };
     RGImageResource gbuffNormal = {
         .name    = "gbuff_normal",
-        .texture = &m_textureDB->getTexture(m_rgResources.gbuffRenderTextureIds[1])
+        .texture = m_textureDB->getTexture(m_rgResources.gbuffRenderTextureIds[1])
     };
     RGImageResource gbuffAoMR = {
         .name    = "gbuff_ao_metallic_roughness",
-        .texture = &m_textureDB->getTexture(m_rgResources.gbuffRenderTextureIds[2])
+        .texture = m_textureDB->getTexture(m_rgResources.gbuffRenderTextureIds[2])
     };
     RGImageResource gbuffEmissive = {
         .name    = "gbuff_emissive",
-        .texture = &m_textureDB->getTexture(m_rgResources.gbuffRenderTextureIds[3])
+        .texture = m_textureDB->getTexture(m_rgResources.gbuffRenderTextureIds[3])
     };
     RGImageResource lightingOutput = {
         .name    = "lighting_output",
-        .texture = &m_textureDB->getTexture(m_rgResources.lightingRenderTextureId)
+        .texture = m_textureDB->getTexture(m_rgResources.lightingRenderTextureId)
     };
     RGImageResource toneMappedOutput = {
         .name    = "tonemap_output",
-        .texture = &m_textureDB->getTexture(m_rgResources.toneMappedRenderTextureId)
+        .texture = m_textureDB->getTexture(m_rgResources.toneMappedRenderTextureId)
     };
 
     RGBufferResource indirectDrawCommandsBuffer = {
@@ -1259,8 +1259,8 @@ void Engine::executeBRDFLUTcomputePipeline()
 
     vkBeginCommandBuffer(commandBuffer, &beginInfo);
 
-    auto& image = m_textureDB->getTexture(m_rgResources.brdfLUTextureId);
-    image.recordTransitionLayout(commandBuffer, VK_IMAGE_LAYOUT_GENERAL);
+    auto image = m_textureDB->getTexture(m_rgResources.brdfLUTextureId);
+    image->recordTransitionLayout(commandBuffer, VK_IMAGE_LAYOUT_GENERAL);
 
     // Bind pipeline and descriptor sets
     m_rgResources.brdfLUTPipeline->bind(commandBuffer);

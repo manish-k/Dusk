@@ -164,7 +164,7 @@ void Environment::setupHWSkyResources(const std::string& shaderPath, uint32_t ma
 
     VkDescriptorImageInfo texDescInfos {};
     texDescInfos.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-    texDescInfos.imageView   = tex.imageView;
+    texDescInfos.imageView   = tex->imageView;
 
     m_genCubeDescSet->configureImage(
         1,
@@ -174,7 +174,7 @@ void Environment::setupHWSkyResources(const std::string& shaderPath, uint32_t ma
 
     tex                      = m_textureDB.getTexture(m_skyIrradianceTexId);
     texDescInfos.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-    texDescInfos.imageView   = tex.imageView;
+    texDescInfos.imageView   = tex->imageView;
     m_genCubeDescSet->configureImage(
         2,
         0,
@@ -183,7 +183,7 @@ void Environment::setupHWSkyResources(const std::string& shaderPath, uint32_t ma
 
     tex                      = m_textureDB.getTexture(m_skyPrefilteredTexId);
     texDescInfos.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-    texDescInfos.imageView   = tex.imageView;
+    texDescInfos.imageView   = tex->imageView;
     m_genCubeDescSet->configureImage(
         3,
         0,

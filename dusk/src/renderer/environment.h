@@ -71,8 +71,20 @@ public:
     bool                 areHosekWilkieParamsDirty() const { return m_hwParamsDirty; }
     void                 markHosekWilkieParamsClean() { m_hwParamsDirty = false; }
 
-    VkGfxRenderPipeline& getPipeline() const { return *m_skyBoxRenderPipeline; }
-    VkGfxPipelineLayout& getPipelineLayout() const { return *m_skyBoxRenderPipelineLayout; }
+    VkGfxDescriptorSet&   getHWSkyDescriptorSet() const { return *m_genCubeDescSet; }
+
+    VkGfxRenderPipeline& getSkyRenderPipeline() const { return *m_skyBoxRenderPipeline; }
+    VkGfxPipelineLayout& getSkyRenderPipelineLayout() const { return *m_skyBoxRenderPipelineLayout; }
+
+    VkGfxComputePipeline& getEnvCubeMapGenPipeline() const { return *m_genEnvCubeMapPipeline; }
+    VkGfxPipelineLayout&  getEnvCubeMapGenPipelineLayout() const { return *m_genEnvCubeMapPipelineLayout; }
+
+    VkGfxComputePipeline& getEnvIrradianceGenPipeline() const { return *m_genEnvIrradiancePipeline; }
+    VkGfxPipelineLayout&  getEnvIrradianceGenPipelineLayout() const { return *m_genEnvIrradiancePipelineLayout; }
+
+    VkGfxComputePipeline& getEnvPrefilteredGenPipeline() const { return *m_genEnvPrefilteredPipeline; }
+    VkGfxPipelineLayout&  getEnvPrefilteredGenPipelineLayout() const { return *m_genEnvPrefilteredPipelineLayout; }
+
     uint32_t             getSkyTextureId() const { return m_skyTextureId; };
     uint32_t             getSkyPrefilteredTextureId() const { return m_skyPrefilteredTexId; };
     uint32_t             getSkyIrradianceTextureId() const { return m_skyIrradianceTexId; };

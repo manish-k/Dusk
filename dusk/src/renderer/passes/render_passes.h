@@ -83,4 +83,19 @@ struct CullLodPushConstant
 
 void dispatchIndirectDrawCompute(const FrameData& frameData);
 
+//////////////////////////////////////////////////////
+// Env cube map generation passes
+
+void dispatchGenEnvCubeMapCompute(const FrameData& frameData);
+
+//////////////////////////////////////////////////////
+// Env irradiance cube map generation passes
+
+void dispatchGenEnvIrradianceCubeMapCompute(const FrameData& frameData);
+
+//////////////////////////////////////////////////////
+// Prefiltered Env cube map generation passes
+
+void dispatchGenEnvPrefilteredCubeMapCompute(const FrameData& frameData);
+
 } // namespace dusk

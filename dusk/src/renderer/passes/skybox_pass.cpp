@@ -22,12 +22,12 @@ void recordSkyBoxCmds(const FrameData& frameData)
     Scene& scene       = *frameData.scene;
     auto&  environment = Engine::get().getEnvironment();
 
-    environment.getPipeline().bind(frameData.commandBuffer);
+    environment.getSkyRenderPipeline().bind(frameData.commandBuffer);
 
     vkCmdBindDescriptorSets(
         frameData.commandBuffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
-        environment.getPipelineLayout().get(),
+        environment.getSkyRenderPipelineLayout().get(),
         0,
         1,
         &frameData.globalDescriptorSet,
@@ -37,7 +37,7 @@ void recordSkyBoxCmds(const FrameData& frameData)
     vkCmdBindDescriptorSets(
         frameData.commandBuffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
-        environment.getPipelineLayout().get(),
+        environment.getSkyRenderPipelineLayout().get(),
         1,
         1,
         &frameData.textureDescriptorSet,
@@ -50,7 +50,7 @@ void recordSkyBoxCmds(const FrameData& frameData)
 
     vkCmdPushConstants(
         frameData.commandBuffer,
-        environment.getPipelineLayout().get(),
+        environment.getSkyRenderPipelineLayout().get(),
         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
         0,
         sizeof(SkyBoxPushConstant),

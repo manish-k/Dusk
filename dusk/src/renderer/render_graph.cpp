@@ -380,12 +380,63 @@ void RenderGraph::buildWriteImageResourcesState(RGNode& pass, bool useDepth)
             newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
             newStage  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
             newAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+            if (pass.targetQueueFamily == RGQueueFamilyType::Compute)
+            {
+                newLayout = VK_IMAGE_LAYOUT_GENERAL;
+                newStage  = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+                newAccess = VK_ACCESS_2_SHADER_WRITE_BIT;
+            }
         }
 
         if (resource->texture->usage & DepthStencilTexture)
         {
             // if reading depth buffer
             imageAspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+        }
+
+        // TODO:: Need proper reasoning about WAW ownership cases. Currently there is no use case for it.
+        // handle ownership transfer for Write -> Write cases across different queue families
+        bool needOwnershipTransfer = state.lastWriter != -1
+            && state.lastWriter != pass.index
+            && state.currentQueueFamily != pass.targetQueueFamily;
+
+        bool addedPreBarrier  = false;
+        bool addedPostBarrier = false;
+
+        if (needOwnershipTransfer)
+        {
+            RGNode& oldPass = m_passes[state.lastWriter];
+
+            // release on old queue family
+            VkImageMemoryBarrier2 release { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2 };
+
+            // wait for the old stage to finish all its operation before release
+            release.srcStageMask  = state.stage;
+            release.srcAccessMask = state.access;
+
+            // dst doesnt' matter for release
+            release.dstStageMask                    = VK_PIPELINE_STAGE_2_NONE;
+            release.dstAccessMask                   = 0;
+
+            release.oldLayout                       = state.layout;
+            release.newLayout                       = state.layout;
+
+            release.srcQueueFamilyIndex             = getQueueFamilyIndex(oldPass.targetQueueFamily);
+            release.dstQueueFamilyIndex             = getQueueFamilyIndex(pass.targetQueueFamily);
+
+            release.image                           = resource->texture->image.vkImage;
+
+            release.subresourceRange.aspectMask     = imageAspectFlags;
+            release.subresourceRange.baseMipLevel   = 0;
+            release.subresourceRange.levelCount     = resource->texture->numMipLevels;
+            release.subresourceRange.baseArrayLayer = 0;
+            release.subresourceRange.layerCount     = resource->texture->numLayers;
+
+            oldPass.postImageBarriers.push_back(release);
+            oldPass.submitNeeded = true; // ensure submit happens between release and acquire
+
+            addedPreBarrier      = true;
         }
 
         // emit barrier if layout transition is needed
@@ -409,13 +460,27 @@ void RenderGraph::buildWriteImageResourcesState(RGNode& pass, bool useDepth)
             barrier.subresourceRange.baseArrayLayer = 0;
             barrier.subresourceRange.layerCount     = resource->texture->numLayers;
 
+            // merging ownership transfer barrier if needed with layout transition
+            if (needOwnershipTransfer)
+            {
+                RGNode& oldPass             = m_passes[state.lastWriter];
+
+                barrier.srcQueueFamilyIndex = getQueueFamilyIndex(oldPass.targetQueueFamily);
+                barrier.dstQueueFamilyIndex = getQueueFamilyIndex(pass.targetQueueFamily);
+
+                addedPostBarrier            = true;
+            }
+
             pass.preImageBarriers.push_back(barrier);
         }
 
-        state.layout     = newLayout;
-        state.stage      = newStage;
-        state.access     = newAccess;
-        state.lastWriter = pass.index;
+        DASSERT(addedPreBarrier == addedPostBarrier, "missing either release or acquire barriers");
+
+        state.layout             = newLayout;
+        state.stage              = newStage;
+        state.access             = newAccess;
+        state.currentQueueFamily = pass.targetQueueFamily;
+        state.lastWriter         = pass.index;
     }
 }
 
@@ -451,12 +516,13 @@ void RenderGraph::buildReadImageResourcesState(RGNode& pass, bool useDepth)
             && state.lastWriter != pass.index
             && state.currentQueueFamily != pass.targetQueueFamily;
 
-        bool    addedPreBarrier  = false;
-        bool    addedPostBarrier = false;
-        RGNode& oldPass          = m_passes[state.lastWriter];
+        bool addedPreBarrier  = false;
+        bool addedPostBarrier = false;
 
         if (needOwnershipTransfer)
         {
+            RGNode& oldPass = m_passes[state.lastWriter];
+
             // release on old queue family
             VkImageMemoryBarrier2 release { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2 };
 
@@ -532,6 +598,8 @@ void RenderGraph::buildReadImageResourcesState(RGNode& pass, bool useDepth)
             // merging ownership transfer barrier if needed with layout transition
             if (needOwnershipTransfer)
             {
+                RGNode& oldPass             = m_passes[state.lastWriter];
+
                 barrier.srcQueueFamilyIndex = getQueueFamilyIndex(oldPass.targetQueueFamily);
                 barrier.dstQueueFamilyIndex = getQueueFamilyIndex(pass.targetQueueFamily);
 

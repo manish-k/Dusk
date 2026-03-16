@@ -91,13 +91,14 @@ struct RGNode
 
     HashMap<uint32_t, LoadStoreState>    resourceLoadStoreStates;
 
-    DynamicArray<VkImageMemoryBarrier2>  preImageBarriers        = {};
-    DynamicArray<VkImageMemoryBarrier2>  postImageBarriers = {};
+    DynamicArray<VkImageMemoryBarrier2>  preImageBarriers   = {};
+    DynamicArray<VkImageMemoryBarrier2>  postImageBarriers  = {};
 
-    DynamicArray<VkBufferMemoryBarrier2> bufferBarriers       = {};
+    DynamicArray<VkBufferMemoryBarrier2> preBufferBarriers  = {};
+    DynamicArray<VkBufferMemoryBarrier2> postBufferBarriers = {};
 
-    uint32_t                             viewMask             = 0u; // only for multiview
-    uint32_t                             layerCount           = 1u; // only for multiview
+    uint32_t                             viewMask           = 0u; // only for multiview
+    uint32_t                             layerCount         = 1u; // only for multiview
 };
 
 struct DebugGraph
@@ -254,11 +255,18 @@ private:
     void buildReadBufferResourcesState(RGNode& pass);
 
     /**
-     * @brief Inserts barriers in command buffer for the given pass
+     * @brief Inserts barriers in command buffer for the given pass before beginning the pass execution.
      * @param frameData
      * @param pass
      */
-    void insertPassBarriers(const FrameData& frameData, const RGNode& pass) const;
+    void insertPrePassBarriers(const FrameData& frameData, const RGNode& pass) const;
+
+    /**
+     * @brief Inserts barriers in command buffer for the given pass after ending the pass execution.
+     * @param frameData
+     * @param pass
+     */
+    void insertPostPassBarriers(const FrameData& frameData, const RGNode& pass) const;
 
     /**
      * @brief Begins or initializes a rendering pass using the provided frame data.

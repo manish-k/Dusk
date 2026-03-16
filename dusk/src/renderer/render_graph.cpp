@@ -160,7 +160,7 @@ void RenderGraph::execute(const FrameData& frameData)
 
         statsRecorder->beginPass(frameData.commandBuffer, pass.name, passExecutionIdx);
 
-        insertPassBarriers(frameData, pass);
+        insertPrePassBarriers(frameData, pass);
 
         // DUSK_DEBUG("executing pass: {}", pass.name);
 
@@ -178,6 +178,8 @@ void RenderGraph::execute(const FrameData& frameData)
             endPass(frameData);
             vkdebug::cmdEndLabel(frameData.commandBuffer);
         }
+
+        insertPostPassBarriers(frameData, pass);
 
         statsRecorder->endPass(frameData.commandBuffer, passExecutionIdx);
     }
@@ -634,7 +636,6 @@ void RenderGraph::buildWriteBufferResourcesState(RGNode& pass)
         {
             state.firstWriter = pass.index;
         }
-        state.lastWriter = pass.index;
 
         if (pass.isCompute)
         {
@@ -648,6 +649,41 @@ void RenderGraph::buildWriteBufferResourcesState(RGNode& pass)
             }
         }
 
+        bool needOwnershipTransfer = state.lastWriter != -1
+            && state.lastWriter != pass.index
+            && state.currentQueueFamily != pass.targetQueueFamily;
+
+        bool addedPreBarrier  = false;
+        bool addedPostBarrier = false;
+
+        if (needOwnershipTransfer)
+        {
+            RGNode& oldPass = m_passes[state.lastWriter];
+
+            // release on old queue family
+            VkBufferMemoryBarrier2 release { VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2 };
+
+            // wait for the old stage to finish all its operation before release
+            release.srcStageMask  = state.stage;
+            release.srcAccessMask = state.access;
+
+            // dst doesnt' matter for release
+            release.dstStageMask        = VK_PIPELINE_STAGE_2_NONE;
+            release.dstAccessMask       = 0;
+
+            release.srcQueueFamilyIndex = getQueueFamilyIndex(oldPass.targetQueueFamily);
+            release.dstQueueFamilyIndex = getQueueFamilyIndex(pass.targetQueueFamily);
+
+            release.buffer              = resource->buffer->vkBuffer.buffer;
+            release.offset              = 0;
+            release.size                = resource->buffer->vkBuffer.sizeInBytes;
+
+            oldPass.postBufferBarriers.push_back(release);
+            oldPass.submitNeeded = true; // ensure submit happens between release and acquire
+
+            addedPreBarrier      = true;
+        }
+
         // emit barrier if access or stage flags have changed
         if (state.stage != newStage || state.access != newAccess)
         {
@@ -658,15 +694,29 @@ void RenderGraph::buildWriteBufferResourcesState(RGNode& pass)
             barrier.srcAccessMask = state.access;
             barrier.dstAccessMask = newAccess;
 
-            barrier.buffer        = resource->buffer->vkBuffer.buffer; // TODO: WTF is this?
+            barrier.buffer        = resource->buffer->vkBuffer.buffer;
             barrier.offset        = 0;
             barrier.size          = resource->buffer->vkBuffer.sizeInBytes;
 
-            pass.bufferBarriers.push_back(barrier);
+            if (needOwnershipTransfer)
+            {
+                const RGNode& oldPass       = m_passes[state.lastWriter];
+
+                barrier.srcQueueFamilyIndex = getQueueFamilyIndex(oldPass.targetQueueFamily);
+                barrier.dstQueueFamilyIndex = getQueueFamilyIndex(pass.targetQueueFamily);
+
+                addedPostBarrier            = true;
+            }
+
+            pass.preBufferBarriers.push_back(barrier);
         }
 
-        state.stage  = newStage;
-        state.access = newAccess;
+        DASSERT(addedPreBarrier == addedPostBarrier, "missing either release or acquire barriers");
+
+        state.stage              = newStage;
+        state.access             = newAccess;
+        state.lastWriter         = pass.index;
+        state.currentQueueFamily = pass.targetQueueFamily;
     }
 }
 
@@ -690,6 +740,42 @@ void RenderGraph::buildReadBufferResourcesState(RGNode& pass)
             newAccess = VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT;
         }
 
+        // handle ownership transfer for Write -> Read cases across different queue families
+        bool needOwnershipTransfer = state.lastWriter != -1
+            && state.lastWriter != pass.index
+            && state.currentQueueFamily != pass.targetQueueFamily;
+
+        bool addedPreBarrier  = false;
+        bool addedPostBarrier = false;
+
+        if (needOwnershipTransfer)
+        {
+            RGNode& oldPass = m_passes[state.lastWriter];
+
+            // release on old queue family
+            VkBufferMemoryBarrier2 release { VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2 };
+
+            // wait for the old stage to finish all its operation before release
+            release.srcStageMask  = state.stage;
+            release.srcAccessMask = state.access;
+
+            // dst doesnt' matter for release
+            release.dstStageMask        = VK_PIPELINE_STAGE_2_NONE;
+            release.dstAccessMask       = 0;
+
+            release.srcQueueFamilyIndex = getQueueFamilyIndex(oldPass.targetQueueFamily);
+            release.dstQueueFamilyIndex = getQueueFamilyIndex(pass.targetQueueFamily);
+
+            release.buffer              = resource->buffer->vkBuffer.buffer; // TODO: WTF is this?
+            release.offset              = 0;
+            release.size                = resource->buffer->vkBuffer.sizeInBytes;
+
+            oldPass.postBufferBarriers.push_back(release);
+            oldPass.submitNeeded = true; // ensure submit happens between release and acquire
+
+            addedPreBarrier      = true;
+        }
+
         // emit barrier if access or stage flags have changed
         if (state.stage != newStage || state.access != newAccess)
         {
@@ -704,23 +790,48 @@ void RenderGraph::buildReadBufferResourcesState(RGNode& pass)
             barrier.offset        = 0;
             barrier.size          = resource->buffer->vkBuffer.sizeInBytes;
 
-            pass.bufferBarriers.push_back(barrier);
+            if (needOwnershipTransfer)
+            {
+                const RGNode& oldPass       = m_passes[state.lastWriter];
+
+                barrier.srcQueueFamilyIndex = getQueueFamilyIndex(oldPass.targetQueueFamily);
+                barrier.dstQueueFamilyIndex = getQueueFamilyIndex(pass.targetQueueFamily);
+
+                addedPostBarrier            = true;
+            }
+
+            pass.preBufferBarriers.push_back(barrier);
         }
 
-        state.stage  = newStage;
-        state.access = newAccess;
+        DASSERT(addedPreBarrier == addedPostBarrier, "missing either release or acquire barriers");
+
+        state.stage              = newStage;
+        state.access             = newAccess;
+        state.currentQueueFamily = pass.targetQueueFamily;
     }
 }
 
-void RenderGraph::insertPassBarriers(const FrameData& frameData, const RGNode& pass) const
+void RenderGraph::insertPrePassBarriers(const FrameData& frameData, const RGNode& pass) const
 {
     VkCommandBuffer  cmdBuffer = frameData.commandBuffer;
 
     VkDependencyInfo dependencyInfo { VK_STRUCTURE_TYPE_DEPENDENCY_INFO };
     dependencyInfo.imageMemoryBarrierCount  = static_cast<uint32_t>(pass.preImageBarriers.size());
     dependencyInfo.pImageMemoryBarriers     = pass.preImageBarriers.data();
-    dependencyInfo.bufferMemoryBarrierCount = static_cast<uint32_t>(pass.bufferBarriers.size());
-    dependencyInfo.pBufferMemoryBarriers    = pass.bufferBarriers.data();
+    dependencyInfo.bufferMemoryBarrierCount = static_cast<uint32_t>(pass.preBufferBarriers.size());
+    dependencyInfo.pBufferMemoryBarriers    = pass.preBufferBarriers.data();
+    vkCmdPipelineBarrier2(cmdBuffer, &dependencyInfo);
+}
+
+void RenderGraph::insertPostPassBarriers(const FrameData& frameData, const RGNode& pass) const
+{
+    VkCommandBuffer  cmdBuffer = frameData.commandBuffer;
+
+    VkDependencyInfo dependencyInfo { VK_STRUCTURE_TYPE_DEPENDENCY_INFO };
+    dependencyInfo.imageMemoryBarrierCount  = static_cast<uint32_t>(pass.postImageBarriers.size());
+    dependencyInfo.pImageMemoryBarriers     = pass.postImageBarriers.data();
+    dependencyInfo.bufferMemoryBarrierCount = static_cast<uint32_t>(pass.postBufferBarriers.size());
+    dependencyInfo.pBufferMemoryBarriers    = pass.postBufferBarriers.data();
     vkCmdPipelineBarrier2(cmdBuffer, &dependencyInfo);
 }
 

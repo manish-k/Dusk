@@ -122,7 +122,8 @@ void RenderGraph::setMulitView(uint32_t passId, uint32_t mask, uint32_t numLayer
     pass.layerCount = numLayers;
 }
 
-RenderGraph::RenderGraph()
+RenderGraph::RenderGraph(VulkanContext vkCtx) :
+    m_vkContext(vkCtx)
 {
     m_passes.reserve(MAX_RENDER_GRAPH_PASSES);
     m_passExecutionOrder.reserve(MAX_RENDER_GRAPH_PASSES);
@@ -132,11 +133,12 @@ RenderGraph::RenderGraph()
 
 uint32_t RenderGraph::addPass(
     const std::string&           passName,
+    RGQueueFamilyType            targetQueue,
     const RecordCmdBuffFunction& recordFn)
 {
     // add render node
     auto passId = static_cast<uint32_t>(m_passes.size());
-    m_passes.push_back({ passName, passId, recordFn });
+    m_passes.emplace_back(passName, passId, targetQueue, recordFn);
 
     return passId;
 }
@@ -266,10 +268,10 @@ void RenderGraph::buildExecutionOrder()
     uint32_t nodeCount = static_cast<uint32_t>(m_passes.size());
 
     // represent all nodes as bitset eg: for 5 nodes 0b11111
-    uint64_t               allNodesBitset = (1ULL << nodeCount) - 1ULL;
+    uint64_t allNodesBitset = (1ULL << nodeCount) - 1ULL;
 
     // copying, avoiding modifications on original array
-    DynamicArray<uint64_t> inEdgeBitsets  = m_inEdgesBitsets;
+    DynamicArray<uint64_t> inEdgeBitsets = m_inEdgesBitsets;
 
     // track initial zero in-degree nodes
     uint64_t zeroInDegreeNodesBitset = 0ULL;
@@ -357,7 +359,6 @@ void RenderGraph::buildWriteImageResourcesState(RGNode& pass, bool useDepth)
             state.firstWriter                          = pass.index;
             pass.resourceLoadStoreStates[resId].loadOp = GfxLoadOperation::Clear; // TODO:: make configurable, Expose per-pass intent
         }
-        state.lastWriter                    = pass.index;
 
         VkImageAspectFlags imageAspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
 
@@ -393,22 +394,28 @@ void RenderGraph::buildWriteImageResourcesState(RGNode& pass, bool useDepth)
             VkImageMemoryBarrier2 barrier { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2 };
             barrier.srcStageMask                    = state.stage;
             barrier.dstStageMask                    = newStage;
+
             barrier.srcAccessMask                   = state.access;
             barrier.dstAccessMask                   = newAccess;
+
             barrier.oldLayout                       = state.layout;
             barrier.newLayout                       = newLayout;
+
             barrier.image                           = resource->texture->image.vkImage;
+
             barrier.subresourceRange.aspectMask     = imageAspectFlags;
             barrier.subresourceRange.baseMipLevel   = 0;
             barrier.subresourceRange.levelCount     = resource->texture->numMipLevels;
             barrier.subresourceRange.baseArrayLayer = 0;
             barrier.subresourceRange.layerCount     = resource->texture->numLayers;
-            pass.imageBarriers.push_back(barrier);
+
+            pass.preImageBarriers.push_back(barrier);
         }
 
-        state.layout = newLayout;
-        state.stage  = newStage;
-        state.access = newAccess;
+        state.layout     = newLayout;
+        state.stage      = newStage;
+        state.access     = newAccess;
+        state.lastWriter = pass.index;
     }
 }
 
@@ -432,17 +439,6 @@ void RenderGraph::buildReadImageResourcesState(RGNode& pass, bool useDepth)
             pass.resourceLoadStoreStates[resId].loadOp = GfxLoadOperation::Load;
         }
 
-        if (useDepth && resource->texture->usage & DepthStencilTexture)
-        {
-            continue;
-        }
-        else
-        {
-            newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            newStage  = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-            newAccess = VK_ACCESS_SHADER_READ_BIT;
-        }
-
         VkImageAspectFlags imageAspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
         if (resource->texture->usage & DepthStencilTexture)
         {
@@ -450,28 +446,107 @@ void RenderGraph::buildReadImageResourcesState(RGNode& pass, bool useDepth)
             imageAspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
         }
 
+        // handle ownership transfer for Write -> Read cases across different queue families
+        bool needOwnershipTransfer = state.lastWriter != -1
+            && state.lastWriter != pass.index
+            && state.currentQueueFamily != pass.targetQueueFamily;
+
+        bool    addedPreBarrier  = false;
+        bool    addedPostBarrier = false;
+        RGNode& oldPass          = m_passes[state.lastWriter];
+
+        if (needOwnershipTransfer)
+        {
+            // release on old queue family
+            VkImageMemoryBarrier2 release { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2 };
+
+            // wait for the old stage to finish all its operation before release
+            release.srcStageMask  = state.stage;
+            release.srcAccessMask = state.access;
+
+            // dst doesnt' matter for release
+            release.dstStageMask                    = VK_PIPELINE_STAGE_2_NONE;
+            release.dstAccessMask                   = 0;
+
+            release.oldLayout                       = state.layout;
+            release.newLayout                       = state.layout;
+
+            release.srcQueueFamilyIndex             = getQueueFamilyIndex(oldPass.targetQueueFamily);
+            release.dstQueueFamilyIndex             = getQueueFamilyIndex(pass.targetQueueFamily);
+
+            release.image                           = resource->texture->image.vkImage;
+
+            release.subresourceRange.aspectMask     = imageAspectFlags;
+            release.subresourceRange.baseMipLevel   = 0;
+            release.subresourceRange.levelCount     = resource->texture->numMipLevels;
+            release.subresourceRange.baseArrayLayer = 0;
+            release.subresourceRange.layerCount     = resource->texture->numLayers;
+
+            oldPass.postImageBarriers.push_back(release);
+            oldPass.submitNeeded = true; // ensure submit happens between release and acquire
+
+            addedPreBarrier      = true;
+        }
+
+        // default to graphic reading stage
+        newStage  = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        newAccess = VK_ACCESS_SHADER_READ_BIT;
+        newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+        if (useDepth && resource->texture->usage & DepthStencilTexture)
+        {
+            // handled in write
+            continue;
+        }
+        else
+        {
+            if (pass.targetQueueFamily == RGQueueFamilyType::Compute)
+            {
+                newStage  = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+                newAccess = VK_ACCESS_SHADER_READ_BIT;
+                newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            }
+        }
+
         // emit barrier if layout transition is needed
         if (state.layout != newLayout)
         {
             VkImageMemoryBarrier2 barrier { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2 };
             barrier.srcStageMask                    = state.stage;
-            barrier.dstStageMask                    = newStage;
             barrier.srcAccessMask                   = state.access;
+
+            barrier.dstStageMask                    = newStage;
             barrier.dstAccessMask                   = newAccess;
+
             barrier.oldLayout                       = state.layout;
             barrier.newLayout                       = newLayout;
+
             barrier.image                           = resource->texture->image.vkImage;
+
             barrier.subresourceRange.aspectMask     = imageAspectFlags;
             barrier.subresourceRange.baseMipLevel   = 0;
             barrier.subresourceRange.levelCount     = resource->texture->numMipLevels;
             barrier.subresourceRange.baseArrayLayer = 0;
             barrier.subresourceRange.layerCount     = resource->texture->numLayers;
-            pass.imageBarriers.push_back(barrier);
+
+            // merging ownership transfer barrier if needed with layout transition
+            if (needOwnershipTransfer)
+            {
+                barrier.srcQueueFamilyIndex = getQueueFamilyIndex(oldPass.targetQueueFamily);
+                barrier.dstQueueFamilyIndex = getQueueFamilyIndex(pass.targetQueueFamily);
+
+                addedPostBarrier            = true;
+            }
+
+            pass.preImageBarriers.push_back(barrier);
         }
 
-        state.layout = newLayout;
-        state.stage  = newStage;
-        state.access = newAccess;
+        DASSERT(addedPreBarrier == addedPostBarrier, "missing either release or acquire barriers");
+
+        state.layout             = newLayout;
+        state.stage              = newStage;
+        state.access             = newAccess;
+        state.currentQueueFamily = pass.targetQueueFamily;
     }
 }
 
@@ -511,8 +586,10 @@ void RenderGraph::buildWriteBufferResourcesState(RGNode& pass)
             VkBufferMemoryBarrier2 barrier { VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2 };
             barrier.srcStageMask  = state.stage;
             barrier.dstStageMask  = newStage;
+
             barrier.srcAccessMask = state.access;
             barrier.dstAccessMask = newAccess;
+
             barrier.buffer        = resource->buffer->vkBuffer.buffer; // TODO: WTF is this?
             barrier.offset        = 0;
             barrier.size          = resource->buffer->vkBuffer.sizeInBytes;
@@ -551,8 +628,10 @@ void RenderGraph::buildReadBufferResourcesState(RGNode& pass)
             VkBufferMemoryBarrier2 barrier { VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2 };
             barrier.srcStageMask  = state.stage;
             barrier.dstStageMask  = newStage;
+
             barrier.srcAccessMask = state.access;
             barrier.dstAccessMask = newAccess;
+
             barrier.buffer        = resource->buffer->vkBuffer.buffer; // TODO: WTF is this?
             barrier.offset        = 0;
             barrier.size          = resource->buffer->vkBuffer.sizeInBytes;
@@ -570,8 +649,8 @@ void RenderGraph::insertPassBarriers(const FrameData& frameData, const RGNode& p
     VkCommandBuffer  cmdBuffer = frameData.commandBuffer;
 
     VkDependencyInfo dependencyInfo { VK_STRUCTURE_TYPE_DEPENDENCY_INFO };
-    dependencyInfo.imageMemoryBarrierCount  = static_cast<uint32_t>(pass.imageBarriers.size());
-    dependencyInfo.pImageMemoryBarriers     = pass.imageBarriers.data();
+    dependencyInfo.imageMemoryBarrierCount  = static_cast<uint32_t>(pass.preImageBarriers.size());
+    dependencyInfo.pImageMemoryBarriers     = pass.preImageBarriers.data();
     dependencyInfo.bufferMemoryBarrierCount = static_cast<uint32_t>(pass.bufferBarriers.size());
     dependencyInfo.pBufferMemoryBarriers    = pass.bufferBarriers.data();
     vkCmdPipelineBarrier2(cmdBuffer, &dependencyInfo);
@@ -739,6 +818,16 @@ void RenderGraph::dumpDebugGraph(const std::string& path) const
         });
 }
 
+uint32_t RenderGraph::getQueueFamilyIndex(RGQueueFamilyType queueFamily) const
+{
+    switch (queueFamily)
+    {
+        case RGQueueFamilyType::Graphics: return m_vkContext.graphicsQueueFamilyIndex;
+        case RGQueueFamilyType::Compute:  return m_vkContext.computeQueueFamilyIndex;
+        case RGQueueFamilyType::Transfer: return m_vkContext.transferQueueFamilyIndex;
+    }
+}
+
 void DebugGraph::exportDot(const char* path) const
 {
     std::ofstream dotFile(path);
@@ -753,8 +842,8 @@ void DebugGraph::exportDot(const char* path) const
 
     for (uint32_t nodeIdx = 0u; nodeIdx < nodes.size(); ++nodeIdx)
     {
-        const auto& node  = nodes[nodeIdx];
-        const char* color = node.isCompute ? "lightblue" : "palegreen";
+        const auto&       node  = nodes[nodeIdx];
+        const char*       color = node.isCompute ? "lightblue" : "palegreen";
 
         std::stringstream label;
         label << node.name << "\\n";

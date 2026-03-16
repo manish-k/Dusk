@@ -68,8 +68,8 @@ void main()
     hdrColor *= push.exposure;
 
     // tonemap
-    // hdrColor = ReinhardJodie(hdrColor);
-    hdrColor = ACESFilmic(hdrColor);
+    hdrColor = ReinhardJodie(hdrColor);
+    // hdrColor = ACESFilmic(hdrColor);
 
     outColor = vec4(hdrColor, 1.0);
 }

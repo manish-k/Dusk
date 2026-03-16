@@ -115,8 +115,8 @@ bool Engine::start(Shared<Application> app)
     }
 
     m_environment = createUnique<Environment>(*m_textureDB);
-    if (!m_environment->initHW(*m_globalDescriptorSetLayout, m_renderer->getMaxFramesCount()))
-    //if (!m_environment->init(*m_globalDescriptorSetLayout))
+    // if (!m_environment->initHW(*m_globalDescriptorSetLayout, m_renderer->getMaxFramesCount()))
+    if (!m_environment->init(*m_globalDescriptorSetLayout))
     {
         DUSK_ERROR("Unable to init environment");
         return false;
@@ -378,7 +378,7 @@ void Engine::renderFrame(FrameData& frameData)
 {
     DUSK_PROFILE_FUNCTION;
 
-    RenderGraph renderGraph;
+    RenderGraph renderGraph(VkGfxDevice::getSharedVulkanContext());
 
     GfxTexture  swapImageTexture = m_renderer->getSwapChain().getCurrentSwapImageTexture();
 
@@ -429,7 +429,7 @@ void Engine::renderFrame(FrameData& frameData)
         .buffer = &m_rgResources.frameIndirectDrawCountBuffers[frameData.frameIndex]
     };
 
-    auto     cullPassId                 = renderGraph.addPass("cull_lod_pass", dispatchIndirectDrawCompute);
+    auto     cullPassId                 = renderGraph.addPass("cull_lod_pass", RGQueueFamilyType::Graphics, dispatchIndirectDrawCompute);
     uint32_t indirectBufferVersion      = renderGraph.addWriteResource(cullPassId, indirectDrawCommandsBuffer);
     uint32_t indirectCountBufferVersion = renderGraph.addWriteResource(cullPassId, indirectDrawCountBuffer);
 
@@ -442,13 +442,13 @@ void Engine::renderFrame(FrameData& frameData)
 
     if (dirLightsCount > 0)
     {
-        auto shadowPassId = renderGraph.addPass("dir_shadow_pass", recordShadow2DMapsCmds);
+        auto shadowPassId = renderGraph.addPass("dir_shadow_pass", RGQueueFamilyType::Graphics, recordShadow2DMapsCmds);
 
         dirShadowMapVer   = renderGraph.addDepthResource(shadowPassId, dirShadowMap);
     }
 
     // create g-buffer pass
-    auto     gbuffPassId   = renderGraph.addPass("gbuffer_pass", recordGBufferCmds);
+    auto     gbuffPassId   = renderGraph.addPass("gbuffer_pass", RGQueueFamilyType::Graphics, recordGBufferCmds);
 
     uint32_t gbuffDepthVer = renderGraph.addDepthResource(gbuffPassId, gbuffDepth);
 
@@ -461,7 +461,7 @@ void Engine::renderFrame(FrameData& frameData)
     uint32_t gbuffEmissiveVer = renderGraph.addWriteResource(gbuffPassId, gbuffEmissive);
 
     // create lighting pass
-    auto lightPassId = renderGraph.addPass("lighting_pass", recordLightingCmds);
+    auto lightPassId = renderGraph.addPass("lighting_pass", RGQueueFamilyType::Graphics, recordLightingCmds);
     renderGraph.addReadResource(lightPassId, gbuffAlbedo, gbuffAlbedoVer);
     renderGraph.addReadResource(lightPassId, gbuffNormal, gbuffNormalVer);
     renderGraph.addReadResource(lightPassId, gbuffAoMR, gbuffAoMRVer);
@@ -472,7 +472,7 @@ void Engine::renderFrame(FrameData& frameData)
     uint32_t lightOutputVer = renderGraph.addWriteResource(lightPassId, lightingOutput);
 
     // create skybox pass
-    auto skyPassId = renderGraph.addPass("skybox_pass", recordSkyBoxCmds);
+    auto skyPassId = renderGraph.addPass("skybox_pass", RGQueueFamilyType::Graphics, recordSkyBoxCmds);
 
     renderGraph.addDepthResource(skyPassId, gbuffDepth, gbuffDepthVer);
 
@@ -481,14 +481,14 @@ void Engine::renderFrame(FrameData& frameData)
     uint32_t skyOutputVer = renderGraph.addWriteResource(skyPassId, lightingOutput);
 
     // create tonemapping pass
-    auto tonemapPassId = renderGraph.addPass("tonemap_pass", recordTonemapCmds);
+    auto tonemapPassId = renderGraph.addPass("tonemap_pass", RGQueueFamilyType::Graphics, recordTonemapCmds);
 
     renderGraph.addReadResource(tonemapPassId, lightingOutput, skyOutputVer);
 
     uint32_t tonemapOutputVer = renderGraph.addWriteResource(tonemapPassId, toneMappedOutput);
 
     // create presentation pass
-    auto presentPassId = renderGraph.addPass("present_pass", recordPresentationCmds);
+    auto presentPassId = renderGraph.addPass("present_pass", RGQueueFamilyType::Graphics, recordPresentationCmds);
     renderGraph.addReadResource(presentPassId, toneMappedOutput, tonemapOutputVer);
     renderGraph.addWriteResource(presentPassId, swapImage);
 

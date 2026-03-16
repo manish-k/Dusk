@@ -25,14 +25,21 @@ struct LoadStoreState
     GfxStoreOperation storeOp = GfxStoreOperation::Store;
 };
 
+enum class RGQueueFamilyType : uint32_t
+{
+    Graphics,
+    Compute,
+    Transfer,
+};
+
 struct RGImageExecState
 {
-    int32_t               firstWriter = -1;
-    int32_t               lastWriter  = -1;
-    VkImageLayout         layout      = VK_IMAGE_LAYOUT_UNDEFINED;
-    VkPipelineStageFlags2 stage       = VK_PIPELINE_STAGE_2_NONE;
-    VkAccessFlags2        access      = VK_ACCESS_2_NONE;
-    uint32_t              queueFamily;
+    int32_t               firstWriter        = -1;
+    int32_t               lastWriter         = -1;
+    VkImageLayout         layout             = VK_IMAGE_LAYOUT_UNDEFINED;
+    VkPipelineStageFlags2 stage              = VK_PIPELINE_STAGE_2_NONE;
+    VkAccessFlags2        access             = VK_ACCESS_2_NONE;
+    RGQueueFamilyType     currentQueueFamily = RGQueueFamilyType::Graphics;
 };
 
 struct RGImageResource
@@ -45,11 +52,11 @@ struct RGImageResource
 
 struct RGBufferExecState
 {
-    int32_t               firstWriter = -1;
-    int32_t               lastWriter  = -1;
-    VkPipelineStageFlags2 stage       = VK_PIPELINE_STAGE_2_NONE;
-    VkAccessFlags2        access      = VK_ACCESS_2_NONE;
-    uint32_t              queueFamily;
+    int32_t               firstWriter        = -1;
+    int32_t               lastWriter         = -1;
+    VkPipelineStageFlags2 stage              = VK_PIPELINE_STAGE_2_NONE;
+    VkAccessFlags2        access             = VK_ACCESS_2_NONE;
+    RGQueueFamilyType     currentQueueFamily = RGQueueFamilyType::Graphics;
 };
 
 struct RGBufferResource
@@ -68,10 +75,12 @@ struct RGNodeResource
 
 struct RGNode
 {
-    std::string                          name      = "";
-    uint32_t                             index     = 0u; // index of the pass
-    RecordCmdBuffFunction                recordFn  = nullptr;
-    bool                                 isCompute = false;
+    std::string                          name              = "";
+    uint32_t                             index             = 0u; // index of the pass
+    RGQueueFamilyType                    targetQueueFamily = RGQueueFamilyType::Graphics;
+    RecordCmdBuffFunction                recordFn          = nullptr;
+    bool                                 isCompute         = false;
+    bool                                 submitNeeded      = false;
 
     DynamicArray<RGNodeResource>         readTextureResources;
     DynamicArray<RGNodeResource>         writeTextureResources;
@@ -82,11 +91,13 @@ struct RGNode
 
     HashMap<uint32_t, LoadStoreState>    resourceLoadStoreStates;
 
-    DynamicArray<VkImageMemoryBarrier2>  imageBarriers  = {};
-    DynamicArray<VkBufferMemoryBarrier2> bufferBarriers = {};
+    DynamicArray<VkImageMemoryBarrier2>  preImageBarriers        = {};
+    DynamicArray<VkImageMemoryBarrier2>  postImageBarriers = {};
 
-    uint32_t                             viewMask       = 0u; // only for multiview
-    uint32_t                             layerCount     = 1u; // only for multiview
+    DynamicArray<VkBufferMemoryBarrier2> bufferBarriers       = {};
+
+    uint32_t                             viewMask             = 0u; // only for multiview
+    uint32_t                             layerCount           = 1u; // only for multiview
 };
 
 struct DebugGraph
@@ -101,8 +112,8 @@ struct DebugGraph
 
     struct Edge
     {
-        uint32_t    src  = 0u;
-        uint32_t    dst  = 0u;
+        uint32_t src = 0u;
+        uint32_t dst = 0u;
     };
 
     DynamicArray<Node> nodes = {};
@@ -114,7 +125,7 @@ struct DebugGraph
 class RenderGraph
 {
 public:
-    RenderGraph();
+    RenderGraph(VulkanContext vkCtx);
 
     /**
      * @brief Adds a pass with the given name and associated command-recording function.
@@ -124,6 +135,7 @@ public:
      */
     uint32_t addPass(
         const std::string&           passName,
+        RGQueueFamilyType            targetQueue,
         const RecordCmdBuffFunction& recordFn);
 
     /**
@@ -261,7 +273,16 @@ private:
      */
     void endPass(const FrameData& frameData) const;
 
+    /**
+     * @brief Get queue family index for the given queue family type.
+     * @param queueFamill type
+     * @return index of the queue family
+     */
+    uint32_t getQueueFamilyIndex(RGQueueFamilyType queueFamily) const;
+
 private:
+    VulkanContext                             m_vkContext          = {};
+
     DynamicArray<RGNode>                      m_passes             = {};
     DynamicArray<uint32_t>                    m_passExecutionOrder = {};
 

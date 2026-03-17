@@ -403,8 +403,8 @@ void RenderGraph::buildWriteImageResourcesState(RGNode& pass, bool useDepth)
             && state.lastWriter != pass.index
             && state.currentQueueFamily != pass.targetQueueFamily;
 
-        bool addedPreBarrier  = false;
-        bool addedPostBarrier = false;
+        bool addedReleaseBarrier  = false;
+        bool addedAcquireBarrier = false;
 
         if (needOwnershipTransfer)
         {
@@ -438,7 +438,7 @@ void RenderGraph::buildWriteImageResourcesState(RGNode& pass, bool useDepth)
             oldPass.postImageBarriers.push_back(release);
             oldPass.submitNeeded = true; // ensure submit happens between release and acquire
 
-            addedPreBarrier      = true;
+            addedReleaseBarrier      = true;
         }
 
         // emit barrier if layout transition is needed
@@ -470,13 +470,13 @@ void RenderGraph::buildWriteImageResourcesState(RGNode& pass, bool useDepth)
                 barrier.srcQueueFamilyIndex = getQueueFamilyIndex(oldPass.targetQueueFamily);
                 barrier.dstQueueFamilyIndex = getQueueFamilyIndex(pass.targetQueueFamily);
 
-                addedPostBarrier            = true;
+                addedAcquireBarrier            = true;
             }
 
             pass.preImageBarriers.push_back(barrier);
         }
 
-        DASSERT(addedPreBarrier == addedPostBarrier, "missing either release or acquire barriers");
+        DASSERT(addedReleaseBarrier == addedAcquireBarrier, "missing either release or acquire barriers");
 
         state.layout             = newLayout;
         state.stage              = newStage;
@@ -518,8 +518,8 @@ void RenderGraph::buildReadImageResourcesState(RGNode& pass, bool useDepth)
             && state.lastWriter != pass.index
             && state.currentQueueFamily != pass.targetQueueFamily;
 
-        bool addedPreBarrier  = false;
-        bool addedPostBarrier = false;
+        bool addedReleaseBarrier  = false;
+        bool addedAcquireBarrier = false;
 
         if (needOwnershipTransfer)
         {
@@ -553,7 +553,7 @@ void RenderGraph::buildReadImageResourcesState(RGNode& pass, bool useDepth)
             oldPass.postImageBarriers.push_back(release);
             oldPass.submitNeeded = true; // ensure submit happens between release and acquire
 
-            addedPreBarrier      = true;
+            addedReleaseBarrier      = true;
         }
 
         // default to graphic reading stage
@@ -605,13 +605,13 @@ void RenderGraph::buildReadImageResourcesState(RGNode& pass, bool useDepth)
                 barrier.srcQueueFamilyIndex = getQueueFamilyIndex(oldPass.targetQueueFamily);
                 barrier.dstQueueFamilyIndex = getQueueFamilyIndex(pass.targetQueueFamily);
 
-                addedPostBarrier            = true;
+                addedAcquireBarrier            = true;
             }
 
             pass.preImageBarriers.push_back(barrier);
         }
 
-        DASSERT(addedPreBarrier == addedPostBarrier, "missing either release or acquire barriers");
+        DASSERT(addedReleaseBarrier == addedAcquireBarrier, "missing either release or acquire barriers");
 
         state.layout             = newLayout;
         state.stage              = newStage;
@@ -653,8 +653,8 @@ void RenderGraph::buildWriteBufferResourcesState(RGNode& pass)
             && state.lastWriter != pass.index
             && state.currentQueueFamily != pass.targetQueueFamily;
 
-        bool addedPreBarrier  = false;
-        bool addedPostBarrier = false;
+        bool addedReleaseBarrier  = false;
+        bool addedAcquireBarrier = false;
 
         if (needOwnershipTransfer)
         {
@@ -681,7 +681,7 @@ void RenderGraph::buildWriteBufferResourcesState(RGNode& pass)
             oldPass.postBufferBarriers.push_back(release);
             oldPass.submitNeeded = true; // ensure submit happens between release and acquire
 
-            addedPreBarrier      = true;
+            addedReleaseBarrier      = true;
         }
 
         // emit barrier if access or stage flags have changed
@@ -705,13 +705,13 @@ void RenderGraph::buildWriteBufferResourcesState(RGNode& pass)
                 barrier.srcQueueFamilyIndex = getQueueFamilyIndex(oldPass.targetQueueFamily);
                 barrier.dstQueueFamilyIndex = getQueueFamilyIndex(pass.targetQueueFamily);
 
-                addedPostBarrier            = true;
+                addedAcquireBarrier            = true;
             }
 
             pass.preBufferBarriers.push_back(barrier);
         }
 
-        DASSERT(addedPreBarrier == addedPostBarrier, "missing either release or acquire barriers");
+        DASSERT(addedReleaseBarrier == addedAcquireBarrier, "missing either release or acquire barriers");
 
         state.stage              = newStage;
         state.access             = newAccess;
@@ -745,8 +745,8 @@ void RenderGraph::buildReadBufferResourcesState(RGNode& pass)
             && state.lastWriter != pass.index
             && state.currentQueueFamily != pass.targetQueueFamily;
 
-        bool addedPreBarrier  = false;
-        bool addedPostBarrier = false;
+        bool addedReleaseBarrier  = false;
+        bool addedAcquireBarrier = false;
 
         if (needOwnershipTransfer)
         {
@@ -773,7 +773,7 @@ void RenderGraph::buildReadBufferResourcesState(RGNode& pass)
             oldPass.postBufferBarriers.push_back(release);
             oldPass.submitNeeded = true; // ensure submit happens between release and acquire
 
-            addedPreBarrier      = true;
+            addedReleaseBarrier      = true;
         }
 
         // emit barrier if access or stage flags have changed
@@ -797,13 +797,13 @@ void RenderGraph::buildReadBufferResourcesState(RGNode& pass)
                 barrier.srcQueueFamilyIndex = getQueueFamilyIndex(oldPass.targetQueueFamily);
                 barrier.dstQueueFamilyIndex = getQueueFamilyIndex(pass.targetQueueFamily);
 
-                addedPostBarrier            = true;
+                addedAcquireBarrier            = true;
             }
 
             pass.preBufferBarriers.push_back(barrier);
         }
 
-        DASSERT(addedPreBarrier == addedPostBarrier, "missing either release or acquire barriers");
+        DASSERT(addedReleaseBarrier == addedAcquireBarrier, "missing either release or acquire barriers");
 
         state.stage              = newStage;
         state.access             = newAccess;

@@ -14,6 +14,7 @@
 #include <bit>
 #include <iostream>
 #include <fstream>
+#include <algorithm>
 
 namespace dusk
 {
@@ -341,6 +342,31 @@ void RenderGraph::buildResourcesStates()
     }
 }
 
+void RenderGraph::buildWaitSignalValues()
+{
+    uint32_t nodeCount = static_cast<uint32_t>(m_passExecutionOrder.size());
+    for (uint32_t execIdx = 0u; execIdx < nodeCount; ++execIdx)
+    {
+        uint32_t passIdx = m_passExecutionOrder[execIdx];
+        auto&    pass    = m_passes[passIdx];
+
+        // calculate wait value as OR of all signal values of its dependencies
+        uint32_t waitValue = 0u;
+        uint64_t deps      = m_inEdgesBitsets[passIdx];
+
+        while (deps)
+        {
+            uint32_t depIdx = std::countr_zero(deps);
+
+            deps &= deps - 1;
+            waitValue = std::max(waitValue, m_passes[depIdx].signalValue);
+        }
+
+        pass.waitValue   = waitValue;
+        pass.signalValue = execIdx + 1;
+    }
+}
+
 void RenderGraph::buildWriteImageResourcesState(RGNode& pass, bool useDepth)
 {
     for (uint32_t resIdx = 0u; resIdx < pass.writeTextureResources.size(); ++resIdx)
@@ -403,7 +429,7 @@ void RenderGraph::buildWriteImageResourcesState(RGNode& pass, bool useDepth)
             && state.lastWriter != pass.index
             && state.currentQueueFamily != pass.targetQueueFamily;
 
-        bool addedReleaseBarrier  = false;
+        bool addedReleaseBarrier = false;
         bool addedAcquireBarrier = false;
 
         if (needOwnershipTransfer)
@@ -436,9 +462,10 @@ void RenderGraph::buildWriteImageResourcesState(RGNode& pass, bool useDepth)
             release.subresourceRange.layerCount     = resource->texture->numLayers;
 
             oldPass.postImageBarriers.push_back(release);
-            oldPass.submitNeeded = true; // ensure submit happens between release and acquire
 
-            addedReleaseBarrier      = true;
+            pass.crossQueueDeps = 1ULL << state.lastWriter; // ensure submit happens between release and acquire
+
+            addedReleaseBarrier = true;
         }
 
         // emit barrier if layout transition is needed
@@ -470,7 +497,7 @@ void RenderGraph::buildWriteImageResourcesState(RGNode& pass, bool useDepth)
                 barrier.srcQueueFamilyIndex = getQueueFamilyIndex(oldPass.targetQueueFamily);
                 barrier.dstQueueFamilyIndex = getQueueFamilyIndex(pass.targetQueueFamily);
 
-                addedAcquireBarrier            = true;
+                addedAcquireBarrier         = true;
             }
 
             pass.preImageBarriers.push_back(barrier);
@@ -518,7 +545,7 @@ void RenderGraph::buildReadImageResourcesState(RGNode& pass, bool useDepth)
             && state.lastWriter != pass.index
             && state.currentQueueFamily != pass.targetQueueFamily;
 
-        bool addedReleaseBarrier  = false;
+        bool addedReleaseBarrier = false;
         bool addedAcquireBarrier = false;
 
         if (needOwnershipTransfer)
@@ -551,9 +578,10 @@ void RenderGraph::buildReadImageResourcesState(RGNode& pass, bool useDepth)
             release.subresourceRange.layerCount     = resource->texture->numLayers;
 
             oldPass.postImageBarriers.push_back(release);
-            oldPass.submitNeeded = true; // ensure submit happens between release and acquire
+            
+            pass.crossQueueDeps       = 1ULL << state.lastWriter; // ensure submit happens between release and acquire
 
-            addedReleaseBarrier      = true;
+            addedReleaseBarrier       = true;
         }
 
         // default to graphic reading stage
@@ -605,7 +633,7 @@ void RenderGraph::buildReadImageResourcesState(RGNode& pass, bool useDepth)
                 barrier.srcQueueFamilyIndex = getQueueFamilyIndex(oldPass.targetQueueFamily);
                 barrier.dstQueueFamilyIndex = getQueueFamilyIndex(pass.targetQueueFamily);
 
-                addedAcquireBarrier            = true;
+                addedAcquireBarrier         = true;
             }
 
             pass.preImageBarriers.push_back(barrier);
@@ -653,7 +681,7 @@ void RenderGraph::buildWriteBufferResourcesState(RGNode& pass)
             && state.lastWriter != pass.index
             && state.currentQueueFamily != pass.targetQueueFamily;
 
-        bool addedReleaseBarrier  = false;
+        bool addedReleaseBarrier = false;
         bool addedAcquireBarrier = false;
 
         if (needOwnershipTransfer)
@@ -679,9 +707,10 @@ void RenderGraph::buildWriteBufferResourcesState(RGNode& pass)
             release.size                = resource->buffer->vkBuffer.sizeInBytes;
 
             oldPass.postBufferBarriers.push_back(release);
-            oldPass.submitNeeded = true; // ensure submit happens between release and acquire
 
-            addedReleaseBarrier      = true;
+            pass.crossQueueDeps       = 1ULL << state.lastWriter; // ensure submit happens between release and acquire
+
+            addedReleaseBarrier       = true;
         }
 
         // emit barrier if access or stage flags have changed
@@ -705,7 +734,7 @@ void RenderGraph::buildWriteBufferResourcesState(RGNode& pass)
                 barrier.srcQueueFamilyIndex = getQueueFamilyIndex(oldPass.targetQueueFamily);
                 barrier.dstQueueFamilyIndex = getQueueFamilyIndex(pass.targetQueueFamily);
 
-                addedAcquireBarrier            = true;
+                addedAcquireBarrier         = true;
             }
 
             pass.preBufferBarriers.push_back(barrier);
@@ -745,7 +774,7 @@ void RenderGraph::buildReadBufferResourcesState(RGNode& pass)
             && state.lastWriter != pass.index
             && state.currentQueueFamily != pass.targetQueueFamily;
 
-        bool addedReleaseBarrier  = false;
+        bool addedReleaseBarrier = false;
         bool addedAcquireBarrier = false;
 
         if (needOwnershipTransfer)
@@ -771,9 +800,10 @@ void RenderGraph::buildReadBufferResourcesState(RGNode& pass)
             release.size                = resource->buffer->vkBuffer.sizeInBytes;
 
             oldPass.postBufferBarriers.push_back(release);
-            oldPass.submitNeeded = true; // ensure submit happens between release and acquire
 
-            addedReleaseBarrier      = true;
+            pass.crossQueueDeps       = 1ULL << state.lastWriter; // ensure submit happens between release and acquire
+
+            addedReleaseBarrier       = true;
         }
 
         // emit barrier if access or stage flags have changed
@@ -797,7 +827,7 @@ void RenderGraph::buildReadBufferResourcesState(RGNode& pass)
                 barrier.srcQueueFamilyIndex = getQueueFamilyIndex(oldPass.targetQueueFamily);
                 barrier.dstQueueFamilyIndex = getQueueFamilyIndex(pass.targetQueueFamily);
 
-                addedAcquireBarrier            = true;
+                addedAcquireBarrier         = true;
             }
 
             pass.preBufferBarriers.push_back(barrier);

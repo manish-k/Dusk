@@ -80,7 +80,7 @@ struct RGNode
     RGQueueFamilyType                    targetQueueFamily = RGQueueFamilyType::Graphics;
     RecordCmdBuffFunction                recordFn          = nullptr;
     bool                                 isCompute         = false;
-    bool                                 submitNeeded      = false;
+    uint64_t                             crossQueueDeps    = false; // passes with cross-queue dependecies
 
     DynamicArray<RGNodeResource>         readTextureResources;
     DynamicArray<RGNodeResource>         writeTextureResources;
@@ -99,6 +99,23 @@ struct RGNode
 
     uint32_t                             viewMask           = 0u; // only for multiview
     uint32_t                             layerCount         = 1u; // only for multiview
+
+    uint32_t                             waitValue          = 0u;
+    uint32_t                             signalValue        = 0u;
+};
+
+struct SubmissionBatch
+{
+    uint64_t batchMask   = 0u; // bitmask of passes in the batch
+    uint32_t waitValue   = 0u;
+    uint32_t signalValue = 0u;
+};
+
+struct RGSubmissionOrder
+{
+    uint64_t                      batchMask      = 0u; // passes that have been submitted in previous batches
+    DynamicArray<SubmissionBatch> graphicBatches = {};
+    DynamicArray<SubmissionBatch> computeBatches = {};
 };
 
 struct DebugGraph
@@ -228,6 +245,10 @@ private:
      */
     void buildResourcesStates();
 
+    void buildWaitSignalValues();
+
+    void buildSubmissionBatches();
+
     /**
      * @brief Genrate barriers and load/store states for write image resources of the pass.
      * @param pass reference
@@ -293,6 +314,8 @@ private:
 
     DynamicArray<RGNode>                      m_passes             = {};
     DynamicArray<uint32_t>                    m_passExecutionOrder = {};
+
+    RGSubmissionOrder                         m_submissionOrder    = {};
 
     DynamicArray<uint64_t>                    m_inEdgesBitsets     = {};
     DynamicArray<uint64_t>                    m_outEdgesBitsets    = {};

@@ -106,7 +106,7 @@ struct RGNode
 
 struct SubmissionBatch
 {
-    uint64_t batchMask   = 0u; // bitmask of passes in the batch
+    uint64_t passesMask   = 0u; // bitmask of passes in the batch
     uint32_t waitValue   = 0u;
     uint32_t signalValue = 0u;
 };

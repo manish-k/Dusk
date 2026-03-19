@@ -151,6 +151,8 @@ void RenderGraph::execute(const FrameData& frameData)
     buildDependencyGraph();
     buildExecutionOrder();
     buildResourcesStates();
+    buildWaitSignalValues();
+    buildSubmissionBatches();
 
     auto*    statsRecorder = StatsRecorder::get();
 
@@ -367,6 +369,105 @@ void RenderGraph::buildWaitSignalValues()
     }
 }
 
+void RenderGraph::buildSubmissionBatches()
+{
+    // start with an empty batch
+    m_submissionOrder.graphicBatches.push_back({});
+    m_submissionOrder.computeBatches.push_back({});
+
+    uint32_t nodeCount           = static_cast<uint32_t>(m_passExecutionOrder.size());
+    bool     closeCurrentBatches = false;
+
+    for (uint32_t execIdx = 0u; execIdx < nodeCount; ++execIdx)
+    {
+        uint32_t    passIdx = m_passExecutionOrder[execIdx];
+        const auto& pass    = m_passes[passIdx];
+
+        // no cross-queue dependencies, add to current batch
+        if (pass.crossQueueDeps == 0)
+        {
+            if (pass.targetQueueFamily == RGQueueFamilyType::Graphics)
+            {
+                auto& batch = m_submissionOrder.graphicBatches.back();
+                batch.passesMask |= (1ULL << passIdx);
+                batch.signalValue = std::max(batch.signalValue, pass.signalValue);
+                batch.waitValue   = std::max(batch.waitValue, pass.waitValue);
+            }
+            else
+            {
+                auto& batch = m_submissionOrder.computeBatches.back();
+                batch.passesMask |= (1ULL << passIdx);
+                batch.signalValue = std::max(batch.signalValue, pass.signalValue);
+                batch.waitValue   = std::max(batch.waitValue, pass.waitValue);
+            }
+        }
+        else
+        {
+            // and also add all its dependencies to the batch to ensure they are submitted together
+            uint64_t deps = pass.crossQueueDeps;
+            while (deps)
+            {
+                uint32_t depIdx = std::countr_zero(deps);
+                deps &= deps - 1;
+
+                // check if depeendecy already submitted in previous batch
+                if (1ULL << depIdx & m_submissionOrder.batchMask)
+                {
+                    continue;
+                }
+                // otherwise dependency must exist in current batch because of topological order
+                else
+                {
+                    bool depsExists = false;
+                    if (pass.targetQueueFamily == RGQueueFamilyType::Graphics)
+                    {
+                        depsExists = m_submissionOrder.computeBatches.back().passesMask | (1ULL << depIdx);
+                    }
+                    else
+                    {
+                        depsExists = m_submissionOrder.graphicBatches.back().passesMask | (1ULL << depIdx);
+                    }
+
+                    DASSERT(depsExists, "Critical error in render graph's execution order");
+
+                    if (!depsExists)
+                    {
+                        DUSK_ERROR("Critical error in render graph's execution order");
+                    }
+                    else
+                    {
+                        closeCurrentBatches = true;
+                    }
+                }
+            }
+        }
+
+        // We will submit the batch containing cross queue depenedent passes and also submit the ongoing batch
+        // for current queue because that batch should not wait for the passes with cross-queue dependencies
+        if (closeCurrentBatches)
+        {
+            // commit passes in the submitted batch mask
+            m_submissionOrder.batchMask |= m_submissionOrder.graphicBatches.back().passesMask;
+            m_submissionOrder.batchMask |= m_submissionOrder.computeBatches.back().passesMask;
+
+            // close current batches and start new batch with current pass
+            m_submissionOrder.graphicBatches.push_back({});
+            m_submissionOrder.computeBatches.push_back({});
+
+            if (pass.targetQueueFamily == RGQueueFamilyType::Graphics)
+            {
+                m_submissionOrder.graphicBatches.back().passesMask |= (1ULL << passIdx);
+            }
+            else
+            {
+                m_submissionOrder.computeBatches.back().passesMask |= (1ULL << passIdx);
+            }
+
+            closeCurrentBatches = false;
+        }
+    }
+}
+
 void RenderGraph::buildWriteImageResourcesState(RGNode& pass, bool useDepth)
 {
     for (uint32_t resIdx = 0u; resIdx < pass.writeTextureResources.size(); ++resIdx)
@@ -578,10 +679,10 @@ void RenderGraph::buildReadImageResourcesState(RGNode& pass, bool useDepth)
             release.subresourceRange.layerCount     = resource->texture->numLayers;
 
             oldPass.postImageBarriers.push_back(release);
-            
-            pass.crossQueueDeps       = 1ULL << state.lastWriter; // ensure submit happens between release and acquire
 
-            addedReleaseBarrier       = true;
+            pass.crossQueueDeps = 1ULL << state.lastWriter; // ensure submit happens between release and acquire
+
+            addedReleaseBarrier = true;
         }
 
         // default to graphic reading stage
@@ -708,9 +809,9 @@ void RenderGraph::buildWriteBufferResourcesState(RGNode& pass)
 
             oldPass.postBufferBarriers.push_back(release);
 
-            pass.crossQueueDeps       = 1ULL << state.lastWriter; // ensure submit happens between release and acquire
+            pass.crossQueueDeps = 1ULL << state.lastWriter; // ensure submit happens between release and acquire
 
-            addedReleaseBarrier       = true;
+            addedReleaseBarrier = true;
         }
 
         // emit barrier if access or stage flags have changed
@@ -801,9 +902,9 @@ void RenderGraph::buildReadBufferResourcesState(RGNode& pass)
 
             oldPass.postBufferBarriers.push_back(release);
 
-            pass.crossQueueDeps       = 1ULL << state.lastWriter; // ensure submit happens between release and acquire
+            pass.crossQueueDeps = 1ULL << state.lastWriter; // ensure submit happens between release and acquire
 
-            addedReleaseBarrier       = true;
+            addedReleaseBarrier = true;
         }
 
         // emit barrier if access or stage flags have changed

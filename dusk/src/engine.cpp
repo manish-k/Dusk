@@ -429,7 +429,7 @@ void Engine::renderFrame(FrameData& frameData)
         .buffer = &m_rgResources.frameIndirectDrawCountBuffers[frameData.frameIndex]
     };
 
-    auto     cullPassId                 = renderGraph.addPass("cull_lod_pass", RGQueueFamilyType::Graphics, dispatchIndirectDrawCompute);
+    auto     cullPassId                 = renderGraph.addPass("cull_lod_pass", RGQueueFamilyType::Compute, dispatchIndirectDrawCompute);
     uint32_t indirectBufferVersion      = renderGraph.addWriteResource(cullPassId, indirectDrawCommandsBuffer);
     uint32_t indirectCountBufferVersion = renderGraph.addWriteResource(cullPassId, indirectDrawCountBuffer);
 

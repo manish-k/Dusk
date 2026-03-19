@@ -1,95 +1,142 @@
-<svg width="721pt" height="501pt" viewBox="0.00 0.00 721.00 501.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 496.8)">
+<svg width="1126pt" height="649pt" viewBox="0.00 0.00 1126.00 649.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 644.8)">
 <title>RenderGraph</title>
-<polygon fill="white" stroke="none" points="-4,4 -4,-496.8 717,-496.8 717,4 -4,4"/>
+<polygon fill="white" stroke="none" points="-4,4 -4,-644.8 1122,-644.8 1122,4 -4,4"/>
 <g id="clust1" class="cluster">
 <title>cluster_graphics</title>
-<polygon fill="none" stroke="black" stroke-dasharray="1,5" points="8,-8 8,-484.8 705,-484.8 705,-8 8,-8"/>
-<text xml:space="preserve" text-anchor="middle" x="356.5" y="-468.2" font-family="Times,serif" font-size="14.00">Graphic Queue</text>
+<polygon fill="none" stroke="black" stroke-dasharray="1,5" points="8,-8 8,-632.8 682,-632.8 682,-8 8,-8"/>
+<text xml:space="preserve" text-anchor="middle" x="345" y="-616.2" font-family="Times,serif" font-size="14.00">Graphic Queue</text>
 </g>
-<!-- node_0 -->
-<g id="node1" class="node">
-<title>node_0</title>
-<polygon fill="lightblue" stroke="black" points="472.63,-452 85.37,-452 85.37,-393.6 472.63,-393.6 472.63,-452"/>
-<text xml:space="preserve" text-anchor="middle" x="279" y="-435.4" font-family="Times,serif" font-size="14.00">cull_lod_pass</text>
-<text xml:space="preserve" text-anchor="middle" x="279" y="-418.6" font-family="Times,serif" font-size="14.00">R: indirect_draw_count_buffer </text>
-<text xml:space="preserve" text-anchor="middle" x="279" y="-401.8" font-family="Times,serif" font-size="14.00">W: indirect_draw_commands_buffer indirect_draw_count_buffer </text>
+<g id="clust2" class="cluster">
+<title>cluster_graphics_batch_0</title>
+<polygon fill="none" stroke="black" stroke-dasharray="5,2" points="45,-500.8 45,-600 197,-600 197,-500.8 45,-500.8"/>
+<text xml:space="preserve" text-anchor="middle" x="121" y="-583.4" font-family="Times,serif" font-size="14.00">Graphic Batch #0</text>
 </g>
-<!-- node_2 -->
-<g id="node3" class="node">
-<title>node_2</title>
-<polygon fill="palegreen" stroke="black" points="542.44,-357.6 15.56,-357.6 15.56,-299.2 542.44,-299.2 542.44,-357.6"/>
-<text xml:space="preserve" text-anchor="middle" x="279" y="-341" font-family="Times,serif" font-size="14.00">gbuffer_pass</text>
-<text xml:space="preserve" text-anchor="middle" x="279" y="-324.2" font-family="Times,serif" font-size="14.00">R: gbuff_depth indirect_draw_commands_buffer indirect_draw_count_buffer </text>
-<text xml:space="preserve" text-anchor="middle" x="279" y="-307.4" font-family="Times,serif" font-size="14.00">W: gbuff_depth gbuff_albedo gbuff_normal gbuff_ao_metallic_roughness gbuff_emissive </text>
+<g id="clust3" class="cluster">
+<title>cluster_graphics_batch_1</title>
+<polygon fill="none" stroke="black" stroke-dasharray="5,2" points="16,-16 16,-492.8 674,-492.8 674,-16 16,-16"/>
+<text xml:space="preserve" text-anchor="middle" x="345" y="-476.2" font-family="Times,serif" font-size="14.00">Graphic Batch #1</text>
 </g>
-<!-- node_0&#45;&gt;node_2 -->
-<g id="edge1" class="edge">
-<title>node_0-&gt;node_2</title>
-<path fill="none" stroke="black" d="M279,-393.32C279,-385.77 279,-377.47 279,-369.43"/>
-<polygon fill="black" stroke="black" points="282.5,-369.46 279,-359.46 275.5,-369.46 282.5,-369.46"/>
+<g id="clust4" class="cluster">
+<title>cluster_computes</title>
+<polygon fill="none" stroke="black" stroke-dasharray="1,5" points="690,-9.2 690,-632.8 1110,-632.8 1110,-9.2 690,-9.2"/>
+<text xml:space="preserve" text-anchor="middle" x="900" y="-616.2" font-family="Times,serif" font-size="14.00">Compute Queue</text>
+</g>
+<g id="clust5" class="cluster">
+<title>cluster_compute_batch_0</title>
+<polygon fill="none" stroke="black" stroke-dasharray="5,2" points="698,-500.8 698,-600 1102,-600 1102,-500.8 698,-500.8"/>
+<text xml:space="preserve" text-anchor="middle" x="900" y="-583.4" font-family="Times,serif" font-size="14.00">Compute Batch #0</text>
+</g>
+<g id="clust6" class="cluster">
+<title>cluster_compute_batch_invis</title>
 </g>
 <!-- node_1 -->
-<g id="node2" class="node">
+<g id="node1" class="node">
 <title>node_1</title>
-<polygon fill="palegreen" stroke="black" points="697.27,-357.6 560.73,-357.6 560.73,-299.2 697.27,-299.2 697.27,-357.6"/>
-<text xml:space="preserve" text-anchor="middle" x="629" y="-341" font-family="Times,serif" font-size="14.00">dir_shadow_pass</text>
-<text xml:space="preserve" text-anchor="middle" x="629" y="-324.2" font-family="Times,serif" font-size="14.00">R: dir_shadow_map </text>
-<text xml:space="preserve" text-anchor="middle" x="629" y="-307.4" font-family="Times,serif" font-size="14.00">W: dir_shadow_map </text>
+<polygon fill="palegreen" stroke="black" points="189.27,-567.2 52.73,-567.2 52.73,-508.8 189.27,-508.8 189.27,-567.2"/>
+<text xml:space="preserve" text-anchor="middle" x="121" y="-550.6" font-family="Times,serif" font-size="14.00">dir_shadow_pass</text>
+<text xml:space="preserve" text-anchor="middle" x="121" y="-533.8" font-family="Times,serif" font-size="14.00">R: dir_shadow_map </text>
+<text xml:space="preserve" text-anchor="middle" x="121" y="-517" font-family="Times,serif" font-size="14.00">W: dir_shadow_map </text>
 </g>
 <!-- node_3 -->
-<g id="node4" class="node">
+<g id="node3" class="node">
 <title>node_3</title>
-<polygon fill="palegreen" stroke="black" points="697.46,-263.2 74.54,-263.2 74.54,-204.8 697.46,-204.8 697.46,-263.2"/>
-<text xml:space="preserve" text-anchor="middle" x="386" y="-246.6" font-family="Times,serif" font-size="14.00">lighting_pass</text>
-<text xml:space="preserve" text-anchor="middle" x="386" y="-229.8" font-family="Times,serif" font-size="14.00">R: gbuff_albedo gbuff_normal gbuff_ao_metallic_roughness gbuff_emissive gbuff_depth dir_shadow_map </text>
-<text xml:space="preserve" text-anchor="middle" x="386" y="-213" font-family="Times,serif" font-size="14.00">W: lighting_output </text>
+<polygon fill="palegreen" stroke="black" points="646.46,-365.6 23.54,-365.6 23.54,-307.2 646.46,-307.2 646.46,-365.6"/>
+<text xml:space="preserve" text-anchor="middle" x="335" y="-349" font-family="Times,serif" font-size="14.00">lighting_pass</text>
+<text xml:space="preserve" text-anchor="middle" x="335" y="-332.2" font-family="Times,serif" font-size="14.00">R: gbuff_albedo gbuff_normal gbuff_ao_metallic_roughness gbuff_emissive gbuff_depth dir_shadow_map </text>
+<text xml:space="preserve" text-anchor="middle" x="335" y="-315.4" font-family="Times,serif" font-size="14.00">W: lighting_output </text>
 </g>
 <!-- node_1&#45;&gt;node_3 -->
-<g id="edge2" class="edge">
+<g id="edge7" class="edge">
 <title>node_1-&gt;node_3</title>
-<path fill="none" stroke="black" d="M560.34,-301.29C532.84,-290.84 500.86,-278.67 471.85,-267.64"/>
-<polygon fill="black" stroke="black" points="473.31,-264.46 462.72,-264.17 470.83,-271 473.31,-264.46"/>
+<path fill="none" stroke="black" d="M114.56,-508.3C109.62,-478.38 107.15,-431.72 131,-401.6 140.65,-389.42 152.59,-379.51 165.82,-371.45"/>
+<polygon fill="black" stroke="black" points="167.35,-374.6 174.35,-366.64 163.92,-368.5 167.35,-374.6"/>
+</g>
+<!-- node_2 -->
+<g id="node2" class="node">
+<title>node_2</title>
+<polygon fill="palegreen" stroke="black" points="666.44,-460 139.56,-460 139.56,-401.6 666.44,-401.6 666.44,-460"/>
+<text xml:space="preserve" text-anchor="middle" x="403" y="-443.4" font-family="Times,serif" font-size="14.00">gbuffer_pass</text>
+<text xml:space="preserve" text-anchor="middle" x="403" y="-426.6" font-family="Times,serif" font-size="14.00">R: gbuff_depth indirect_draw_commands_buffer indirect_draw_count_buffer </text>
+<text xml:space="preserve" text-anchor="middle" x="403" y="-409.8" font-family="Times,serif" font-size="14.00">W: gbuff_depth gbuff_albedo gbuff_normal gbuff_ao_metallic_roughness gbuff_emissive </text>
 </g>
 <!-- node_2&#45;&gt;node_3 -->
-<g id="edge3" class="edge">
+<g id="edge8" class="edge">
 <title>node_2-&gt;node_3</title>
-<path fill="none" stroke="black" d="M311.98,-298.92C322.25,-290.05 333.71,-280.16 344.49,-270.85"/>
-<polygon fill="black" stroke="black" points="346.52,-273.72 351.8,-264.53 341.95,-268.42 346.52,-273.72"/>
+<path fill="none" stroke="black" d="M382.04,-401.32C375.97,-393.07 369.24,-383.92 362.81,-375.19"/>
+<polygon fill="black" stroke="black" points="365.65,-373.14 356.9,-367.16 360.01,-377.29 365.65,-373.14"/>
 </g>
 <!-- node_4 -->
-<g id="node5" class="node">
+<g id="node4" class="node">
 <title>node_4</title>
-<polygon fill="palegreen" stroke="black" points="349.18,-168.8 150.82,-168.8 150.82,-110.4 349.18,-110.4 349.18,-168.8"/>
-<text xml:space="preserve" text-anchor="middle" x="250" y="-152.2" font-family="Times,serif" font-size="14.00">skybox_pass</text>
-<text xml:space="preserve" text-anchor="middle" x="250" y="-135.4" font-family="Times,serif" font-size="14.00">R: gbuff_depth lighting_output </text>
-<text xml:space="preserve" text-anchor="middle" x="250" y="-118.6" font-family="Times,serif" font-size="14.00">W: gbuff_depth lighting_output </text>
+<polygon fill="palegreen" stroke="black" points="550.18,-271.2 351.82,-271.2 351.82,-212.8 550.18,-212.8 550.18,-271.2"/>
+<text xml:space="preserve" text-anchor="middle" x="451" y="-254.6" font-family="Times,serif" font-size="14.00">skybox_pass</text>
+<text xml:space="preserve" text-anchor="middle" x="451" y="-237.8" font-family="Times,serif" font-size="14.00">R: gbuff_depth lighting_output </text>
+<text xml:space="preserve" text-anchor="middle" x="451" y="-221" font-family="Times,serif" font-size="14.00">W: gbuff_depth lighting_output </text>
 </g>
 <!-- node_2&#45;&gt;node_4 -->
-<g id="edge4" class="edge">
+<g id="edge9" class="edge">
 <title>node_2-&gt;node_4</title>
-<path fill="none" stroke="black" d="M138.7,-298.78C105.28,-289.03 76.28,-277.03 66,-263.2 50.52,-242.37 50.97,-225.96 66,-204.8 83.46,-180.22 111.06,-164.97 139.62,-155.54"/>
-<polygon fill="black" stroke="black" points="140.6,-158.9 149.15,-152.64 138.57,-152.2 140.6,-158.9"/>
+<path fill="none" stroke="black" d="M579.23,-401.14C614.25,-391.84 643.75,-380.08 655,-365.6 670.93,-345.11 670.35,-328.13 655,-307.2 633.06,-277.29 597.17,-260.95 561.56,-252.14"/>
+<polygon fill="black" stroke="black" points="562.54,-248.77 552.01,-249.97 560.99,-255.6 562.54,-248.77"/>
 </g>
 <!-- node_3&#45;&gt;node_4 -->
-<g id="edge5" class="edge">
+<g id="edge10" class="edge">
 <title>node_3-&gt;node_4</title>
-<path fill="none" stroke="black" d="M344.09,-204.52C330.51,-195.3 315.31,-184.97 301.14,-175.35"/>
-<polygon fill="black" stroke="black" points="303.5,-172.72 293.26,-169.99 299.57,-178.51 303.5,-172.72"/>
+<path fill="none" stroke="black" d="M370.75,-306.92C382,-297.96 394.56,-287.96 406.34,-278.57"/>
+<polygon fill="black" stroke="black" points="408.34,-281.45 413.98,-272.49 403.98,-275.98 408.34,-281.45"/>
 </g>
 <!-- node_5 -->
-<g id="node6" class="node">
+<g id="node5" class="node">
 <title>node_5</title>
-<polygon fill="palegreen" stroke="black" points="311.28,-74.4 188.72,-74.4 188.72,-16 311.28,-16 311.28,-74.4"/>
-<text xml:space="preserve" text-anchor="middle" x="250" y="-57.8" font-family="Times,serif" font-size="14.00">present_pass</text>
-<text xml:space="preserve" text-anchor="middle" x="250" y="-41" font-family="Times,serif" font-size="14.00">R: lighting_output </text>
-<text xml:space="preserve" text-anchor="middle" x="250" y="-24.2" font-family="Times,serif" font-size="14.00">W: swap_image </text>
+<polygon fill="palegreen" stroke="black" points="516.54,-176.8 385.46,-176.8 385.46,-118.4 516.54,-118.4 516.54,-176.8"/>
+<text xml:space="preserve" text-anchor="middle" x="451" y="-160.2" font-family="Times,serif" font-size="14.00">tonemap_pass</text>
+<text xml:space="preserve" text-anchor="middle" x="451" y="-143.4" font-family="Times,serif" font-size="14.00">R: lighting_output </text>
+<text xml:space="preserve" text-anchor="middle" x="451" y="-126.6" font-family="Times,serif" font-size="14.00">W: tonemap_output </text>
 </g>
 <!-- node_4&#45;&gt;node_5 -->
-<g id="edge6" class="edge">
+<g id="edge11" class="edge">
 <title>node_4-&gt;node_5</title>
-<path fill="none" stroke="black" d="M250,-110.12C250,-102.57 250,-94.27 250,-86.23"/>
-<polygon fill="black" stroke="black" points="253.5,-86.26 250,-76.26 246.5,-86.26 253.5,-86.26"/>
+<path fill="none" stroke="black" d="M451,-212.52C451,-204.97 451,-196.67 451,-188.63"/>
+<polygon fill="black" stroke="black" points="454.5,-188.66 451,-178.66 447.5,-188.66 454.5,-188.66"/>
 </g>
+<!-- node_6 -->
+<g id="node6" class="node">
+<title>node_6</title>
+<polygon fill="palegreen" stroke="black" points="514.61,-82.4 387.39,-82.4 387.39,-24 514.61,-24 514.61,-82.4"/>
+<text xml:space="preserve" text-anchor="middle" x="451" y="-65.8" font-family="Times,serif" font-size="14.00">present_pass</text>
+<text xml:space="preserve" text-anchor="middle" x="451" y="-49" font-family="Times,serif" font-size="14.00">R: tonemap_output </text>
+<text xml:space="preserve" text-anchor="middle" x="451" y="-32.2" font-family="Times,serif" font-size="14.00">W: swap_image </text>
+</g>
+<!-- node_5&#45;&gt;node_6 -->
+<g id="edge12" class="edge">
+<title>node_5-&gt;node_6</title>
+<path fill="none" stroke="black" d="M451,-118.12C451,-110.57 451,-102.27 451,-94.23"/>
+<polygon fill="black" stroke="black" points="454.5,-94.26 451,-84.26 447.5,-94.26 454.5,-94.26"/>
+</g>
+<!-- node_0 -->
+<g id="node7" class="node">
+<title>node_0</title>
+<polygon fill="lightblue" stroke="black" points="1093.63,-567.2 706.37,-567.2 706.37,-508.8 1093.63,-508.8 1093.63,-567.2"/>
+<text xml:space="preserve" text-anchor="middle" x="900" y="-550.6" font-family="Times,serif" font-size="14.00">cull_lod_pass</text>
+<text xml:space="preserve" text-anchor="middle" x="900" y="-533.8" font-family="Times,serif" font-size="14.00">R: indirect_draw_count_buffer </text>
+<text xml:space="preserve" text-anchor="middle" x="900" y="-517" font-family="Times,serif" font-size="14.00">W: indirect_draw_commands_buffer indirect_draw_count_buffer </text>
+</g>
+<!-- node_0&#45;&gt;node_2 -->
+<g id="edge6" class="edge">
+<title>node_0-&gt;node_2</title>
+<path fill="none" stroke="black" d="M764.52,-508.32C697.95,-494.23 617.63,-477.23 549.62,-462.84"/>
+<polygon fill="black" stroke="black" points="550.37,-459.42 539.86,-460.77 548.92,-466.27 550.37,-459.42"/>
+</g>
+<!-- pad_compute_0 -->
+<!-- node_0&#45;&gt;pad_compute_0 -->
+<!-- pad_compute_1 -->
+<!-- pad_compute_0&#45;&gt;pad_compute_1 -->
+<!-- pad_compute_2 -->
+<!-- pad_compute_1&#45;&gt;pad_compute_2 -->
+<!-- pad_compute_3 -->
+<!-- pad_compute_2&#45;&gt;pad_compute_3 -->
+<!-- pad_compute_4 -->
+<!-- pad_compute_3&#45;&gt;pad_compute_4 -->
 </g>
 </svg>

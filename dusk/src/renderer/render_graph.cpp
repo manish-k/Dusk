@@ -380,26 +380,18 @@ void RenderGraph::buildSubmissionBatches()
 
     for (uint32_t execIdx = 0u; execIdx < nodeCount; ++execIdx)
     {
-        uint32_t    passIdx = m_passExecutionOrder[execIdx];
-        const auto& pass    = m_passes[passIdx];
+        uint32_t         passIdx      = m_passExecutionOrder[execIdx];
+        const auto&      pass         = m_passes[passIdx];
+
+        SubmissionBatch& currentBatch = pass.targetQueueFamily == RGQueueFamilyType::Graphics ? m_submissionOrder.graphicBatches.back() : m_submissionOrder.computeBatches.back();
+        SubmissionBatch& otherBatch   = pass.targetQueueFamily == RGQueueFamilyType::Graphics ? m_submissionOrder.computeBatches.back() : m_submissionOrder.graphicBatches.back();
 
         // no cross-queue dependencies, add to current batch
         if (pass.crossQueueDeps == 0)
         {
-            if (pass.targetQueueFamily == RGQueueFamilyType::Graphics)
-            {
-                auto& batch = m_submissionOrder.graphicBatches.back();
-                batch.passesMask |= (1ULL << passIdx);
-                batch.signalValue = std::max(batch.signalValue, pass.signalValue);
-                batch.waitValue   = std::max(batch.waitValue, pass.waitValue);
-            }
-            else
-            {
-                auto& batch = m_submissionOrder.computeBatches.back();
-                batch.passesMask |= (1ULL << passIdx);
-                batch.signalValue = std::max(batch.signalValue, pass.signalValue);
-                batch.waitValue   = std::max(batch.waitValue, pass.waitValue);
-            }
+            currentBatch.passesMask |= (1ULL << passIdx);
+            currentBatch.signalValue = std::max(currentBatch.signalValue, pass.signalValue);
+            currentBatch.waitValue   = std::max(currentBatch.waitValue, pass.waitValue);
         }
         else
         {
@@ -418,26 +410,9 @@ void RenderGraph::buildSubmissionBatches()
                 // otherwise dependency must exist in current batch because of topological order
                 else
                 {
-                    bool depsExists = false;
-                    if (pass.targetQueueFamily == RGQueueFamilyType::Graphics)
-                    {
-                        depsExists = m_submissionOrder.computeBatches.back().passesMask | (1ULL << depIdx);
-                    }
-                    else
-                    {
-                        depsExists = m_submissionOrder.graphicBatches.back().passesMask | (1ULL << depIdx);
-                    }
+                    DASSERT(otherBatch.passesMask & (1ULL << depIdx), "Critical error in render graph's execution order, dependency doesn't exist in existing batch.");
 
-                    DASSERT(depsExists, "Critical error in render graph's execution order");
-
-                    if (!depsExists)
-                    {
-                        DUSK_ERROR("Critical error in render graph's execution order");
-                    }
-                    else
-                    {
-                        closeCurrentBatches = true;
-                    }
+                    closeCurrentBatches = true;
                 }
             }
         }
@@ -562,7 +537,7 @@ void RenderGraph::buildWriteImageResourcesState(RGNode& pass, bool useDepth)
             release.subresourceRange.baseArrayLayer = 0;
             release.subresourceRange.layerCount     = resource->texture->numLayers;
 
-            oldPass.postImageBarriers.push_back(release);
+            // oldPass.postImageBarriers.push_back(release);
 
             pass.crossQueueDeps = 1ULL << state.lastWriter; // ensure submit happens between release and acquire
 
@@ -593,12 +568,12 @@ void RenderGraph::buildWriteImageResourcesState(RGNode& pass, bool useDepth)
             // merging ownership transfer barrier if needed with layout transition
             if (needOwnershipTransfer)
             {
-                RGNode& oldPass             = m_passes[state.lastWriter];
+                const RGNode& oldPass = m_passes[state.lastWriter];
 
-                barrier.srcQueueFamilyIndex = getQueueFamilyIndex(oldPass.targetQueueFamily);
-                barrier.dstQueueFamilyIndex = getQueueFamilyIndex(pass.targetQueueFamily);
+                // barrier.srcQueueFamilyIndex = getQueueFamilyIndex(oldPass.targetQueueFamily);
+                // barrier.dstQueueFamilyIndex = getQueueFamilyIndex(pass.targetQueueFamily);
 
-                addedAcquireBarrier         = true;
+                addedAcquireBarrier = true;
             }
 
             pass.preImageBarriers.push_back(barrier);
@@ -678,7 +653,7 @@ void RenderGraph::buildReadImageResourcesState(RGNode& pass, bool useDepth)
             release.subresourceRange.baseArrayLayer = 0;
             release.subresourceRange.layerCount     = resource->texture->numLayers;
 
-            oldPass.postImageBarriers.push_back(release);
+            // oldPass.postImageBarriers.push_back(release);
 
             pass.crossQueueDeps = 1ULL << state.lastWriter; // ensure submit happens between release and acquire
 
@@ -729,12 +704,12 @@ void RenderGraph::buildReadImageResourcesState(RGNode& pass, bool useDepth)
             // merging ownership transfer barrier if needed with layout transition
             if (needOwnershipTransfer)
             {
-                RGNode& oldPass             = m_passes[state.lastWriter];
+                const RGNode& oldPass = m_passes[state.lastWriter];
 
-                barrier.srcQueueFamilyIndex = getQueueFamilyIndex(oldPass.targetQueueFamily);
-                barrier.dstQueueFamilyIndex = getQueueFamilyIndex(pass.targetQueueFamily);
+                // barrier.srcQueueFamilyIndex = getQueueFamilyIndex(oldPass.targetQueueFamily);
+                // barrier.dstQueueFamilyIndex = getQueueFamilyIndex(pass.targetQueueFamily);
 
-                addedAcquireBarrier         = true;
+                addedAcquireBarrier = true;
             }
 
             pass.preImageBarriers.push_back(barrier);
@@ -807,7 +782,7 @@ void RenderGraph::buildWriteBufferResourcesState(RGNode& pass)
             release.offset              = 0;
             release.size                = resource->buffer->vkBuffer.sizeInBytes;
 
-            oldPass.postBufferBarriers.push_back(release);
+            // oldPass.postBufferBarriers.push_back(release);
 
             pass.crossQueueDeps = 1ULL << state.lastWriter; // ensure submit happens between release and acquire
 
@@ -830,12 +805,12 @@ void RenderGraph::buildWriteBufferResourcesState(RGNode& pass)
 
             if (needOwnershipTransfer)
             {
-                const RGNode& oldPass       = m_passes[state.lastWriter];
+                const RGNode& oldPass = m_passes[state.lastWriter];
 
-                barrier.srcQueueFamilyIndex = getQueueFamilyIndex(oldPass.targetQueueFamily);
-                barrier.dstQueueFamilyIndex = getQueueFamilyIndex(pass.targetQueueFamily);
+                // barrier.srcQueueFamilyIndex = getQueueFamilyIndex(oldPass.targetQueueFamily);
+                // barrier.dstQueueFamilyIndex = getQueueFamilyIndex(pass.targetQueueFamily);
 
-                addedAcquireBarrier         = true;
+                addedAcquireBarrier = true;
             }
 
             pass.preBufferBarriers.push_back(barrier);
@@ -900,7 +875,7 @@ void RenderGraph::buildReadBufferResourcesState(RGNode& pass)
             release.offset              = 0;
             release.size                = resource->buffer->vkBuffer.sizeInBytes;
 
-            oldPass.postBufferBarriers.push_back(release);
+            // oldPass.postBufferBarriers.push_back(release);
 
             pass.crossQueueDeps = 1ULL << state.lastWriter; // ensure submit happens between release and acquire
 
@@ -923,12 +898,12 @@ void RenderGraph::buildReadBufferResourcesState(RGNode& pass)
 
             if (needOwnershipTransfer)
             {
-                const RGNode& oldPass       = m_passes[state.lastWriter];
+                const RGNode& oldPass = m_passes[state.lastWriter];
 
-                barrier.srcQueueFamilyIndex = getQueueFamilyIndex(oldPass.targetQueueFamily);
-                barrier.dstQueueFamilyIndex = getQueueFamilyIndex(pass.targetQueueFamily);
+                // barrier.srcQueueFamilyIndex = getQueueFamilyIndex(oldPass.targetQueueFamily);
+                // barrier.dstQueueFamilyIndex = getQueueFamilyIndex(pass.targetQueueFamily);
 
-                addedAcquireBarrier         = true;
+                addedAcquireBarrier = true;
             }
 
             pass.preBufferBarriers.push_back(barrier);
@@ -1120,11 +1095,50 @@ void RenderGraph::dumpDebugGraph(const std::string& path) const
         }
     }
 
+    for (uint32_t batchIdx = 0u; batchIdx < m_submissionOrder.graphicBatches.size(); ++batchIdx)
+    {
+        DebugGraph::Batch batch  = {};
+        uint64_t          passes = m_submissionOrder.graphicBatches[batchIdx].passesMask;
+
+        if (passes == 0) continue;
+
+        while (passes)
+        {
+            uint32_t passIdx = std::countr_zero(passes);
+            passes &= passes - 1;
+
+            batch.nodes.push_back(passIdxtoOrderMap[passIdx]);
+            graph.graphicNodesCount++;
+        }
+
+        graph.graphicBatches.push_back(batch);
+    }
+
+    for (uint32_t batchIdx = 0u; batchIdx < m_submissionOrder.computeBatches.size(); ++batchIdx)
+    {
+        DebugGraph::Batch batch  = {};
+        uint64_t          passes = m_submissionOrder.computeBatches[batchIdx].passesMask;
+
+        if (passes == 0) continue;
+
+        while (passes)
+        {
+            uint32_t passIdx = std::countr_zero(passes);
+            passes &= passes - 1;
+
+            batch.nodes.push_back(passIdxtoOrderMap[passIdx]);
+            graph.computeNodesCount++;
+        }
+
+        graph.computeBatches.push_back(batch);
+    }
+
     auto& executor = Engine::get().getTfExecutor();
     executor.silent_async(
         [path, graph]()
         {
-            graph.exportDot(path.c_str());
+            // graph.exportDot(path.c_str());
+            graph.exportSubmissionDot(path.c_str());
         });
 }
 
@@ -1186,6 +1200,189 @@ void DebugGraph::exportDot(const char* path) const
     }
 
     dotFile << "}\n";
+}
+
+void DebugGraph::exportSubmissionDot(const char* path) const
+{
+    std::ofstream dotFile(path);
+
+    dotFile << "digraph RenderGraph {\n";
+    dotFile << "rankdir=TD;\n";
+    dotFile << "newrank=true;\n";
+    dotFile << "node [shape=box, style=filled];\n\n";
+
+    dotFile << "subgraph cluster_graphics {\n";
+    dotFile << "label=\"Graphic Queue\";\n";
+    dotFile << "style=dotted; \n";
+
+    std::string firstGraphicNodeId;
+    std::string lastGraphicNodeId;
+    std::string firstComputeNodeId;
+    std::string lastComputeNodeId;
+
+    for (uint32_t batchIdx = 0u; batchIdx < graphicBatches.size(); ++batchIdx)
+    {
+        const auto& batch = graphicBatches[batchIdx];
+
+        dotFile << "subgraph cluster_graphics_batch_" << batchIdx << " {\n";
+        dotFile << "label=\"Graphic Batch #" << batchIdx << "\";\n";
+        dotFile << "style=dashed; \n";
+
+        std::stringstream label;
+        for (uint32_t i = 0u; i < batch.nodes.size(); ++i)
+        {
+            uint32_t          nodeIdx = batch.nodes[i];
+            const auto&       node    = nodes[nodeIdx];
+            const char*       color   = node.isCompute ? "lightblue" : "palegreen";
+
+            std::stringstream label;
+            label << node.name << "\\n";
+
+            if (!node.reads.empty())
+            {
+                label << "R: ";
+                for (auto& r : node.reads) label << r << " ";
+                label << "\\n";
+            }
+
+            if (!node.writes.empty())
+            {
+                label << "W: ";
+                for (auto& w : node.writes) label << w << " ";
+            }
+
+            dotFile << "node_" << nodeIdx
+                    << " [label=\"" << label.str() << "\""
+                    << ", fillcolor=\"" << color << "\"]; \n";
+
+            std::string nodeId = "node_" + std::to_string(nodeIdx);
+            if (firstGraphicNodeId.empty())
+            {
+                firstGraphicNodeId = nodeId;
+            }
+            lastGraphicNodeId = nodeId;
+        }
+
+        dotFile << "}\n";
+    }
+
+    if (graphicNodesCount < computeNodesCount)
+    {
+        // pad with invisible nodes and edges for proper cluster alignments in graphviz rendering
+        uint32_t padNodesCount = computeNodesCount - graphicNodesCount;
+
+        dotFile << "subgraph cluster_graphic_batch_invis {\n";
+        dotFile << "label=\"\";\n";
+        dotFile << "margin=18;\n";
+        dotFile << "style=invis; \n";
+
+        for (uint32_t i = 0u; i < padNodesCount; ++i)
+        {
+            std::string padNodeId = "pad_graphic_" + std::to_string(i);
+            dotFile << padNodeId << " [label=\"\", style=invis];\n";
+            if (!lastGraphicNodeId.empty())
+            {
+                dotFile << lastGraphicNodeId << " -> " << padNodeId << " [style=invis];\n";
+            }
+            lastGraphicNodeId = padNodeId;
+        }
+
+        dotFile << "}\n";
+    }
+
+    dotFile << "}\n";
+    dotFile << "\n";
+
+    dotFile << "subgraph cluster_computes {\n";
+    dotFile << "label=\"Compute Queue\";\n";
+    dotFile << "style=dotted; \n";
+
+    for (uint32_t batchIdx = 0u; batchIdx < computeBatches.size(); ++batchIdx)
+    {
+        const auto& batch = computeBatches[batchIdx];
+
+        dotFile << "subgraph cluster_compute_batch_" << batchIdx << " {\n";
+        dotFile << "label=\"Compute Batch #" << batchIdx << "\";\n";
+        dotFile << "style=dashed; \n";
+
+        std::stringstream label;
+        for (uint32_t i = 0u; i < batch.nodes.size(); ++i)
+        {
+            uint32_t          nodeIdx = batch.nodes[i];
+            const auto&       node    = nodes[nodeIdx];
+            const char*       color   = node.isCompute ? "lightblue" : "palegreen";
+
+            std::stringstream label;
+            label << node.name << "\\n";
+
+            if (!node.reads.empty())
+            {
+                label << "R: ";
+                for (auto& r : node.reads) label << r << " ";
+                label << "\\n";
+            }
+
+            if (!node.writes.empty())
+            {
+                label << "W: ";
+                for (auto& w : node.writes) label << w << " ";
+            }
+
+            dotFile << "node_" << nodeIdx
+                    << " [label=\"" << label.str() << "\""
+                    << ", fillcolor=\"" << color << "\"]; \n";
+
+            std::string nodeId = "node_" + std::to_string(nodeIdx);
+            if (firstComputeNodeId.empty())
+            {
+                firstComputeNodeId = nodeId;
+            }
+            lastComputeNodeId = nodeId;
+        }
+
+        dotFile << "}\n";
+    }
+
+    if (computeNodesCount < graphicNodesCount)
+    {
+        // pad with invisible nodes and edges for proper cluster alignments in graphviz rendering
+        uint32_t padNodesCount = graphicNodesCount - computeNodesCount;
+
+        dotFile << "subgraph cluster_compute_batch_invis {\n";
+        dotFile << "label=\"\";\n";
+        dotFile << "margin=18;\n";
+        dotFile << "style=invis; \n";
+
+        for (uint32_t i = 0u; i < padNodesCount; ++i)
+        {
+            std::string padNodeId = "pad_compute_" + std::to_string(i);
+            dotFile << padNodeId << " [label=\"\", style=invis];\n";
+            if (!lastGraphicNodeId.empty())
+            {
+                dotFile << lastComputeNodeId << " -> " << padNodeId << " [style=invis];\n";
+            }
+            lastComputeNodeId = padNodeId;
+        }
+
+        dotFile << "}\n";
+    }
+
+    dotFile << "}\n";
+    dotFile << "\n";
+
+    dotFile << "{rank=same; " << firstGraphicNodeId << "; " << firstComputeNodeId << ";}\n";
+
+    for (uint32_t edgeIdx = 0u; edgeIdx < edges.size(); ++edgeIdx)
+    {
+        const auto& edge = edges[edgeIdx];
+        dotFile << "node_" << edge.src << " -> node_" << edge.dst << ";\n";
+    }
+
+    dotFile << "}\n";
+
+    dotFile.close();
+
+    DUSK_DEBUG("Render graph save at {}", path);
 }
 
 } // namespace dusk

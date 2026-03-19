@@ -106,7 +106,7 @@ struct RGNode
 
 struct SubmissionBatch
 {
-    uint64_t passesMask   = 0u; // bitmask of passes in the batch
+    uint64_t passesMask  = 0u; // bitmask of passes in the batch
     uint32_t waitValue   = 0u;
     uint32_t signalValue = 0u;
 };
@@ -134,10 +134,22 @@ struct DebugGraph
         uint32_t dst = 0u;
     };
 
-    DynamicArray<Node> nodes = {};
-    DynamicArray<Edge> edges = {};
+    struct Batch
+    {
+        DynamicArray<uint32_t> nodes = {};
+    };
 
-    void               exportDot(const char* path) const;
+    DynamicArray<Node>  nodes             = {};
+    DynamicArray<Edge>  edges             = {};
+
+    DynamicArray<Batch> graphicBatches    = {};
+    DynamicArray<Batch> computeBatches    = {};
+
+    uint32_t            graphicNodesCount = 0u;
+    uint32_t            computeNodesCount = 0u;
+
+    void                exportDot(const char* path) const;
+    void                exportSubmissionDot(const char* path) const;
 };
 
 class RenderGraph

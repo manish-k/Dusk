@@ -1100,6 +1100,9 @@ void RenderGraph::dumpDebugGraph(const std::string& path) const
         DebugGraph::Batch batch  = {};
         uint64_t          passes = m_submissionOrder.graphicBatches[batchIdx].passesMask;
 
+        batch.signalValue        = m_submissionOrder.graphicBatches[batchIdx].signalValue;
+        batch.waitValue          = m_submissionOrder.graphicBatches[batchIdx].waitValue;
+
         if (passes == 0) continue;
 
         while (passes)
@@ -1118,6 +1121,9 @@ void RenderGraph::dumpDebugGraph(const std::string& path) const
     {
         DebugGraph::Batch batch  = {};
         uint64_t          passes = m_submissionOrder.computeBatches[batchIdx].passesMask;
+
+        batch.signalValue        = m_submissionOrder.computeBatches[batchIdx].signalValue;
+        batch.waitValue          = m_submissionOrder.computeBatches[batchIdx].waitValue;
 
         if (passes == 0) continue;
 
@@ -1225,7 +1231,7 @@ void DebugGraph::exportSubmissionDot(const char* path) const
         const auto& batch = graphicBatches[batchIdx];
 
         dotFile << "subgraph cluster_graphics_batch_" << batchIdx << " {\n";
-        dotFile << "label=\"Graphic Batch #" << batchIdx << "\";\n";
+        dotFile << "label=\"Graphic Batch #" << batchIdx << "\n wait=" << batch.waitValue << " signal=" << batch.signalValue << "\";\n";
         dotFile << "style=dashed; \n";
 
         std::stringstream label;
@@ -1302,7 +1308,7 @@ void DebugGraph::exportSubmissionDot(const char* path) const
         const auto& batch = computeBatches[batchIdx];
 
         dotFile << "subgraph cluster_compute_batch_" << batchIdx << " {\n";
-        dotFile << "label=\"Compute Batch #" << batchIdx << "\";\n";
+        dotFile << "label=\"Compute Batch #" << batchIdx << "\n wait=" << batch.waitValue << " signal=" << batch.signalValue << "\";\n";
         dotFile << "style=dashed; \n";
 
         std::stringstream label;

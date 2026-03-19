@@ -137,6 +137,8 @@ struct DebugGraph
     struct Batch
     {
         DynamicArray<uint32_t> nodes = {};
+        uint32_t               waitValue   = 0u;
+        uint32_t               signalValue = 0u;
     };
 
     DynamicArray<Node>  nodes             = {};

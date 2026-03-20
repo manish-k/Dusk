@@ -11,13 +11,13 @@
 <title>cluster_graphics_batch_0</title>
 <polygon fill="none" stroke="black" stroke-dasharray="5,2" points="45,-517.6 45,-633.6 197,-633.6 197,-517.6 45,-517.6"/>
 <text xml:space="preserve" text-anchor="middle" x="121" y="-617" font-family="Times,serif" font-size="14.00">Graphic Batch #0</text>
-<text xml:space="preserve" text-anchor="middle" x="121" y="-600.2" font-family="Times,serif" font-size="14.00"> wait=0 signal=2</text>
+<text xml:space="preserve" text-anchor="middle" x="121" y="-600.2" font-family="Times,serif" font-size="14.00"> wait=0 signal=1</text>
 </g>
 <g id="clust3" class="cluster">
 <title>cluster_graphics_batch_1</title>
 <polygon fill="none" stroke="black" stroke-dasharray="5,2" points="16,-16 16,-509.6 674,-509.6 674,-16 16,-16"/>
 <text xml:space="preserve" text-anchor="middle" x="345" y="-493" font-family="Times,serif" font-size="14.00">Graphic Batch #1</text>
-<text xml:space="preserve" text-anchor="middle" x="345" y="-476.2" font-family="Times,serif" font-size="14.00"> wait=2 signal=3</text>
+<text xml:space="preserve" text-anchor="middle" x="345" y="-476.2" font-family="Times,serif" font-size="14.00"> wait=2 signal=2</text>
 </g>
 <g id="clust4" class="cluster">
 <title>cluster_computes</title>

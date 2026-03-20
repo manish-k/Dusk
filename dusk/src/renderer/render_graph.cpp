@@ -367,7 +367,7 @@ void RenderGraph::buildSubmissionBatches()
         if (pass.crossQueueDeps == 0)
         {
             currentBatch.passesMask |= (1ULL << passIdx);
-            currentBatch.signalValue = signalCounter + 1;
+            currentBatch.signalValue = signalCounter;
         }
         else
         {

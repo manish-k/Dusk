@@ -259,8 +259,9 @@ private:
      */
     void buildResourcesStates();
 
-    void buildWaitSignalValues();
-
+    /**
+     * @brief Generate submission batches for the passes based on their execution order and dependencies.
+     */
     void buildSubmissionBatches();
 
     /**

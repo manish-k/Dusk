@@ -151,7 +151,6 @@ void RenderGraph::execute(const FrameData& frameData)
     buildDependencyGraph();
     buildExecutionOrder();
     buildResourcesStates();
-    buildWaitSignalValues();
     buildSubmissionBatches();
 
     auto*    statsRecorder = StatsRecorder::get();
@@ -344,31 +343,6 @@ void RenderGraph::buildResourcesStates()
     }
 }
 
-void RenderGraph::buildWaitSignalValues()
-{
-    uint32_t nodeCount = static_cast<uint32_t>(m_passExecutionOrder.size());
-    for (uint32_t execIdx = 0u; execIdx < nodeCount; ++execIdx)
-    {
-        uint32_t passIdx = m_passExecutionOrder[execIdx];
-        auto&    pass    = m_passes[passIdx];
-
-        // calculate wait value as OR of all signal values of its dependencies
-        uint32_t waitValue = 0u;
-        uint64_t deps      = m_inEdgesBitsets[passIdx];
-
-        while (deps)
-        {
-            uint32_t depIdx = std::countr_zero(deps);
-
-            deps &= deps - 1;
-            waitValue = std::max(waitValue, m_passes[depIdx].signalValue);
-        }
-
-        pass.waitValue   = waitValue;
-        pass.signalValue = execIdx + 1;
-    }
-}
-
 void RenderGraph::buildSubmissionBatches()
 {
     // start with an empty batch
@@ -377,6 +351,7 @@ void RenderGraph::buildSubmissionBatches()
 
     uint32_t nodeCount           = static_cast<uint32_t>(m_passExecutionOrder.size());
     bool     closeCurrentBatches = false;
+    uint32_t signalCounter       = 1u;
 
     for (uint32_t execIdx = 0u; execIdx < nodeCount; ++execIdx)
     {
@@ -386,12 +361,13 @@ void RenderGraph::buildSubmissionBatches()
         SubmissionBatch& currentBatch = pass.targetQueueFamily == RGQueueFamilyType::Graphics ? m_submissionOrder.graphicBatches.back() : m_submissionOrder.computeBatches.back();
         SubmissionBatch& otherBatch   = pass.targetQueueFamily == RGQueueFamilyType::Graphics ? m_submissionOrder.computeBatches.back() : m_submissionOrder.graphicBatches.back();
 
+        uint32_t         newWaitValue = 0u; // wait value if pass added in new batch
+
         // no cross-queue dependencies, add to current batch
         if (pass.crossQueueDeps == 0)
         {
             currentBatch.passesMask |= (1ULL << passIdx);
-            currentBatch.signalValue = std::max(currentBatch.signalValue, pass.signalValue);
-            currentBatch.waitValue   = std::max(currentBatch.waitValue, pass.waitValue);
+            currentBatch.signalValue = signalCounter + 1;
         }
         else
         {
@@ -402,17 +378,22 @@ void RenderGraph::buildSubmissionBatches()
                 uint32_t depIdx = std::countr_zero(deps);
                 deps &= deps - 1;
 
-                // check if depeendecy already submitted in previous batch
+                signalCounter++;
+                newWaitValue = signalCounter;
+
                 if (1ULL << depIdx & m_submissionOrder.batchMask)
                 {
+                    // depeendecy already submitted in previous batch
                     continue;
                 }
-                // otherwise dependency must exist in current batch because of topological order
                 else
                 {
+                    // dependency must exist in current batch because of topological order
+
                     DASSERT(otherBatch.passesMask & (1ULL << depIdx), "Critical error in render graph's execution order, dependency doesn't exist in existing batch.");
 
-                    closeCurrentBatches = true;
+                    otherBatch.signalValue = signalCounter;
+                    closeCurrentBatches    = true;
                 }
             }
         }
@@ -432,10 +413,12 @@ void RenderGraph::buildSubmissionBatches()
             if (pass.targetQueueFamily == RGQueueFamilyType::Graphics)
             {
                 m_submissionOrder.graphicBatches.back().passesMask |= (1ULL << passIdx);
+                m_submissionOrder.graphicBatches.back().waitValue = newWaitValue;
             }
             else
             {
                 m_submissionOrder.computeBatches.back().passesMask |= (1ULL << passIdx);
+                m_submissionOrder.computeBatches.back().waitValue = newWaitValue;
             }
 
             closeCurrentBatches = false;

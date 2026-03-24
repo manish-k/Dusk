@@ -42,12 +42,12 @@ void VkGfxSwapChain::destroy()
 }
 
 
-VulkanResult VkGfxSwapChain::acquireNextImage(uint32_t* imageIndex)
+VulkanResult VkGfxSwapChain::acquireNextImage(uint32_t frameIndex, uint32_t* imageIndex)
 {
     vkWaitForFences(
-        m_device, 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
+        m_device, 1, &m_inFlightFences[frameIndex], VK_TRUE, UINT64_MAX);
 
-    VulkanResult result = vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, imageIndex);
+    VulkanResult result = vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, m_imageAvailableSemaphores[frameIndex], VK_NULL_HANDLE, imageIndex);
 
     if (result.hasError())
     {
@@ -57,14 +57,17 @@ VulkanResult VkGfxSwapChain::acquireNextImage(uint32_t* imageIndex)
     return result;
 }
 
-VulkanResult VkGfxSwapChain::submitCommandBuffers(const VkCommandBuffer* buffers, uint32_t* imageIndex)
+VulkanResult VkGfxSwapChain::submitCommandBuffers(
+    const VkCommandBuffer* buffers, 
+    uint32_t frameIndex, 
+    uint32_t imageIndex)
 {
     // wait semaphores
-    VkSemaphore          waitSemaphores[] = { m_imageAvailableSemaphores[m_currentFrame] };
+    VkSemaphore          waitSemaphores[] = { m_imageAvailableSemaphores[frameIndex] };
     VkPipelineStageFlags waitStages[]     = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 
     // signal semaphores
-    VkSemaphore signalSemaphores[] = { m_renderFinishedSemaphores[m_currentFrame] };
+    VkSemaphore signalSemaphores[] = { m_renderFinishedSemaphores[frameIndex] };
 
     // image submit info for presentation
     VkSubmitInfo submitInfo         = {};
@@ -77,9 +80,9 @@ VulkanResult VkGfxSwapChain::submitCommandBuffers(const VkCommandBuffer* buffers
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores    = signalSemaphores;
 
-    vkResetFences(m_device, 1, &m_inFlightFences[m_currentFrame]);
+    vkResetFences(m_device, 1, &m_inFlightFences[frameIndex]);
 
-    VulkanResult result = vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, m_inFlightFences[m_currentFrame]);
+    VulkanResult result = vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, m_inFlightFences[frameIndex]);
 
     if (result.hasError())
     {
@@ -97,7 +100,7 @@ VulkanResult VkGfxSwapChain::submitCommandBuffers(const VkCommandBuffer* buffers
     presentInfo.swapchainCount     = 1;
     presentInfo.pSwapchains        = swapChains;
 
-    presentInfo.pImageIndices      = imageIndex;
+    presentInfo.pImageIndices      = &imageIndex;
 
     // present image
     result = vkQueuePresentKHR(m_presentQueue, &presentInfo);
@@ -108,23 +111,7 @@ VulkanResult VkGfxSwapChain::submitCommandBuffers(const VkCommandBuffer* buffers
         return result;
     }
 
-    // go to next frame
-    m_currentFrame = (m_currentFrame + 1) % m_imagesCount;
-
     return result;
-}
-
-GfxTexture VkGfxSwapChain::getCurrentSwapImageTexture()
-{
-    GfxTexture tex(10000 + m_currentFrame); // some random id
-    tex.image.vkImage = m_swapChainImages[m_currentFrame];
-    tex.imageView     = m_swapChainImageViews[m_currentFrame];
-    tex.usage         = ColorTexture | TransferDstTexture;
-    tex.format        = m_imageFormat;
-    tex.numLayers     = 1;
-    tex.numMipLevels  = 1;
-
-    return tex;
 }
 
 Error VkGfxSwapChain::createSwapChain(const VkGfxSwapChainParams& params)
@@ -302,10 +289,10 @@ void VkGfxSwapChain::destroyImageViews()
 
 Error VkGfxSwapChain::createSyncObjects()
 {
-    m_imageAvailableSemaphores.resize(m_imagesCount);
-    m_renderFinishedSemaphores.resize(m_imagesCount);
-    m_submitSemaphores.resize(m_imagesCount);
-    m_inFlightFences.resize(m_imagesCount);
+    m_imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+    m_renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+    m_submitSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+    m_inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
 
     VkSemaphoreCreateInfo semaphoreInfo {};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -314,7 +301,7 @@ Error VkGfxSwapChain::createSyncObjects()
     fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-    for (uint32_t i = 0; i < m_imagesCount; ++i)
+    for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
     {
         VulkanResult result = vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_imageAvailableSemaphores[i]);
         if (result.hasError())
@@ -360,7 +347,7 @@ Error VkGfxSwapChain::createSyncObjects()
 
 void VkGfxSwapChain::destroySyncObjects()
 {
-    for (uint32_t i = 0; i < m_imagesCount; ++i)
+    for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
     {
         vkDestroySemaphore(m_device, m_imageAvailableSemaphores[i], nullptr);
         vkDestroySemaphore(m_device, m_renderFinishedSemaphores[i], nullptr);

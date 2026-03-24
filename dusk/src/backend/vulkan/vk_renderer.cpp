@@ -60,7 +60,7 @@ VkCommandBuffer VulkanRenderer::beginFrame()
 
     DASSERT(!m_isFrameStarted, "Can't call begin frame when already in progress");
 
-    VulkanResult result = m_swapChain->acquireNextImage(&m_currentImageIndex);
+    VulkanResult result = m_swapChain->acquireNextImage(m_currentFrameIndex, &m_currentImageIndex);
 
     if (result.vkResult == VK_ERROR_OUT_OF_DATE_KHR)
     {
@@ -135,7 +135,7 @@ Error VulkanRenderer::endFrame()
         return result.getErrorId();
     }
 
-    result = m_swapChain->submitCommandBuffers(&commandBuffer, &m_currentImageIndex);
+    result = m_swapChain->submitCommandBuffers(&commandBuffer, m_currentFrameIndex, m_currentImageIndex);
 
     if (result.vkResult == VK_ERROR_OUT_OF_DATE_KHR || result.vkResult == VK_SUBOPTIMAL_KHR || m_window.isResized())
     {
@@ -151,7 +151,7 @@ Error VulkanRenderer::endFrame()
     }
 
     m_isFrameStarted    = false;
-    m_currentFrameIndex = (m_currentFrameIndex + 1) % m_swapChain->getImagesCount();
+    m_currentFrameIndex = (m_currentFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
 
     return Error::Ok;
 }
@@ -200,7 +200,7 @@ Error VulkanRenderer::createCommandBuffers()
 {
     auto& context = VkGfxDevice::getSharedVulkanContext();
 
-    m_commandBuffers.resize(m_swapChain->getImagesCount());
+    m_commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 
     VkCommandBufferAllocateInfo allocInfo {};
     allocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -258,11 +258,10 @@ Error VulkanRenderer::createSecondaryCmdPoolsAndBuffers()
 {
     auto&          context    = VkGfxDevice::getSharedVulkanContext();
     const uint32_t poolsCount = std::thread::hardware_concurrency();
-    const uint32_t maxFrames  = m_swapChain->getImagesCount();
 
     m_secondaryCmdPools.resize(poolsCount);
-    m_secondaryCmdBuffers.resize(maxFrames);
-    for (uint32_t i = 0u; i < maxFrames; ++i)
+    m_secondaryCmdBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+    for (uint32_t i = 0u; i < MAX_FRAMES_IN_FLIGHT; ++i)
     {
         m_secondaryCmdBuffers[i].resize(poolsCount);
     }
@@ -290,7 +289,7 @@ Error VulkanRenderer::createSecondaryCmdPoolsAndBuffers()
 #endif
 
         // allocate secondary cmd buffers
-        for (uint32_t frameIdx = 0u; frameIdx < maxFrames; ++frameIdx)
+        for (uint32_t frameIdx = 0u; frameIdx < MAX_FRAMES_IN_FLIGHT; ++frameIdx)
         {
             VkCommandBufferAllocateInfo allocInfo = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
             allocInfo.commandPool                 = m_secondaryCmdPools[i];
@@ -319,10 +318,9 @@ Error VulkanRenderer::createSecondaryCmdPoolsAndBuffers()
 
 void VulkanRenderer::freeSecondaryCmdPoolsAndBuffers()
 {
-    auto&          context   = VkGfxDevice::getSharedVulkanContext();
-    const uint32_t maxFrames = m_swapChain->getImagesCount();
+    auto& context = VkGfxDevice::getSharedVulkanContext();
 
-    for (uint32_t frameIdx = 0u; frameIdx < maxFrames; ++frameIdx)
+    for (uint32_t frameIdx = 0u; frameIdx < MAX_FRAMES_IN_FLIGHT; ++frameIdx)
     {
         for (uint32_t cmdBuffIdx = 0u; cmdBuffIdx < m_secondaryCmdBuffers.size(); ++cmdBuffIdx)
         {
@@ -347,6 +345,19 @@ void VulkanRenderer::resetSecondaryCmdBuffers(uint32_t frameIdx)
     {
         vkFreeCommandBuffers(context.device, m_secondaryCmdPools[cmdBuffIdx], 1, &m_secondaryCmdBuffers[frameIdx][cmdBuffIdx]);
     }
+}
+
+GfxTexture VulkanRenderer::getCurrentSwapImageTexture()
+{
+    GfxTexture tex(10000 + m_currentImageIndex); // some random id
+    tex.image.vkImage = m_swapChain->getImage(m_currentImageIndex);
+    tex.imageView     = m_swapChain->getImageView(m_currentImageIndex);
+    tex.usage         = ColorTexture | TransferDstTexture;
+    tex.format        = m_swapChain->getImageFormat();
+    tex.numLayers     = 1;
+    tex.numMipLevels  = 1;
+
+    return tex;
 }
 
 } // namespace dusk

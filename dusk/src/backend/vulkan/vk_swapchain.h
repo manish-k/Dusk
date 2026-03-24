@@ -3,8 +3,6 @@
 #include "dusk.h"
 #include "vk.h"
 #include "vk_types.h"
-#include "vk_allocator.h"
-#include "renderer/texture.h"
 
 namespace dusk
 {
@@ -20,8 +18,11 @@ public:
     Error          create(VulkanContext& vkContext, VkGfxSwapChainParams& params, Shared<VkGfxSwapChain> oldSwapChain = nullptr);
     void           destroy();
 
-    VulkanResult   acquireNextImage(uint32_t* imageIndex);
-    VulkanResult   submitCommandBuffers(const VkCommandBuffer* buffers, uint32_t* imageIndex);
+    VulkanResult   acquireNextImage(uint32_t frameIndex, uint32_t* imageIndex);
+    VulkanResult   submitCommandBuffers(
+        const VkCommandBuffer* buffers, 
+        uint32_t frameIndex, 
+        uint32_t imageIndex);
 
     VkSwapchainKHR getSwapChain() const { return m_swapChain; }
     uint32_t       getImagesCount() const { return m_imagesCount; }
@@ -30,7 +31,6 @@ public:
     VkFormat       getImageFormat() const { return m_imageFormat; }
     VkImage        getImage(uint32_t imageIndex) const { return m_swapChainImages[imageIndex]; }
 
-    GfxTexture     getCurrentSwapImageTexture();
 
 private:
     Error              createSwapChain(const VkGfxSwapChainParams& params);
@@ -67,10 +67,7 @@ private:
     DynamicArray<VkSemaphore> m_imageAvailableSemaphores = {};
     DynamicArray<VkSemaphore> m_renderFinishedSemaphores = {};
     DynamicArray<VkSemaphore> m_submitSemaphores         = {};
-
     DynamicArray<VkFence>     m_inFlightFences           = {};
-
-    uint32_t                  m_currentFrame             = 0u;
 
     VkQueue                   m_graphicsQueue            = VK_NULL_HANDLE;
     VkQueue                   m_presentQueue             = VK_NULL_HANDLE;

@@ -85,7 +85,7 @@ bool Engine::start(Shared<Application> app)
     }
 
     m_statsRecorder = createUnique<StatsRecorder>();
-    if (!m_statsRecorder->init(m_renderer->getMaxFramesCount()))
+    if (!m_statsRecorder->init(MAX_FRAMES_IN_FLIGHT))
     {
         DUSK_ERROR("Stats recorder initialization failed");
         return false;
@@ -380,7 +380,7 @@ void Engine::renderFrame(FrameData& frameData)
 
     RenderGraph renderGraph(VkGfxDevice::getSharedVulkanContext());
 
-    GfxTexture  swapImageTexture = m_renderer->getSwapChain().getCurrentSwapImageTexture();
+    GfxTexture  swapImageTexture = m_renderer->getCurrentSwapImageTexture();
 
     // create rg resources
     RGImageResource swapImage = {
@@ -504,7 +504,6 @@ void Engine::renderFrame(FrameData& frameData)
 
 bool Engine::setupGlobals()
 {
-    uint32_t      maxFramesCount = m_renderer->getMaxFramesCount();
     VulkanContext ctx            = VkGfxDevice::getSharedVulkanContext();
 
     // setup 256mb vertex buffer * 128mb index buffer
@@ -526,14 +525,14 @@ bool Engine::setupGlobals()
 
     // create global descriptor pool
     m_globalDescriptorPool = VkGfxDescriptorPool::Builder(ctx)
-                                 .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, maxFramesCount)
+                                 .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, MAX_FRAMES_IN_FLIGHT)
                                  .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 100) // TODO: make count configurable
                                  .setDebugName("global_desc_pool")
                                  .build(1, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
     CHECK_AND_RETURN_FALSE(!m_globalDescriptorPool);
 
     m_globalDescriptorSetLayout = VkGfxDescriptorSetLayout::Builder(ctx)
-                                      .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT, maxFramesCount, true)
+                                      .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT, MAX_FRAMES_IN_FLIGHT, true)
                                       .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1000, true) // TODO: make count configurable
                                       .setDebugName("global_desc_set_layout")
                                       .build();
@@ -542,7 +541,7 @@ bool Engine::setupGlobals()
     GfxBuffer::createHostWriteBuffer(
         GfxBufferUsageFlags::UniformBuffer,
         sizeof(GlobalUbo),
-        maxFramesCount,
+        MAX_FRAMES_IN_FLIGHT,
         "global_uniform_buffer",
         &m_globalUbos);
     CHECK_AND_RETURN_FALSE(!m_globalUbos.isAllocated());
@@ -551,9 +550,9 @@ bool Engine::setupGlobals()
     CHECK_AND_RETURN_FALSE(!m_globalDescriptorSet);
 
     DynamicArray<VkDescriptorBufferInfo> buffersInfo;
-    buffersInfo.reserve(maxFramesCount);
+    buffersInfo.reserve(MAX_FRAMES_IN_FLIGHT);
 
-    for (uint32_t frameIndex = 0u; frameIndex < maxFramesCount; ++frameIndex)
+    for (uint32_t frameIndex = 0u; frameIndex < MAX_FRAMES_IN_FLIGHT; ++frameIndex)
     {
         buffersInfo.push_back(m_globalUbos.getDescriptorInfoAtIndex(frameIndex));
     }
@@ -622,9 +621,9 @@ bool Engine::setupGlobals()
 
     // renderables resources
     m_renderableDescriptorPool = VkGfxDescriptorPool::Builder(ctx)
-                                     .addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 5 * maxFramesCount)
+                                     .addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 5 * MAX_FRAMES_IN_FLIGHT)
                                      .setDebugName("renderables_desc_pool")
-                                     .build(maxFramesCount, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
+                                     .build(MAX_FRAMES_IN_FLIGHT, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
     CHECK_AND_RETURN_FALSE(!m_renderableDescriptorPool);
 
     m_renderableDescriptorSetLayout = VkGfxDescriptorSetLayout::Builder(ctx)
@@ -662,14 +661,14 @@ bool Engine::setupGlobals()
                                           .build();
     CHECK_AND_RETURN_FALSE(!m_renderableDescriptorSetLayout);
 
-    m_frameRenderables.resize(maxFramesCount);
-    m_modelMatrixBuffers.resize(maxFramesCount);
-    m_normalMatrixBuffers.resize(maxFramesCount);
-    m_boundingBoxBuffers.resize(maxFramesCount);
-    m_meshIdsBuffers.resize(maxFramesCount);
-    m_materialIdsBuffers.resize(maxFramesCount);
-    m_renderableDescriptorSets.resize(maxFramesCount);
-    for (uint32_t frameIdx = 0u; frameIdx < maxFramesCount; ++frameIdx)
+    m_frameRenderables.resize(MAX_FRAMES_IN_FLIGHT);
+    m_modelMatrixBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+    m_normalMatrixBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+    m_boundingBoxBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+    m_meshIdsBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+    m_materialIdsBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+    m_renderableDescriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
+    for (uint32_t frameIdx = 0u; frameIdx < MAX_FRAMES_IN_FLIGHT; ++frameIdx)
     {
         m_frameRenderables[frameIdx].modelMatrices.reserve(MAX_RENDERABLES_COUNT);
         m_frameRenderables[frameIdx].normalMatrices.reserve(MAX_RENDERABLES_COUNT);
@@ -756,7 +755,7 @@ void Engine::cleanupGlobals()
     m_renderableDescriptorSetLayout = nullptr;
     m_renderableDescriptorPool      = nullptr;
 
-    for (uint32_t frameIdx = 0u; frameIdx < m_renderer->getMaxFramesCount(); ++frameIdx)
+    for (uint32_t frameIdx = 0u; frameIdx < MAX_FRAMES_IN_FLIGHT; ++frameIdx)
     {
         m_modelMatrixBuffers[frameIdx].cleanup();
         m_normalMatrixBuffers[frameIdx].cleanup();
@@ -808,13 +807,12 @@ void Engine::prepareRenderGraphResources()
 
     auto&    ctx            = VkGfxDevice::getSharedVulkanContext();
     auto     extent         = m_renderer->getSwapChain().getCurrentExtent();
-    uint32_t maxFramesCount = m_renderer->getMaxFramesCount();
 
     // Indirect draw resources
     m_rgResources.indirectDrawDescriptorPool = VkGfxDescriptorPool::Builder(ctx)
-                                                   .addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2 * maxFramesCount)
+                                                   .addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2 * MAX_FRAMES_IN_FLIGHT)
                                                    .setDebugName("indirect draw_desc_pool")
-                                                   .build(maxFramesCount, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
+                                                   .build(MAX_FRAMES_IN_FLIGHT, VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT);
 
     m_rgResources.indirectDrawDescriptorSetLayout = VkGfxDescriptorSetLayout::Builder(ctx)
                                                         .addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 1, true)
@@ -822,11 +820,11 @@ void Engine::prepareRenderGraphResources()
                                                         .setDebugName("indirect draw_desc_set_layout")
                                                         .build();
 
-    m_rgResources.frameIndirectDrawCommandsBuffers.resize(maxFramesCount);
-    m_rgResources.frameIndirectDrawCountBuffers.resize(maxFramesCount);
-    m_rgResources.indirectDrawDescriptorSet.resize(maxFramesCount);
+    m_rgResources.frameIndirectDrawCommandsBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+    m_rgResources.frameIndirectDrawCountBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+    m_rgResources.indirectDrawDescriptorSet.resize(MAX_FRAMES_IN_FLIGHT);
 
-    for (uint32_t frameIdx = 0u; frameIdx < maxFramesCount; ++frameIdx)
+    for (uint32_t frameIdx = 0u; frameIdx < MAX_FRAMES_IN_FLIGHT; ++frameIdx)
     {
         m_rgResources.frameIndirectDrawCommandsBuffers[frameIdx].init(
             GfxBufferUsageFlags::StorageBuffer | GfxBufferUsageFlags::IndirectBuffer | GfxBufferUsageFlags::TransferTarget,

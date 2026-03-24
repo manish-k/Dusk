@@ -11,6 +11,8 @@
 
 #include <glm/glm.hpp>
 
+#define MAX_FRAMES_IN_FLIGHT 2
+
 #ifdef DDEBUG // Dusk Debug
 #    define ENABLE_ASSERT
 #endif        // DEBUG

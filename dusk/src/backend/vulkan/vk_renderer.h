@@ -6,6 +6,7 @@
 #include "vk_swapchain.h"
 #include "renderer/renderer.h"
 #include "platform/glfw_vulkan_window.h"
+#include "renderer/texture.h"
 
 namespace dusk
 {
@@ -27,9 +28,10 @@ public:
 
     uint32_t                       getCurrentFrameIndex() const { return m_currentFrameIndex; }
     float                          getAspectRatio() const;
-    uint32_t                       getMaxFramesCount() const { return m_swapChain->getImagesCount(); }
 
     DynamicArray<VkCommandBuffer>& getSecondayCmdBuffers(uint32_t frameIndex) { return m_secondaryCmdBuffers[frameIndex]; }
+
+    GfxTexture                     getCurrentSwapImageTexture();
 
 private:
     Error recreateSwapChain();

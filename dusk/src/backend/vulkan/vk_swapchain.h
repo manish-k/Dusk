@@ -69,33 +69,33 @@ private:
     Shared<VkGfxSwapChain>       m_oldSwapChain   = nullptr;
     Unique<VkGfxRenderPass>      m_renderPass     = nullptr;
 
-    VkSurfaceCapabilitiesKHR     m_capabilities {};
+    VkSurfaceCapabilitiesKHR     m_capabilities   = {};
 
     VulkanGPUAllocator*          m_gpuAllocator;
 
-    uint32_t                     m_imagesCount = 0u;
-    DynamicArray<VkImage>        m_swapChainImages {};
-    DynamicArray<VkImageView>    m_swapChainImageViews {};
-    DynamicArray<VkFramebuffer>  m_frameBuffers {};
-    VkFormat                     m_imageFormat {};
+    uint32_t                     m_imagesCount              = 0u;
+    DynamicArray<VkImage>        m_swapChainImages          = {};
+    DynamicArray<VkImageView>    m_swapChainImageViews      = {};
+    DynamicArray<VkFramebuffer>  m_frameBuffers             = {};
+    VkFormat                     m_imageFormat              = {};
 
-    DynamicArray<VulkanGfxImage> m_depthImages {};
-    DynamicArray<VkImageView>    m_depthImageViews {};
-    VkFormat                     m_depthImageFormat {};
+    DynamicArray<VulkanGfxImage> m_depthImages              = {};
+    DynamicArray<VkImageView>    m_depthImageViews          = {};
+    VkFormat                     m_depthImageFormat         = {};
 
-    VkExtent2D                   m_currentExtent {};
+    VkExtent2D                   m_currentExtent            = {};
 
-    DynamicArray<VkSemaphore>    m_imageAvailableSemaphores {};
-    DynamicArray<VkSemaphore>    m_renderFinishedSemaphores {};
+    DynamicArray<VkSemaphore>    m_imageAvailableSemaphores = {};
+    DynamicArray<VkSemaphore>    m_renderFinishedSemaphores = {};
+    DynamicArray<VkSemaphore>    m_submitSemaphores         = {};
 
-    DynamicArray<VkFence>        m_inFlightFences {};
-    DynamicArray<VkFence>        m_imagesInFlight {};
+    DynamicArray<VkFence>        m_inFlightFences           = {};
 
-    uint32_t                     m_currentFrame  = 0u;
+    uint32_t                     m_currentFrame             = 0u;
 
-    VkQueue                      m_graphicsQueue = VK_NULL_HANDLE;
-    VkQueue                      m_presentQueue  = VK_NULL_HANDLE;
-    VkQueue                      m_computeQueue  = VK_NULL_HANDLE;
-    VkQueue                      m_transferQueue = VK_NULL_HANDLE;
+    VkQueue                      m_graphicsQueue            = VK_NULL_HANDLE;
+    VkQueue                      m_presentQueue             = VK_NULL_HANDLE;
+    VkQueue                      m_computeQueue             = VK_NULL_HANDLE;
+    VkQueue                      m_transferQueue            = VK_NULL_HANDLE;
 };
 } // namespace dusk

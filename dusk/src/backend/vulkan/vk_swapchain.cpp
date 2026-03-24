@@ -310,6 +310,7 @@ void VkGfxSwapChain::destroySwapChain()
     {
         vkDestroySemaphore(m_device, m_renderFinishedSemaphores[i], nullptr);
         vkDestroySemaphore(m_device, m_imageAvailableSemaphores[i], nullptr);
+        vkDestroySemaphore(m_device, m_submitSemaphores[i], nullptr);
         vkDestroyFence(m_device, m_inFlightFences[i], nullptr);
     }
 
@@ -365,8 +366,8 @@ Error VkGfxSwapChain::createSyncObjects()
 {
     m_imageAvailableSemaphores.resize(m_imagesCount);
     m_renderFinishedSemaphores.resize(m_imagesCount);
+    m_submitSemaphores.resize(m_imagesCount);
     m_inFlightFences.resize(m_imagesCount);
-    m_imagesInFlight.resize(m_imagesCount);
 
     VkSemaphoreCreateInfo semaphoreInfo {};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -388,6 +389,23 @@ Error VkGfxSwapChain::createSyncObjects()
         if (result.hasError())
         {
             DUSK_ERROR("Unable to create renderFinishedSemaphores {}", result.toString());
+            return result.getErrorId();
+        }
+
+        // allocate timeline semaphores for submitting command buffers
+        VkSemaphoreTypeCreateInfo timelineCreateInfo = { VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO };
+        timelineCreateInfo.pNext                     = nullptr;
+        timelineCreateInfo.semaphoreType             = VK_SEMAPHORE_TYPE_TIMELINE;
+        timelineCreateInfo.initialValue              = 0;
+
+        // chain timeline create info to semaphore create info
+        VkSemaphoreCreateInfo submiSemaphoreCreateInfo = { VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
+        submiSemaphoreCreateInfo.pNext                 = &timelineCreateInfo;
+
+        result                                         = vkCreateSemaphore(m_device, &submiSemaphoreCreateInfo, nullptr, &m_submitSemaphores[i]);
+        if (result.hasError())
+        {
+            DUSK_ERROR("Unable to create submit timeline semaphores {}", result.toString());
             return result.getErrorId();
         }
 

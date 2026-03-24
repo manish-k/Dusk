@@ -374,6 +374,14 @@ Error VkGfxDevice::createDevice()
         }
         pDeviceInfo->deviceFeaturesVk13.synchronization2 = VK_TRUE;
 
+        // Enabling timeline semaphores
+        if (!deviceFeaturesVk12.timelineSemaphore)
+        {
+            DUSK_INFO("Skipping device because it does not support timeline semaphores");
+            continue;
+        }
+        pDeviceInfo->deviceFeaturesVk12.timelineSemaphore = VK_TRUE;
+
         // check for gpu profiling extension/features
 #ifdef DUSK_ENABLE_PROFILING
         if (!availableExtensionsSet.has(hash(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME)))

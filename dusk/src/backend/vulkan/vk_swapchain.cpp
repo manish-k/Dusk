@@ -18,16 +18,11 @@ Error VkGfxSwapChain::create(VulkanContext& vkContext, VkGfxSwapChainParams& par
 
     m_oldSwapChain   = oldSwapChain;
 
-    m_gpuAllocator   = vkContext.gpuAllocator;
-
     Error err        = createSwapChain(params);
     if (err != Error::Ok)
     {
         return err;
     }
-
-    m_renderPass = VkGfxRenderPass::Builder(vkContext).setColorAttachmentFormat(m_imageFormat).build();
-    err          = initFrameBuffers();
 
     return err;
 }
@@ -41,47 +36,11 @@ void VkGfxSwapChain::destroy()
         m_oldSwapChain->destroy();
     }
 
-    m_renderPass->destroy();
-
     // TODO: handle double destroy of swapchain,
     // can trigger after failed image view creation
     destroySwapChain();
 }
 
-void VkGfxSwapChain::resize()
-{
-}
-
-Error VkGfxSwapChain::initFrameBuffers()
-{
-    m_frameBuffers.resize(m_swapChainImageViews.size());
-
-    for (uint32_t i = 0u; i < m_swapChainImageViews.size(); ++i)
-    {
-        Array<VkImageView, 1> attachments[] = {
-            m_swapChainImageViews[i],
-        };
-
-        VkFramebufferCreateInfo framebufferInfo {};
-        framebufferInfo.sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        framebufferInfo.renderPass      = m_renderPass->get();
-        framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments->size());
-        framebufferInfo.pAttachments    = attachments->data();
-        framebufferInfo.width           = m_currentExtent.width;
-        framebufferInfo.height          = m_currentExtent.height;
-        framebufferInfo.layers          = 1;
-
-        VulkanResult result             = vkCreateFramebuffer(m_device, &framebufferInfo, nullptr, &m_frameBuffers[i]);
-
-        if (result.hasError())
-        {
-            DUSK_ERROR("Unable to creat framebuffers {}");
-            return result.getErrorId();
-        }
-    }
-
-    return Error::Ok;
-}
 
 VulkanResult VkGfxSwapChain::acquireNextImage(uint32_t* imageIndex)
 {
@@ -281,13 +240,6 @@ Error VkGfxSwapChain::createSwapChain(const VkGfxSwapChainParams& params)
         return err;
     }
 
-    err = createDepthResources();
-    if (err != Error::Ok)
-    {
-        destroySwapChain();
-        return err;
-    }
-
     DUSK_INFO("Swapchain created successfully");
     return Error::Ok;
 }
@@ -300,21 +252,7 @@ void VkGfxSwapChain::destroySwapChain()
         m_swapChain = VK_NULL_HANDLE;
     }
 
-    for (auto framebuffer : m_frameBuffers)
-    {
-        vkDestroyFramebuffer(m_device, framebuffer, nullptr);
-    }
-    m_frameBuffers.clear();
-
-    for (uint32_t i = 0u; i < m_imagesCount; i++)
-    {
-        vkDestroySemaphore(m_device, m_renderFinishedSemaphores[i], nullptr);
-        vkDestroySemaphore(m_device, m_imageAvailableSemaphores[i], nullptr);
-        vkDestroySemaphore(m_device, m_submitSemaphores[i], nullptr);
-        vkDestroyFence(m_device, m_inFlightFences[i], nullptr);
-    }
-
-    destroyDepthResources();
+    destroySyncObjects();
 }
 
 // TODO: maybe this functionality should go into VkGfxDevice
@@ -420,79 +358,19 @@ Error VkGfxSwapChain::createSyncObjects()
     return Error::Ok;
 }
 
-Error VkGfxSwapChain::createDepthResources()
+void VkGfxSwapChain::destroySyncObjects()
 {
-    VkFormat depthFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
-
-    m_depthImages.resize(m_imagesCount);
-    m_depthImageViews.resize(m_imagesCount);
-
-    for (uint32_t depthImageIndex = 0u; depthImageIndex < m_imagesCount; ++depthImageIndex)
+    for (uint32_t i = 0; i < m_imagesCount; ++i)
     {
-        VkImageCreateInfo imageInfo { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
-        imageInfo.imageType     = VK_IMAGE_TYPE_2D;
-        imageInfo.extent.width  = m_currentExtent.width;
-        imageInfo.extent.height = m_currentExtent.height;
-        imageInfo.extent.depth  = 1;
-        imageInfo.mipLevels     = 1;
-        imageInfo.arrayLayers   = 1;
-        imageInfo.format        = depthFormat;
-        imageInfo.tiling        = VK_IMAGE_TILING_OPTIMAL;
-        imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        imageInfo.usage         = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-        imageInfo.samples       = VK_SAMPLE_COUNT_1_BIT;
-        imageInfo.sharingMode   = VK_SHARING_MODE_EXCLUSIVE;
-        imageInfo.flags         = 0;
-
-        // create image
-        VulkanResult result = vulkan::allocateGPUImage(
-            m_gpuAllocator,
-            imageInfo,
-            VMA_MEMORY_USAGE_AUTO,
-            VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
-            &m_depthImages[depthImageIndex]);
-        if (result.hasError())
-        {
-            DUSK_ERROR("Unable to create images for depth attachment {}", result.toString());
-            return Error::Generic;
-        }
-
-        VkImageViewCreateInfo viewInfo {};
-        viewInfo.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        viewInfo.image                           = m_depthImages[depthImageIndex].vkImage;
-        viewInfo.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
-        viewInfo.format                          = depthFormat;
-        viewInfo.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_DEPTH_BIT;
-        viewInfo.subresourceRange.baseMipLevel   = 0;
-        viewInfo.subresourceRange.levelCount     = 1;
-        viewInfo.subresourceRange.baseArrayLayer = 0;
-        viewInfo.subresourceRange.layerCount     = 1;
-
-        // create image views
-        result = vkCreateImageView(m_device, &viewInfo, nullptr, &m_depthImageViews[depthImageIndex]);
-        if (result.hasError())
-        {
-            DUSK_ERROR("Unable to create depth image views {}", result.toString());
-            return Error::Generic;
-        }
+        vkDestroySemaphore(m_device, m_imageAvailableSemaphores[i], nullptr);
+        vkDestroySemaphore(m_device, m_renderFinishedSemaphores[i], nullptr);
+        vkDestroySemaphore(m_device, m_submitSemaphores[i], nullptr);
+        vkDestroyFence(m_device, m_inFlightFences[i], nullptr);
     }
-
-    return Error();
-}
-
-void VkGfxSwapChain::destroyDepthResources()
-{
-    for (auto& imageView : m_depthImageViews)
-    {
-        vkDestroyImageView(m_device, imageView, nullptr);
-    }
-    m_depthImageViews.clear();
-
-    for (auto& depthImage : m_depthImages)
-    {
-        vulkan::freeGPUImage(m_gpuAllocator, &depthImage);
-    }
-    m_depthImages.clear();
+    m_imageAvailableSemaphores.clear();
+    m_renderFinishedSemaphores.clear();
+    m_submitSemaphores.clear();
+    m_inFlightFences.clear();
 }
 
 VkSurfaceFormatKHR VkGfxSwapChain::getBestSurfaceFormat() const

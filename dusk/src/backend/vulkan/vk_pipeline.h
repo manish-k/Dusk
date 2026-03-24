@@ -3,7 +3,6 @@
 #include "dusk.h"
 #include "vk.h"
 #include "vk_types.h"
-#include "vk_renderpass.h"
 #include "vk_pipeline_layout.h"
 
 namespace dusk

@@ -23,12 +23,6 @@ public:
     Error                          endFrame();
     void                           deviceWaitIdle();
 
-    void                           beginSwapChainRenderPass(VkCommandBuffer commandBuffer);
-    void                           endSwapChainRenderPass(VkCommandBuffer commandBuffer);
-
-    void                           beginRendering(VkCommandBuffer commandBuffer);
-    void                           endRendering(VkCommandBuffer commandBuffer);
-
     VkGfxSwapChain&                getSwapChain() const { return *m_swapChain; }
 
     uint32_t                       getCurrentFrameIndex() const { return m_currentFrameIndex; }

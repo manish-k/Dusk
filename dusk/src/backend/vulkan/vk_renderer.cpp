@@ -63,6 +63,10 @@ VkCommandBuffer VulkanRenderer::beginFrame()
 
     VulkanResult result = m_swapChain->acquireNextImage(m_currentFrameIndex, &m_currentImageIndex);
 
+    // reset pools before use. Acquiring image is guarded by a fence so it is a good place to reset pools.
+    vulkan::resetCmdBufferPool(&m_graphicCommandBufferPools[m_currentFrameIndex]);
+    vulkan::resetCmdBufferPool(&m_computeCommandBufferPools[m_currentFrameIndex]);
+
     if (result.vkResult == VK_ERROR_OUT_OF_DATE_KHR)
     {
         recreateSwapChain();

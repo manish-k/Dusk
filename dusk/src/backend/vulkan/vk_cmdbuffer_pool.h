@@ -42,9 +42,9 @@ inline VulkanResult createCmdBufferPool(VkDevice device, uint32_t queueFamilyInd
     return result;
 }
 
-inline void resetCmdBufferPool(VkDevice device, VulkanCmdBufferPool* pool)
+inline void resetCmdBufferPool(VulkanCmdBufferPool* pool)
 {
-    vkResetCommandPool(device, pool->commandPool, 0);
+    vkResetCommandPool(pool->device, pool->commandPool, 0);
     pool->nextAvailableIndex = 0u;
 }
 

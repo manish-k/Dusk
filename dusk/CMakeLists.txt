@@ -29,6 +29,7 @@ set(VULKAN_BACKEND_FILES
 	"${VULKAN_BACKEND_DIR}/vk_debug.h"
 	"${VULKAN_BACKEND_DIR}/vk_allocator.h"
 	"${VULKAN_BACKEND_DIR}/vk_descriptors.h"
+	"${VULKAN_BACKEND_DIR}/vk_cmdbuffer_pool.h"
 	# Source files
 	"${VULKAN_BACKEND_DIR}/vk.cpp"
 	"${VULKAN_BACKEND_DIR}/vk_renderer.cpp"

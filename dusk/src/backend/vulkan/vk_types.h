@@ -32,6 +32,15 @@ struct VulkanGfxImage
     VkMemoryPropertyFlags memoryFlags  = 0;
 };
 
+struct VulkanCmdBufferPool
+{
+    VkDevice                      device;
+    uint32_t                      queueFamilyIndex;
+    VkCommandPool                 commandPool;
+    DynamicArray<VkCommandBuffer> commandBuffers;
+    uint32_t                      nextAvailableIndex = 0u;
+};
+
 struct VulkanContext
 {
     VkInstance                 vulkanInstance;

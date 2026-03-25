@@ -53,8 +53,11 @@ private:
     // TODO: currently 1 buff per frame per secondary pool
     DynamicArray<DynamicArray<VkCommandBuffer>> m_secondaryCmdBuffers {};
 
-    bool                                        m_isFrameStarted    = false;
-    uint32_t                                    m_currentImageIndex = 0u;
-    uint32_t                                    m_currentFrameIndex = 0u;
+    DynamicArray<VulkanCmdBufferPool>           m_graphicCommandBufferPools = {};
+    DynamicArray<VulkanCmdBufferPool>           m_computeCommandBufferPools = {};
+
+    bool                                        m_isFrameStarted            = false;
+    uint32_t                                    m_currentImageIndex         = 0u;
+    uint32_t                                    m_currentFrameIndex         = 0u;
 };
 } // namespace dusk

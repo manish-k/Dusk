@@ -3,6 +3,7 @@
 #include "stats_recorder.h"
 
 #include "vk_renderer.h"
+#include "vk_cmdbuffer_pool.h"
 #include "debug/profiler.h"
 
 #define VOLK_IMPLEMENTATION
@@ -228,6 +229,24 @@ Error VulkanRenderer::createCommandBuffers()
 #endif // VK_RENDERER_DEBUG
     }
 
+    m_graphicCommandBufferPools.resize(MAX_FRAMES_IN_FLIGHT);
+    m_computeCommandBufferPools.resize(MAX_FRAMES_IN_FLIGHT);
+
+    for (uint32_t i = 0u; i < MAX_FRAMES_IN_FLIGHT; ++i)
+    {
+        vulkan::createCmdBufferPool(
+            context.device,
+            context.graphicsQueueFamilyIndex,
+            8u, // starting with 8 command buffers
+            &m_graphicCommandBufferPools[i]);
+
+        vulkan::createCmdBufferPool(
+            context.device,
+            context.computeQueueFamilyIndex,
+            8u, // starting with 8 command buffers
+            &m_computeCommandBufferPools[i]);
+    }
+
     DUSK_INFO("Command buffers created = {}", m_commandBuffers.size());
 
     Error err = createSecondaryCmdPoolsAndBuffers();
@@ -240,7 +259,16 @@ void VulkanRenderer::freeCommandBuffers()
 {
     auto& context = VkGfxDevice::getSharedVulkanContext();
     vkFreeCommandBuffers(context.device, context.commandPool, static_cast<uint32_t>(m_commandBuffers.size()), m_commandBuffers.data());
+
     m_commandBuffers.clear();
+
+    for (uint32_t i = 0u; i < MAX_FRAMES_IN_FLIGHT; ++i)
+    {
+        vulkan::destroyCmdBufferPool(&m_graphicCommandBufferPools[i]);
+        vulkan::destroyCmdBufferPool(&m_computeCommandBufferPools[i]);
+    }
+    m_graphicCommandBufferPools.clear();
+    m_computeCommandBufferPools.clear();
 
     freeSecondaryCmdPoolsAndBuffers();
 }

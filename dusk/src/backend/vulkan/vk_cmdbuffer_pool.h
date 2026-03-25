@@ -48,19 +48,6 @@ inline void resetCmdBufferPool(VkDevice device, VulkanCmdBufferPool* pool)
     pool->nextAvailableIndex = 0u;
 }
 
-inline VkCommandBuffer getNextCmdBuffer(VulkanCmdBufferPool* pool)
-{
-    if (pool->nextAvailableIndex >= pool->commandBuffers.size())
-    {
-        VulkanResult result = allocateMoreCmdBuffers(pool, pool->commandBuffers.size());
-        if (result.hasError())
-        {
-            return VK_NULL_HANDLE;
-        }
-    }
-    return pool->commandBuffers[pool->nextAvailableIndex++];
-}
-
 inline VulkanResult allocateMoreCmdBuffers(VulkanCmdBufferPool* pool, uint32_t numBuffers)
 {
     uint32_t currentSize = static_cast<uint32_t>(pool->commandBuffers.size());
@@ -82,6 +69,26 @@ inline VulkanResult allocateMoreCmdBuffers(VulkanCmdBufferPool* pool, uint32_t n
 
     return result;
 }
+
+inline VkCommandBuffer getNextCmdBuffer(VulkanCmdBufferPool* pool)
+{
+    if (pool->nextAvailableIndex >= pool->commandBuffers.size())
+    {
+        VulkanResult result = allocateMoreCmdBuffers(pool, pool->commandBuffers.size());
+        if (result.hasError())
+        {
+            return VK_NULL_HANDLE;
+        }
+    }
+    return pool->commandBuffers[pool->nextAvailableIndex++];
+}
+
+inline void destroyCmdBufferPool(VulkanCmdBufferPool* pool)
+{
+    vkFreeCommandBuffers(pool->device, pool->commandPool, static_cast<uint32_t>(pool->commandBuffers.size()), pool->commandBuffers.data());
+    vkDestroyCommandPool(pool->device, pool->commandPool, nullptr);
+}
+
 }; // namespace vulkan
 
 } // namespace dusk

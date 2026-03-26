@@ -28,6 +28,7 @@ This project is intended as a **technical renderer framework** for experimentati
 - **RenderGraph system**
 	- Synchronization handling
 	- Topological sort for scheduling
+	- Async Compute support
 	- Resource lifetime & usage tracking
 	- Graph visualization using Graphviz  
 - **GPU-driven rendering**
@@ -96,6 +97,11 @@ Dusk is built around the following principles:
   <em>Rendergraph for deferred rendering system in Dusk</em>
 </p>
 
+<p align="left">
+  <img src="docs//nsight.svg" height="400"><br>
+  <em>Mulitple Queue family utilization</em>
+</p>
+
 ## Gallery
 
 **GPU:** RTX 3060  
@@ -114,8 +120,6 @@ Dusk is built around the following principles:
 
 - RenderGraph texture aliasing
 - Expanded RenderGraph pass support
-- Improved async compute scheduling
-
 
 ## Roadmap
 
@@ -129,7 +133,6 @@ Dusk is built around the following principles:
 
 ### GPU Systems
 - Visibility buffer GPU sorting and  batching
-- Async compute and transfers integration into RenderGraph
 - Mip streaming system
 
 ### Debugging Tools

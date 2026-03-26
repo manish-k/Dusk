@@ -967,7 +967,7 @@ void RenderGraph::buildReadBufferResourcesState(RGNode& pass)
             release.offset              = 0;
             release.size                = resource->buffer->vkBuffer.sizeInBytes;
 
-            // oldPass.postBufferBarriers.push_back(release);
+            oldPass.postBufferBarriers.push_back(release);
 
             pass.crossQueueDeps = 1ULL << state.lastWriter; // ensure submit happens between release and acquire
 

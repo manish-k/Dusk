@@ -15,14 +15,13 @@
 
 namespace dusk
 {
-void dispatchIndirectDrawCompute(const FrameData& frameData)
+void dispatchIndirectDrawCompute(VkCommandBuffer cmdBuffer, const FrameData& frameData)
 {
     DUSK_PROFILE_FUNCTION;
 
     if (!frameData.scene) return;
 
     Scene&          scene         = *frameData.scene;
-    VkCommandBuffer commandBuffer = frameData.commandBuffer;
     auto&           resources     = Engine::get().getRenderGraphResources();
 
     // gather all mesh instances in the scene and upload to GPU buffers along with indirect draw commands
@@ -43,7 +42,7 @@ void dispatchIndirectDrawCompute(const FrameData& frameData)
         auto& currentDrawCountBuffer = resources.frameIndirectDrawCountBuffers[frameData.frameIndex];
 
         vkCmdFillBuffer(
-            commandBuffer,
+            cmdBuffer,
             currentDrawCountBuffer.vkBuffer.buffer,
             0,
             VK_WHOLE_SIZE,
@@ -54,11 +53,11 @@ void dispatchIndirectDrawCompute(const FrameData& frameData)
         DUSK_PROFILE_SECTION("resource_bindings");
 
         // bind cull and lod pipeline
-        resources.cullLodPipeline->bind(commandBuffer);
+        resources.cullLodPipeline->bind(cmdBuffer);
 
         // bind global descriptor set
         vkCmdBindDescriptorSets(
-            commandBuffer,
+            cmdBuffer,
             VK_PIPELINE_BIND_POINT_COMPUTE,
             resources.cullLodPipelineLayout->get(),
             0, // binding location
@@ -68,7 +67,7 @@ void dispatchIndirectDrawCompute(const FrameData& frameData)
             nullptr);
 
         vkCmdBindDescriptorSets(
-            commandBuffer,
+            cmdBuffer,
             VK_PIPELINE_BIND_POINT_COMPUTE,
             resources.cullLodPipelineLayout->get(),
             1, // binding location
@@ -79,7 +78,7 @@ void dispatchIndirectDrawCompute(const FrameData& frameData)
 
         // bind mesh instance data descriptor set
         vkCmdBindDescriptorSets(
-            commandBuffer,
+            cmdBuffer,
             VK_PIPELINE_BIND_POINT_COMPUTE,
             resources.cullLodPipelineLayout->get(),
             2, // binding location
@@ -90,7 +89,7 @@ void dispatchIndirectDrawCompute(const FrameData& frameData)
 
         // bind indirect draw descriptor set
         vkCmdBindDescriptorSets(
-            commandBuffer,
+            cmdBuffer,
             VK_PIPELINE_BIND_POINT_COMPUTE,
             resources.cullLodPipelineLayout->get(),
             3, // binding location
@@ -108,7 +107,7 @@ void dispatchIndirectDrawCompute(const FrameData& frameData)
         push.objectCount  = frameData.renderables->meshIds.size();
 
         vkCmdPushConstants(
-            commandBuffer,
+            cmdBuffer,
             resources.cullLodPipelineLayout->get(),
             VK_SHADER_STAGE_COMPUTE_BIT,
             0,
@@ -118,7 +117,7 @@ void dispatchIndirectDrawCompute(const FrameData& frameData)
         // dispatch compute shader
         uint32_t workgroupCount = (push.objectCount + 31) / 32;
         vkCmdDispatch(
-            commandBuffer,
+            cmdBuffer,
             workgroupCount,
             1,
             1);

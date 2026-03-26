@@ -116,6 +116,12 @@ void RenderGraph::markAsCompute(uint32_t passId)
     pass.isCompute = true;
 }
 
+void RenderGraph::markAsFinal(uint32_t passId)
+{
+    auto& pass       = m_passes[passId];
+    pass.isFinalPass = true;
+}
+
 void RenderGraph::setMulitView(uint32_t passId, uint32_t mask, uint32_t numLayers)
 {
     auto& pass      = m_passes[passId];
@@ -144,7 +150,7 @@ uint32_t RenderGraph::addPass(
     return passId;
 }
 
-void RenderGraph::execute(const FrameData& frameData)
+DynamicArray<VulkanSubmitBatch> RenderGraph::execute(const FrameData& frameData)
 {
     DASSERT(m_passes.size() <= MAX_RENDER_GRAPH_PASSES, "Currently maximum supported passes in a graph is 64");
 
@@ -153,38 +159,109 @@ void RenderGraph::execute(const FrameData& frameData)
     buildResourcesStates();
     buildSubmissionBatches();
 
-    auto*    statsRecorder = StatsRecorder::get();
+    DynamicArray<VulkanSubmitBatch> backendSubmitBatches = {};
+    auto                            computeBatchesCount  = m_submissionOrder.computeBatches.size();
+    auto                            graphicBatchesCount  = m_submissionOrder.graphicBatches.size();
+    backendSubmitBatches.reserve(computeBatchesCount + graphicBatchesCount);
 
-    uint32_t passCount     = static_cast<uint32_t>(m_passExecutionOrder.size());
-    for (uint32_t passExecutionIdx = 0u; passExecutionIdx < passCount; ++passExecutionIdx)
+    auto* statsRecorder = StatsRecorder::get();
+
+    // all compute batches
+    for (const auto& batch : m_submissionOrder.computeBatches)
     {
-        auto& pass = m_passes[m_passExecutionOrder[passExecutionIdx]];
+        VkCommandBuffer recordingBuffer = vulkan::getCmdBuffer(frameData.cmdBufferPools->computePool);
+        vulkan::beginRecording(recordingBuffer);
 
-        statsRecorder->beginPass(frameData.commandBuffer, pass.name, passExecutionIdx);
+        uint32_t targetQueueFamilyIndex = getQueueFamilyIndex(RGQueueFamilyType::Compute);
 
-        insertPrePassBarriers(frameData, pass);
-
-        // DUSK_DEBUG("executing pass: {}", pass.name);
-
-        if (pass.isCompute)
+        uint64_t batchPasses            = batch.passesMask;
+        while (batchPasses)
         {
-            vkdebug::cmdBeginLabel(frameData.commandBuffer, pass.name.c_str(), glm::vec4(0.7f, 0.7f, 0.f, 0.f));
-            pass.recordFn(frameData);
-            vkdebug::cmdEndLabel(frameData.commandBuffer);
-        }
-        else
-        {
-            vkdebug::cmdBeginLabel(frameData.commandBuffer, pass.name.c_str(), glm::vec4(0.7f, 0.7f, 0.f, 0.f));
-            beginPass(frameData, pass);
-            pass.recordFn(frameData);
-            endPass(frameData);
-            vkdebug::cmdEndLabel(frameData.commandBuffer);
+            uint32_t passIdx = std::countr_zero(batchPasses);
+            batchPasses &= batchPasses - 1ULL;
+            auto&    pass             = m_passes[passIdx];
+
+            uint32_t passExecutionIdx = m_passIdToExecutionOrder[passIdx];
+
+            statsRecorder->beginPass(recordingBuffer, pass.name, passExecutionIdx);
+
+            insertPrePassBarriers(frameData, pass, recordingBuffer);
+
+            // DUSK_DEBUG("executing pass: {}", pass.name);
+
+            vkdebug::cmdBeginLabel(recordingBuffer, pass.name.c_str(), glm::vec4(0.7f, 0.7f, 0.f, 0.f));
+
+            beginPass(frameData, pass, recordingBuffer);
+            pass.recordFn(recordingBuffer, frameData);
+            endPass(frameData, pass, recordingBuffer);
+
+            vkdebug::cmdEndLabel(recordingBuffer);
+
+            insertPostPassBarriers(frameData, pass, recordingBuffer);
+
+            statsRecorder->endPass(recordingBuffer, passExecutionIdx);
         }
 
-        insertPostPassBarriers(frameData, pass);
+        vulkan::endRecording(recordingBuffer);
 
-        statsRecorder->endPass(frameData.commandBuffer, passExecutionIdx);
+        backendSubmitBatches.emplace_back(
+            recordingBuffer,
+            targetQueueFamilyIndex,
+            batch.waitValue,
+            batch.signalValue);
     }
+
+    // all graphics batches
+    for (const auto& batch : m_submissionOrder.graphicBatches)
+    {
+        VkCommandBuffer recordingBuffer = vulkan::getCmdBuffer(frameData.cmdBufferPools->graphicsPool);
+        vulkan::beginRecording(recordingBuffer);
+
+        uint32_t targetQueueFamilyIndex = getQueueFamilyIndex(RGQueueFamilyType::Graphics);
+
+        uint64_t batchPasses            = batch.passesMask;
+        bool     isFinalBatch           = false;
+
+        while (batchPasses)
+        {
+            uint32_t passIdx = std::countr_zero(batchPasses);
+            batchPasses &= batchPasses - 1ULL;
+            auto&    pass             = m_passes[passIdx];
+
+            uint32_t passExecutionIdx = m_passIdToExecutionOrder[passIdx];
+
+            statsRecorder->beginPass(recordingBuffer, pass.name, passExecutionIdx);
+
+            insertPrePassBarriers(frameData, pass, recordingBuffer);
+
+            // DUSK_DEBUG("executing pass: {}", pass.name);
+
+            vkdebug::cmdBeginLabel(recordingBuffer, pass.name.c_str(), glm::vec4(0.7f, 0.7f, 0.f, 0.f));
+
+            beginPass(frameData, pass, recordingBuffer);
+            pass.recordFn(recordingBuffer, frameData);
+            endPass(frameData, pass, recordingBuffer);
+
+            vkdebug::cmdEndLabel(recordingBuffer);
+
+            insertPostPassBarriers(frameData, pass, recordingBuffer);
+
+            statsRecorder->endPass(recordingBuffer, passExecutionIdx);
+
+            isFinalBatch |= pass.isFinalPass;
+        }
+
+        vulkan::endRecording(recordingBuffer);
+
+        backendSubmitBatches.emplace_back(
+            recordingBuffer,
+            targetQueueFamilyIndex,
+            batch.waitValue,
+            batch.signalValue,
+            isFinalBatch);
+    }
+
+    return backendSubmitBatches;
 }
 
 void RenderGraph::buildDependencyGraph()
@@ -301,8 +378,9 @@ void RenderGraph::buildExecutionOrder()
 
         // add node to execution order
         m_passExecutionOrder.push_back(nodeIdx);
+        m_passIdToExecutionOrder[nodeIdx] = static_cast<uint32_t>(m_passExecutionOrder.size() - 1);
 
-        uint64_t outEdges = m_outEdgesBitsets[nodeIdx];
+        uint64_t outEdges                 = m_outEdgesBitsets[nodeIdx];
 
         // decrease in-degree of all other nodes via outgoing edges from current node
         while (outEdges)
@@ -367,7 +445,7 @@ void RenderGraph::buildSubmissionBatches()
         if (pass.crossQueueDeps == 0)
         {
             currentBatch.passesMask |= (1ULL << passIdx);
-            currentBatch.signalValue = signalCounter;
+            currentBatch.signalValue = std::max(signalCounter, currentBatch.signalValue);
         }
         else
         {
@@ -413,16 +491,28 @@ void RenderGraph::buildSubmissionBatches()
             if (pass.targetQueueFamily == RGQueueFamilyType::Graphics)
             {
                 m_submissionOrder.graphicBatches.back().passesMask |= (1ULL << passIdx);
-                m_submissionOrder.graphicBatches.back().waitValue = newWaitValue;
+                m_submissionOrder.graphicBatches.back().waitValue   = newWaitValue;
+                m_submissionOrder.graphicBatches.back().signalValue = newWaitValue + 1;
             }
             else
             {
                 m_submissionOrder.computeBatches.back().passesMask |= (1ULL << passIdx);
-                m_submissionOrder.computeBatches.back().waitValue = newWaitValue;
+                m_submissionOrder.computeBatches.back().waitValue   = newWaitValue;
+                m_submissionOrder.computeBatches.back().signalValue = newWaitValue + 1;
             }
 
             closeCurrentBatches = false;
         }
+    }
+
+    if (m_submissionOrder.graphicBatches.back().passesMask == 0)
+    {
+        m_submissionOrder.graphicBatches.pop_back();
+    }
+
+    if (m_submissionOrder.computeBatches.back().passesMask == 0)
+    {
+        m_submissionOrder.computeBatches.pop_back();
     }
 }
 
@@ -520,7 +610,7 @@ void RenderGraph::buildWriteImageResourcesState(RGNode& pass, bool useDepth)
             release.subresourceRange.baseArrayLayer = 0;
             release.subresourceRange.layerCount     = resource->texture->numLayers;
 
-            // oldPass.postImageBarriers.push_back(release);
+            oldPass.postImageBarriers.push_back(release);
 
             pass.crossQueueDeps = 1ULL << state.lastWriter; // ensure submit happens between release and acquire
 
@@ -551,18 +641,37 @@ void RenderGraph::buildWriteImageResourcesState(RGNode& pass, bool useDepth)
             // merging ownership transfer barrier if needed with layout transition
             if (needOwnershipTransfer)
             {
-                const RGNode& oldPass = m_passes[state.lastWriter];
+                const RGNode& oldPass       = m_passes[state.lastWriter];
 
-                // barrier.srcQueueFamilyIndex = getQueueFamilyIndex(oldPass.targetQueueFamily);
-                // barrier.dstQueueFamilyIndex = getQueueFamilyIndex(pass.targetQueueFamily);
+                barrier.srcQueueFamilyIndex = getQueueFamilyIndex(oldPass.targetQueueFamily);
+                barrier.dstQueueFamilyIndex = getQueueFamilyIndex(pass.targetQueueFamily);
 
-                addedAcquireBarrier = true;
+                addedAcquireBarrier         = true;
             }
 
             pass.preImageBarriers.push_back(barrier);
         }
 
         DASSERT(addedReleaseBarrier == addedAcquireBarrier, "missing either release or acquire barriers");
+
+        if (pass.isFinalPass)
+        {
+            // post pass barrier change layout to presentation layout for final usage
+            VkImageMemoryBarrier2 presentBarrier { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2 };
+            presentBarrier.srcStageMask     = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            presentBarrier.dstStageMask     = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+
+            presentBarrier.srcAccessMask    = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            presentBarrier.dstAccessMask    = 0;
+
+            presentBarrier.oldLayout        = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            presentBarrier.newLayout        = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+            presentBarrier.image            = resource->texture->image.vkImage; // assuming swapchain image
+            presentBarrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+
+            pass.postImageBarriers.push_back(presentBarrier);
+        }
 
         state.layout             = newLayout;
         state.stage              = newStage;
@@ -636,7 +745,7 @@ void RenderGraph::buildReadImageResourcesState(RGNode& pass, bool useDepth)
             release.subresourceRange.baseArrayLayer = 0;
             release.subresourceRange.layerCount     = resource->texture->numLayers;
 
-            // oldPass.postImageBarriers.push_back(release);
+            oldPass.postImageBarriers.push_back(release);
 
             pass.crossQueueDeps = 1ULL << state.lastWriter; // ensure submit happens between release and acquire
 
@@ -687,12 +796,12 @@ void RenderGraph::buildReadImageResourcesState(RGNode& pass, bool useDepth)
             // merging ownership transfer barrier if needed with layout transition
             if (needOwnershipTransfer)
             {
-                const RGNode& oldPass = m_passes[state.lastWriter];
+                const RGNode& oldPass       = m_passes[state.lastWriter];
 
-                // barrier.srcQueueFamilyIndex = getQueueFamilyIndex(oldPass.targetQueueFamily);
-                // barrier.dstQueueFamilyIndex = getQueueFamilyIndex(pass.targetQueueFamily);
+                barrier.srcQueueFamilyIndex = getQueueFamilyIndex(oldPass.targetQueueFamily);
+                barrier.dstQueueFamilyIndex = getQueueFamilyIndex(pass.targetQueueFamily);
 
-                addedAcquireBarrier = true;
+                addedAcquireBarrier         = true;
             }
 
             pass.preImageBarriers.push_back(barrier);
@@ -765,7 +874,7 @@ void RenderGraph::buildWriteBufferResourcesState(RGNode& pass)
             release.offset              = 0;
             release.size                = resource->buffer->vkBuffer.sizeInBytes;
 
-            // oldPass.postBufferBarriers.push_back(release);
+            oldPass.postBufferBarriers.push_back(release);
 
             pass.crossQueueDeps = 1ULL << state.lastWriter; // ensure submit happens between release and acquire
 
@@ -788,12 +897,12 @@ void RenderGraph::buildWriteBufferResourcesState(RGNode& pass)
 
             if (needOwnershipTransfer)
             {
-                const RGNode& oldPass = m_passes[state.lastWriter];
+                const RGNode& oldPass       = m_passes[state.lastWriter];
 
-                // barrier.srcQueueFamilyIndex = getQueueFamilyIndex(oldPass.targetQueueFamily);
-                // barrier.dstQueueFamilyIndex = getQueueFamilyIndex(pass.targetQueueFamily);
+                barrier.srcQueueFamilyIndex = getQueueFamilyIndex(oldPass.targetQueueFamily);
+                barrier.dstQueueFamilyIndex = getQueueFamilyIndex(pass.targetQueueFamily);
 
-                addedAcquireBarrier = true;
+                addedAcquireBarrier         = true;
             }
 
             pass.preBufferBarriers.push_back(barrier);
@@ -881,12 +990,12 @@ void RenderGraph::buildReadBufferResourcesState(RGNode& pass)
 
             if (needOwnershipTransfer)
             {
-                const RGNode& oldPass = m_passes[state.lastWriter];
+                const RGNode& oldPass       = m_passes[state.lastWriter];
 
-                // barrier.srcQueueFamilyIndex = getQueueFamilyIndex(oldPass.targetQueueFamily);
-                // barrier.dstQueueFamilyIndex = getQueueFamilyIndex(pass.targetQueueFamily);
+                barrier.srcQueueFamilyIndex = getQueueFamilyIndex(oldPass.targetQueueFamily);
+                barrier.dstQueueFamilyIndex = getQueueFamilyIndex(pass.targetQueueFamily);
 
-                addedAcquireBarrier = true;
+                addedAcquireBarrier         = true;
             }
 
             pass.preBufferBarriers.push_back(barrier);
@@ -900,10 +1009,8 @@ void RenderGraph::buildReadBufferResourcesState(RGNode& pass)
     }
 }
 
-void RenderGraph::insertPrePassBarriers(const FrameData& frameData, const RGNode& pass) const
+void RenderGraph::insertPrePassBarriers(const FrameData& frameData, const RGNode& pass, VkCommandBuffer cmdBuffer) const
 {
-    VkCommandBuffer  cmdBuffer = frameData.commandBuffer;
-
     VkDependencyInfo dependencyInfo { VK_STRUCTURE_TYPE_DEPENDENCY_INFO };
     dependencyInfo.imageMemoryBarrierCount  = static_cast<uint32_t>(pass.preImageBarriers.size());
     dependencyInfo.pImageMemoryBarriers     = pass.preImageBarriers.data();
@@ -912,10 +1019,8 @@ void RenderGraph::insertPrePassBarriers(const FrameData& frameData, const RGNode
     vkCmdPipelineBarrier2(cmdBuffer, &dependencyInfo);
 }
 
-void RenderGraph::insertPostPassBarriers(const FrameData& frameData, const RGNode& pass) const
+void RenderGraph::insertPostPassBarriers(const FrameData& frameData, const RGNode& pass, VkCommandBuffer cmdBuffer) const
 {
-    VkCommandBuffer  cmdBuffer = frameData.commandBuffer;
-
     VkDependencyInfo dependencyInfo { VK_STRUCTURE_TYPE_DEPENDENCY_INFO };
     dependencyInfo.imageMemoryBarrierCount  = static_cast<uint32_t>(pass.postImageBarriers.size());
     dependencyInfo.pImageMemoryBarriers     = pass.postImageBarriers.data();
@@ -924,10 +1029,11 @@ void RenderGraph::insertPostPassBarriers(const FrameData& frameData, const RGNod
     vkCmdPipelineBarrier2(cmdBuffer, &dependencyInfo);
 }
 
-void RenderGraph::beginPass(const FrameData& frameData, RGNode& pass) const
+void RenderGraph::beginPass(const FrameData& frameData, RGNode& pass, VkCommandBuffer cmdBuffer) const
 {
     DUSK_PROFILE_SECTION("begin_pass");
-    VkCommandBuffer cmdBuffer = frameData.commandBuffer;
+
+    if (pass.isCompute) return;
 
     // TODO:: VkRenderingAttachmentInfo can be prepared earlier in buildResourceStates
     VkRenderingInfo                         renderingInfo        = {};
@@ -1010,11 +1116,13 @@ void RenderGraph::beginPass(const FrameData& frameData, RGNode& pass) const
     vkCmdSetScissor(cmdBuffer, 0, 1, &scissor);
 }
 
-void RenderGraph::endPass(const FrameData& frameData) const
+void RenderGraph::endPass(const FrameData& frameData, RGNode& pass, VkCommandBuffer cmdBuffer) const
 {
     DUSK_PROFILE_SECTION("end_pass");
 
-    vkCmdEndRendering(frameData.commandBuffer);
+    if (pass.isCompute) return;
+
+    vkCmdEndRendering(cmdBuffer);
 }
 
 void RenderGraph::dumpDebugGraph(const std::string& path) const

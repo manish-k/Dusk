@@ -10,7 +10,7 @@
 
 namespace dusk
 {
-void recordLightingCmds(const FrameData& frameData)
+void recordLightingCmds(VkCommandBuffer cmdBuffer, const FrameData& frameData)
 {
     DUSK_PROFILE_FUNCTION;
 
@@ -18,8 +18,6 @@ void recordLightingCmds(const FrameData& frameData)
 
     auto& resources = Engine::get().getRenderGraphResources();
     auto& env       = Engine::get().getEnvironment();
-
-    auto  cmdBuffer = frameData.commandBuffer;
 
     resources.lightingPipeline->bind(cmdBuffer);
 

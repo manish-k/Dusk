@@ -5,6 +5,7 @@
 #include "renderer/gfx_enums.h"
 
 #include "backend/vulkan/vk.h"
+#include "backend/vulkan/vk_renderer.h"
 
 #include <string>
 #include <functional>
@@ -17,7 +18,7 @@ struct GfxBuffer;
 
 constexpr uint32_t MAX_RENDER_GRAPH_PASSES = 64u;
 
-using RecordCmdBuffFunction                = std::function<void(const FrameData&)>;
+using RecordCmdBuffFunction                = std::function<void(VkCommandBuffer cmdBuffer, const FrameData&)>;
 
 struct LoadStoreState
 {
@@ -79,6 +80,7 @@ struct RGNode
     uint32_t                             index             = 0u; // index of the pass
     RGQueueFamilyType                    targetQueueFamily = RGQueueFamilyType::Graphics;
     RecordCmdBuffFunction                recordFn          = nullptr;
+    bool                                 isFinalPass       = false;
     bool                                 isCompute         = false;
     uint64_t                             crossQueueDeps    = false; // passes with cross-queue dependecies
 
@@ -136,7 +138,7 @@ struct DebugGraph
 
     struct Batch
     {
-        DynamicArray<uint32_t> nodes = {};
+        DynamicArray<uint32_t> nodes       = {};
         uint32_t               waitValue   = 0u;
         uint32_t               signalValue = 0u;
     };
@@ -174,7 +176,7 @@ public:
      * @brief Executes the render graph for the given frame data.
      * @param frameData
      */
-    void execute(const FrameData& frameData);
+    DynamicArray<VulkanSubmitBatch> execute(const FrameData& frameData);
 
     /**
      * @brief Registers an image resource as a read dependency for the specified pass.
@@ -231,6 +233,12 @@ public:
      * @param passId Handle of the compute pass to mark.
      */
     void markAsCompute(uint32_t passId);
+
+    /**
+     * @brief Marks a pass as final, indicating presentation will happen after this pass.
+     * @param passId 
+     */
+    void markAsFinal(uint32_t passId);
 
     /**
      * @brief Configures multiview settings for a specified pass.
@@ -295,27 +303,27 @@ private:
      * @param frameData
      * @param pass
      */
-    void insertPrePassBarriers(const FrameData& frameData, const RGNode& pass) const;
+    void insertPrePassBarriers(const FrameData& frameData, const RGNode& pass, VkCommandBuffer cmdBuffer) const;
 
     /**
      * @brief Inserts barriers in command buffer for the given pass after ending the pass execution.
      * @param frameData
      * @param pass
      */
-    void insertPostPassBarriers(const FrameData& frameData, const RGNode& pass) const;
+    void insertPostPassBarriers(const FrameData& frameData, const RGNode& pass, VkCommandBuffer cmdBuffer) const;
 
     /**
      * @brief Begins or initializes a rendering pass using the provided frame data.
      * @param frameData
      * @param pass Reference to the pass node to begin the pass.
      */
-    void beginPass(const FrameData& frameData, RGNode& pass) const;
+    void beginPass(const FrameData& frameData, RGNode& pass, VkCommandBuffer cmdBuffer) const;
 
     /**
      * @brief Ends the current ongoing rendering pass.
      * @param frameData
      */
-    void endPass(const FrameData& frameData) const;
+    void endPass(const FrameData& frameData, RGNode& pass, VkCommandBuffer cmdBuffer) const;
 
     /**
      * @brief Get queue family index for the given queue family type.
@@ -325,18 +333,19 @@ private:
     uint32_t getQueueFamilyIndex(RGQueueFamilyType queueFamily) const;
 
 private:
-    VulkanContext                             m_vkContext          = {};
+    VulkanContext                             m_vkContext              = {};
 
-    DynamicArray<RGNode>                      m_passes             = {};
-    DynamicArray<uint32_t>                    m_passExecutionOrder = {};
+    DynamicArray<RGNode>                      m_passes                 = {};
+    DynamicArray<uint32_t>                    m_passExecutionOrder     = {};
+    HashMap<uint32_t, uint32_t>               m_passIdToExecutionOrder = {};
 
-    RGSubmissionOrder                         m_submissionOrder    = {};
+    RGSubmissionOrder                         m_submissionOrder        = {};
 
-    DynamicArray<uint64_t>                    m_inEdgesBitsets     = {};
-    DynamicArray<uint64_t>                    m_outEdgesBitsets    = {};
+    DynamicArray<uint64_t>                    m_inEdgesBitsets         = {};
+    DynamicArray<uint64_t>                    m_outEdgesBitsets        = {};
 
-    HashMap<uint32_t, DynamicArray<uint32_t>> m_imageVersions      = {};
-    HashMap<uint64_t, DynamicArray<uint32_t>> m_bufferVersions     = {};
+    HashMap<uint32_t, DynamicArray<uint32_t>> m_imageVersions          = {};
+    HashMap<uint64_t, DynamicArray<uint32_t>> m_bufferVersions         = {};
 
     // states for images during graph execution time
     HashMap<uint32_t, RGImageExecState>  m_imageExecStates;

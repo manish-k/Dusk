@@ -14,22 +14,21 @@
 
 namespace dusk
 {
-void recordGBufferCmds(const FrameData& frameData)
+void recordGBufferCmds(VkCommandBuffer cmdBuffer, const FrameData& frameData)
 {
     DUSK_PROFILE_FUNCTION;
 
     if (!frameData.scene) return;
 
     const Scene&    scene         = *frameData.scene;
-    VkCommandBuffer commandBuffer = frameData.commandBuffer;
     auto&           resources     = Engine::get().getRenderGraphResources();
 
-    resources.gbuffPipeline->bind(commandBuffer);
+    resources.gbuffPipeline->bind(cmdBuffer);
 
     {
-        DUSK_PROFILE_GPU_ZONE("gbuffer_bind_desc_set", commandBuffer);
+        DUSK_PROFILE_GPU_ZONE("gbuffer_bind_desc_set", cmdBuffer);
         vkCmdBindDescriptorSets(
-            commandBuffer,
+            cmdBuffer,
             VK_PIPELINE_BIND_POINT_GRAPHICS,
             resources.gbuffPipelineLayout->get(),
             0, // global desc set binding location
@@ -39,7 +38,7 @@ void recordGBufferCmds(const FrameData& frameData)
             nullptr);
 
         vkCmdBindDescriptorSets(
-            commandBuffer,
+            cmdBuffer,
             VK_PIPELINE_BIND_POINT_GRAPHICS,
             resources.gbuffPipelineLayout->get(),
             1, // material desc set binding location
@@ -49,7 +48,7 @@ void recordGBufferCmds(const FrameData& frameData)
             nullptr);
 
         vkCmdBindDescriptorSets(
-            commandBuffer,
+            cmdBuffer,
             VK_PIPELINE_BIND_POINT_GRAPHICS,
             resources.gbuffPipelineLayout->get(),
             2, // mesh instance data desc set binding location
@@ -59,7 +58,7 @@ void recordGBufferCmds(const FrameData& frameData)
             nullptr);
 
         vkCmdBindDescriptorSets(
-            commandBuffer,
+            cmdBuffer,
             VK_PIPELINE_BIND_POINT_GRAPHICS,
             resources.gbuffPipelineLayout->get(),
             3, // texture desc set binding location
@@ -74,17 +73,17 @@ void recordGBufferCmds(const FrameData& frameData)
         VkBuffer     buffers[] = { Engine::get().getVertexBuffer().vkBuffer.buffer };
         VkDeviceSize offsets[] = { 0 };
 
-        DUSK_PROFILE_GPU_ZONE("gbuffer_bind_vertex", commandBuffer);
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
+        DUSK_PROFILE_GPU_ZONE("gbuffer_bind_vertex", cmdBuffer);
+        vkCmdBindVertexBuffers(cmdBuffer, 0, 1, buffers, offsets);
 
-        vkCmdBindIndexBuffer(commandBuffer, Engine::get().getIndexBuffer().vkBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+        vkCmdBindIndexBuffer(cmdBuffer, Engine::get().getIndexBuffer().vkBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
     }
 
     GbufferPushConstant push {};
     push.globalUboIdx = frameData.frameIndex;
 
     vkCmdPushConstants(
-        commandBuffer,
+        cmdBuffer,
         resources.gbuffPipelineLayout->get(),
         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
         0,
@@ -95,10 +94,10 @@ void recordGBufferCmds(const FrameData& frameData)
     auto& currentIndirectDrawCountBuffer = resources.frameIndirectDrawCountBuffers[frameData.frameIndex];
 
     {
-        DUSK_PROFILE_GPU_ZONE("gbuffer_indirect_draw", commandBuffer);
+        DUSK_PROFILE_GPU_ZONE("gbuffer_indirect_draw", cmdBuffer);
 
         vkCmdDrawIndexedIndirectCount(
-            commandBuffer,
+            cmdBuffer,
             currentIndirectBuffer.vkBuffer.buffer,
             0,
             currentIndirectDrawCountBuffer.vkBuffer.buffer,

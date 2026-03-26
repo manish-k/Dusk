@@ -9,7 +9,7 @@
 namespace dusk
 {
 
-void dispatchGenEnvCubeMapPass(const FrameData& frameData)
+void dispatchGenEnvCubeMapPass(VkCommandBuffer cmdBuffer, const FrameData& frameData)
 {
     DUSK_PROFILE_FUNCTION;
 
@@ -19,10 +19,10 @@ void dispatchGenEnvCubeMapPass(const FrameData& frameData)
 
     auto& pipeline = env.getEnvCubeMapGenPipeline();
 
-    pipeline.bind(frameData.commandBuffer);
+    pipeline.bind(cmdBuffer);
 
     vkCmdBindDescriptorSets(
-        frameData.commandBuffer,
+        cmdBuffer,
         VK_PIPELINE_BIND_POINT_COMPUTE,
         env.getEnvCubeMapGenPipelineLayout().get(),
         0,
@@ -38,7 +38,7 @@ void dispatchGenEnvCubeMapPass(const FrameData& frameData)
     push.resolution          = cubeSize;
 
     vkCmdPushConstants(
-        frameData.commandBuffer,
+        cmdBuffer,
         env.getEnvCubeMapGenPipelineLayout().get(),
         VK_SHADER_STAGE_COMPUTE_BIT,
         0,
@@ -47,13 +47,13 @@ void dispatchGenEnvCubeMapPass(const FrameData& frameData)
 
     // dispatch compute shader with 6 workgroups, one for each cube map face
     vkCmdDispatch(
-        frameData.commandBuffer,
+        cmdBuffer,
         cubeSize / 8,
         cubeSize / 8,
         6);
 }
 
-void dispatchGenEnvIrradiancePass(const FrameData& frameData)
+void dispatchGenEnvIrradiancePass(VkCommandBuffer cmdBuffer, const FrameData& frameData)
 {
     DUSK_PROFILE_FUNCTION;
 
@@ -63,10 +63,10 @@ void dispatchGenEnvIrradiancePass(const FrameData& frameData)
 
     auto& pipeline = env.getEnvIrradianceGenPipeline();
 
-    pipeline.bind(frameData.commandBuffer);
+    pipeline.bind(cmdBuffer);
 
     vkCmdBindDescriptorSets(
-        frameData.commandBuffer,
+        cmdBuffer,
         VK_PIPELINE_BIND_POINT_COMPUTE,
         env.getEnvIrradianceGenPipelineLayout().get(),
         0,
@@ -76,7 +76,7 @@ void dispatchGenEnvIrradiancePass(const FrameData& frameData)
         nullptr);
 
     vkCmdBindDescriptorSets(
-        frameData.commandBuffer,
+        cmdBuffer,
         VK_PIPELINE_BIND_POINT_COMPUTE,
         env.getEnvIrradianceGenPipelineLayout().get(),
         1,
@@ -93,7 +93,7 @@ void dispatchGenEnvIrradiancePass(const FrameData& frameData)
     push.resolution          = cubeSize;
 
     vkCmdPushConstants(
-        frameData.commandBuffer,
+        cmdBuffer,
         env.getEnvIrradianceGenPipelineLayout().get(),
         VK_SHADER_STAGE_COMPUTE_BIT,
         0,
@@ -102,13 +102,13 @@ void dispatchGenEnvIrradiancePass(const FrameData& frameData)
 
     // dispatch compute shader with 6 workgroups, one for each cube map face
     vkCmdDispatch(
-        frameData.commandBuffer,
+        cmdBuffer,
         cubeSize / 8,
         cubeSize / 8,
         6);
 }
 
-void dispatchGenEnvPrefilteredPass(const FrameData& frameData)
+void dispatchGenEnvPrefilteredPass(VkCommandBuffer cmdBuffer, const FrameData& frameData)
 {
     DUSK_PROFILE_FUNCTION;
 
@@ -118,9 +118,9 @@ void dispatchGenEnvPrefilteredPass(const FrameData& frameData)
 
     auto& pipeline = env.getEnvPrefilteredGenPipeline();
 
-    pipeline.bind(frameData.commandBuffer);
+    pipeline.bind(cmdBuffer);
     vkCmdBindDescriptorSets(
-        frameData.commandBuffer,
+        cmdBuffer,
         VK_PIPELINE_BIND_POINT_COMPUTE,
         env.getEnvPrefilteredGenPipelineLayout().get(),
         0,
@@ -130,7 +130,7 @@ void dispatchGenEnvPrefilteredPass(const FrameData& frameData)
         nullptr);
 
     vkCmdBindDescriptorSets(
-        frameData.commandBuffer,
+        cmdBuffer,
         VK_PIPELINE_BIND_POINT_COMPUTE,
         env.getEnvPrefilteredGenPipelineLayout().get(),
         1,
@@ -153,7 +153,7 @@ void dispatchGenEnvPrefilteredPass(const FrameData& frameData)
         push.roughness = static_cast<float>(level) / static_cast<float>(numMipLevels - 1);
 
         vkCmdPushConstants(
-            frameData.commandBuffer,
+            cmdBuffer,
             env.getEnvPrefilteredGenPipelineLayout().get(),
             VK_SHADER_STAGE_COMPUTE_BIT,
             0,
@@ -162,7 +162,7 @@ void dispatchGenEnvPrefilteredPass(const FrameData& frameData)
 
         // dispatch compute shader with 6 workgroups, one for each cube map face
         vkCmdDispatch(
-            frameData.commandBuffer,
+            cmdBuffer,
             (cubeSize >> level) / 8,
             (cubeSize >> level) / 8,
             6);

@@ -11,6 +11,7 @@ namespace dusk
 class Scene;
 
 struct GfxRenderables;
+struct CommandBufferPools;
 
 struct alignas(16) GlobalUbo
 {
@@ -33,20 +34,21 @@ struct alignas(16) GlobalUbo
 
 struct FrameData
 {
-    uint32_t         frameIndex;
-    TimeStep         frameTime;
-    VkCommandBuffer  commandBuffer;
-    Scene*           scene;
-    uint32_t         width;
-    uint32_t         height;
+    uint32_t            frameIndex;
+    TimeStep            frameTime;
+    Scene*              scene;
+    uint32_t            width;
+    uint32_t            height;
 
-    GfxRenderables*  renderables;
+    CommandBufferPools* cmdBufferPools;
 
-    VkDescriptorSet& globalDescriptorSet;
-    VkDescriptorSet& textureDescriptorSet;
-    VkDescriptorSet& lightsDescriptorSet;
-    VkDescriptorSet& materialDescriptorSet;
-    VkDescriptorSet& meshDataDescriptorSet;
-    VkDescriptorSet& renderablesDescriptorSet;
+    GfxRenderables*     renderables;
+
+    VkDescriptorSet&    globalDescriptorSet;
+    VkDescriptorSet&    textureDescriptorSet;
+    VkDescriptorSet&    lightsDescriptorSet;
+    VkDescriptorSet&    materialDescriptorSet;
+    VkDescriptorSet&    meshDataDescriptorSet;
+    VkDescriptorSet&    renderablesDescriptorSet;
 };
 } // namespace dusk

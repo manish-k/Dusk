@@ -53,10 +53,9 @@ public:
 
     /**
      * @brief Initialize the StatsRecorder
-     * @param total frames in flight
      * @return true if initialization is successful, false otherwise
      */
-    bool init(uint32_t maxFramesInFlightCount);
+    bool init();
 
     /**
      * @brief cleanup vulkan resources
@@ -133,7 +132,6 @@ private:
     Array<FrameStats, MAX_FRAMES_HISTORY> m_frameStatsHistory      = { {} };
 
     uint32_t                              m_frameCounter           = 0;
-    uint32_t                              m_maxFramesInFlightCount = 0;
 
     VkDevice                              m_device                 = VK_NULL_HANDLE;
     VkPhysicalDevice                      m_physicalDevice         = VK_NULL_HANDLE;

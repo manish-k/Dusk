@@ -19,17 +19,15 @@ StatsRecorder::StatsRecorder()
     s_instance = this;
 }
 
-bool StatsRecorder::init(uint32_t maxFramesInFlightCount)
+bool StatsRecorder::init()
 {
-    m_maxFramesInFlightCount = maxFramesInFlightCount;
-
     m_frameStatsHistory.fill({});
 
-    for (uint32_t i = 0; i < maxFramesInFlightCount; ++i)
+    for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
     {
         VkQueryPoolCreateInfo queryPoolCreateInfo { VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO };
         queryPoolCreateInfo.queryType  = VK_QUERY_TYPE_TIMESTAMP;
-        queryPoolCreateInfo.queryCount = MAX_QUERIES_PER_FRAME * maxFramesInFlightCount;
+        queryPoolCreateInfo.queryCount = MAX_QUERIES_PER_FRAME * MAX_FRAMES_IN_FLIGHT;
         queryPoolCreateInfo.flags      = 0;
 
         VulkanResult result            = vkCreateQueryPool(m_device, &queryPoolCreateInfo, nullptr, &m_queryPool);
@@ -61,10 +59,10 @@ void StatsRecorder::retrieveQueryStats()
 {
     uint64_t queryResults[MAX_QUERIES_PER_FRAME] = {};
 
-    if (m_frameCounter >= m_maxFramesInFlightCount)
+    if (m_frameCounter >= MAX_FRAMES_IN_FLIGHT)
     {
-        uint32_t frameToRetrieve = (m_frameCounter - m_maxFramesInFlightCount);
-        uint32_t queryIndex      = (frameToRetrieve % m_maxFramesInFlightCount) * MAX_QUERIES_PER_FRAME;
+        uint32_t frameToRetrieve = (m_frameCounter - MAX_FRAMES_IN_FLIGHT);
+        uint32_t queryIndex      = (frameToRetrieve % MAX_FRAMES_IN_FLIGHT) * MAX_QUERIES_PER_FRAME;
 
         // Retrieve query results for the frame that has completed GPU execution
         VkResult result = vkGetQueryPoolResults(
@@ -106,7 +104,7 @@ void StatsRecorder::retrieveQueryStats()
 
 void StatsRecorder::beginFrame(VkCommandBuffer cmdBuffer)
 {
-    uint32_t queryIndex = (m_frameCounter % m_maxFramesInFlightCount) * MAX_QUERIES_PER_FRAME;
+    uint32_t queryIndex = (m_frameCounter % MAX_FRAMES_IN_FLIGHT) * MAX_QUERIES_PER_FRAME;
 
     vkCmdResetQueryPool(
         cmdBuffer,
@@ -134,7 +132,7 @@ void StatsRecorder::beginFrame(VkCommandBuffer cmdBuffer)
 
 void StatsRecorder::endFrame(VkCommandBuffer cmdBuffer)
 {
-    uint32_t queryIndex = (m_frameCounter % m_maxFramesInFlightCount) * MAX_QUERIES_PER_FRAME;
+    uint32_t queryIndex = (m_frameCounter % MAX_FRAMES_IN_FLIGHT) * MAX_QUERIES_PER_FRAME;
 
     vkCmdWriteTimestamp(
         cmdBuffer,
@@ -146,7 +144,7 @@ void StatsRecorder::endFrame(VkCommandBuffer cmdBuffer)
     if (m_frameCounter > 0)
     {
         uint32_t    currentFrameIndex         = m_frameCounter % MAX_FRAMES_HISTORY;
-        uint32_t    lastRecordedGPUFrameIndex = (m_frameCounter + MAX_FRAMES_HISTORY - m_maxFramesInFlightCount) % MAX_FRAMES_HISTORY;
+        uint32_t    lastRecordedGPUFrameIndex = (m_frameCounter + MAX_FRAMES_HISTORY - MAX_FRAMES_IN_FLIGHT) % MAX_FRAMES_HISTORY;
 
         const auto& currentFrameStats         = m_frameStatsHistory[currentFrameIndex];
         const auto& lastRecordedGPUFrameStats = m_frameStatsHistory[lastRecordedGPUFrameIndex];
@@ -184,7 +182,7 @@ void StatsRecorder::beginPass(
     const std::string& passName,
     uint32_t           passOrderedIndex)
 {
-    uint32_t queryIndex = (m_frameCounter % m_maxFramesInFlightCount) * MAX_QUERIES_PER_FRAME + 2 + passOrderedIndex * 2;
+    uint32_t queryIndex = (m_frameCounter % MAX_FRAMES_IN_FLIGHT) * MAX_QUERIES_PER_FRAME + 2 + passOrderedIndex * 2;
 
     vkCmdWriteTimestamp(
         cmdBuffer,
@@ -197,7 +195,7 @@ void StatsRecorder::beginPass(
 
 void StatsRecorder::endPass(VkCommandBuffer cmdBuffer, uint32_t passOrderedIndex)
 {
-    uint32_t queryIndex = (m_frameCounter % m_maxFramesInFlightCount) * MAX_QUERIES_PER_FRAME + 2 + passOrderedIndex * 2;
+    uint32_t queryIndex = (m_frameCounter % MAX_FRAMES_IN_FLIGHT) * MAX_QUERIES_PER_FRAME + 2 + passOrderedIndex * 2;
 
     vkCmdWriteTimestamp(
         cmdBuffer,

@@ -85,7 +85,7 @@ bool Engine::start(Shared<Application> app)
     }
 
     m_statsRecorder = createUnique<StatsRecorder>();
-    if (!m_statsRecorder->init(MAX_FRAMES_IN_FLIGHT))
+    if (!m_statsRecorder->init())
     {
         DUSK_ERROR("Stats recorder initialization failed");
         return false;
@@ -190,9 +190,14 @@ void Engine::onUpdate(TimeStep dt)
     const std::string sectionName       = std::format("frame_in_flight_{}", currentFrameIndex);
     ZoneName(sectionName.c_str(), sectionName.size());
 
-    if (VkCommandBuffer commandBuffer = m_renderer->beginFrame())
+    if (auto commandBufferPools = m_renderer->beginFrame();
+        commandBufferPools.graphicsPool != nullptr && commandBufferPools.computePool != nullptr)
     {
-        m_statsRecorder->beginFrame(commandBuffer);
+        VkCommandBuffer statsCommandBuffer = vulkan::getCmdBuffer(commandBufferPools.graphicsPool);
+
+        vulkan::beginRecording(statsCommandBuffer);
+
+        m_statsRecorder->beginFrame(statsCommandBuffer);
 
         m_statsRecorder->recordCpuFrameTime(m_deltaTime);
 
@@ -201,10 +206,10 @@ void Engine::onUpdate(TimeStep dt)
         FrameData frameData {
             currentFrameIndex,
             dt,
-            commandBuffer,
             m_currentScene,
             extent.width,
             extent.height,
+            &commandBufferPools,
             &m_frameRenderables[currentFrameIndex],
             m_globalDescriptorSet->set,
             m_textureDB->getTexturesDescriptorSet().set,
@@ -272,13 +277,24 @@ void Engine::onUpdate(TimeStep dt)
             updateMaterialsBuffer(m_currentScene->getMaterials());
         }
 
-        renderFrame(frameData);
+        auto batches = renderFrame(frameData);
+
+        // add stats recording batch in the front
+        VulkanSubmitBatch statsBatch {};
+        statsBatch.recordedBuffer       = statsCommandBuffer;
+        statsBatch.semaphoreWaitValue   = 0;
+        statsBatch.semaphoreSignalValue = 0;
+        statsBatch.targetQueueFamily    = m_gfxDevice->getSharedVulkanContext().graphicsQueueFamilyIndex;
+
+        batches.insert(batches.begin(), statsBatch);
 
         const auto* gpuAllocator = m_gfxDevice->getGPUAllocator();
         m_statsRecorder->recordGpuMemoryUsage(gpuAllocator);
-        m_statsRecorder->endFrame(commandBuffer);
+        m_statsRecorder->endFrame(statsCommandBuffer);
 
-        m_renderer->endFrame();
+        vulkan::endRecording(statsCommandBuffer);
+
+        m_renderer->endFrame(batches);
 
         m_frameRenderables[currentFrameIndex].modelMatrices.clear();
         m_frameRenderables[currentFrameIndex].normalMatrices.clear();
@@ -374,7 +390,7 @@ void Engine::loadScene(Scene* scene)
     m_lightsSystem->registerAllLights(*scene);
 }
 
-void Engine::renderFrame(FrameData& frameData)
+DynamicArray<VulkanSubmitBatch> Engine::renderFrame(FrameData& frameData)
 {
     DUSK_PROFILE_FUNCTION;
 
@@ -491,20 +507,23 @@ void Engine::renderFrame(FrameData& frameData)
     auto presentPassId = renderGraph.addPass("present_pass", RGQueueFamilyType::Graphics, recordPresentationCmds);
     renderGraph.addReadResource(presentPassId, toneMappedOutput, tonemapOutputVer);
     renderGraph.addWriteResource(presentPassId, swapImage);
+    renderGraph.markAsFinal(presentPassId);
 
     // execute render graph
-    renderGraph.execute(frameData);
+    auto batches = renderGraph.execute(frameData);
 
     if (m_dumpFrameRenderGraph)
     {
         renderGraph.dumpDebugGraph("render_graph.dot");
         m_dumpFrameRenderGraph = false;
     }
+
+    return batches;
 }
 
 bool Engine::setupGlobals()
 {
-    VulkanContext ctx            = VkGfxDevice::getSharedVulkanContext();
+    VulkanContext ctx = VkGfxDevice::getSharedVulkanContext();
 
     // setup 256mb vertex buffer * 128mb index buffer
     m_vertexBuffer.init(
@@ -805,8 +824,8 @@ void Engine::prepareRenderGraphResources()
 {
     DUSK_PROFILE_FUNCTION;
 
-    auto&    ctx            = VkGfxDevice::getSharedVulkanContext();
-    auto     extent         = m_renderer->getSwapChain().getCurrentExtent();
+    auto& ctx    = VkGfxDevice::getSharedVulkanContext();
+    auto  extent = m_renderer->getSwapChain().getCurrentExtent();
 
     // Indirect draw resources
     m_rgResources.indirectDrawDescriptorPool = VkGfxDescriptorPool::Builder(ctx)

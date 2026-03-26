@@ -2,6 +2,8 @@
 
 #include "dusk.h"
 
+#include <volk.h>
+
 namespace dusk
 {
 struct FrameData;
@@ -14,7 +16,7 @@ struct GbufferPushConstant
     uint32_t globalUboIdx;
 };
 
-void recordGBufferCmds(const FrameData& frameData);
+void recordGBufferCmds(VkCommandBuffer cmdBuffer, const FrameData& frameData);
 
 //////////////////////////////////////////////////////
 // Lighting Pass
@@ -34,7 +36,7 @@ struct LightingPushConstant
     int32_t  dirShadowMapTextureIdx = -1;
 };
 
-void recordLightingCmds(const FrameData& frameData);
+void recordLightingCmds(VkCommandBuffer cmdBuffer, const FrameData& frameData);
 
 //////////////////////////////////////////////////////
 // Skybox Pass
@@ -44,7 +46,7 @@ struct SkyBoxPushConstant
     int32_t  skyColorTextureIdx = -1;
 };
 
-void recordSkyBoxCmds(const FrameData& frameData);
+void recordSkyBoxCmds(VkCommandBuffer cmdBuffer, const FrameData& frameData);
 
 //////////////////////////////////////////////////////
 // Tonemap Pass
@@ -55,7 +57,7 @@ struct ToneMapPushConstant
     float   exposure        = 1.f;
 };
 
-void recordTonemapCmds(const FrameData& frameData);
+void recordTonemapCmds(VkCommandBuffer cmdBuffer, const FrameData& frameData);
 
 //////////////////////////////////////////////////////
 // Presentation Pass
@@ -65,12 +67,12 @@ struct PresentationPushConstant
     int32_t inputTextureIdx = -1;
 };
 
-void recordPresentationCmds(const FrameData& frameData);
+void recordPresentationCmds(VkCommandBuffer cmdBuffer, const FrameData& frameData);
 
 //////////////////////////////////////////////////////
 // Shadow Pass
 
-void recordShadow2DMapsCmds(const FrameData& frameData);
+void recordShadow2DMapsCmds(VkCommandBuffer cmdBuffer, const FrameData& frameData);
 
 //////////////////////////////////////////////////////
 // Cull & LOD Pass
@@ -81,21 +83,21 @@ struct CullLodPushConstant
     uint32_t objectCount;
 };
 
-void dispatchIndirectDrawCompute(const FrameData& frameData);
+void dispatchIndirectDrawCompute(VkCommandBuffer cmdBuffer, const FrameData& frameData);
 
 //////////////////////////////////////////////////////
 // Env cube map generation passes
 
-void dispatchGenEnvCubeMapCompute(const FrameData& frameData);
+void dispatchGenEnvCubeMapCompute(VkCommandBuffer cmdBuffer, const FrameData& frameData);
 
 //////////////////////////////////////////////////////
 // Env irradiance cube map generation passes
 
-void dispatchGenEnvIrradianceCubeMapCompute(const FrameData& frameData);
+void dispatchGenEnvIrradianceCubeMapCompute(VkCommandBuffer cmdBuffer, const FrameData& frameData);
 
 //////////////////////////////////////////////////////
 // Prefiltered Env cube map generation passes
 
-void dispatchGenEnvPrefilteredCubeMapCompute(const FrameData& frameData);
+void dispatchGenEnvPrefilteredCubeMapCompute(VkCommandBuffer cmdBuffer, const FrameData& frameData);
 
 } // namespace dusk

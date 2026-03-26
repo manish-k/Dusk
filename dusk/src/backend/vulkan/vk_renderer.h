@@ -1,15 +1,22 @@
 #pragma once
 
 #include "dusk.h"
-#include "vk_device.h"
 #include "vk_types.h"
 #include "vk_swapchain.h"
+#include "vk_cmdbuffer_pool.h"
 #include "renderer/renderer.h"
 #include "platform/glfw_vulkan_window.h"
 #include "renderer/texture.h"
 
 namespace dusk
 {
+
+struct CommandBufferPools
+{
+    VulkanCmdBufferPool* graphicsPool;
+    VulkanCmdBufferPool* computePool;
+};
+
 class VulkanRenderer final : public Renderer
 {
 public:
@@ -20,8 +27,10 @@ public:
     void                           cleanup() override;
 
     VkCommandBuffer                getCurrentCommandBuffer() const;
-    VkCommandBuffer                beginFrame();
-    Error                          endFrame();
+
+    CommandBufferPools             beginFrame();
+    Error                          endFrame(DynamicArray<VulkanSubmitBatch>& batches);
+
     void                           deviceWaitIdle();
 
     VkGfxSwapChain&                getSwapChain() const { return *m_swapChain; }

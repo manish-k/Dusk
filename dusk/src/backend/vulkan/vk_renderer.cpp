@@ -2,8 +2,8 @@
 
 #include "stats_recorder.h"
 
+#include "vk_device.h"
 #include "vk_renderer.h"
-#include "vk_cmdbuffer_pool.h"
 #include "debug/profiler.h"
 
 #define VOLK_IMPLEMENTATION
@@ -55,7 +55,7 @@ VkCommandBuffer VulkanRenderer::getCurrentCommandBuffer() const
     return m_commandBuffers[m_currentFrameIndex];
 }
 
-VkCommandBuffer VulkanRenderer::beginFrame()
+CommandBufferPools VulkanRenderer::beginFrame()
 {
     DUSK_PROFILE_FUNCTION;
 
@@ -71,13 +71,13 @@ VkCommandBuffer VulkanRenderer::beginFrame()
     {
         recreateSwapChain();
         recreateCommandBuffers();
-        return VK_NULL_HANDLE;
+        return { nullptr, nullptr };
     }
 
     if (result.hasError() && result.vkResult != VK_SUBOPTIMAL_KHR)
     {
         DUSK_ERROR("beginFrame Failed to acquire swap chain image! {}", result.toString());
-        return VK_NULL_HANDLE;
+        return { nullptr, nullptr };
     }
 
     // collect stats from N - MAX_FRAMES_IN_FLIGHT frames ago, as those should have finished GPU execution by now
@@ -102,10 +102,10 @@ VkCommandBuffer VulkanRenderer::beginFrame()
     TracyVkCollect(VkGfxDevice::getProfilerContext(), commandBuffer);
 #endif
 
-    return commandBuffer;
+    return { &m_graphicCommandBufferPools[m_currentFrameIndex], &m_computeCommandBufferPools[m_currentFrameIndex] };
 }
 
-Error VulkanRenderer::endFrame()
+Error VulkanRenderer::endFrame(DynamicArray<VulkanSubmitBatch>& batches)
 {
     DUSK_PROFILE_FUNCTION;
 
@@ -140,7 +140,7 @@ Error VulkanRenderer::endFrame()
         return result.getErrorId();
     }
 
-    result = m_swapChain->submitCommandBuffers(&commandBuffer, m_currentFrameIndex, m_currentImageIndex);
+    result = m_swapChain->submitCommandBuffers(batches, m_currentFrameIndex, m_currentImageIndex);
 
     if (result.vkResult == VK_ERROR_OUT_OF_DATE_KHR || result.vkResult == VK_SUBOPTIMAL_KHR || m_window.isResized())
     {

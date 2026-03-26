@@ -41,6 +41,15 @@ struct VulkanCmdBufferPool
     uint32_t                      nextAvailableIndex = 0u;
 };
 
+struct VulkanSubmitBatch
+{
+    VkCommandBuffer recordedBuffer;
+    uint32_t        targetQueueFamily;
+    uint32_t        semaphoreWaitValue;
+    uint32_t        semaphoreSignalValue;
+    bool            isPresentBatch = false; // for sync with presentation engine
+};
+
 struct VulkanContext
 {
     VkInstance                 vulkanInstance;

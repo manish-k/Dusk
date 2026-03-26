@@ -24,7 +24,6 @@ class Event;
 class EditorUI;
 class Scene;
 class Environment;
-class GridRenderSystem;
 class LightsSystem;
 class TextureDB;
 class VulkanRenderer;
@@ -113,33 +112,33 @@ public:
 
     CLASS_UNCOPYABLE(Engine)
 
-    bool                  start(Shared<Application> app);
-    void                  run();
-    void                  stop();
-    void                  shutdown();
-    void                  onUpdate(TimeStep dt);
-    void                  onEvent(Event& ev);
-    void                  loadScene(Scene* scene);
-    void                  renderFrame(FrameData& frameData);
+    bool                            start(Shared<Application> app);
+    void                            run();
+    void                            stop();
+    void                            shutdown();
+    void                            onUpdate(TimeStep dt);
+    void                            onEvent(Event& ev);
+    void                            loadScene(Scene* scene);
+    DynamicArray<VulkanSubmitBatch> renderFrame(FrameData& frameData);
 
-    static Engine&        get() { return *s_instance; }
-    static RenderAPI::API getRenderAPI() { return s_instance->m_config.renderAPI; }
+    static Engine&                  get() { return *s_instance; }
+    static RenderAPI::API           getRenderAPI() { return s_instance->m_config.renderAPI; }
 
-    VulkanRenderer&       getRenderer() { return *m_renderer; }
-    VkGfxDevice&          getGfxDevice() { return *m_gfxDevice; }
-    EditorUI&             getEditorUI() { return *m_editorUI; }
+    VulkanRenderer&                 getRenderer() { return *m_renderer; }
+    VkGfxDevice&                    getGfxDevice() { return *m_gfxDevice; }
+    EditorUI&                       getEditorUI() { return *m_editorUI; }
 
-    bool                  setupGlobals();
-    void                  cleanupGlobals();
+    bool                            setupGlobals();
+    void                            cleanupGlobals();
 
-    void                  registerMaterials(DynamicArray<Material>& materials);
+    void                            registerMaterials(DynamicArray<Material>& materials);
 
-    void                  updateMaterialsBuffer(DynamicArray<Material>& materials);
-    void                  uploadVertexAndIndexBuffers(
-                         DynamicArray<Vertex>&   vertices,
-                         DynamicArray<uint32_t>& indices,
-                         int*                    outVertexOffset,
-                         uint32_t*               firstIndex);
+    void                            updateMaterialsBuffer(DynamicArray<Material>& materials);
+    void                            uploadVertexAndIndexBuffers(
+                                   DynamicArray<Vertex>&   vertices,
+                                   DynamicArray<uint32_t>& indices,
+                                   int*                    outVertexOffset,
+                                   uint32_t*               firstIndex);
 
     TimeStep              getFrameDelta() const { return m_deltaTime; };
 

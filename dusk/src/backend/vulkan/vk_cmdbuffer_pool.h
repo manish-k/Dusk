@@ -70,7 +70,7 @@ inline VulkanResult allocateMoreCmdBuffers(VulkanCmdBufferPool* pool, uint32_t n
     return result;
 }
 
-inline VkCommandBuffer getNextCmdBuffer(VulkanCmdBufferPool* pool)
+inline VkCommandBuffer getCmdBuffer(VulkanCmdBufferPool* pool)
 {
     if (pool->nextAvailableIndex >= pool->commandBuffers.size())
     {
@@ -87,6 +87,18 @@ inline void destroyCmdBufferPool(VulkanCmdBufferPool* pool)
 {
     vkFreeCommandBuffers(pool->device, pool->commandPool, static_cast<uint32_t>(pool->commandBuffers.size()), pool->commandBuffers.data());
     vkDestroyCommandPool(pool->device, pool->commandPool, nullptr);
+}
+
+inline VkResult beginRecording(VkCommandBuffer cmdBuffer, VkCommandBufferUsageFlags usageFlags = 0)
+{
+    VkCommandBufferBeginInfo beginInfo { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
+    beginInfo.flags = usageFlags;
+    return vkBeginCommandBuffer(cmdBuffer, &beginInfo);
+}
+
+inline VkResult endRecording(VkCommandBuffer cmdBuffer)
+{
+    return vkEndCommandBuffer(cmdBuffer);
 }
 
 }; // namespace vulkan

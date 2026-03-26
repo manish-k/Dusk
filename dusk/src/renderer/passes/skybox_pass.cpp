@@ -10,7 +10,7 @@
 
 namespace dusk
 {
-void recordSkyBoxCmds(const FrameData& frameData)
+void recordSkyBoxCmds(VkCommandBuffer cmdBuffer, const FrameData& frameData)
 
 {
     DUSK_PROFILE_FUNCTION;
@@ -22,10 +22,10 @@ void recordSkyBoxCmds(const FrameData& frameData)
     Scene& scene       = *frameData.scene;
     auto&  environment = Engine::get().getEnvironment();
 
-    environment.getSkyRenderPipeline().bind(frameData.commandBuffer);
+    environment.getSkyRenderPipeline().bind(cmdBuffer);
 
     vkCmdBindDescriptorSets(
-        frameData.commandBuffer,
+        cmdBuffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
         environment.getSkyRenderPipelineLayout().get(),
         0,
@@ -35,7 +35,7 @@ void recordSkyBoxCmds(const FrameData& frameData)
         nullptr);
 
     vkCmdBindDescriptorSets(
-        frameData.commandBuffer,
+        cmdBuffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
         environment.getSkyRenderPipelineLayout().get(),
         1,
@@ -49,14 +49,14 @@ void recordSkyBoxCmds(const FrameData& frameData)
     push.skyColorTextureIdx = environment.getSkyTextureId();
 
     vkCmdPushConstants(
-        frameData.commandBuffer,
+        cmdBuffer,
         environment.getSkyRenderPipelineLayout().get(),
         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
         0,
         sizeof(SkyBoxPushConstant),
         &push);
 
-    vkCmdDraw(frameData.commandBuffer, 36, 1, 0, 0);
+    vkCmdDraw(cmdBuffer, 36, 1, 0, 0);
 }
 
 } // namespace dusk

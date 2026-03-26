@@ -9,7 +9,7 @@
 
 namespace dusk
 {
-void recordTonemapCmds(const FrameData& frameData)
+void recordTonemapCmds(VkCommandBuffer cmdBuffer, const FrameData& frameData)
 {
     DUSK_PROFILE_FUNCTION;
 
@@ -17,10 +17,10 @@ void recordTonemapCmds(const FrameData& frameData)
 
     const auto& resources = Engine::get().getRenderGraphResources();
 
-    resources.toneMapPipeline->bind(frameData.commandBuffer);
+    resources.toneMapPipeline->bind(cmdBuffer);
 
     vkCmdBindDescriptorSets(
-        frameData.commandBuffer,
+        cmdBuffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
         resources.toneMapPipelineLayout->get(),
         0,
@@ -33,14 +33,14 @@ void recordTonemapCmds(const FrameData& frameData)
     push.inputTextureIdx = resources.lightingRenderTextureId;
 
     vkCmdPushConstants(
-        frameData.commandBuffer,
+        cmdBuffer,
         resources.toneMapPipelineLayout->get(),
         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
         0,
         sizeof(ToneMapPushConstant),
         &push);
 
-    vkCmdDraw(frameData.commandBuffer, 3, 1, 0, 0);
+    vkCmdDraw(cmdBuffer, 3, 1, 0, 0);
 
     return;
 }

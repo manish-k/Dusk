@@ -12,21 +12,20 @@
 
 namespace dusk
 {
-void recordShadow2DMapsCmds(const FrameData& frameData)
+void recordShadow2DMapsCmds(VkCommandBuffer cmdBuffer, const FrameData& frameData)
 {
     DUSK_PROFILE_FUNCTION;
 
     if (!frameData.scene) return;
 
     Scene&          scene         = *frameData.scene;
-    VkCommandBuffer commandBuffer = frameData.commandBuffer;
 
     auto&           resources     = Engine::get().getRenderGraphResources();
-    resources.shadow2DMapPipeline->bind(commandBuffer);
+    resources.shadow2DMapPipeline->bind(cmdBuffer);
 
     // renderable list descriptor set
     vkCmdBindDescriptorSets(
-        commandBuffer,
+        cmdBuffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
         resources.shadow2DMapPipelineLayout->get(),
         0, // renderable desc set binding location
@@ -37,7 +36,7 @@ void recordShadow2DMapsCmds(const FrameData& frameData)
 
     // lights descriptor set
     vkCmdBindDescriptorSets(
-        commandBuffer,
+        cmdBuffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
         resources.shadow2DMapPipelineLayout->get(),
         1, // binding location
@@ -53,8 +52,8 @@ void recordShadow2DMapsCmds(const FrameData& frameData)
         VkBuffer     buffers[] = { Engine::get().getVertexBuffer().vkBuffer.buffer };
         VkDeviceSize offsets[] = { 0 };
 
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
-        vkCmdBindIndexBuffer(commandBuffer, Engine::get().getIndexBuffer().vkBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+        vkCmdBindVertexBuffers(cmdBuffer, 0, 1, buffers, offsets);
+        vkCmdBindIndexBuffer(cmdBuffer, Engine::get().getIndexBuffer().vkBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
     }
 
     GfxBuffer& frameIndirectBuffer = resources.frameIndirectDrawCommandsBuffers[frameData.frameIndex];
@@ -107,7 +106,7 @@ void recordShadow2DMapsCmds(const FrameData& frameData)
         DUSK_PROFILE_SECTION("shadow_map_draw");
 
         vkCmdDrawIndexedIndirect(
-            commandBuffer,
+            cmdBuffer,
             frameIndirectBuffer.vkBuffer.buffer,
             MAX_RENDERABLES_COUNT * sizeof(GfxIndexedIndirectDrawCommand),
             totalInstnaces,

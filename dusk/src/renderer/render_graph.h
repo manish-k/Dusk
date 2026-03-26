@@ -175,6 +175,7 @@ public:
     /**
      * @brief Executes the render graph for the given frame data.
      * @param frameData
+     * @return Array of VUlkanSubmitBatch
      */
     DynamicArray<VulkanSubmitBatch> execute(const FrameData& frameData);
 
@@ -236,7 +237,7 @@ public:
 
     /**
      * @brief Marks a pass as final, indicating presentation will happen after this pass.
-     * @param passId 
+     * @param passId
      */
     void markAsFinal(uint32_t passId);
 

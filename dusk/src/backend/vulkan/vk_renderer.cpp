@@ -49,12 +49,6 @@ void VulkanRenderer::cleanup()
     m_swapChain->destroy();
 }
 
-VkCommandBuffer VulkanRenderer::getCurrentCommandBuffer() const
-{
-    DASSERT(m_isFrameStarted, "Cannot get command buffer when frame not in progress");
-    return m_commandBuffers[m_currentFrameIndex];
-}
-
 CommandBufferPools VulkanRenderer::beginFrame()
 {
     DUSK_PROFILE_FUNCTION;
@@ -83,24 +77,7 @@ CommandBufferPools VulkanRenderer::beginFrame()
     // collect stats from N - MAX_FRAMES_IN_FLIGHT frames ago, as those should have finished GPU execution by now
     StatsRecorder::get()->retrieveQueryStats();
 
-    m_isFrameStarted              = true;
-    VkCommandBuffer commandBuffer = getCurrentCommandBuffer();
-
-    // start recording command buffer
-    VkCommandBufferBeginInfo beginInfo {};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-
-    result          = vkBeginCommandBuffer(commandBuffer, &beginInfo);
-
-    if (result.hasError())
-    {
-        DUSK_ERROR("beginFrame Failed to begin recording command buffer! {}", result.toString());
-    }
-
-    // profiler stuff
-#ifdef DUSK_ENABLE_PROFILING
-    TracyVkCollect(VkGfxDevice::getProfilerContext(), commandBuffer);
-#endif
+    m_isFrameStarted = true;
 
     return { &m_graphicCommandBufferPools[m_currentFrameIndex], &m_computeCommandBufferPools[m_currentFrameIndex] };
 }
@@ -110,37 +87,8 @@ Error VulkanRenderer::endFrame(DynamicArray<VulkanSubmitBatch>& batches)
     DUSK_PROFILE_FUNCTION;
 
     DASSERT(m_isFrameStarted, "Can't call endFrame while frame is not in progress");
-    VkCommandBuffer commandBuffer = getCurrentCommandBuffer();
 
-    // dynamic rendering is being used so transitioning image layout for presentation.
-    VkImageMemoryBarrier imageBarrier { VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER };
-    imageBarrier.srcAccessMask    = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-    imageBarrier.oldLayout        = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    imageBarrier.newLayout        = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-    imageBarrier.image            = m_swapChain->getImage(m_currentImageIndex);
-    imageBarrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
-
-    vkCmdPipelineBarrier(
-        commandBuffer,
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, // srcStageMask
-        VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,          // dstStageMask
-        0,
-        0,
-        nullptr,
-        0,
-        nullptr,
-        1,
-        &imageBarrier);
-
-    // finish recording command buffer
-    VulkanResult result = vkEndCommandBuffer(commandBuffer);
-    if (result.hasError())
-    {
-        DUSK_ERROR("endFrame failed to record command buffer! {}", result.toString());
-        return result.getErrorId();
-    }
-
-    result = m_swapChain->submitCommandBuffers(batches, m_currentFrameIndex, m_currentImageIndex);
+    VulkanResult result = m_swapChain->submitCommandBuffers(batches, m_currentFrameIndex, m_currentImageIndex);
 
     if (result.vkResult == VK_ERROR_OUT_OF_DATE_KHR || result.vkResult == VK_SUBOPTIMAL_KHR || m_window.isResized())
     {
@@ -205,34 +153,6 @@ Error VulkanRenderer::createCommandBuffers()
 {
     auto& context = VkGfxDevice::getSharedVulkanContext();
 
-    m_commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-
-    VkCommandBufferAllocateInfo allocInfo {};
-    allocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandPool        = context.commandPool;
-    allocInfo.commandBufferCount = static_cast<uint32_t>(m_commandBuffers.size());
-
-    // allocate command buffers for each swapchain image
-    VulkanResult result = vkAllocateCommandBuffers(context.device, &allocInfo, m_commandBuffers.data());
-
-    if (result.hasError())
-    {
-        DUSK_ERROR("Unable to allocate command buffers {}", result.toString());
-        return result.getErrorId();
-    }
-
-    for (uint32_t i = 0; i < m_commandBuffers.size(); ++i)
-    {
-#ifdef VK_RENDERER_DEBUG
-        vkdebug::setObjectName(
-            context.device,
-            VK_OBJECT_TYPE_COMMAND_BUFFER,
-            (uint64_t)m_commandBuffers[i],
-            "renderer_cmd_buff");
-#endif // VK_RENDERER_DEBUG
-    }
-
     m_graphicCommandBufferPools.resize(MAX_FRAMES_IN_FLIGHT);
     m_computeCommandBufferPools.resize(MAX_FRAMES_IN_FLIGHT);
 
@@ -251,8 +171,6 @@ Error VulkanRenderer::createCommandBuffers()
             &m_computeCommandBufferPools[i]);
     }
 
-    DUSK_INFO("Command buffers created = {}", m_commandBuffers.size());
-
     Error err = createSecondaryCmdPoolsAndBuffers();
     if (err != Error::Ok) return err;
 
@@ -262,9 +180,6 @@ Error VulkanRenderer::createCommandBuffers()
 void VulkanRenderer::freeCommandBuffers()
 {
     auto& context = VkGfxDevice::getSharedVulkanContext();
-    vkFreeCommandBuffers(context.device, context.commandPool, static_cast<uint32_t>(m_commandBuffers.size()), m_commandBuffers.data());
-
-    m_commandBuffers.clear();
 
     for (uint32_t i = 0u; i < MAX_FRAMES_IN_FLIGHT; ++i)
     {

@@ -26,8 +26,6 @@ public:
     bool                           init() override;
     void                           cleanup() override;
 
-    VkCommandBuffer                getCurrentCommandBuffer() const;
-
     CommandBufferPools             beginFrame();
     Error                          endFrame(DynamicArray<VulkanSubmitBatch>& batches);
 
@@ -54,13 +52,12 @@ private:
     void  freeSecondaryCmdPoolsAndBuffers();
 
 private:
-    Unique<VkGfxSwapChain>        m_swapChain = nullptr;
-    GLFWVulkanWindow&             m_window;
+    Unique<VkGfxSwapChain>                      m_swapChain = nullptr;
+    GLFWVulkanWindow&                           m_window;
 
-    DynamicArray<VkCommandBuffer> m_commandBuffers;
-    DynamicArray<VkCommandPool>   m_secondaryCmdPools {};
-    // TODO: currently 1 buff per frame per secondary pool
-    DynamicArray<DynamicArray<VkCommandBuffer>> m_secondaryCmdBuffers {};
+    DynamicArray<VkCommandPool>                 m_secondaryCmdPools         = {};
+
+    DynamicArray<DynamicArray<VkCommandBuffer>> m_secondaryCmdBuffers       = {}; // TODO: currently 1 buff per frame per secondary pool
 
     DynamicArray<VulkanCmdBufferPool>           m_graphicCommandBufferPools = {};
     DynamicArray<VulkanCmdBufferPool>           m_computeCommandBufferPools = {};

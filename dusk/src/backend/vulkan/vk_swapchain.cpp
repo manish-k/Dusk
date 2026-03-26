@@ -246,7 +246,7 @@ Error VkGfxSwapChain::createSwapChain(const VkGfxSwapChainParams& params)
 
     if (m_oldSwapChain != nullptr)
     {
-        createInfo.oldSwapchain = m_oldSwapChain->getSwapChain();
+        createInfo.oldSwapchain = m_oldSwapChain->getVkSwapChain();
     }
 
     // create swapchain now

@@ -24,7 +24,7 @@ public:
         uint32_t                         frameIndex,
         uint32_t                         imageIndex);
 
-    VkSwapchainKHR getSwapChain() const { return m_swapChain; }
+    VkSwapchainKHR getVkSwapChain() const { return m_swapChain; }
     uint32_t       getImagesCount() const { return m_imagesCount; }
     VkExtent2D     getCurrentExtent() const { return m_currentExtent; }
     VkImageView    getImageView(uint32_t imageIndex) { return m_swapChainImageViews[imageIndex]; }

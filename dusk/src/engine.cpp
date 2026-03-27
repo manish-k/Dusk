@@ -316,6 +316,11 @@ void Engine::onEvent(Event& ev)
                 m_dumpFrameRenderGraph = true;
             }
 
+            if (ev.getKeyCode() == Key::F7)
+            {
+                m_statsRecorder->dumpGpuFrameTimeHistory("gpu_frame_history.txt", MAX_FRAMES_IN_FLIGHT * 2);
+            }
+
             return false;
         });
 

@@ -1246,6 +1246,7 @@ uint32_t RenderGraph::getQueueFamilyIndex(RGQueueFamilyType queueFamily) const
         case RGQueueFamilyType::Graphics: return m_vkContext.graphicsQueueFamilyIndex;
         case RGQueueFamilyType::Compute:  return m_vkContext.computeQueueFamilyIndex;
         case RGQueueFamilyType::Transfer: return m_vkContext.transferQueueFamilyIndex;
+        default:                          return m_vkContext.graphicsQueueFamilyIndex;
     }
 }
 
@@ -1297,6 +1298,8 @@ void DebugGraph::exportDot(const char* path) const
     }
 
     dotFile << "}\n";
+
+    dotFile.close();
 }
 
 void DebugGraph::exportSubmissionDot(const char* path) const

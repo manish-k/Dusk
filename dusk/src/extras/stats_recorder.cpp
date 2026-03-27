@@ -1,5 +1,6 @@
 #include "stats_recorder.h"
 
+#include "engine.h"
 #include "renderer/render_graph.h"
 #include "backend/vulkan/vk_device.h"
 
@@ -23,31 +24,27 @@ bool StatsRecorder::init()
 {
     m_frameStatsHistory.fill({});
 
-    for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+    VkQueryPoolCreateInfo queryPoolCreateInfo { VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO };
+    queryPoolCreateInfo.queryType  = VK_QUERY_TYPE_TIMESTAMP;
+    queryPoolCreateInfo.queryCount = MAX_QUERIES_PER_FRAME * MAX_FRAMES_IN_FLIGHT;
+    queryPoolCreateInfo.flags      = 0;
+
+    VulkanResult result            = vkCreateQueryPool(m_device, &queryPoolCreateInfo, nullptr, &m_queryPool);
+
+    if (result.hasError())
     {
-        VkQueryPoolCreateInfo queryPoolCreateInfo { VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO };
-        queryPoolCreateInfo.queryType  = VK_QUERY_TYPE_TIMESTAMP;
-        queryPoolCreateInfo.queryCount = MAX_QUERIES_PER_FRAME * MAX_FRAMES_IN_FLIGHT;
-        queryPoolCreateInfo.flags      = 0;
-
-        VulkanResult result            = vkCreateQueryPool(m_device, &queryPoolCreateInfo, nullptr, &m_queryPool);
-
-        if (result.hasError())
-        {
-            DUSK_ERROR("Failed to create query pool for stats recorder: {}", result.toString());
-            return false;
-        }
+        DUSK_ERROR("Failed to create query pool for stats recorder: {}", result.toString());
+        return false;
+    }
 
 #ifdef VK_RENDERER_DEBUG
-        vkdebug::setObjectName(
-            m_device,
-            VK_OBJECT_TYPE_QUERY_POOL,
-            (uint64_t)m_queryPool,
-            "stats_recorder_timestamp_query_pool");
+    vkdebug::setObjectName(
+        m_device,
+        VK_OBJECT_TYPE_QUERY_POOL,
+        (uint64_t)m_queryPool,
+        "stats_recorder_timestamp_query_pool");
 #endif // VK_RENDERER_DEBUG
-
-        return true;
-    }
+    return true;
 }
 
 void StatsRecorder::cleanup()
@@ -95,8 +92,12 @@ void StatsRecorder::retrieveQueryStats()
         {
             auto&    passStats      = m_frameStatsHistory[ringBufferIndex].passStats[index];
             uint32_t passQueryIndex = 2 + index * 2;
-            uint64_t passTimeNs     = queryResults[passQueryIndex + 1] - queryResults[passQueryIndex];
+            uint64_t startTimeNs    = queryResults[passQueryIndex];
+            uint64_t endTimeNs      = queryResults[passQueryIndex + 1];
+            uint64_t passTimeNs     = endTimeNs - startTimeNs;
 
+            passStats.startTimeNs   = startTimeNs;
+            passStats.endTimeNs     = endTimeNs;
             passStats.gpuTimeNs     = TimeStepNs(passTimeNs);
         }
     }
@@ -211,7 +212,7 @@ void StatsRecorder::recordCpuFrameTime(TimeStepNs cpuFrameTime)
 
 void StatsRecorder::recordGpuMemoryUsage(const VulkanGPUAllocator* gpuAllocator)
 {
-    auto&     frameStats = m_frameStatsHistory[m_frameCounter % MAX_FRAMES_HISTORY];
+    auto&                            frameStats = m_frameStatsHistory[m_frameCounter % MAX_FRAMES_HISTORY];
 
     VkPhysicalDeviceMemoryProperties props;
     vkGetPhysicalDeviceMemoryProperties(m_physicalDevice, &props);
@@ -241,11 +242,57 @@ void StatsRecorder::recordGpuMemoryUsage(const VulkanGPUAllocator* gpuAllocator)
 
 FrameStats StatsRecorder::getThirdLastFrameStats() const
 {
-    if (m_frameCounter < 3)
+    if (m_frameCounter < MAX_FRAMES_IN_FLIGHT)
     {
         return FrameStats {};
     }
-    return m_frameStatsHistory[(m_frameCounter + MAX_FRAMES_HISTORY - 3) % MAX_FRAMES_HISTORY];
+    return m_frameStatsHistory[(m_frameCounter + MAX_FRAMES_HISTORY - MAX_FRAMES_IN_FLIGHT) % MAX_FRAMES_HISTORY];
+}
+
+void StatsRecorder::dumpGpuFrameTimeHistory(const char* path, uint32_t prevFramesCount) const
+{
+    if (prevFramesCount > MAX_FRAMES_HISTORY)
+    {
+        DUSK_ERROR("Requested frame count {} exceeds max history size {}", prevFramesCount, MAX_FRAMES_HISTORY);
+        return;
+    }
+
+    if (m_frameCounter < prevFramesCount - MAX_FRAMES_IN_FLIGHT)
+    {
+        DUSK_ERROR("Not enough frames recorded to dump history. Requested: {}, Recorded: {}", prevFramesCount, m_frameCounter - MAX_FRAMES_IN_FLIGHT);
+        return;
+    }
+
+    DynamicArray<GpuFrameTimeEntry> gpuFrameTimeEntries;
+
+    for (uint32_t i = 0; i < prevFramesCount; ++i)
+    {
+        uint32_t    frameIndex = (m_frameCounter + MAX_FRAMES_HISTORY - MAX_FRAMES_IN_FLIGHT - prevFramesCount + i) % MAX_FRAMES_HISTORY;
+        const auto& frameStats = m_frameStatsHistory[frameIndex];
+        for (const auto& passStats : frameStats.passStats)
+        {
+            gpuFrameTimeEntries.emplace_back(
+                frameIndex,
+                passStats.passName,
+                passStats.startTimeNs,
+                passStats.endTimeNs);
+        }
+    }
+
+    auto& executor = Engine::get().getTfExecutor();
+    executor.silent_async(
+        [path, gpuFrameTimeEntries]()
+        {
+            std::ofstream outputFile(path);
+            for (uint32_t i = 0; i < gpuFrameTimeEntries.size(); ++i)
+            {
+                const auto& entry = gpuFrameTimeEntries[i];
+                outputFile << "[\'Frame " << entry.frameIndex << "\', \'" << entry.passName << "\', " << entry.startTimeNs << ", " << entry.endTimeNs << "],\n";
+            }
+            outputFile.close();
+
+            DUSK_INFO("Dumped GPU frame time history for {} frames to {}", gpuFrameTimeEntries.size(), path);
+        });
 }
 
 } // namespace dusk

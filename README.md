@@ -43,6 +43,7 @@ This project is intended as a **technical renderer framework** for experimentati
 - Descriptor Indexing
 - Multiview
 - MultiDrawIndirectCount
+- Timeline semaphores for RenderGraph's batches
 
 ### Rendering Features
 - PBR metallic-roughness workflow

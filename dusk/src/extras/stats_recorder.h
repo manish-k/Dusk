@@ -14,8 +14,10 @@ static constexpr float    EMA_ALPHA             = 0.05f;                        
 
 struct PassStats
 {
-    std::string passName  = "";
-    TimeStepNs  gpuTimeNs = {};
+    std::string passName    = "";
+    TimeStepNs  gpuTimeNs   = {};
+    uint64_t    startTimeNs = 0;
+    uint64_t    endTimeNs   = 0;
 };
 
 struct FrameStats
@@ -43,6 +45,14 @@ struct AggregateStats
     TimeStepNs avgGpuTimeNs        = {};
     TimeStepNs maxGpuTimeNs        = {};
     TimeStepNs emaGpuTimeNs        = {};
+};
+
+struct GpuFrameTimeEntry
+{
+    uint32_t    frameIndex;
+    std::string passName;
+    uint64_t    startTimeNs;
+    uint64_t    endTimeNs;
 };
 
 class StatsRecorder
@@ -121,6 +131,13 @@ public:
      */
     FrameStats getThirdLastFrameStats() const;
 
+    /**
+     * @brief Dump last frames gpu timestamps for passes to a file
+     * @param path of the output file
+     * @param previous frames count to dump
+     */
+    void dumpGpuFrameTimeHistory(const char* path, uint32_t prevFramesCount) const;
+
 public:
     /**
      * @brief Get static instance of StatsRecorder
@@ -129,13 +146,13 @@ public:
     static StatsRecorder* get() { return s_instance; };
 
 private:
-    Array<FrameStats, MAX_FRAMES_HISTORY> m_frameStatsHistory      = { {} };
+    Array<FrameStats, MAX_FRAMES_HISTORY> m_frameStatsHistory = { {} };
 
-    uint32_t                              m_frameCounter           = 0;
+    uint32_t                              m_frameCounter      = 0;
 
-    VkDevice                              m_device                 = VK_NULL_HANDLE;
-    VkPhysicalDevice                      m_physicalDevice         = VK_NULL_HANDLE;
-    VkQueryPool                           m_queryPool              = VK_NULL_HANDLE;
+    VkDevice                              m_device            = VK_NULL_HANDLE;
+    VkPhysicalDevice                      m_physicalDevice    = VK_NULL_HANDLE;
+    VkQueryPool                           m_queryPool         = VK_NULL_HANDLE;
 
     // Aggregate stats based on history buffer
     AggregateStats m_aggregateStats = {};

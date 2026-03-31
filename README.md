@@ -99,7 +99,7 @@ Dusk is built around the following principles:
 </p>
 
 <p align="left">
-  <img src="docs//nsight.svg" height="400"><br>
+  <img src="docs//nsight.png" height="400"><br>
   <em>Mulitple Queue family utilization</em>
 </p>
 

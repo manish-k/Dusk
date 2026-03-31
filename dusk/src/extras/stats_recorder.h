@@ -78,16 +78,26 @@ public:
     void retrieveQueryStats();
 
     /**
-     * @brief Begins collection of current frame stats. All record commands should be called after this.
-     * @param command buffer for the current frame
+     * @brief Start frame stats recording for current frame
      */
-    void beginFrame(VkCommandBuffer cmdBuffer);
+    void beginFrame();
 
     /**
-     * @brief Ends collection of current frame stats
+     * @brief End frame stats recording for current frame
+     */
+    void endFrame();
+
+    /**
+     * @brief Begins collection of current frame time stamps at GPU. All record commands should be called after this.
      * @param command buffer for the current frame
      */
-    void endFrame(VkCommandBuffer cmdBuffer);
+    void beginGPUFrame(VkCommandBuffer cmdBuffer);
+
+    /**
+     * @brief Ends collection of current frame time stamps at GPU
+     * @param command buffer for the current frame
+     */
+    void endGPUFrame(VkCommandBuffer cmdBuffer);
 
     /**
      * @brief Begins collection of pass stats in render graph execution

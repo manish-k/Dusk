@@ -193,11 +193,7 @@ void Engine::onUpdate(TimeStep dt)
     if (auto commandBufferPools = m_renderer->beginFrame();
         commandBufferPools.graphicsPool != nullptr && commandBufferPools.computePool != nullptr)
     {
-        VkCommandBuffer statsCommandBuffer = vulkan::getCmdBuffer(commandBufferPools.graphicsPool);
-
-        vulkan::beginRecording(statsCommandBuffer);
-
-        m_statsRecorder->beginFrame(statsCommandBuffer);
+        m_statsRecorder->beginFrame();
 
         m_statsRecorder->recordCpuFrameTime(m_deltaTime);
 
@@ -278,23 +274,12 @@ void Engine::onUpdate(TimeStep dt)
         }
 
         auto batches = renderFrame(frameData);
-
-        // add stats recording batch in the front
-        VulkanSubmitBatch statsBatch {};
-        statsBatch.recordedBuffer       = statsCommandBuffer;
-        statsBatch.semaphoreWaitValue   = 0;
-        statsBatch.semaphoreSignalValue = 0;
-        statsBatch.targetQueueFamily    = m_gfxDevice->getSharedVulkanContext().graphicsQueueFamilyIndex;
-
-        batches.insert(batches.begin(), statsBatch);
-
-        const auto* gpuAllocator = m_gfxDevice->getGPUAllocator();
-        m_statsRecorder->recordGpuMemoryUsage(gpuAllocator);
-        m_statsRecorder->endFrame(statsCommandBuffer);
-
-        vulkan::endRecording(statsCommandBuffer);
+        
+        m_statsRecorder->recordGpuMemoryUsage(m_gfxDevice->getGPUAllocator());
 
         m_renderer->endFrame(batches);
+
+        m_statsRecorder->endFrame();
 
         m_frameRenderables[currentFrameIndex].modelMatrices.clear();
         m_frameRenderables[currentFrameIndex].normalMatrices.clear();

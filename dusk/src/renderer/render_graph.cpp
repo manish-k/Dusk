@@ -166,6 +166,17 @@ DynamicArray<VulkanSubmitBatch> RenderGraph::execute(const FrameData& frameData)
 
     auto* statsRecorder = StatsRecorder::get();
 
+    // add frame start batch for stats recorder
+    VkCommandBuffer statsStartCmdBuffer = vulkan::getCmdBuffer(frameData.cmdBufferPools->graphicsPool);
+    vulkan::beginRecording(statsStartCmdBuffer);
+    statsRecorder->beginGPUFrame(statsStartCmdBuffer);
+    backendSubmitBatches.emplace_back(
+        statsStartCmdBuffer,
+        m_vkContext.graphicsQueueFamilyIndex,
+        0,
+        0);
+    vulkan::endRecording(statsStartCmdBuffer);
+
     // all compute batches
     for (const auto& batch : m_submissionOrder.computeBatches)
     {
@@ -260,6 +271,17 @@ DynamicArray<VulkanSubmitBatch> RenderGraph::execute(const FrameData& frameData)
             batch.signalValue,
             isFinalBatch);
     }
+
+    // stats recorder frame end buffer, must be submitted after all batches
+    VkCommandBuffer statsEndCmdBuffer = vulkan::getCmdBuffer(frameData.cmdBufferPools->graphicsPool);
+    vulkan::beginRecording(statsEndCmdBuffer);
+    statsRecorder->endGPUFrame(statsEndCmdBuffer);
+    backendSubmitBatches.emplace_back(
+        statsEndCmdBuffer,
+        m_vkContext.graphicsQueueFamilyIndex,
+        backendSubmitBatches.back().semaphoreSignalValue,
+        backendSubmitBatches.back().semaphoreSignalValue + 1);
+    vulkan::endRecording(statsEndCmdBuffer);
 
     return backendSubmitBatches;
 }

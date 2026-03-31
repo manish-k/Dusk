@@ -103,7 +103,26 @@ void StatsRecorder::retrieveQueryStats()
     }
 }
 
-void StatsRecorder::beginFrame(VkCommandBuffer cmdBuffer)
+void StatsRecorder::beginFrame()
+{
+    // reset frame stats for the current frame
+    auto& frameStats                    = m_frameStatsHistory[m_frameCounter % MAX_FRAMES_HISTORY];
+    frameStats.cpuFrameTime             = {};
+    frameStats.gpuFrameTime             = {};
+    frameStats.verticesCount            = 0;
+    frameStats.totalVramUsedBytes       = 0;
+    frameStats.totalVramBudgetBytes     = 0;
+    frameStats.totalVramBufferUsedBytes = 0;
+    frameStats.totalVramImageUsedBytes  = 0;
+    frameStats.passStats.clear();
+}
+
+void StatsRecorder::endFrame()
+{
+    m_frameCounter++;
+}
+
+void StatsRecorder::beginGPUFrame(VkCommandBuffer cmdBuffer)
 {
     uint32_t queryIndex = (m_frameCounter % MAX_FRAMES_IN_FLIGHT) * MAX_QUERIES_PER_FRAME;
 
@@ -118,20 +137,9 @@ void StatsRecorder::beginFrame(VkCommandBuffer cmdBuffer)
         VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
         m_queryPool,
         queryIndex); // write gpu timestamp for frame begin at the first index
-
-    // reset frame stats for the current frame
-    auto& frameStats                    = m_frameStatsHistory[m_frameCounter % MAX_FRAMES_HISTORY];
-    frameStats.cpuFrameTime             = {};
-    frameStats.gpuFrameTime             = {};
-    frameStats.verticesCount            = 0;
-    frameStats.totalVramUsedBytes       = 0;
-    frameStats.totalVramBudgetBytes     = 0;
-    frameStats.totalVramBufferUsedBytes = 0;
-    frameStats.totalVramImageUsedBytes  = 0;
-    frameStats.passStats.clear();
 }
 
-void StatsRecorder::endFrame(VkCommandBuffer cmdBuffer)
+void StatsRecorder::endGPUFrame(VkCommandBuffer cmdBuffer)
 {
     uint32_t queryIndex = (m_frameCounter % MAX_FRAMES_IN_FLIGHT) * MAX_QUERIES_PER_FRAME;
 
@@ -174,8 +182,6 @@ void StatsRecorder::endFrame(VkCommandBuffer cmdBuffer)
         m_aggregateStats.maxGpuTimeNs = std::max(m_aggregateStats.maxGpuTimeNs, lastRecordedGPUFrameStats.gpuFrameTime);
         m_aggregateStats.emaGpuTimeNs = (EMA_ALPHA * lastRecordedGPUFrameStats.gpuFrameTime) + ((1.0f - EMA_ALPHA) * m_aggregateStats.emaGpuTimeNs);
     }
-
-    m_frameCounter++;
 }
 
 void StatsRecorder::beginPass(

@@ -1,7 +1,9 @@
 #include "log.h"
 
-#include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/async.h>
+#include <spdlog/async_logger.h>
 #include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
 
 namespace dusk
 {
@@ -12,6 +14,8 @@ Shared<spdlog::logger> Logger::s_vulkanLogger;
 // initialize loggers
 void Logger::init()
 {
+    spdlog::init_thread_pool(8192, 1);
+
     auto consoleSink = createShared<spdlog::sinks::stdout_color_sink_mt>();
     consoleSink->set_pattern("%^[%T] [%l] %n: %v%$");
 
@@ -23,26 +27,32 @@ void Logger::init()
         fileSink
     };
 
-    s_appLogger = createShared<spdlog::logger>(
+    s_appLogger = createShared<spdlog::async_logger>(
         "App",
         logSinks.begin(),
-        logSinks.end());
+        logSinks.end(),
+        spdlog::thread_pool(),
+        spdlog::async_overflow_policy::block);
     s_appLogger->set_level(spdlog::level::trace);
     s_appLogger->flush_on(spdlog::level::trace);
     spdlog::register_logger(s_appLogger);
 
-    s_engineLogger = createShared<spdlog::logger>(
+    s_engineLogger = createShared<spdlog::async_logger>(
         "Dusk",
         logSinks.begin(),
-        logSinks.end());
+        logSinks.end(),
+        spdlog::thread_pool(),
+        spdlog::async_overflow_policy::block);
     s_engineLogger->set_level(spdlog::level::trace);
     s_engineLogger->flush_on(spdlog::level::trace);
     spdlog::register_logger(s_engineLogger);
 
-    s_vulkanLogger = createShared<spdlog::logger>(
+    s_vulkanLogger = createShared<spdlog::async_logger>(
         "Vulkan",
         logSinks.begin(),
-        logSinks.end());
+        logSinks.end(),
+        spdlog::thread_pool(),
+        spdlog::async_overflow_policy::block);
     s_vulkanLogger->set_level(spdlog::level::trace);
     s_vulkanLogger->flush_on(spdlog::level::trace);
     spdlog::register_logger(s_vulkanLogger);

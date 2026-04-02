@@ -115,6 +115,11 @@ Error VkGfxDevice::createInstance(const char* appName, uint32_t version, Dynamic
             requiredExtensionNames.push_back("VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME");
         }
 
+        if (hasInstanceExtension("VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT"))
+        {
+            requiredExtensionNames.push_back("VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT");
+        }
+
         validationLayerNames.push_back(validationLayerName);
     }
     else

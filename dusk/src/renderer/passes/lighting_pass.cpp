@@ -76,7 +76,6 @@ void recordLightingCmds(VkCommandBuffer cmdBuffer, const FrameData& frameData)
         &push);
 
     {
-        DUSK_PROFILE_GPU_ZONE("lighting_draw", cmdBuffer);
         vkCmdDraw(cmdBuffer, 3, 1, 0, 0);
     }
 }

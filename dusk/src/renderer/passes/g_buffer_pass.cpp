@@ -26,7 +26,6 @@ void recordGBufferCmds(VkCommandBuffer cmdBuffer, const FrameData& frameData)
     resources.gbuffPipeline->bind(cmdBuffer);
 
     {
-        DUSK_PROFILE_GPU_ZONE("gbuffer_bind_desc_set", cmdBuffer);
         vkCmdBindDescriptorSets(
             cmdBuffer,
             VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -73,7 +72,6 @@ void recordGBufferCmds(VkCommandBuffer cmdBuffer, const FrameData& frameData)
         VkBuffer     buffers[] = { Engine::get().getVertexBuffer().vkBuffer.buffer };
         VkDeviceSize offsets[] = { 0 };
 
-        DUSK_PROFILE_GPU_ZONE("gbuffer_bind_vertex", cmdBuffer);
         vkCmdBindVertexBuffers(cmdBuffer, 0, 1, buffers, offsets);
 
         vkCmdBindIndexBuffer(cmdBuffer, Engine::get().getIndexBuffer().vkBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
@@ -94,7 +92,6 @@ void recordGBufferCmds(VkCommandBuffer cmdBuffer, const FrameData& frameData)
     auto& currentIndirectDrawCountBuffer = resources.frameIndirectDrawCountBuffers[frameData.frameIndex];
 
     {
-        DUSK_PROFILE_GPU_ZONE("gbuffer_indirect_draw", cmdBuffer);
 
         vkCmdDrawIndexedIndirectCount(
             cmdBuffer,

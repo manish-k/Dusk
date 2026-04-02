@@ -1,5 +1,7 @@
 #include "vk_swapchain.h"
 
+#include "debug/profiler.h"
+
 #include <limits>
 #include <algorithm>
 
@@ -46,8 +48,18 @@ void VkGfxSwapChain::destroy()
 
 VulkanResult VkGfxSwapChain::acquireNextImage(uint32_t frameIndex, uint32_t* imageIndex)
 {
-    vkWaitForFences(
-        m_device, 1, &m_inFlightFences[frameIndex], VK_TRUE, UINT64_MAX);
+    DUSK_PROFILE_FUNCTION;
+
+    {
+        DUSK_PROFILE_SECTION("fence_wait");
+        vkWaitForFences(
+            m_device, 1, &m_inFlightFences[frameIndex], VK_TRUE, UINT64_MAX);
+    }
+
+    {
+        DUSK_PROFILE_SECTION("reset_fence");
+        vkResetFences(m_device, 1, &m_inFlightFences[frameIndex]);
+    }
 
     VulkanResult result = vkAcquireNextImageKHR(m_device, m_swapChain, UINT64_MAX, m_imageAvailableSemaphores[frameIndex], VK_NULL_HANDLE, imageIndex);
 
@@ -64,122 +76,135 @@ VulkanResult VkGfxSwapChain::submitCommandBuffers(
     uint32_t                         frameIndex,
     uint32_t                         imageIndex)
 {
-    vkResetFences(m_device, 1, &m_inFlightFences[frameIndex]);
+    DUSK_PROFILE_FUNCTION;
 
-    uint32_t                                submtiCount = static_cast<uint32_t>(batches.size());
-    DynamicArray<VkSemaphoreSubmitInfo>     waitSemaphoreSubmitInfos;
-    DynamicArray<VkSemaphoreSubmitInfo>     signalSemaphoreSubmitInfos;
-    DynamicArray<VkCommandBufferSubmitInfo> commandBufferSubmitInfos;
-
-    waitSemaphoreSubmitInfos.reserve(2u);
-    signalSemaphoreSubmitInfos.reserve(2u);
-    commandBufferSubmitInfos.reserve(2u);
+    uint32_t    submtiCount          = static_cast<uint32_t>(batches.size());
 
     uint32_t    batchTimelineCounter = 0u;
     VkSemaphore timelineSemaphore    = m_submitSemaphores[frameIndex];
 
-    for (uint32_t batchIndex = 0u; batchIndex < submtiCount; ++batchIndex)
+    // DUSK_DEBUG("Submitting for frame={}, image={}", frameIndex, imageIndex);
+
     {
-        auto&   batch = batches[batchIndex];
+        DUSK_PROFILE_SECTION("batch_submits");
 
-        VkQueue queue = m_graphicsQueue;
-        if (batch.targetQueueFamily == m_computeQueueFamilyIndex)
-            queue = m_computeQueue;
-
-        if (batch.semaphoreWaitValue > 0)
+        for (uint32_t batchIndex = 0u; batchIndex < submtiCount; ++batchIndex)
         {
-            VkSemaphoreSubmitInfo waitInfo { VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO };
-            waitInfo.semaphore = timelineSemaphore;
-            waitInfo.value     = m_globalTimelineCounter + batch.semaphoreWaitValue;
-            waitInfo.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-            waitSemaphoreSubmitInfos.push_back(waitInfo);
+            auto&                                   batch = batches[batchIndex];
+
+            DynamicArray<VkSemaphoreSubmitInfo>     waitSemaphoreSubmitInfos;
+            DynamicArray<VkSemaphoreSubmitInfo>     signalSemaphoreSubmitInfos;
+            DynamicArray<VkCommandBufferSubmitInfo> commandBufferSubmitInfos;
+
+            waitSemaphoreSubmitInfos.reserve(2u);
+            signalSemaphoreSubmitInfos.reserve(2u);
+            commandBufferSubmitInfos.reserve(2u);
+
+            VkQueue queue = m_graphicsQueue;
+
+            if (batch.targetQueueFamily == m_computeQueueFamilyIndex)
+            {
+                queue = m_computeQueue;
+            }
+
+            // DUSK_DEBUG("[{}] Submitting batch {}: present={}", batch.targetQueueFamily, batchIndex, batch.isPresentBatch);
+            // DUSK_DEBUG("[{}] batch {}: global={}, wait={}, signal={}", batch.targetQueueFamily, batchIndex, m_globalTimelineCounter, batch.semaphoreWaitValue, batch.semaphoreSignalValue);
+
+            if (batch.semaphoreWaitValue > 0)
+            {
+                VkSemaphoreSubmitInfo waitInfo { VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO };
+                waitInfo.semaphore = timelineSemaphore;
+                waitInfo.value     = m_globalTimelineCounter + batch.semaphoreWaitValue;
+                waitInfo.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+                waitSemaphoreSubmitInfos.push_back(waitInfo);
+            }
+
+            if (batch.semaphoreSignalValue > 0)
+            {
+                VkSemaphoreSubmitInfo signalInfo { VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO };
+                signalInfo.semaphore = timelineSemaphore;
+                signalInfo.value     = m_globalTimelineCounter + batch.semaphoreSignalValue;
+                signalInfo.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+
+                batchTimelineCounter = std::max(batchTimelineCounter, batch.semaphoreSignalValue);
+
+                signalSemaphoreSubmitInfos.push_back(signalInfo);
+            }
+
+            VkFence frameFence = VK_NULL_HANDLE;
+            if (batchIndex == submtiCount - 1)
+            {
+                // wait on acquire image
+                VkSemaphoreSubmitInfo waitInfo { VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO };
+                waitInfo.semaphore = m_imageAvailableSemaphores[frameIndex];
+                waitInfo.stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+                waitSemaphoreSubmitInfos.push_back(waitInfo);
+
+                // add a signal for presentation queue
+                VkSemaphoreSubmitInfo presentSignalInfo { VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO };
+                presentSignalInfo.semaphore = m_renderFinishedSemaphores[frameIndex];
+                presentSignalInfo.stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+                signalSemaphoreSubmitInfos.push_back(presentSignalInfo);
+
+                frameFence = m_inFlightFences[frameIndex];
+            }
+
+            VkCommandBufferSubmitInfo cmdBufferInfo { VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO };
+            cmdBufferInfo.commandBuffer = batch.recordedBuffer;
+
+            commandBufferSubmitInfos.push_back(cmdBufferInfo);
+
+            VkSubmitInfo2 submitInfo            = { VK_STRUCTURE_TYPE_SUBMIT_INFO_2 };
+            submitInfo.waitSemaphoreInfoCount   = waitSemaphoreSubmitInfos.size();
+            submitInfo.pWaitSemaphoreInfos      = waitSemaphoreSubmitInfos.data();
+            submitInfo.commandBufferInfoCount   = commandBufferSubmitInfos.size();
+            submitInfo.pCommandBufferInfos      = commandBufferSubmitInfos.data();
+            submitInfo.signalSemaphoreInfoCount = signalSemaphoreSubmitInfos.size();
+            submitInfo.pSignalSemaphoreInfos    = signalSemaphoreSubmitInfos.data();
+
+            // submit to corresponding queue
+            VulkanResult result = vkQueueSubmit2(
+                queue,
+                1u,
+                &submitInfo,
+                frameFence);
+
+            if (result.hasError())
+            {
+                DUSK_ERROR("Failed to submit batch to queue family {}: {}", batch.targetQueueFamily, result.toString());
+                return result;
+            }
         }
-
-        if (batch.semaphoreSignalValue > 0)
-        {
-            VkSemaphoreSubmitInfo signalInfo { VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO };
-            signalInfo.semaphore = timelineSemaphore;
-            signalInfo.value     = m_globalTimelineCounter + batch.semaphoreSignalValue;
-            signalInfo.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-
-            batchTimelineCounter = std::max(batchTimelineCounter, batch.semaphoreSignalValue);
-
-            signalSemaphoreSubmitInfos.push_back(signalInfo);
-        }
-
-        VkFence frameFence = VK_NULL_HANDLE;
-        if (batch.isPresentBatch)
-        {
-            // wait on acquire image
-            VkSemaphoreSubmitInfo waitInfo { VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO };
-            waitInfo.semaphore = m_imageAvailableSemaphores[frameIndex];
-            waitInfo.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-            waitSemaphoreSubmitInfos.push_back(waitInfo);
-
-            // add a signal for presentation queue
-            VkSemaphoreSubmitInfo presentSignalInfo { VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO };
-            presentSignalInfo.semaphore = m_renderFinishedSemaphores[frameIndex];
-            presentSignalInfo.stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
-
-            signalSemaphoreSubmitInfos.push_back(presentSignalInfo);
-
-            frameFence = m_inFlightFences[frameIndex];
-        }
-
-        VkCommandBufferSubmitInfo cmdBufferInfo { VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO };
-        cmdBufferInfo.commandBuffer = batch.recordedBuffer;
-
-        commandBufferSubmitInfos.push_back(cmdBufferInfo);
-
-        VkSubmitInfo2 submitInfo            = { VK_STRUCTURE_TYPE_SUBMIT_INFO_2 };
-        submitInfo.waitSemaphoreInfoCount   = waitSemaphoreSubmitInfos.size();
-        submitInfo.pWaitSemaphoreInfos      = waitSemaphoreSubmitInfos.data();
-        submitInfo.commandBufferInfoCount   = commandBufferSubmitInfos.size();
-        submitInfo.pCommandBufferInfos      = commandBufferSubmitInfos.data();
-        submitInfo.signalSemaphoreInfoCount = signalSemaphoreSubmitInfos.size();
-        submitInfo.pSignalSemaphoreInfos    = signalSemaphoreSubmitInfos.data();
-
-        // submit to corresponding queue
-        VulkanResult result = vkQueueSubmit2(
-            queue,
-            1u,
-            &submitInfo,
-            frameFence);
-
-        if (result.hasError())
-        {
-            DUSK_ERROR("Failed to submit batch to queue family {}: {}", batch.targetQueueFamily, result.toString());
-            return result;
-        }
-
-        waitSemaphoreSubmitInfos.clear();
-        signalSemaphoreSubmitInfos.clear();
-        commandBufferSubmitInfos.clear();
     }
 
     m_globalTimelineCounter += batchTimelineCounter;
 
-    VkSemaphore      signalSemaphores[] = { m_renderFinishedSemaphores[frameIndex] };
-
-    VkPresentInfoKHR presentInfo        = {};
-    presentInfo.sType                   = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-
-    presentInfo.waitSemaphoreCount      = 1u;
-    presentInfo.pWaitSemaphores         = signalSemaphores;
-
-    VkSwapchainKHR swapChains[]         = { m_swapChain };
-    presentInfo.swapchainCount          = 1u;
-    presentInfo.pSwapchains             = swapChains;
-
-    presentInfo.pImageIndices           = &imageIndex;
-
-    // present image
-    VulkanResult result = vkQueuePresentKHR(m_presentQueue, &presentInfo);
-
-    if (result.hasError())
+    VulkanResult result;
     {
-        DUSK_ERROR("Failed to present image {}", result.toString());
-        return result;
+        DUSK_PROFILE_SECTION("presentation");
+        VkSemaphore      signalSemaphores[] = { m_renderFinishedSemaphores[frameIndex] };
+
+        VkPresentInfoKHR presentInfo        = {};
+        presentInfo.sType                   = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+
+        presentInfo.waitSemaphoreCount      = 1u;
+        presentInfo.pWaitSemaphores         = signalSemaphores;
+
+        VkSwapchainKHR swapChains[]         = { m_swapChain };
+        presentInfo.swapchainCount          = 1u;
+        presentInfo.pSwapchains             = swapChains;
+
+        presentInfo.pImageIndices           = &imageIndex;
+
+        // present image
+        result = vkQueuePresentKHR(m_presentQueue, &presentInfo);
+
+        if (result.hasError())
+        {
+            DUSK_ERROR("Failed to present image {}", result.toString());
+            return result;
+        }
     }
 
     return result;

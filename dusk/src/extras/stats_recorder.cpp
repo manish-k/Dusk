@@ -132,7 +132,7 @@ void StatsRecorder::beginGPUFrame(VkCommandBuffer cmdBuffer)
         queryIndex,             // start index of the queries for the current frame
         MAX_QUERIES_PER_FRAME); // count of queries for the frame
 
-    vkCmdWriteTimestamp(
+    vkCmdWriteTimestamp2(
         cmdBuffer,
         VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
         m_queryPool,
@@ -143,7 +143,7 @@ void StatsRecorder::endGPUFrame(VkCommandBuffer cmdBuffer)
 {
     uint32_t queryIndex = (m_frameCounter % MAX_FRAMES_IN_FLIGHT) * MAX_QUERIES_PER_FRAME;
 
-    vkCmdWriteTimestamp(
+    vkCmdWriteTimestamp2(
         cmdBuffer,
         VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
         m_queryPool,
@@ -191,7 +191,7 @@ void StatsRecorder::beginPass(
 {
     uint32_t queryIndex = (m_frameCounter % MAX_FRAMES_IN_FLIGHT) * MAX_QUERIES_PER_FRAME + 2 + passOrderedIndex * 2;
 
-    vkCmdWriteTimestamp(
+    vkCmdWriteTimestamp2(
         cmdBuffer,
         VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
         m_queryPool,
@@ -204,7 +204,7 @@ void StatsRecorder::endPass(VkCommandBuffer cmdBuffer, uint32_t passOrderedIndex
 {
     uint32_t queryIndex = (m_frameCounter % MAX_FRAMES_IN_FLIGHT) * MAX_QUERIES_PER_FRAME + 2 + passOrderedIndex * 2;
 
-    vkCmdWriteTimestamp(
+    vkCmdWriteTimestamp2(
         cmdBuffer,
         VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
         m_queryPool,
